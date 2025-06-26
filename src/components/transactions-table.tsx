@@ -45,7 +45,7 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
-      currency: "USD",
+      currency: "BRL",
     }).format(value);
   };
 

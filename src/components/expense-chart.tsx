@@ -62,11 +62,11 @@ export default function ExpenseChart({ expenses }: ExpenseChartProps) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `$${value / 1000}k`}
+                tickFormatter={(value) => `R$${value / 1000}k`}
                 />
                 <Tooltip
                 cursor={{ fill: "hsl(var(--accent) / 0.2)" }}
-                content={<ChartTooltipContent />}
+                content={<ChartTooltipContent formatter={(value) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value as number)} />}
                 />
                 <Bar dataKey="total" fill="var(--color-total)" radius={[4, 4, 0, 0]} />
             </BarChart>
