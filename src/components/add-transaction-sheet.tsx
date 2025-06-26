@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Lightbulb, Loader2 } from "lucide-react";
 
 import {
@@ -47,8 +48,8 @@ const formSchema = z
   .object({
     description: z
       .string()
-      .min(2, { message: "Description must be at least 2 characters." }),
-    amount: z.coerce.number().positive({ message: "Amount must be positive." }),
+      .min(2, { message: "A descrição deve ter pelo menos 2 caracteres." }),
+    amount: z.coerce.number().positive({ message: "O valor deve ser positivo." }),
     date: z.date(),
     category: z.enum(EXPENSE_CATEGORIES).optional(),
     type: z.enum(["revenue", "expense"]),
@@ -61,7 +62,7 @@ const formSchema = z
       return true;
     },
     {
-      message: "Category is required for expenses.",
+      message: "A categoria é obrigatória para despesas.",
       path: ["category"],
     }
   );
@@ -95,7 +96,6 @@ export function AddTransactionSheet({
     },
   });
 
-  // Watch for type changes to update the form's default type
   const currentType = form.watch("type");
   if (currentType !== type) {
     form.reset({
@@ -112,8 +112,8 @@ export function AddTransactionSheet({
     if (!description) {
       toast({
         variant: "destructive",
-        title: "No Description",
-        description: "Please enter a description to get suggestions.",
+        title: "Sem Descrição",
+        description: "Por favor, insira uma descrição para obter sugestões.",
       });
       return;
     }
@@ -124,13 +124,13 @@ export function AddTransactionSheet({
       const result = await getCategorySuggestions(description);
       setSuggestions(result);
       if(result.length === 0){
-        toast({ title: "No specific suggestions found." });
+        toast({ title: "Nenhuma sugestão específica encontrada." });
       }
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Suggestion Error",
-        description: "Could not fetch category suggestions.",
+        title: "Erro na Sugestão",
+        description: "Não foi possível buscar sugestões de categoria.",
       });
     } finally {
       setIsSuggesting(false);
@@ -150,11 +150,11 @@ export function AddTransactionSheet({
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <SheetTitle>
-            Add {type === "revenue" ? "Revenue" : "Expense"}
+            Adicionar {type === "revenue" ? "Receita" : "Despesa"}
           </SheetTitle>
           <SheetDescription>
-            Enter the details of your{" "}
-            {type === "revenue" ? "income" : "expenditure"}.
+            Insira os detalhes da sua{" "}
+            {type === "revenue" ? "receita" : "despesa"}.
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
@@ -167,9 +167,9 @@ export function AddTransactionSheet({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Descrição</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Camera rental" {...field} />
+                    <Input placeholder="ex: Aluguel de câmera" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -180,7 +180,7 @@ export function AddTransactionSheet({
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Valor</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="1000.00" {...field} />
                   </FormControl>
@@ -193,7 +193,7 @@ export function AddTransactionSheet({
               name="date"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>Data</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -205,9 +205,9 @@ export function AddTransactionSheet({
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            format(field.value, "PPP", { locale: ptBR })
                           ) : (
-                            <span>Pick a date</span>
+                            <span>Escolha uma data</span>
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
@@ -219,6 +219,7 @@ export function AddTransactionSheet({
                         selected={field.value}
                         onSelect={field.onChange}
                         initialFocus
+                        locale={ptBR}
                       />
                     </PopoverContent>
                   </Popover>
@@ -232,7 +233,7 @@ export function AddTransactionSheet({
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>Categoria</FormLabel>
                     <div className="flex gap-2">
                        <Select
                           onValueChange={field.onChange}
@@ -241,7 +242,7 @@ export function AddTransactionSheet({
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a category" />
+                              <SelectValue placeholder="Selecione uma categoria" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -258,7 +259,7 @@ export function AddTransactionSheet({
                         size="icon"
                         onClick={handleSuggestCategory}
                         disabled={isSuggesting}
-                        aria-label="Suggest Category"
+                        aria-label="Sugerir Categoria"
                       >
                         {isSuggesting ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -289,7 +290,7 @@ export function AddTransactionSheet({
             )}
 
             <SheetFooter className="pt-4">
-              <Button type="submit">Save Transaction</Button>
+              <Button type="submit">Salvar Transação</Button>
             </SheetFooter>
           </form>
         </Form>

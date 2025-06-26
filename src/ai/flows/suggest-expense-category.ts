@@ -1,11 +1,11 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for suggesting expense categories based on a description.
+ * @fileOverview Este arquivo define um fluxo Genkit para sugerir categorias de despesas com base em uma descrição.
  *
- * - suggestExpenseCategory - A function that takes an expense description and returns category suggestions.
- * - SuggestExpenseCategoryInput - The input type for the suggestExpenseCategory function.
- * - SuggestExpenseCategoryOutput - The output type for the suggestExpenseCategory function.
+ * - suggestExpenseCategory - Uma função que recebe uma descrição de despesa e retorna sugestões de categoria.
+ * - SuggestExpenseCategoryInput - O tipo de entrada para a função suggestExpenseCategory.
+ * - SuggestExpenseCategoryOutput - O tipo de saída para a função suggestExpenseCategory.
  */
 
 import {ai} from '@/ai/genkit';
@@ -14,7 +14,7 @@ import {z} from 'genkit';
 const SuggestExpenseCategoryInputSchema = z.object({
   expenseDescription: z
     .string()
-    .describe('The description of the expense to categorize.'),
+    .describe('A descrição da despesa a ser categorizada.'),
 });
 export type SuggestExpenseCategoryInput = z.infer<
   typeof SuggestExpenseCategoryInputSchema
@@ -23,7 +23,7 @@ export type SuggestExpenseCategoryInput = z.infer<
 const SuggestExpenseCategoryOutputSchema = z.object({
   suggestedCategories: z
     .array(z.string())
-    .describe('An array of suggested expense categories.'),
+    .describe('Um array de categorias de despesas sugeridas.'),
 });
 export type SuggestExpenseCategoryOutput = z.infer<
   typeof SuggestExpenseCategoryOutputSchema
@@ -39,13 +39,13 @@ const prompt = ai.definePrompt({
   name: 'suggestExpenseCategoryPrompt',
   input: {schema: SuggestExpenseCategoryInputSchema},
   output: {schema: SuggestExpenseCategoryOutputSchema},
-  prompt: `You are an expert financial advisor specializing in categorizing expenses for audiovisual productions.
+  prompt: `Você é um consultor financeiro especialista em categorizar despesas para produções audiovisuais.
 
-  Given the following expense description, suggest a few relevant categories.
+  Dada a seguinte descrição de despesa, sugira algumas categorias relevantes.
 
-  Expense Description: {{{expenseDescription}}}
+  Descrição da Despesa: {{{expenseDescription}}}
 
-  Please provide the categories as a JSON array of strings.`,
+  Forneça as categorias como um array JSON de strings.`,
 });
 
 const suggestExpenseCategoryFlow = ai.defineFlow(

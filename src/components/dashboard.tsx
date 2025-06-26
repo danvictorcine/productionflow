@@ -13,13 +13,13 @@ import TransactionsTable from "@/components/transactions-table";
 import { AddTransactionSheet } from "@/components/add-transaction-sheet";
 
 const initialTransactions: Transaction[] = [
-    { id: '1', type: 'revenue', amount: 50000, description: 'Initial Funding from Investor', date: new Date('2024-05-15') },
-    { id: '2', type: 'expense', amount: 15000, description: 'Lead Actor Advance', category: 'Talent Fee', date: new Date('2024-06-01') },
-    { id: '3', type: 'expense', amount: 20000, description: 'Camera Package Rental', category: 'Production Costs', date: new Date('2024-06-10') },
-    { id: '4', type: 'expense', amount: 8000, description: 'Color Grading Services', category: 'Post-production', date: new Date('2024-07-05') },
-    { id: '5', type: 'revenue', amount: 10000, description: 'Product Placement Deal', date: new Date('2024-07-20') },
-    { id: '6', type: 'expense', amount: 5000, description: 'Catering for 2 weeks', category: 'Production Costs', date: new Date('2024-06-25') },
-    { id: '7', type: 'expense', amount: 2500, description: 'Social Media Campaign', category: 'Marketing & Distribution', date: new Date('2024-08-01') }
+    { id: '1', type: 'revenue', amount: 50000, description: 'Financiamento Inicial do Investidor', date: new Date('2024-05-15') },
+    { id: '2', type: 'expense', amount: 15000, description: 'Adiantamento do Ator Principal', category: 'Cachê do Talento', date: new Date('2024-06-01') },
+    { id: '3', type: 'expense', amount: 20000, description: 'Aluguel de Pacote de Câmera', category: 'Custos de Produção', date: new Date('2024-06-10') },
+    { id: '4', type: 'expense', amount: 8000, description: 'Serviços de Gradação de Cor', category: 'Pós-produção', date: new Date('2024-07-05') },
+    { id: '5', type: 'revenue', amount: 10000, description: 'Acordo de Product Placement', date: new Date('2024-07-20') },
+    { id: '6', type: 'expense', amount: 5000, description: 'Catering por 2 semanas', category: 'Custos de Produção', date: new Date('2024-06-25') },
+    { id: '7', type: 'expense', amount: 2500, description: 'Campanha de Mídia Social', category: 'Marketing e Distribuição', date: new Date('2024-08-01') }
 ];
 
 
@@ -97,11 +97,11 @@ export default function Dashboard() {
         <div className="ml-auto flex items-center gap-4">
           <Button onClick={() => openSheet("revenue")} variant="outline">
             <PlusCircle className="mr-2 h-4 w-4" />
-            Add Revenue
+            Adicionar Receita
           </Button>
           <Button onClick={() => openSheet("expense")}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Add Expense
+            Adicionar Despesa
           </Button>
         </div>
       </header>
@@ -117,7 +117,7 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart2 className="h-5 w-5 text-muted-foreground" />
-                Expense Breakdown
+                Detalhamento de Despesas
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -127,11 +127,11 @@ export default function Dashboard() {
           <Card className="lg:col-span-1">
              <Tabs defaultValue="all">
               <div className="flex justify-between items-center px-6 pt-4">
-                <CardTitle>Transactions</CardTitle>
+                <CardTitle>Transações</CardTitle>
                 <TabsList>
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="revenues">Revenues</TabsTrigger>
-                  <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                  <TabsTrigger value="all">Todas</TabsTrigger>
+                  <TabsTrigger value="revenues">Receitas</TabsTrigger>
+                  <TabsTrigger value="expenses">Despesas</TabsTrigger>
                 </TabsList>
               </div>
               <CardContent className="pt-4">

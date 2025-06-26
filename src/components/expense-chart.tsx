@@ -25,7 +25,7 @@ export default function ExpenseChart({ expenses }: ExpenseChartProps) {
     if (!expenses || expenses.length === 0) return [];
     
     const categoryTotals = expenses.reduce((acc, expense) => {
-      const category = expense.category || "Other";
+      const category = expense.category || "Outros";
       acc[category] = (acc[category] || 0) + expense.amount;
       return acc;
     }, {} as Record<string, number>);
@@ -41,7 +41,7 @@ export default function ExpenseChart({ expenses }: ExpenseChartProps) {
   if (chartData.length === 0) {
     return (
       <div className="flex items-center justify-center h-[250px] text-muted-foreground">
-        No expense data to display.
+        Nenhum dado de despesa para exibir.
       </div>
     );
   }

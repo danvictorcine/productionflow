@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Transaction } from "@/lib/types";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { MoreHorizontal, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 
 import {
@@ -42,7 +43,7 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "USD",
     }).format(value);
@@ -55,9 +56,9 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
           <TableHeader>
             <TableRow>
               <TableHead className="w-[10px]"></TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="hidden md:table-cell">Date</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="hidden md:table-cell">Data</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -81,7 +82,7 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
                   <TableCell className={`text-right font-mono ${t.type === 'revenue' ? 'text-green-600' : ''}`}>
                     {t.type === 'expense' && '-'}{formatCurrency(t.amount)}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{format(t.date, "MMM d, yyyy")}</TableCell>
+                  <TableCell className="hidden md:table-cell">{format(t.date, "d MMM, yyyy", { locale: ptBR })}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -92,7 +93,7 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
                       <DropdownMenuContent>
                         <DropdownMenuItem onClick={() => setDeleteId(t.id)} className="text-destructive">
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -102,7 +103,7 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center h-24">
-                  No transactions yet.
+                  Nenhuma transação ainda.
                 </TableCell>
               </TableRow>
             )}
@@ -112,14 +113,14 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this
-              transaction from your records.
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente esta
+              transação de seus registros.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if(deleteId) {
@@ -129,7 +130,7 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
               }}
               className="bg-destructive hover:bg-destructive/90"
             >
-              Continue
+              Continuar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
