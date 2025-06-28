@@ -139,10 +139,10 @@ export function AddTransactionSheet({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
-            className="flex-1 flex flex-col overflow-y-hidden"
+            className="flex-1 flex flex-col min-h-0"
           >
-            <ScrollArea className="flex-1 p-4 -mx-6">
-                <div className="space-y-4 px-6">
+            <ScrollArea className="flex-auto p-4">
+                <div className="space-y-4">
 
                     <FormField
                     control={form.control}
@@ -271,7 +271,7 @@ export function AddTransactionSheet({
 
                 </div>
             </ScrollArea>
-            <SheetFooter className="pt-4 mt-auto border-t">
+            <SheetFooter className="flex-shrink-0 pt-4 border-t">
               <Button type="submit">Salvar Despesa</Button>
             </SheetFooter>
           </form>

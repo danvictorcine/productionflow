@@ -111,9 +111,9 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-y-hidden">
-            <ScrollArea className="flex-1 p-4 -mx-6">
-                <div className="space-y-4 px-6">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col min-h-0">
+            <ScrollArea className="flex-auto p-6 pt-2">
+                <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -179,7 +179,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   <FormLabel>Equipe e Talentos</FormLabel>
                   <div className="space-y-3 mt-2">
                     {fields.map((field, index) => (
-                      <div key={field.id} className="grid grid-cols-1 items-end gap-3 rounded-md border p-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_130px_auto]">
+                      <div key={field.id} className="grid grid-cols-1 items-end gap-3 rounded-md border p-3 md:grid-cols-[1fr_1fr_130px_auto]">
                         <FormField
                           control={form.control}
                           name={`talents.${index}.name`}
@@ -237,7 +237,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                 </div>
               </div>
             </ScrollArea>
-            <DialogFooter className="pt-4 flex-shrink-0 border-t mt-auto">
+            <DialogFooter className="flex-shrink-0 border-t p-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
             </DialogFooter>
