@@ -46,7 +46,13 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
     return project.talents.reduce((sum, t) => sum + t.fee, 0);
   }, [project.talents]);
 
-  const balance = useMemo(() => project.budget - totalExpenses, [project.budget, totalExpenses]);
+  const balance = useMemo(() => {
+    const effectiveBudget = project.includeProductionCostsInBudget
+        ? project.budget - project.productionCosts
+        : project.budget;
+    return effectiveBudget - totalExpenses;
+  }, [project.budget, project.productionCosts, project.includeProductionCostsInBudget, totalExpenses]);
+
 
   const expenses = useMemo(
     () => transactions.filter((t) => t.type === "expense"),

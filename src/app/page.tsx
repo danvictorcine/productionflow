@@ -34,7 +34,11 @@ export default function Home() {
     try {
       const storedProjects = localStorage.getItem('production_flow_projects');
       if (storedProjects) {
-        setProjects(JSON.parse(storedProjects));
+        const parsedProjects: Project[] = JSON.parse(storedProjects).map((p: any) => ({
+          ...p,
+          includeProductionCostsInBudget: p.includeProductionCostsInBudget ?? true,
+        }));
+        setProjects(parsedProjects);
       }
     } catch (error) {
       console.error("Failed to parse projects from localStorage", error);
@@ -173,10 +177,10 @@ export default function Home() {
       <CreateEditProjectDialog
         isOpen={isDialogOpen}
         setIsOpen={(open) => {
-            setIsDialogOpen(open);
             if (!open) {
                 setEditingProject(null);
             }
+            setIsDialogOpen(open);
         }}
         onSubmit={handleProjectSubmit}
         project={editingProject || undefined}

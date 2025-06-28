@@ -22,6 +22,7 @@ export type Project = {
   budget: number;
   productionCosts: number;
   talents: Talent[];
+  includeProductionCostsInBudget: boolean;
 };
 
 export type Transaction = {

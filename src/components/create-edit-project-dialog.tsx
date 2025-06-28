@@ -4,6 +4,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { PlusCircle, Trash2 } from "lucide-react";
+import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,8 +26,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import type { Project } from "@/lib/types";
-import { useEffect } from "react";
+
 
 const talentSchema = z.object({
   name: z.string().min(1, "Nome do talento é obrigatório."),
@@ -37,6 +40,7 @@ const projectFormSchema = z.object({
   name: z.string().min(2, "O nome do projeto deve ter pelo menos 2 caracteres."),
   budget: z.coerce.number().positive("O orçamento deve ser um número positivo."),
   productionCosts: z.coerce.number().min(0, "Custos de produção não podem ser negativos."),
+  includeProductionCostsInBudget: z.boolean().default(true),
   talents: z.array(talentSchema),
 });
 
@@ -58,6 +62,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
       name: "",
       budget: 0,
       productionCosts: 0,
+      includeProductionCostsInBudget: true,
       talents: [],
     },
   });
@@ -69,12 +74,14 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
             name: project.name,
             budget: project.budget,
             productionCosts: project.productionCosts,
+            includeProductionCostsInBudget: project.includeProductionCostsInBudget ?? true,
             talents: project.talents.map(t => ({...t}))
           }
         : {
             name: "",
             budget: 0,
             productionCosts: 0,
+            includeProductionCostsInBudget: true,
             talents: [],
           };
       form.reset(defaultValues);
@@ -148,7 +155,26 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                     )}
                   />
                 </div>
-                
+                 <FormField
+                  control={form.control}
+                  name="includeProductionCostsInBudget"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-background">
+                      <div className="space-y-0.5">
+                        <FormLabel>Subtrair custos de produção do orçamento?</FormLabel>
+                        <FormDescription>
+                            Se ativado, o valor planejado para custos de produção será deduzido do orçamento.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
                 <div>
                   <FormLabel>Equipe e Talentos</FormLabel>
                   <div className="space-y-3 mt-2">

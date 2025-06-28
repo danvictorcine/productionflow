@@ -23,7 +23,10 @@ export default function ProjectPage() {
             const storedTransactions = localStorage.getItem('production_flow_transactions');
 
             if (storedProjects) {
-                const allProjects: Project[] = JSON.parse(storedProjects);
+                const allProjects: Project[] = JSON.parse(storedProjects).map((p: any) => ({
+                    ...p,
+                    includeProductionCostsInBudget: p.includeProductionCostsInBudget ?? true,
+                }));
                 const currentProject = allProjects.find(p => p.id === projectId);
 
                 if (currentProject) {
