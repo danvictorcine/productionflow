@@ -5,66 +5,84 @@ import { useParams, useRouter } from 'next/navigation';
 import type { Project, Transaction } from '@/lib/types';
 import Dashboard from '@/components/dashboard';
 import { Skeleton } from '@/components/ui/skeleton';
+import AuthGuard from '@/components/auth-guard';
+import * as api from '@/lib/firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
 
-export default function ProjectPage() {
+
+function ProjectPageDetail() {
     const router = useRouter();
     const params = useParams();
     const projectId = params.id as string;
+    const { toast } = useToast();
+    const { user } = useAuth();
 
     const [project, setProject] = useState<Project | null>(null);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!projectId) return;
+        if (!projectId || !user) return;
 
-        try {
-            const storedProjects = localStorage.getItem('production_flow_projects');
-            const storedTransactions = localStorage.getItem('production_flow_transactions');
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const [projectData, transactionsData] = await Promise.all([
+                    api.getProject(projectId),
+                    api.getTransactions(projectId),
+                ]);
 
-            if (storedProjects) {
-                const allProjects: Project[] = JSON.parse(storedProjects).map((p: any) => ({
-                    ...p,
-                    includeProductionCostsInBudget: p.includeProductionCostsInBudget ?? true,
-                }));
-                const currentProject = allProjects.find(p => p.id === projectId);
-
-                if (currentProject) {
-                    setProject(currentProject);
+                if (projectData) {
+                    setProject(projectData);
+                    setTransactions(transactionsData);
                 } else {
-                    console.error("Project not found");
-                    router.push('/'); // Redirect if project not found
+                    toast({ variant: "destructive", title: "Erro", description: "Projeto não encontrado ou você não tem permissão para acessá-lo." });
+                    router.push('/');
                 }
-            } else {
-                 router.push('/');
+            } catch (error) {
+                toast({ variant: "destructive", title: "Erro ao carregar dados", description: (error as Error).message });
+                router.push('/');
+            } finally {
+                setIsLoading(false);
             }
+        };
 
-            if (storedTransactions) {
-                const allTransactions: Transaction[] = JSON.parse(storedTransactions).map((t: any) => ({...t, date: new Date(t.date)}));
-                const projectTransactions = allTransactions.filter(t => t.projectId === projectId);
-                setTransactions(projectTransactions);
-            }
+        fetchData();
+    }, [projectId, user, router, toast]);
+
+    const handleUpdateProject = async (updatedProjectData: Partial<Project>) => {
+        if (!project) return;
+        try {
+            await api.updateProject(project.id, updatedProjectData);
+            setProject(prev => prev ? { ...prev, ...updatedProjectData } : null);
+            toast({ title: "Projeto atualizado!" });
         } catch (error) {
-            console.error("Failed to load data from localStorage", error);
-            router.push('/');
-        } finally {
-            setIsLoading(false);
+            toast({ variant: 'destructive', title: 'Erro ao atualizar projeto', description: (error as Error).message });
         }
-    }, [projectId, router]);
-
-    const handleUpdateProject = (updatedProject: Project) => {
-        setProject(updatedProject);
-         try {
-            const storedProjects = localStorage.getItem('production_flow_projects');
-            if (storedProjects) {
-                const allProjects: Project[] = JSON.parse(storedProjects);
-                const updatedProjects = allProjects.map(p => p.id === updatedProject.id ? updatedProject : p);
-                localStorage.setItem('production_flow_projects', JSON.stringify(updatedProjects));
-            }
-        } catch (error) {
-            console.error("Failed to update project in localStorage", error);
+    };
+    
+    const handleAddTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>) => {
+        try {
+            await api.addTransaction(transactionData);
+            const updatedTransactions = await api.getTransactions(projectId);
+            setTransactions(updatedTransactions);
+            toast({ title: 'Despesa adicionada com sucesso!' });
+        } catch(error) {
+            toast({ variant: 'destructive', title: 'Erro ao adicionar despesa', description: (error as Error).message });
+        }
+    };
+    
+    const handleDeleteTransaction = async (transactionId: string) => {
+        try {
+            await api.deleteTransaction(transactionId);
+            setTransactions(prev => prev.filter(t => t.id !== transactionId));
+            toast({ title: 'Despesa excluída.' });
+        } catch(error) {
+            toast({ variant: 'destructive', title: 'Erro ao excluir despesa', description: (error as Error).message });
         }
     }
+
 
     if (isLoading) {
         return (
@@ -84,8 +102,26 @@ export default function ProjectPage() {
     }
     
     if (!project) {
+        // This case is handled by redirection in useEffect, but as a fallback.
         return <div>Projeto não encontrado. Redirecionando...</div>;
     }
 
-    return <Dashboard project={project} initialTransactions={transactions} onProjectUpdate={handleUpdateProject} />;
+    return (
+        <Dashboard 
+            project={project} 
+            transactions={transactions} 
+            onProjectUpdate={handleUpdateProject}
+            onAddTransaction={handleAddTransaction}
+            onDeleteTransaction={handleDeleteTransaction}
+        />
+    );
+}
+
+
+export default function ProjectPage() {
+    return (
+        <AuthGuard>
+            <ProjectPageDetail />
+        </AuthGuard>
+    )
 }

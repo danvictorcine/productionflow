@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users, Wrench } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users, Wrench, LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,32 +24,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EXPENSE_CATEGORIES } from "@/lib/types";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase/config";
+import { useRouter } from "next/navigation";
 
 
 interface DashboardProps {
   project: Project;
-  initialTransactions: Transaction[];
-  onProjectUpdate: (project: Project) => void;
+  transactions: Transaction[];
+  onProjectUpdate: (data: Partial<Project>) => void;
+  onAddTransaction: (data: Omit<Transaction, "id" | "userId">) => void;
+  onDeleteTransaction: (id: string) => void;
 }
 
-export default function Dashboard({ project, initialTransactions, onProjectUpdate }: DashboardProps) {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+export default function Dashboard({ 
+    project, 
+    transactions, 
+    onProjectUpdate, 
+    onAddTransaction,
+    onDeleteTransaction
+}: DashboardProps) {
+  const router = useRouter();
   const [isAddSheetOpen, setAddSheetOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-
-  useEffect(() => {
-    try {
-        const storedTransactions = localStorage.getItem('production_flow_transactions');
-        const allTransactions = storedTransactions ? JSON.parse(storedTransactions) : [];
-        const otherProjectTransactions = allTransactions.filter((t: Transaction) => t.projectId !== project.id);
-        const updatedAllTransactions = [...otherProjectTransactions, ...transactions];
-        localStorage.setItem('production_flow_transactions', JSON.stringify(updatedAllTransactions));
-    } catch(e) {
-        console.error("Could not save transactions", e)
-    }
-  }, [transactions, project.id]);
-
 
   const totalExpenses = useMemo(() => {
     return transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -62,7 +60,6 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
   const balance = useMemo(() => {
     return project.budget - totalExpenses;
   }, [project.budget, totalExpenses]);
-
 
   const expenses = useMemo(
     () => transactions.filter((t) => t.type === "expense"),
@@ -109,7 +106,7 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
     
     return data.filter(item => item.value > 0);
 
-  }, [project, transactions, totalTalentFee, totalExpenses]);
+  }, [project, transactions, totalTalentFee]);
 
   const productionCostsTransactions = useMemo(() => {
     return transactions.filter(t => t.category === 'Custos de Produção');
@@ -123,31 +120,23 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
   }, [transactions, categoryFilter]);
 
 
-  const handleAddTransaction = (transaction: Omit<Transaction, "id" | "projectId" | "type">) => {
-    const newTransaction: Transaction = {
+  const handleAddTransaction = (transaction: Omit<Transaction, "id" | "projectId" | "type" | "userId">) => {
+    onAddTransaction({
       ...transaction,
-      id: crypto.randomUUID(),
       projectId: project.id,
       type: "expense",
-    };
-    setTransactions((prev) => [...prev, newTransaction].sort((a,b) => b.date.getTime() - a.date.getTime()));
+    });
     setAddSheetOpen(false);
   };
   
-  const handleDeleteTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id))
-  }
-
-  const handleEditProject = (projectData: Omit<Project, 'id'>) => {
-      const updatedProject = { ...project, ...projectData };
-      onProjectUpdate(updatedProject);
+  const handleEditProject = (projectData: Omit<Project, 'id' | 'userId'>) => {
+      onProjectUpdate(projectData);
       setEditDialogOpen(false);
   };
 
   const handleDeleteTalent = (talentId: string) => {
     const updatedTalents = project.talents.filter(t => t.id !== talentId);
-    const updatedProject = { ...project, talents: updatedTalents };
-    onProjectUpdate(updatedProject);
+    onProjectUpdate({ talents: updatedTalents });
   };
   
   const handlePayTalent = (talent: Talent) => {
@@ -156,13 +145,11 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
       .reduce((sum, t) => sum + t.amount, 0);
 
     if (paidAmount >= talent.fee) {
-        // This should not happen if the button is disabled, but as a safeguard.
         console.warn("Este talento já foi pago.");
         return;
     }
 
-    const newTransaction: Transaction = {
-      id: crypto.randomUUID(),
+    const newTransactionData: Omit<Transaction, "id" | "userId"> = {
       projectId: project.id,
       type: "expense",
       amount: talent.fee, // Assumes full payment
@@ -171,7 +158,12 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
       date: new Date(),
       talentId: talent.id,
     };
-    setTransactions((prev) => [...prev, newTransaction].sort((a,b) => b.date.getTime() - a.date.getTime()));
+    onAddTransaction(newTransactionData);
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
   };
 
   return (
@@ -192,6 +184,9 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
           <Button onClick={() => setAddSheetOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Despesa
+          </Button>
+          <Button onClick={handleLogout} variant="outline" size="icon" aria-label="Sair">
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </header>
@@ -243,7 +238,7 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[265px] pr-4">
-                  <TransactionsTable transactions={productionCostsTransactions} onDelete={handleDeleteTransaction} />
+                  <TransactionsTable transactions={productionCostsTransactions} onDelete={onDeleteTransaction} />
                 </ScrollArea>
               </CardContent>
             </Card>
@@ -276,7 +271,7 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
                       </div>
                       <div className="flex-1 relative">
                           <ScrollArea className="absolute inset-0 pr-4">
-                            <TransactionsTable transactions={filteredTransactionsForHistory} onDelete={handleDeleteTransaction} />
+                            <TransactionsTable transactions={filteredTransactionsForHistory} onDelete={onDeleteTransaction} />
                           </ScrollArea>
                       </div>
                     </TabsContent>

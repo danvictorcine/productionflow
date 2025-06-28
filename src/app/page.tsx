@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { PlusCircle, Film, MoreVertical, Edit, Trash2 } from "lucide-react";
-import type { Project, Transaction } from "@/lib/types";
+import { PlusCircle, Film, MoreVertical, Edit, Trash2, LogOut } from "lucide-react";
+import { useRouter } from 'next/navigation';
+
+import type { Project } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CreateEditProjectDialog } from "@/components/create-edit-project-dialog";
@@ -23,66 +25,77 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import AuthGuard from "@/components/auth-guard";
+import { useAuth } from "@/context/auth-context";
+import { auth } from "@/lib/firebase/config";
+import { signOut } from "firebase/auth";
+import * as projectApi from '@/lib/firebase/firestore';
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
-export default function Home() {
+function HomePage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   useEffect(() => {
+    if (user) {
+      fetchProjects();
+    }
+  }, [user]);
+
+  const fetchProjects = async () => {
+    setIsLoading(true);
     try {
-      const storedProjects = localStorage.getItem('production_flow_projects');
-      if (storedProjects) {
-        const parsedProjects: Project[] = JSON.parse(storedProjects).map((p: any) => ({
-          ...p,
-          includeProductionCostsInBudget: p.includeProductionCostsInBudget ?? true,
-        }));
-        setProjects(parsedProjects);
-      }
+        const userProjects = await projectApi.getProjects();
+        setProjects(userProjects);
+    } catch(error) {
+        toast({ variant: 'destructive', title: 'Erro ao buscar projetos', description: (error as Error).message });
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+  const handleProjectSubmit = async (projectData: Omit<Project, 'id' | 'userId'>) => {
+    try {
+        if (editingProject) {
+          await projectApi.updateProject(editingProject.id, projectData);
+          toast({ title: 'Projeto atualizado com sucesso!' });
+        } else {
+          await projectApi.addProject(projectData);
+          toast({ title: 'Projeto criado com sucesso!' });
+        }
+        await fetchProjects(); // Refresh the list
     } catch (error) {
-      console.error("Failed to parse projects from localStorage", error);
+        toast({ variant: 'destructive', title: 'Erro ao salvar projeto', description: (error as Error).message });
     }
-  }, []);
-
-  const saveProjects = (updatedProjects: Project[]) => {
-    const sortedProjects = updatedProjects.sort((a, b) => a.name.localeCompare(b.name));
-    setProjects(sortedProjects);
-    localStorage.setItem('production_flow_projects', JSON.stringify(sortedProjects));
-  };
-
-  const handleProjectSubmit = (projectData: Omit<Project, 'id'>) => {
-    if (editingProject) {
-      const updatedProject = { ...editingProject, ...projectData };
-      const updatedProjects = projects.map(p => p.id === updatedProject.id ? updatedProject : p);
-      saveProjects(updatedProjects);
-    } else {
-      const newProject = { ...projectData, id: crypto.randomUUID() };
-      const updatedProjects = [...projects, newProject];
-      saveProjects(updatedProjects);
-    }
+    
     setIsDialogOpen(false);
     setEditingProject(null);
   };
   
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!projectToDelete) return;
 
-    const updatedProjects = projects.filter(p => p.id !== projectToDelete.id);
-    saveProjects(updatedProjects);
-
     try {
-        const storedTransactions = localStorage.getItem('production_flow_transactions');
-        if (storedTransactions) {
-            const allTransactions: Transaction[] = JSON.parse(storedTransactions);
-            const remainingTransactions = allTransactions.filter(t => t.projectId !== projectToDelete.id);
-            localStorage.setItem('production_flow_transactions', JSON.stringify(remainingTransactions));
-        }
+        await projectApi.deleteProject(projectToDelete.id);
+        toast({ title: `Projeto "${projectToDelete.name}" excluído.` });
+        await fetchProjects();
     } catch (error) {
-        console.error("Failed to update transactions in localStorage after project deletion", error);
+        toast({ variant: 'destructive', title: 'Erro ao excluir projeto', description: (error as Error).message });
     }
-
     setProjectToDelete(null);
+  };
+  
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
   };
 
   const openCreateDialog = () => {
@@ -101,6 +114,72 @@ export default function Home() {
       currency: "BRL",
     }).format(value);
   };
+  
+  const renderProjectCards = () => {
+    if (isLoading) {
+        return (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[220px] w-full" />)}
+            </div>
+        )
+    }
+
+    if (projects.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
+                <Film className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold">Nenhum projeto encontrado</h3>
+                <p className="mt-2 text-sm text-muted-foreground">Comece criando seu primeiro projeto de produção.</p>
+                <Button className="mt-6" onClick={openCreateDialog}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Criar Projeto
+                </Button>
+            </div>
+        )
+    }
+
+    return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {projects.map((project) => (
+          <Card key={project.id} className="hover:shadow-lg transition-shadow h-full flex flex-col relative">
+            <div className="absolute top-2 right-2 z-10">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEditDialog(project)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setProjectToDelete(project)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+             <Link href={`/project/${project.id}`} className="flex flex-col flex-grow">
+                <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10">
+                    <div className="p-3 rounded-full bg-primary/10">
+                    <Film className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                    <CardTitle>{project.name}</CardTitle>
+                    <CardDescription>Orçamento: {formatCurrency(project.budget)}</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardContent className="mt-auto">
+                    <Button className="w-full">Gerenciar Projeto</Button>
+                </CardContent>
+            </Link>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
@@ -111,6 +190,10 @@ export default function Home() {
             <PlusCircle className="mr-2 h-4 w-4" />
             Criar Novo Projeto
           </Button>
+           <Button onClick={handleLogout} variant="outline">
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </Button>
         </div>
       </header>
 
@@ -119,57 +202,7 @@ export default function Home() {
           <h2 className="text-3xl font-bold tracking-tight">Meus Projetos</h2>
           <p className="text-muted-foreground">Selecione um projeto para gerenciar ou crie um novo.</p>
         </div>
-        {projects.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {projects.map((project) => (
-              <Card key={project.id} className="hover:shadow-lg transition-shadow h-full flex flex-col relative">
-                <div className="absolute top-2 right-2 z-10">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openEditDialog(project)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setProjectToDelete(project)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Excluir
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-                 <Link href={`/project/${project.id}`} className="flex flex-col flex-grow cursor-pointer">
-                    <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10">
-                        <div className="p-3 rounded-full bg-primary/10">
-                        <Film className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                        <CardTitle>{project.name}</CardTitle>
-                        <CardDescription>Orçamento: {formatCurrency(project.budget)}</CardDescription>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="mt-auto">
-                        <Button className="w-full">Gerenciar Projeto</Button>
-                    </CardContent>
-                </Link>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
-            <Film className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">Nenhum projeto encontrado</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Comece criando seu primeiro projeto de produção.</p>
-            <Button className="mt-6" onClick={openCreateDialog}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Criar Projeto
-            </Button>
-          </div>
-        )}
+        {renderProjectCards()}
       </main>
 
       <CreateEditProjectDialog
@@ -205,4 +238,13 @@ export default function Home() {
       </AlertDialog>
     </div>
   );
+}
+
+
+export default function Home() {
+    return (
+        <AuthGuard>
+            <HomePage />
+        </AuthGuard>
+    )
 }

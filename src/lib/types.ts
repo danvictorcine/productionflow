@@ -18,6 +18,7 @@ export type Talent = {
 
 export type Project = {
   id: string;
+  userId: string;
   name: string;
   budget: number;
   productionCosts: number;
@@ -28,6 +29,7 @@ export type Project = {
 export type Transaction = {
   id: string;
   projectId: string;
+  userId: string;
   type: "expense";
   amount: number;
   description: string;
