@@ -47,11 +47,24 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
   }, [project.talents]);
 
   const balance = useMemo(() => {
-    const effectiveBudget = project.includeProductionCostsInBudget
-        ? project.budget - project.productionCosts
-        : project.budget;
-    return effectiveBudget - totalExpenses;
-  }, [project.budget, project.productionCosts, project.includeProductionCostsInBudget, totalExpenses]);
+    const paidTalentFees = transactions
+      .filter(t => t.category === "Cachê do Talento")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const paidProductionCosts = transactions
+        .filter(t => t.category === "Custos de Produção")
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    const unpaidTalentFees = Math.max(0, totalTalentFee - paidTalentFees);
+    
+    const unpaidProductionCosts = project.includeProductionCostsInBudget
+      ? Math.max(0, project.productionCosts - paidProductionCosts)
+      : 0;
+      
+    const moneyAccountedFor = totalExpenses + unpaidTalentFees + unpaidProductionCosts;
+
+    return project.budget - moneyAccountedFor;
+  }, [project, transactions, totalTalentFee]);
 
 
   const expenses = useMemo(
