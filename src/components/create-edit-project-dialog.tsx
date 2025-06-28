@@ -132,9 +132,24 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                     name="budget"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Orçamento Global (R$)</FormLabel>
+                        <FormLabel>Orçamento Global</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="50000.00" {...field} />
+                          <Input
+                            type="text"
+                            placeholder="R$ 0,00"
+                            value={
+                              field.value
+                                ? new Intl.NumberFormat("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                  }).format(field.value)
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const numericValue = e.target.value.replace(/\D/g, "");
+                              field.onChange(Number(numericValue) / 100);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -145,9 +160,24 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                     name="productionCosts"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Custos de Produção (R$)</FormLabel>
+                        <FormLabel>Custos de Produção</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="10000.00" {...field} />
+                          <Input
+                            type="text"
+                            placeholder="R$ 0,00"
+                            value={
+                              field.value
+                                ? new Intl.NumberFormat("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                  }).format(field.value)
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const numericValue = e.target.value.replace(/\D/g, "");
+                              field.onChange(Number(numericValue) / 100);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -210,9 +240,24 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                           name={`talents.${index}.fee`}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-xs">Cachê (R$)</FormLabel>
+                              <FormLabel className="text-xs">Cachê</FormLabel>
                               <FormControl>
-                                <Input type="number" placeholder="5000.00" {...field} />
+                                <Input
+                                  type="text"
+                                  placeholder="R$ 0,00"
+                                  value={
+                                    field.value
+                                      ? new Intl.NumberFormat("pt-BR", {
+                                          style: "currency",
+                                          currency: "BRL",
+                                        }).format(field.value)
+                                      : ""
+                                  }
+                                  onChange={(e) => {
+                                    const numericValue = e.target.value.replace(/\D/g, "");
+                                    field.onChange(Number(numericValue) / 100);
+                                  }}
+                                />
                               </FormControl>
                                <FormMessage />
                             </FormItem>

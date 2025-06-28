@@ -157,17 +157,32 @@ export function AddTransactionSheet({
                     )}
                     />
                     <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Valor (R$)</FormLabel>
-                        <FormControl>
-                            <Input type="number" placeholder="1000.00" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                      control={form.control}
+                      name="amount"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Valor</FormLabel>
+                          <FormControl>
+                              <Input
+                                type="text"
+                                placeholder="R$ 0,00"
+                                value={
+                                  field.value
+                                    ? new Intl.NumberFormat("pt-BR", {
+                                        style: "currency",
+                                        currency: "BRL",
+                                      }).format(field.value)
+                                    : ""
+                                }
+                                onChange={(e) => {
+                                  const numericValue = e.target.value.replace(/\D/g, "");
+                                  field.onChange(Number(numericValue) / 100);
+                                }}
+                              />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
                     />
                     <FormField
                     control={form.control}
