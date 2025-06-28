@@ -1,0 +1,223 @@
+"use client";
+
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { PlusCircle, Trash2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Project } from "@/lib/types";
+import { useEffect } from "react";
+
+const talentSchema = z.object({
+  name: z.string().min(1, "Nome do talento é obrigatório."),
+  role: z.string().min(1, "Função é obrigatória."),
+  fee: z.coerce.number().min(0, "Cachê não pode ser negativo."),
+});
+
+const projectFormSchema = z.object({
+  name: z.string().min(2, "O nome do projeto deve ter pelo menos 2 caracteres."),
+  budget: z.coerce.number().positive("O orçamento deve ser um número positivo."),
+  productionCosts: z.coerce.number().min(0, "Custos de produção não podem ser negativos."),
+  talents: z.array(talentSchema),
+});
+
+type ProjectFormValues = z.infer<typeof projectFormSchema>;
+
+interface CreateEditProjectDialogProps {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  onSubmit: (projectData: Omit<Project, 'id'>) => void;
+  project?: Project;
+}
+
+export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }: CreateEditProjectDialogProps) {
+  const isEditMode = !!project;
+
+  const form = useForm<ProjectFormValues>({
+    resolver: zodResolver(projectFormSchema),
+    defaultValues: {
+      name: "",
+      budget: 0,
+      productionCosts: 0,
+      talents: [],
+    },
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      const defaultValues = isEditMode
+        ? { 
+            name: project.name,
+            budget: project.budget,
+            productionCosts: project.productionCosts,
+            talents: project.talents.map(t => ({...t}))
+          }
+        : {
+            name: "",
+            budget: 0,
+            productionCosts: 0,
+            talents: [],
+          };
+      form.reset(defaultValues);
+    }
+  }, [isOpen, isEditMode, project, form]);
+  
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "talents",
+  });
+
+  const handleSubmit = (values: ProjectFormValues) => {
+    const talentsWithIds = values.talents.map((t, index) => ({
+      ...t,
+      id: project?.talents[index]?.id || crypto.randomUUID(),
+    }));
+    onSubmit({ ...values, talents: talentsWithIds });
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</DialogTitle>
+          <DialogDescription>
+            {isEditMode ? "Atualize os detalhes do seu projeto." : "Preencha os detalhes abaixo para criar seu projeto."}
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <ScrollArea className="max-h-[60vh] p-1 pr-6">
+                <div className="space-y-4 p-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do Projeto</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ex: Meu Curta-Metragem" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="budget"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Orçamento Global (R$)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="50000.00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="productionCosts"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Custos de Produção (R$)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="10000.00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div>
+                  <FormLabel>Equipe e Talentos</FormLabel>
+                  <div className="space-y-3 mt-2">
+                    {fields.map((field, index) => (
+                      <div key={field.id} className="flex items-end gap-3 p-3 border rounded-md">
+                        <FormField
+                          control={form.control}
+                          name={`talents.${index}.name`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-xs">Nome</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nome do Talento" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`talents.${index}.role`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-xs">Função</FormLabel>
+                              <FormControl>
+                                <Input placeholder="ex: Ator Principal" {...field} />
+                              </FormControl>
+                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                         <FormField
+                          control={form.control}
+                          name={`talents.${index}.fee`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">Cachê (R$)</FormLabel>
+                              <FormControl>
+                                <Input type="number" placeholder="5000.00" {...field} />
+                              </FormControl>
+                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => append({ name: "", role: "", fee: 0 })}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Adicionar Talento
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+            <DialogFooter className="pt-4 pr-6">
+              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
+              <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}

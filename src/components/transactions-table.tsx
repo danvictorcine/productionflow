@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { Transaction } from "@/lib/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MoreHorizontal, Trash2, TrendingUp, TrendingDown } from "lucide-react";
+import { MoreHorizontal, Trash2, TrendingDown } from "lucide-react";
 
 import {
   Table,
@@ -67,11 +67,7 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
               transactions.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell>
-                     {t.type === 'revenue' ? (
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                     ) : (
-                        <TrendingDown className="h-4 w-4 text-red-500" />
-                     )}
+                     <TrendingDown className="h-4 w-4 text-red-500" />
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">{t.description}</div>
@@ -79,8 +75,8 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
                       <Badge variant="outline" className="mt-1 font-normal">{t.category}</Badge>
                     )}
                   </TableCell>
-                  <TableCell className={`text-right font-mono ${t.type === 'revenue' ? 'text-green-600' : ''}`}>
-                    {t.type === 'expense' && '-'}{formatCurrency(t.amount)}
+                  <TableCell className="text-right font-mono">
+                    -{formatCurrency(t.amount)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{format(t.date, "d MMM, yyyy", { locale: ptBR })}</TableCell>
                   <TableCell>
@@ -103,7 +99,7 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center h-24">
-                  Nenhuma transação ainda.
+                  Nenhuma despesa ainda.
                 </TableCell>
               </TableRow>
             )}

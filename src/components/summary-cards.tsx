@@ -6,17 +6,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DollarSign, CreditCard, Wallet } from "lucide-react";
+import { DollarSign, CreditCard, Wallet, Users, Wrench } from "lucide-react";
 
 interface SummaryCardsProps {
-  totalRevenue: number;
-  totalExpenses: number;
+  budget: number;
+  talentFees: number;
+  productionCosts: number;
+  paidExpenses: number;
   balance: number;
 }
 
 export default function SummaryCards({
-  totalRevenue,
-  totalExpenses,
+  budget,
+  talentFees,
+  productionCosts,
+  paidExpenses,
   balance,
 }: SummaryCardsProps) {
   const formatCurrency = (value: number) => {
@@ -27,29 +31,53 @@ export default function SummaryCards({
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-          <DollarSign className="h-4 w-4 text-green-500" />
+          <CardTitle className="text-sm font-medium">Orçamento Global</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {formatCurrency(totalRevenue)}
+            {formatCurrency(budget)}
           </div>
-          <p className="text-xs text-muted-foreground">+20.1% do último mês</p>
+          <p className="text-xs text-muted-foreground">Valor total para a produção.</p>
+        </CardContent>
+      </Card>
+       <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Cachês (Planejado)</CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {formatCurrency(talentFees)}
+          </div>
+          <p className="text-xs text-muted-foreground">Custo total com talentos.</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Despesas Totais</CardTitle>
+          <CardTitle className="text-sm font-medium">Custos de Produção (Planejado)</CardTitle>
+          <Wrench className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {formatCurrency(productionCosts)}
+          </div>
+          <p className="text-xs text-muted-foreground">Custos gerais da produção.</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Despesas Pagas</CardTitle>
           <CreditCard className="h-4 w-4 text-red-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {formatCurrency(totalExpenses)}
+            {formatCurrency(paidExpenses)}
           </div>
-           <p className="text-xs text-muted-foreground">+180.1% do último mês</p>
+           <p className="text-xs text-muted-foreground">Total de gastos até o momento.</p>
         </CardContent>
       </Card>
       <Card className="bg-primary text-primary-foreground">
@@ -59,7 +87,7 @@ export default function SummaryCards({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
-           <p className="text-xs text-primary-foreground/80">Seu orçamento de produção disponível</p>
+           <p className="text-xs text-primary-foreground/80">Seu orçamento disponível.</p>
         </CardContent>
       </Card>
     </div>

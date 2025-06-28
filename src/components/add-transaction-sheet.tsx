@@ -44,42 +44,26 @@ import { getCategorySuggestions } from "@/app/actions";
 import { cn } from "@/lib/utils";
 import { EXPENSE_CATEGORIES, type Transaction, type ExpenseCategory } from "@/lib/types";
 
-const formSchema = z
-  .object({
-    description: z
-      .string()
-      .min(2, { message: "A descrição deve ter pelo menos 2 caracteres." }),
-    amount: z.coerce.number().positive({ message: "O valor deve ser positivo." }),
-    date: z.date(),
-    category: z.enum(EXPENSE_CATEGORIES).optional(),
-    type: z.enum(["revenue", "expense"]),
-  })
-  .refine(
-    (data) => {
-      if (data.type === "expense") {
-        return !!data.category;
-      }
-      return true;
-    },
-    {
-      message: "A categoria é obrigatória para despesas.",
-      path: ["category"],
-    }
-  );
+const formSchema = z.object({
+  description: z
+    .string()
+    .min(2, { message: "A descrição deve ter pelo menos 2 caracteres." }),
+  amount: z.coerce.number().positive({ message: "O valor deve ser positivo." }),
+  date: z.date(),
+  category: z.enum(EXPENSE_CATEGORIES),
+});
 
 type FormValues = z.infer<typeof formSchema>;
 
 interface AddTransactionSheetProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  type: "revenue" | "expense";
-  onSubmit: (transaction: Omit<Transaction, "id">) => void;
+  onSubmit: (transaction: Omit<Transaction, "id" | "projectId" | "type">) => void;
 }
 
 export function AddTransactionSheet({
   isOpen,
   setIsOpen,
-  type,
   onSubmit,
 }: AddTransactionSheetProps) {
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -92,20 +76,8 @@ export function AddTransactionSheet({
       description: "",
       amount: 0,
       date: new Date(),
-      type: type,
     },
   });
-
-  const currentType = form.watch("type");
-  if (currentType !== type) {
-    form.reset({
-      description: "",
-      amount: 0,
-      date: new Date(),
-      category: undefined,
-      type: type,
-    });
-  }
 
   const handleSuggestCategory = async () => {
     const description = form.getValues("description");
@@ -143,18 +115,24 @@ export function AddTransactionSheet({
         amount: Number(values.amount)
     });
     form.reset();
+    setSuggestions([]);
   };
 
+  const onOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      form.reset();
+      setSuggestions([]);
+    }
+  }
+
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>
-            Adicionar {type === "revenue" ? "Receita" : "Despesa"}
-          </SheetTitle>
+          <SheetTitle>Adicionar Despesa</SheetTitle>
           <SheetDescription>
-            Insira os detalhes da sua{" "}
-            {type === "revenue" ? "receita" : "despesa"}.
+            Insira os detalhes da sua despesa.
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
@@ -180,7 +158,7 @@ export function AddTransactionSheet({
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor</FormLabel>
+                  <FormLabel>Valor (R$)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="1000.00" {...field} />
                   </FormControl>
@@ -227,7 +205,6 @@ export function AddTransactionSheet({
                 </FormItem>
               )}
             />
-            {type === "expense" && (
               <FormField
                 control={form.control}
                 name="category"
@@ -287,10 +264,9 @@ export function AddTransactionSheet({
                   </FormItem>
                 )}
               />
-            )}
 
             <SheetFooter className="pt-4">
-              <Button type="submit">Salvar Transação</Button>
+              <Button type="submit">Salvar Despesa</Button>
             </SheetFooter>
           </form>
         </Form>
