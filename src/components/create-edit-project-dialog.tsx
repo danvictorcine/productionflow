@@ -179,12 +179,12 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   <FormLabel>Equipe e Talentos</FormLabel>
                   <div className="space-y-3 mt-2">
                     {fields.map((field, index) => (
-                      <div key={field.id} className="flex items-end gap-3 p-3 border rounded-md">
+                      <div key={field.id} className="flex flex-wrap items-end gap-3 p-3 border rounded-md">
                         <FormField
                           control={form.control}
                           name={`talents.${index}.name`}
                           render={({ field }) => (
-                            <FormItem className="flex-1">
+                            <FormItem className="flex-1 min-w-[150px]">
                               <FormLabel className="text-xs">Nome</FormLabel>
                               <FormControl>
                                 <Input placeholder="Nome do Talento" {...field} />
@@ -197,7 +197,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                           control={form.control}
                           name={`talents.${index}.role`}
                           render={({ field }) => (
-                            <FormItem className="flex-1">
+                            <FormItem className="flex-1 min-w-[150px]">
                               <FormLabel className="text-xs">Função</FormLabel>
                               <FormControl>
                                 <Input placeholder="ex: Ator Principal" {...field} />
@@ -210,7 +210,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                           control={form.control}
                           name={`talents.${index}.fee`}
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="min-w-[120px]">
                               <FormLabel className="text-xs">Cachê (R$)</FormLabel>
                               <FormControl>
                                 <Input type="number" placeholder="5000.00" {...field} />
