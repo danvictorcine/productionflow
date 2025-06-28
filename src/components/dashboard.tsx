@@ -3,13 +3,14 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from 'next/link';
 import type { Transaction, Project } from "@/lib/types";
-import { PlusCircle, BarChart2, Edit, ArrowLeft } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SummaryCards from "@/components/summary-cards";
 import ExpenseChart from "@/components/expense-chart";
+import BudgetBreakdownChart from "@/components/budget-breakdown-chart";
 import TransactionsTable from "@/components/transactions-table";
 import { AddTransactionSheet } from "@/components/add-transaction-sheet";
 import { CreateEditProjectDialog } from "@/components/create-edit-project-dialog";
@@ -64,13 +65,52 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
     const moneyAccountedFor = totalExpenses + unpaidTalentFees + unpaidProductionCosts;
 
     return project.budget - moneyAccountedFor;
-  }, [project, transactions, totalTalentFee]);
+  }, [project, transactions, totalTalentFee, totalExpenses]);
 
 
   const expenses = useMemo(
     () => transactions.filter((t) => t.type === "expense"),
     [transactions]
   );
+  
+  const breakdownData = useMemo(() => {
+    const paidTalentFees = transactions
+      .filter(t => t.category === "Cachê do Talento")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const paidProductionCosts = transactions
+        .filter(t => t.category === "Custos de Produção")
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+    const otherExpenses = transactions
+      .filter(t => !["Cachê do Talento", "Custos de Produção"].includes(t.category || ''))
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const unpaidTalentFees = Math.max(0, totalTalentFee - paidTalentFees);
+    
+    const unpaidProductionCosts = project.includeProductionCostsInBudget
+      ? Math.max(0, project.productionCosts - paidProductionCosts)
+      : 0;
+
+    const finalBalance = balance < 0 ? 0 : balance;
+    const overBudget = balance < 0 ? Math.abs(balance) : 0;
+    
+    let data = [
+        { name: 'Saldo Disponível', value: finalBalance, fill: 'hsl(var(--chart-2))' },
+        { name: 'Cachês Pagos', value: paidTalentFees, fill: 'hsl(var(--chart-1))' },
+        { name: 'Cachês a Pagar', value: unpaidTalentFees, fill: 'hsl(var(--chart-3))' },
+        { name: 'Custos de Produção Pagos', value: paidProductionCosts, fill: 'hsl(var(--chart-4))' },
+        { name: 'Custos de Produção a Pagar', value: unpaidProductionCosts, fill: 'hsl(var(--chart-5))' },
+        { name: 'Outras Despesas', value: otherExpenses, fill: 'hsl(var(--muted-foreground))' },
+    ];
+    
+    if (overBudget > 0) {
+        data.push({ name: 'Acima do Orçamento', value: overBudget, fill: 'hsl(var(--destructive))'});
+    }
+    
+    return data.filter(item => item.value > 0);
+
+  }, [project, transactions, totalTalentFee, balance]);
 
   const handleAddTransaction = (transaction: Omit<Transaction, "id" | "projectId" | "type">) => {
     const newTransaction: Transaction = {
@@ -127,25 +167,29 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BarChart2 className="h-5 w-5 text-muted-foreground" />
-                Detalhamento de Despesas
+                <PieChartIcon className="h-5 w-5 text-muted-foreground" />
+                Balanço do Orçamento
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ExpenseChart expenses={expenses} />
+              <BudgetBreakdownChart data={breakdownData} />
             </CardContent>
           </Card>
           <Card className="lg:col-span-1">
              <Tabs defaultValue="all">
               <div className="flex justify-between items-center px-6 pt-4">
-                <CardTitle>Transações</CardTitle>
+                <CardTitle>Histórico</CardTitle>
                 <TabsList>
-                  <TabsTrigger value="all">Todas</TabsTrigger>
+                  <TabsTrigger value="all">Transações</TabsTrigger>
+                  <TabsTrigger value="categories">Categorias</TabsTrigger>
                 </TabsList>
               </div>
               <CardContent className="pt-4">
                   <TabsContent value="all">
                     <TransactionsTable transactions={transactions} onDelete={handleDeleteTransaction} />
+                  </TabsContent>
+                  <TabsContent value="categories">
+                    <ExpenseChart expenses={expenses} />
                   </TabsContent>
               </CardContent>
             </Tabs>
