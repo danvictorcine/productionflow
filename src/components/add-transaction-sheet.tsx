@@ -43,7 +43,6 @@ import { useToast } from "@/hooks/use-toast";
 import { getCategorySuggestions } from "@/app/actions";
 import { cn } from "@/lib/utils";
 import { EXPENSE_CATEGORIES, type Transaction, type ExpenseCategory } from "@/lib/types";
-import { ScrollArea } from "./ui/scroll-area";
 
 const formSchema = z.object({
   description: z
@@ -139,9 +138,9 @@ export function AddTransactionSheet({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
-            className="flex-1 flex flex-col min-h-0"
+            className="flex-1 flex flex-col overflow-hidden"
           >
-            <ScrollArea className="flex-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-4">
 
                     <FormField
@@ -268,9 +267,8 @@ export function AddTransactionSheet({
                         </FormItem>
                         )}
                     />
-
                 </div>
-            </ScrollArea>
+            </div>
             <SheetFooter className="flex-shrink-0 pt-4 border-t">
               <Button type="submit">Salvar Despesa</Button>
             </SheetFooter>

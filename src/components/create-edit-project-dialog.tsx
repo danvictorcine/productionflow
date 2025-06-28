@@ -25,7 +25,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import type { Project } from "@/lib/types";
 
@@ -111,8 +110,8 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col min-h-0">
-            <ScrollArea className="flex-auto p-6 pt-2">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-6 pt-2">
                 <div className="space-y-4">
                 <FormField
                   control={form.control}
@@ -236,7 +235,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   </div>
                 </div>
               </div>
-            </ScrollArea>
+            </div>
             <DialogFooter className="flex-shrink-0 border-t p-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
