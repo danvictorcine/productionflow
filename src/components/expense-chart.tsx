@@ -40,15 +40,15 @@ export default function ExpenseChart({ expenses }: ExpenseChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+      <div className="flex items-center justify-center h-full text-muted-foreground">
         Nenhum dado de despesa para exibir.
       </div>
     );
   }
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-        <ResponsiveContainer width="100%" height={250}>
+    <ChartContainer config={chartConfig} className="min-h-[250px] w-full h-full">
+        <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
                 <XAxis
                 dataKey="name"
@@ -56,6 +56,7 @@ export default function ExpenseChart({ expenses }: ExpenseChartProps) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
+                interval={0}
                 />
                 <YAxis
                 stroke="#888888"

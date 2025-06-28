@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from 'next/link';
 import type { Transaction, Project } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import BudgetBreakdownChart from "@/components/budget-breakdown-chart";
 import TransactionsTable from "@/components/transactions-table";
 import { AddTransactionSheet } from "@/components/add-transaction-sheet";
 import { CreateEditProjectDialog } from "@/components/create-edit-project-dialog";
+import TalentsTable from "@/components/talents-table";
 
 interface DashboardProps {
   project: Project;
@@ -133,6 +134,12 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
       setEditDialogOpen(false);
   };
 
+  const handleDeleteTalent = (talentId: string) => {
+    const updatedTalents = project.talents.filter(t => t.id !== talentId);
+    const updatedProject = { ...project, talents: updatedTalents };
+    onProjectUpdate(updatedProject);
+  };
+
   return (
     <div className="flex flex-col min-h-screen w-full">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
@@ -163,37 +170,56 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
           paidExpenses={totalExpenses}
           balance={balance}
         />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PieChartIcon className="h-5 w-5 text-muted-foreground" />
-                Balanço do Orçamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BudgetBreakdownChart data={breakdownData} />
-            </CardContent>
-          </Card>
-          <Card className="lg:col-span-1">
-             <Tabs defaultValue="all">
-              <div className="flex justify-between items-center px-6 pt-4">
-                <CardTitle>Histórico</CardTitle>
-                <TabsList>
-                  <TabsTrigger value="all">Transações</TabsTrigger>
-                  <TabsTrigger value="categories">Categorias</TabsTrigger>
-                </TabsList>
-              </div>
-              <CardContent className="pt-4">
-                  <TabsContent value="all">
-                    <TransactionsTable transactions={transactions} onDelete={handleDeleteTransaction} />
-                  </TabsContent>
-                  <TabsContent value="categories">
-                    <ExpenseChart expenses={expenses} />
-                  </TabsContent>
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChartIcon className="h-5 w-5 text-muted-foreground" />
+                  Balanço do Orçamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BudgetBreakdownChart data={breakdownData} />
               </CardContent>
-            </Tabs>
-          </Card>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                  Equipe e Talentos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TalentsTable
+                    talents={project.talents}
+                    onEdit={() => setEditDialogOpen(true)}
+                    onDelete={handleDeleteTalent}
+                />
+              </CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-1">
+            <Card className="h-full">
+              <Tabs defaultValue="all" className="flex flex-col h-full">
+                <div className="flex justify-between items-center px-6 pt-4">
+                  <CardTitle>Histórico</CardTitle>
+                  <TabsList>
+                    <TabsTrigger value="all">Transações</TabsTrigger>
+                    <TabsTrigger value="categories">Categorias</TabsTrigger>
+                  </TabsList>
+                </div>
+                <CardContent className="pt-4 flex-1 flex flex-col">
+                    <TabsContent value="all" className="flex-1">
+                      <TransactionsTable transactions={transactions} onDelete={handleDeleteTransaction} />
+                    </TabsContent>
+                    <TabsContent value="categories" className="flex-1">
+                      <ExpenseChart expenses={expenses} />
+                    </TabsContent>
+                </CardContent>
+              </Tabs>
+            </Card>
+          </div>
         </div>
       </main>
       <AddTransactionSheet
