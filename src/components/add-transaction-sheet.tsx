@@ -43,6 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getCategorySuggestions } from "@/app/actions";
 import { cn } from "@/lib/utils";
 import { EXPENSE_CATEGORIES, type Transaction, type ExpenseCategory } from "@/lib/types";
+import { ScrollArea } from "./ui/scroll-area";
 
 const formSchema = z.object({
   description: z
@@ -128,7 +129,7 @@ export function AddTransactionSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md">
+      <SheetContent className="sm:max-w-md flex flex-col">
         <SheetHeader>
           <SheetTitle>Adicionar Despesa</SheetTitle>
           <SheetDescription>
@@ -138,134 +139,139 @@ export function AddTransactionSheet({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4 py-4"
+            className="flex-1 flex flex-col overflow-y-hidden"
           >
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Input placeholder="ex: Aluguel de câmera" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Valor (R$)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="1000.00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: ptBR })
-                          ) : (
-                            <span>Escolha uma data</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                        locale={ptBR}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <div className="flex gap-2">
-                       <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma categoria" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {EXPENSE_CATEGORIES.map((cat) => (
-                              <SelectItem key={cat} value={cat}>
-                                {cat}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={handleSuggestCategory}
-                        disabled={isSuggesting}
-                        aria-label="Sugerir Categoria"
-                      >
-                        {isSuggesting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Lightbulb className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    {suggestions.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-2">
-                          {suggestions.map((s) => (
-                              <Button
-                                  key={s}
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => form.setValue('category', s as ExpenseCategory, { shouldValidate: true })}
-                              >
-                                  {s}
-                              </Button>
-                          ))}
-                      </div>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <ScrollArea className="flex-1 p-4 -mx-6">
+                <div className="space-y-4 px-6">
 
-            <SheetFooter className="pt-4">
+                    <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl>
+                            <Input placeholder="ex: Aluguel de câmera" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Valor (R$)</FormLabel>
+                        <FormControl>
+                            <Input type="number" placeholder="1000.00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                        <FormLabel>Data</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                )}
+                                >
+                                {field.value ? (
+                                    format(field.value, "PPP", { locale: ptBR })
+                                ) : (
+                                    <span>Escolha uma data</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                            </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                                locale={ptBR}
+                            />
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Categoria</FormLabel>
+                            <div className="flex gap-2">
+                            <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                value={field.value}
+                                >
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Selecione uma categoria" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {EXPENSE_CATEGORIES.map((cat) => (
+                                    <SelectItem key={cat} value={cat}>
+                                        {cat}
+                                    </SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={handleSuggestCategory}
+                                disabled={isSuggesting}
+                                aria-label="Sugerir Categoria"
+                            >
+                                {isSuggesting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                <Lightbulb className="h-4 w-4" />
+                                )}
+                            </Button>
+                            </div>
+                            {suggestions.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-2">
+                                {suggestions.map((s) => (
+                                    <Button
+                                        key={s}
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => form.setValue('category', s as ExpenseCategory, { shouldValidate: true })}
+                                    >
+                                        {s}
+                                    </Button>
+                                ))}
+                            </div>
+                            )}
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+
+                </div>
+            </ScrollArea>
+            <SheetFooter className="pt-4 mt-auto border-t">
               <Button type="submit">Salvar Despesa</Button>
             </SheetFooter>
           </form>

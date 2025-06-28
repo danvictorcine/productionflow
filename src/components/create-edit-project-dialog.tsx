@@ -103,7 +103,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
   
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-2xl flex flex-col max-h-[85vh]">
+      <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</DialogTitle>
           <DialogDescription>
@@ -111,9 +111,9 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-grow flex flex-col overflow-hidden">
-            <ScrollArea className="flex-grow p-4">
-                <div className="space-y-4 pr-2">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-y-hidden">
+            <ScrollArea className="flex-1 p-4 -mx-6">
+                <div className="space-y-4 px-6">
                 <FormField
                   control={form.control}
                   name="name"
@@ -237,7 +237,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                 </div>
               </div>
             </ScrollArea>
-            <DialogFooter className="pt-4 flex-shrink-0 border-t mt-4">
+            <DialogFooter className="pt-4 flex-shrink-0 border-t mt-auto">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
             </DialogFooter>
