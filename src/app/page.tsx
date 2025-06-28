@@ -142,21 +142,19 @@ export default function Home() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-                 <Link href={`/project/${project.id}`} passHref legacyBehavior>
-                    <a className="flex flex-col flex-grow cursor-pointer">
-                        <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10">
-                            <div className="p-3 rounded-full bg-primary/10">
-                            <Film className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                            <CardTitle>{project.name}</CardTitle>
-                            <CardDescription>Orçamento: {formatCurrency(project.budget)}</CardDescription>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="mt-auto">
-                            <Button className="w-full">Gerenciar Projeto</Button>
-                        </CardContent>
-                    </a>
+                 <Link href={`/project/${project.id}`} className="flex flex-col flex-grow cursor-pointer">
+                    <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10">
+                        <div className="p-3 rounded-full bg-primary/10">
+                        <Film className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                        <CardTitle>{project.name}</CardTitle>
+                        <CardDescription>Orçamento: {formatCurrency(project.budget)}</CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="mt-auto">
+                        <Button className="w-full">Gerenciar Projeto</Button>
+                    </CardContent>
                 </Link>
               </Card>
             ))}
