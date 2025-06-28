@@ -11,9 +11,10 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import AuthGuard from '@/components/auth-guard';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import * as firestoreApi from '@/lib/firebase/firestore';
 
@@ -89,52 +90,58 @@ function SettingsPageDetail() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleUpdateName)}>
               <CardHeader>
-                <CardTitle>Perfil</CardTitle>
-                <CardDescription>Gerencie as informações da sua conta.</CardDescription>
+                <CardTitle>Perfil e Segurança</CardTitle>
+                <CardDescription>Gerencie as informações da sua conta e senha.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Seu nome completo" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input readOnly disabled {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <CardContent className="space-y-6">
+                 <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Seu nome completo" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input readOnly disabled {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                 </div>
                  <Button type="submit" disabled={isSaving}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Salvar Alterações
+                    Salvar Alterações no Perfil
                  </Button>
+                 
+                 <Separator />
+
+                 <div className="space-y-4">
+                    <FormLabel>Senha</FormLabel>
+                     <p className="text-sm text-muted-foreground">
+                        Para alterar sua senha, enviaremos um link de redefinição para seu e-mail.
+                    </p>
+                    <Button type="button" variant="outline" onClick={handlePasswordReset} disabled={isSendingEmail}>
+                        {isSendingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Enviar e-mail para alterar senha
+                    </Button>
+                 </div>
               </CardContent>
             </form>
-          <CardHeader className='pt-0'>
-              <CardTitle>Segurança</CardTitle>
-              <CardDescription>Gerencie sua senha.</CardDescription>
-          </CardHeader>
-           <CardContent>
-                <Button variant="outline" onClick={handlePasswordReset} disabled={isSendingEmail}>
-                    {isSendingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Enviar e-mail para alterar senha
-                </Button>
-            </CardContent>
+          </Form>
         </Card>
        </main>
     </div>
