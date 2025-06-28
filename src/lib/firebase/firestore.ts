@@ -14,7 +14,7 @@ import {
   getDoc,
   setDoc,
 } from 'firebase/firestore';
-import { sendPasswordResetEmail } from "firebase/auth";
+import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
 import type { Project, Transaction, UserProfile } from '@/lib/types';
 
 // Helper to get current user ID
@@ -91,24 +91,29 @@ export const createUserProfile = async (uid: string, name: string, email: string
   await setDoc(doc(db, 'users', uid), { name, email });
 };
 
-export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
+export const getUserProfile = async (uid:string): Promise<UserProfile | null> => {
+  const userRef = doc(db, "users", uid);
+  const userSnap = await getDoc(userRef);
 
-    if (userSnap.exists()) {
-        const userData = userSnap.data();
-        return {
-            uid,
-            name: userData.name,
-            email: userData.email,
-        };
-    }
-    return null;
+  if (userSnap.exists()) {
+    const data = userSnap.data();
+    return {
+      uid,
+      name: data.name,
+      email: data.email,
+    };
+  }
+  return null;
 }
 
 export const updateUserProfile = async (uid: string, data: { name: string }) => {
     const userRef = doc(db, 'users', uid);
     await updateDoc(userRef, data);
+
+    // Also update the auth profile display name
+    if (auth.currentUser && auth.currentUser.uid === uid) {
+      await updateAuthProfile(auth.currentUser, { displayName: data.name });
+    }
 };
 
 export const sendPasswordReset = async (email: string) => {

@@ -7,9 +7,16 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
+    
+    // User profiles can be created by the user, and only read/updated by the owner.
+    match /users/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read, update: if isOwner(userId);
+      allow delete: if false; // Deleting profiles is not allowed
+    }
 
     // Projects can be read, updated, or deleted only by the user who created them.
-    // New projects can be created by any authenticated user.
+    // New projects can be created by any authenticated user for themselves.
     match /projects/{projectId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
@@ -17,7 +24,8 @@ service cloud.firestore {
     
     // Transactions can be managed only by the user who created them.
     match /transactions/{transactionId} {
-      allow read, write, delete: if isOwner(resource.data.userId);
+      // allow read, write, delete: if isOwner(resource.data.userId); <-- 'write' is too broad
+      allow read, delete, update: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
   }
