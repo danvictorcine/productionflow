@@ -12,8 +12,10 @@ import {
   orderBy,
   writeBatch,
   getDoc,
+  setDoc,
 } from 'firebase/firestore';
-import type { Project, Transaction } from '@/lib/types';
+import { sendPasswordResetEmail } from "firebase/auth";
+import type { Project, Transaction, UserProfile } from '@/lib/types';
 
 // Helper to get current user ID
 const getUserId = () => {
@@ -53,7 +55,7 @@ export const getProject = async (projectId: string): Promise<Project | null> => 
     const projectSnap = await getDoc(projectRef);
 
     if (projectSnap.exists()) {
-        const projectData = projectSnap.data() as Project;
+        const projectData = projectSnap.data() as Omit<Project, 'id'>;
         if (projectData.userId === userId) {
             return { ...projectData, id: projectSnap.id };
         }
@@ -82,6 +84,37 @@ export const deleteProject = async (projectId: string) => {
     
     await batch.commit();
 };
+
+
+// User Profile Functions
+export const createUserProfile = async (uid: string, name: string, email: string) => {
+  await setDoc(doc(db, 'users', uid), { name, email });
+};
+
+export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
+    const userRef = doc(db, 'users', uid);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+        const userData = userSnap.data();
+        return {
+            uid,
+            name: userData.name,
+            email: userData.email,
+        };
+    }
+    return null;
+}
+
+export const updateUserProfile = async (uid: string, data: { name: string }) => {
+    const userRef = doc(db, 'users', uid);
+    await updateDoc(userRef, data);
+};
+
+export const sendPasswordReset = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+}
+
 
 // Transaction Functions
 export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>) => {

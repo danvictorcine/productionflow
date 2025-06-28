@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users, Wrench, LogOut } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users, Wrench } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,9 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EXPENSE_CATEGORIES } from "@/lib/types";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase/config";
-import { useRouter } from "next/navigation";
+import { UserNav } from "@/components/user-nav";
 
 
 interface DashboardProps {
@@ -44,7 +42,6 @@ export default function Dashboard({
     onAddTransaction,
     onDeleteTransaction
 }: DashboardProps) {
-  const router = useRouter();
   const [isAddSheetOpen, setAddSheetOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -161,11 +158,6 @@ export default function Dashboard({
     onAddTransaction(newTransactionData);
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
-  };
-
   return (
     <div className="flex flex-col min-h-screen w-full">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
@@ -185,9 +177,7 @@ export default function Dashboard({
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Despesa
           </Button>
-          <Button onClick={handleLogout} variant="outline" size="icon" aria-label="Sair">
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <UserNav />
         </div>
       </header>
 

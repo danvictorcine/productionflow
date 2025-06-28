@@ -48,9 +48,9 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       router.push('/');
     } catch (error: any) {
-      let description = 'Falha ao fazer login. Verifique suas credenciais.';
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        description = 'Email ou senha incorretos.';
+      let description = 'Ocorreu um erro desconhecido. Verifique suas credenciais ou a configuração do Firebase.';
+      if (error.message) {
+        description = error.message;
       }
       toast({
         variant: 'destructive',

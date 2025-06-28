@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { PlusCircle, Film, MoreVertical, Edit, Trash2, LogOut } from "lucide-react";
+import { PlusCircle, Film, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 
 import type { Project } from "@/lib/types";
@@ -27,11 +27,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import AuthGuard from "@/components/auth-guard";
 import { useAuth } from "@/context/auth-context";
-import { auth } from "@/lib/firebase/config";
-import { signOut } from "firebase/auth";
 import * as projectApi from '@/lib/firebase/firestore';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { UserNav } from "@/components/user-nav";
 
 function HomePage() {
   const { user } = useAuth();
@@ -91,11 +90,6 @@ function HomePage() {
         toast({ variant: 'destructive', title: 'Erro ao excluir projeto', description: (error as Error).message });
     }
     setProjectToDelete(null);
-  };
-  
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
   };
 
   const openCreateDialog = () => {
@@ -184,16 +178,16 @@ function HomePage() {
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
-        <h1 className="text-2xl font-bold text-primary">ProductionFlow</h1>
+        <h1 className="text-2xl font-bold text-primary truncate">
+          ProductionFlow
+          {user?.name && <span className="text-lg font-normal text-muted-foreground ml-2">/ {user.name}</span>}
+        </h1>
         <div className="ml-auto flex items-center gap-4">
           <Button onClick={openCreateDialog}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Criar Novo Projeto
           </Button>
-           <Button onClick={handleLogout} variant="outline">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sair
-          </Button>
+          <UserNav />
         </div>
       </header>
 

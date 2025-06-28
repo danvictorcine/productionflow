@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
+import * as firestoreApi from '@/lib/firebase/firestore';
 import { useAuth } from '@/context/auth-context';
 
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
+  name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
 });
@@ -38,6 +40,7 @@ export default function SignupPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
     },
@@ -46,17 +49,22 @@ export default function SignupPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+      
+      // Update the auth profile display name
+      await updateProfile(user, { displayName: values.name });
+
+      // Create user profile in Firestore
+      await firestoreApi.createUserProfile(user.uid, values.name, values.email);
+      
       toast({
         title: 'Conta Criada!',
         description: 'Você será redirecionado para a página de login.',
       });
       router.push('/login');
     } catch (error: any) {
-      let description = 'Falha ao criar a conta.';
-       if (error.code === 'auth/email-already-in-use') {
-        description = 'Este email já está em uso.';
-      }
+      const description = error.message || 'Ocorreu um erro desconhecido. Verifique os dados ou a configuração do Firebase.';
       toast({
         variant: 'destructive',
         title: 'Erro no Cadastro',
@@ -82,6 +90,19 @@ export default function SignupPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+               <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome Completo</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Seu nome" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="email"

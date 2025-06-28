@@ -28,13 +28,11 @@ function ProjectPageDetail() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [projectData, transactionsData] = await Promise.all([
-                    api.getProject(projectId),
-                    api.getTransactions(projectId),
-                ]);
+                const projectData = await api.getProject(projectId);
 
                 if (projectData) {
                     setProject(projectData);
+                    const transactionsData = await api.getTransactions(projectId);
                     setTransactions(transactionsData);
                 } else {
                     toast({ variant: "destructive", title: "Erro", description: "Projeto não encontrado ou você não tem permissão para acessá-lo." });

@@ -37,3 +37,9 @@ export type Transaction = {
   date: Date;
   talentId?: string;
 };
+
+export type UserProfile = {
+  uid: string;
+  name: string;
+  email: string;
+};

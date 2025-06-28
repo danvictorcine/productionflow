@@ -1,25 +1,55 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User } from 'firebase/auth';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getUserProfile } from '@/lib/firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+
+
+export type AppUser = User & UserProfile;
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   loading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true, refreshUser: async () => {} });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshUser = useCallback(async () => {
+    const firebaseUser = auth.currentUser;
+    if (firebaseUser) {
+        setLoading(true);
+        const userProfile = await getUserProfile(firebaseUser.uid);
+        if (userProfile) {
+            setUser({ ...firebaseUser, ...userProfile });
+        }
+        setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userProfile = await getUserProfile(firebaseUser.uid);
+        
+        // Ensure auth displayName is consistent with Firestore profile
+        if (userProfile && firebaseUser.displayName !== userProfile.name) {
+          await updateProfile(firebaseUser, { displayName: userProfile.name });
+        }
+        
+        setUser(userProfile ? { ...firebaseUser, ...userProfile } : (firebaseUser as AppUser));
+
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
@@ -38,7 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
