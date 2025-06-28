@@ -127,7 +127,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="budget"
@@ -179,12 +179,12 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   <FormLabel>Equipe e Talentos</FormLabel>
                   <div className="space-y-3 mt-2">
                     {fields.map((field, index) => (
-                      <div key={field.id} className="flex flex-wrap items-end gap-3 p-3 border rounded-md">
+                      <div key={field.id} className="grid grid-cols-1 items-end gap-3 rounded-md border p-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_130px_auto]">
                         <FormField
                           control={form.control}
                           name={`talents.${index}.name`}
                           render={({ field }) => (
-                            <FormItem className="flex-1 min-w-[150px]">
+                            <FormItem>
                               <FormLabel className="text-xs">Nome</FormLabel>
                               <FormControl>
                                 <Input placeholder="Nome do Talento" {...field} />
@@ -197,7 +197,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                           control={form.control}
                           name={`talents.${index}.role`}
                           render={({ field }) => (
-                            <FormItem className="flex-1 min-w-[150px]">
+                            <FormItem>
                               <FormLabel className="text-xs">Função</FormLabel>
                               <FormControl>
                                 <Input placeholder="ex: Ator Principal" {...field} />
@@ -210,7 +210,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                           control={form.control}
                           name={`talents.${index}.fee`}
                           render={({ field }) => (
-                            <FormItem className="min-w-[120px]">
+                            <FormItem>
                               <FormLabel className="text-xs">Cachê (R$)</FormLabel>
                               <FormControl>
                                 <Input type="number" placeholder="5000.00" {...field} />
@@ -219,7 +219,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                             </FormItem>
                           )}
                         />
-                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="w-full md:w-auto">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
