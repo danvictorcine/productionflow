@@ -1,22 +1,23 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
     // Helper function to check ownership
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Projects can only be accessed by their owner
+    // Projects can be read, updated, or deleted only by the user who created them.
+    // New projects can be created by any authenticated user.
     match /projects/{projectId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
-
-    // Transactions can only be accessed by their owner
+    
+    // Transactions can be managed only by the user who created them.
     match /transactions/{transactionId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow read, write, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
   }
