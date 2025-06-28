@@ -33,4 +33,5 @@ export type Transaction = {
   description: string;
   category?: ExpenseCategory;
   date: Date;
+  talentId?: string;
 };

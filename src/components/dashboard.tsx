@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from 'next/link';
-import type { Transaction, Project } from "@/lib/types";
+import type { Transaction, Project, Talent } from "@/lib/types";
 import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -49,24 +49,8 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
   }, [project.talents]);
 
   const balance = useMemo(() => {
-    const paidTalentFees = transactions
-      .filter(t => t.category === "Cachê do Talento")
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const paidProductionCosts = transactions
-        .filter(t => t.category === "Custos de Produção")
-        .reduce((sum, t) => sum + t.amount, 0);
-
-    const unpaidTalentFees = Math.max(0, totalTalentFee - paidTalentFees);
-    
-    const unpaidProductionCosts = project.includeProductionCostsInBudget
-      ? Math.max(0, project.productionCosts - paidProductionCosts)
-      : 0;
-      
-    const moneyAccountedFor = totalExpenses + unpaidTalentFees + unpaidProductionCosts;
-
-    return project.budget - moneyAccountedFor;
-  }, [project, transactions, totalTalentFee, totalExpenses]);
+    return project.budget - totalExpenses;
+  }, [project.budget, totalExpenses]);
 
 
   const expenses = useMemo(
@@ -92,9 +76,12 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
     const unpaidProductionCosts = project.includeProductionCostsInBudget
       ? Math.max(0, project.productionCosts - paidProductionCosts)
       : 0;
+    
+    const moneyAccountedFor = totalExpenses + unpaidTalentFees + unpaidProductionCosts;
+    const projectedBalance = project.budget - moneyAccountedFor;
 
-    const finalBalance = balance < 0 ? 0 : balance;
-    const overBudget = balance < 0 ? Math.abs(balance) : 0;
+    const finalBalance = projectedBalance < 0 ? 0 : projectedBalance;
+    const overBudget = projectedBalance < 0 ? Math.abs(projectedBalance) : 0;
     
     let data = [
         { name: 'Saldo Disponível', value: finalBalance, fill: 'hsl(var(--chart-2))' },
@@ -111,7 +98,7 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
     
     return data.filter(item => item.value > 0);
 
-  }, [project, transactions, totalTalentFee, balance]);
+  }, [project, transactions, totalTalentFee, totalExpenses]);
 
   const handleAddTransaction = (transaction: Omit<Transaction, "id" | "projectId" | "type">) => {
     const newTransaction: Transaction = {
@@ -138,6 +125,30 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
     const updatedTalents = project.talents.filter(t => t.id !== talentId);
     const updatedProject = { ...project, talents: updatedTalents };
     onProjectUpdate(updatedProject);
+  };
+  
+  const handlePayTalent = (talent: Talent) => {
+    const paidAmount = transactions
+      .filter(t => t.talentId === talent.id)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    if (paidAmount >= talent.fee) {
+        // This should not happen if the button is disabled, but as a safeguard.
+        console.warn("Este talento já foi pago.");
+        return;
+    }
+
+    const newTransaction: Transaction = {
+      id: crypto.randomUUID(),
+      projectId: project.id,
+      type: "expense",
+      amount: talent.fee, // Assumes full payment
+      description: `Cachê: ${talent.name}`,
+      category: "Cachê do Talento",
+      date: new Date(),
+      talentId: talent.id,
+    };
+    setTransactions((prev) => [...prev, newTransaction].sort((a,b) => b.date.getTime() - a.date.getTime()));
   };
 
   return (
@@ -193,8 +204,10 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
               <CardContent>
                 <TalentsTable
                     talents={project.talents}
+                    transactions={transactions}
                     onEdit={() => setEditDialogOpen(true)}
                     onDelete={handleDeleteTalent}
+                    onPay={handlePayTalent}
                 />
               </CardContent>
             </Card>
