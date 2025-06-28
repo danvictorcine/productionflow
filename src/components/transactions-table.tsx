@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from './ui/scroll-area';
 
 interface TransactionsTableProps {
   transactions: Transaction[];
@@ -51,61 +50,59 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
 
   return (
     <>
-      <ScrollArea className="h-[400px]">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[10px]"></TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="hidden md:table-cell">Data</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.length > 0 ? (
-              transactions.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell>
-                     <TrendingDown className="h-4 w-4 text-red-500" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{t.description}</div>
-                    {t.category && (
-                      <Badge variant="outline" className="mt-1 font-normal">{t.category}</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    -{formatCurrency(t.amount)}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{format(t.date, "d MMM, yyyy", { locale: ptBR })}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => setDeleteId(t.id)} className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">
-                  Nenhuma despesa ainda.
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[10px]"></TableHead>
+            <TableHead>Descrição</TableHead>
+            <TableHead className="text-right">Valor</TableHead>
+            <TableHead className="hidden md:table-cell">Data</TableHead>
+            <TableHead className="w-[50px]"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {transactions.length > 0 ? (
+            transactions.map((t) => (
+              <TableRow key={t.id}>
+                <TableCell>
+                    <TrendingDown className="h-4 w-4 text-red-500" />
+                </TableCell>
+                <TableCell>
+                  <div className="font-medium">{t.description}</div>
+                  {t.category && (
+                    <Badge variant="outline" className="mt-1 font-normal">{t.category}</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right font-mono">
+                  -{formatCurrency(t.amount)}
+                </TableCell>
+                <TableCell className="hidden md:table-cell">{format(t.date, "d MMM, yyyy", { locale: ptBR })}</TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => setDeleteId(t.id)} className="text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </ScrollArea>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center h-24">
+                Nenhuma despesa ainda.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

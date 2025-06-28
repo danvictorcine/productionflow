@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users, Wrench } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,16 @@ import TransactionsTable from "@/components/transactions-table";
 import { AddTransactionSheet } from "@/components/add-transaction-sheet";
 import { CreateEditProjectDialog } from "@/components/create-edit-project-dialog";
 import TalentsTable from "@/components/talents-table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { EXPENSE_CATEGORIES } from "@/lib/types";
+
 
 interface DashboardProps {
   project: Project;
@@ -26,6 +36,7 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [isAddSheetOpen, setAddSheetOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   useEffect(() => {
     try {
@@ -99,6 +110,18 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
     return data.filter(item => item.value > 0);
 
   }, [project, transactions, totalTalentFee, totalExpenses]);
+
+  const productionCostsTransactions = useMemo(() => {
+    return transactions.filter(t => t.category === 'Custos de Produção');
+  }, [transactions]);
+  
+  const filteredTransactionsForHistory = useMemo(() => {
+    if (categoryFilter === 'all') {
+      return transactions;
+    }
+    return transactions.filter(t => t.category === categoryFilter);
+  }, [transactions, categoryFilter]);
+
 
   const handleAddTransaction = (transaction: Omit<Transaction, "id" | "projectId" | "type">) => {
     const newTransaction: Transaction = {
@@ -211,6 +234,19 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
                 />
               </CardContent>
             </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5 text-muted-foreground" />
+                  Custos de Produção
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[265px] pr-4">
+                  <TransactionsTable transactions={productionCostsTransactions} onDelete={handleDeleteTransaction} />
+                </ScrollArea>
+              </CardContent>
+            </Card>
           </div>
           <div className="lg:col-span-1">
             <Card className="h-full">
@@ -223,8 +259,26 @@ export default function Dashboard({ project, initialTransactions, onProjectUpdat
                   </TabsList>
                 </div>
                 <CardContent className="pt-4 flex-1 flex flex-col">
-                    <TabsContent value="all" className="flex-1">
-                      <TransactionsTable transactions={transactions} onDelete={handleDeleteTransaction} />
+                    <TabsContent value="all" className="flex-1 flex flex-col gap-2">
+                      <div className="flex-shrink-0 flex items-center gap-2">
+                          <label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground">Filtrar:</label>
+                          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <SelectTrigger id="category-filter" className="w-[220px]">
+                              <SelectValue placeholder="Selecionar categoria" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Todas as Categorias</SelectItem>
+                              {EXPENSE_CATEGORIES.map(cat => (
+                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                      </div>
+                      <div className="flex-1 relative">
+                          <ScrollArea className="absolute inset-0 pr-4">
+                            <TransactionsTable transactions={filteredTransactionsForHistory} onDelete={handleDeleteTransaction} />
+                          </ScrollArea>
+                      </div>
                     </TabsContent>
                     <TabsContent value="categories" className="flex-1">
                       <ExpenseChart expenses={expenses} />
