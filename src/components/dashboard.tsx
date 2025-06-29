@@ -79,9 +79,15 @@ export default function Dashboard({
     return project.talents.reduce((sum, t) => sum + t.fee, 0);
   }, [project.talents]);
 
+  const totalInstallments = useMemo(() => {
+    if (!project.isBudgetParcelado || !project.installments) return 0;
+    return project.installments.reduce((sum, i) => sum + i.amount, 0);
+  }, [project.isBudgetParcelado, project.installments]);
+
   const balance = useMemo(() => {
-    return project.budget - totalExpenses;
-  }, [project.budget, totalExpenses]);
+    const sourceOfFunds = project.isBudgetParcelado ? totalInstallments : project.budget;
+    return sourceOfFunds - totalExpenses;
+  }, [project.budget, project.isBudgetParcelado, totalInstallments, totalExpenses]);
   
   const totalGeneralExpenses = useMemo(() => {
     return generalExpenses.reduce((sum, t) => sum + t.amount, 0);
@@ -89,14 +95,20 @@ export default function Dashboard({
 
   // Data for Tab 1: Visão Geral
   const geralChartData = useMemo(() => {
-    return [
+    const baseData = [
       { name: "Orçamento Total", value: project.budget, fill: "hsl(var(--chart-3))" },
       { name: "Cachês Planejados", value: totalTalentFee, fill: "hsl(var(--chart-1))" },
       { name: "Valor de Produção", value: project.productionCosts, fill: "hsl(var(--chart-4))" },
       { name: "Despesas Pagas", value: totalExpenses, fill: "hsl(var(--destructive))" },
       { name: "Saldo Atual", value: balance, fill: "hsl(var(--chart-2))" },
-    ].filter(d => d.value > 0 || d.name === "Saldo Atual" || d.name === "Orçamento Total");
-  }, [project.budget, totalTalentFee, project.productionCosts, totalExpenses, balance]);
+    ];
+    
+    if (project.isBudgetParcelado) {
+        baseData.splice(1, 0, { name: "Valor em Conta", value: totalInstallments, fill: "hsl(var(--chart-5))" });
+    }
+
+    return baseData.filter(d => d.value > 0 || ['Saldo Atual', 'Orçamento Total', 'Valor em Conta'].includes(d.name));
+  }, [project, totalTalentFee, totalExpenses, balance, totalInstallments]);
 
   // Data for Tab 2: Situação Paga
   const totalPaidTalentFees = useMemo(() => {
@@ -106,13 +118,17 @@ export default function Dashboard({
   }, [paidTransactions]);
 
   const paidChartData = useMemo(() => {
+    const sourceName = project.isBudgetParcelado ? "Valor em Conta" : "Orçamento Total";
+    const sourceValue = project.isBudgetParcelado ? totalInstallments : project.budget;
+    const sourceFill = project.isBudgetParcelado ? "hsl(var(--chart-5))" : "hsl(var(--chart-3))";
+    
     return [
-      { name: "Orçamento Total", value: project.budget, fill: "hsl(var(--chart-3))" },
+      { name: sourceName, value: sourceValue, fill: sourceFill },
       { name: "Total Pago", value: totalExpenses, fill: "hsl(var(--destructive))" },
       { name: "Cachês Pagos", value: totalPaidTalentFees, fill: "hsl(var(--chart-1))" },
       { name: "Saldo Atual", value: balance, fill: "hsl(var(--chart-2))" },
-    ].filter(d => d.value > 0 || d.name === "Saldo Atual" || d.name === "Orçamento Total");
-  }, [project.budget, totalExpenses, totalPaidTalentFees, balance]);
+    ].filter(d => d.value > 0 || d.name === "Saldo Atual" || d.name === sourceName);
+  }, [project.isBudgetParcelado, project.budget, totalInstallments, totalExpenses, totalPaidTalentFees, balance]);
   
   // Data for Tab 3: Pagamentos por Categoria
   const categoryChartData = useMemo(() => {
@@ -231,6 +247,7 @@ export default function Dashboard({
     // --- 1. Summary Sheet ---
     const summaryDataForSheet = [
         ['Orçamento Total', project.budget],
+        ...(project.isBudgetParcelado ? [['Valor em Conta (Soma das Parcelas)', totalInstallments]] : []),
         ['Cachês Planejados (Total)', totalTalentFee],
         ['Valor de Produção Planejado', project.productionCosts],
         ['Despesas Totais Pagas', totalExpenses],
@@ -245,7 +262,7 @@ export default function Dashboard({
     ]);
 
     wsSummary['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
-    wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }];
+    wsSummary['!cols'] = [{ wch: 35 }, { wch: 20 }];
     wsSummary['A1'].s = titleStyle;
     ['A3', 'B3'].forEach(cell => { wsSummary[cell].s = headerStyle; });
     summaryDataForSheet.forEach((_, i) => {
@@ -416,6 +433,8 @@ export default function Dashboard({
           productionCosts={project.productionCosts}
           paidExpenses={totalExpenses}
           balance={balance}
+          isBudgetParcelado={project.isBudgetParcelado}
+          totalInstallments={totalInstallments}
         />
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 flex flex-col gap-6">

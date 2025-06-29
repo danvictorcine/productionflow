@@ -16,6 +16,13 @@ export type Talent = {
   fee: number;
 };
 
+export type Installment = {
+  id: string;
+  amount: number;
+  date: Date;
+  description: string;
+}
+
 export type Project = {
   id: string;
   userId: string;
@@ -25,6 +32,8 @@ export type Project = {
   talents: Talent[];
   includeProductionCostsInBudget: boolean;
   customCategories?: string[];
+  isBudgetParcelado: boolean;
+  installments: Installment[];
 };
 
 export type Transaction = {

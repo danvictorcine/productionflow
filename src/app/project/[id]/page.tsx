@@ -28,21 +28,35 @@ function ProjectPageDetail() {
         setTransactions(transactionsData);
     }, [projectId]);
 
+    const fetchProject = useCallback(async () => {
+        if (!projectId) return;
+         const projectData = await api.getProject(projectId);
+
+        if (projectData) {
+            // Add default values for backward compatibility
+            const projectWithDefaults: Project = {
+                ...projectData,
+                isBudgetParcelado: projectData.isBudgetParcelado ?? false,
+                installments: projectData.installments ?? [],
+                talents: projectData.talents ?? [],
+                customCategories: projectData.customCategories ?? [],
+                includeProductionCostsInBudget: projectData.includeProductionCostsInBudget ?? true,
+            };
+            setProject(projectWithDefaults);
+        } else {
+            toast({ variant: "destructive", title: "Erro", description: "Projeto não encontrado ou você não tem permissão para acessá-lo." });
+            router.push('/');
+        }
+    }, [projectId, router, toast]);
+
     useEffect(() => {
         if (!projectId || !user) return;
 
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const projectData = await api.getProject(projectId);
-
-                if (projectData) {
-                    setProject(projectData);
-                    await fetchTransactions();
-                } else {
-                    toast({ variant: "destructive", title: "Erro", description: "Projeto não encontrado ou você não tem permissão para acessá-lo." });
-                    router.push('/');
-                }
+                await fetchProject();
+                await fetchTransactions();
             } catch (error) {
                 toast({ variant: "destructive", title: "Erro ao carregar dados", description: (error as Error).message });
                 router.push('/');
@@ -52,13 +66,13 @@ function ProjectPageDetail() {
         };
 
         fetchData();
-    }, [projectId, user, router, toast, fetchTransactions]);
+    }, [projectId, user, router, toast, fetchProject, fetchTransactions]);
 
     const handleUpdateProject = async (updatedProjectData: Partial<Project>) => {
         if (!project) return;
         try {
             await api.updateProject(project.id, updatedProjectData);
-            setProject(prev => prev ? { ...prev, ...updatedProjectData } : null);
+            await fetchProject(); // Re-fetch to get latest data with converted dates
             toast({ title: "Projeto atualizado!" });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Erro ao atualizar projeto', description: (error as Error).message });

@@ -15,6 +15,8 @@ interface SummaryCardsProps {
   productionCosts: number;
   paidExpenses: number;
   balance: number;
+  isBudgetParcelado: boolean;
+  totalInstallments?: number;
 }
 
 export default function SummaryCards({
@@ -23,6 +25,8 @@ export default function SummaryCards({
   productionCosts,
   paidExpenses,
   balance,
+  isBudgetParcelado,
+  totalInstallments,
 }: SummaryCardsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
@@ -38,18 +42,35 @@ export default function SummaryCards({
           <p className="text-xs text-muted-foreground">Valor total para a produção.</p>
         </CardContent>
       </Card>
-       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Cachês (Planejado)</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {formatCurrency(talentFees)}
-          </div>
-          <p className="text-xs text-muted-foreground">Custo total com talentos.</p>
-        </CardContent>
-      </Card>
+      
+      {isBudgetParcelado ? (
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Valor em Conta</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(totalInstallments || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">Soma das parcelas recebidas.</p>
+          </CardContent>
+        </Card>
+      ) : (
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cachês (Planejado)</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(talentFees)}
+            </div>
+            <p className="text-xs text-muted-foreground">Custo total com talentos.</p>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Valor de Produção (Planejado)</CardTitle>
@@ -81,7 +102,7 @@ export default function SummaryCards({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
-           <p className="text-xs text-primary-foreground/80">Seu orçamento disponível.</p>
+           <p className="text-xs text-primary-foreground/80">{isBudgetParcelado ? 'Saldo com base no valor em conta.' : 'Seu orçamento disponível.'}</p>
         </CardContent>
       </Card>
     </div>

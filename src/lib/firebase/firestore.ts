@@ -15,7 +15,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Installment } from '@/lib/types';
 
 // Helper to get current user ID
 const getUserId = () => {
@@ -27,7 +27,14 @@ const getUserId = () => {
 // Project Functions
 export const addProject = async (projectData: Omit<Project, 'id' | 'userId'>) => {
   const userId = getUserId();
-  const docRef = await addDoc(collection(db, 'projects'), { ...projectData, userId });
+  const docRef = await addDoc(collection(db, 'projects'), { 
+    ...projectData, 
+    userId,
+    installments: (projectData.installments || []).map(inst => ({
+      ...inst,
+      date: Timestamp.fromDate(inst.date),
+    })),
+  });
   return docRef.id;
 };
 
@@ -37,7 +44,15 @@ export const getProjects = async (): Promise<Project[]> => {
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
   querySnapshot.forEach((doc) => {
-    projects.push({ ...doc.data(), id: doc.id } as Project);
+    const data = doc.data();
+    projects.push({ 
+      ...data, 
+      id: doc.id,
+      installments: (data.installments || []).map((inst: any) => ({
+        ...inst,
+        date: (inst.date as Timestamp).toDate()
+      })),
+    } as Project);
   });
   projects.sort((a, b) => a.name.localeCompare(b.name));
   return projects;
@@ -51,7 +66,14 @@ export const getProject = async (projectId: string): Promise<Project | null> => 
     if (projectSnap.exists()) {
         const projectData = projectSnap.data() as Omit<Project, 'id'>;
         if (projectData.userId === userId) {
-            return { ...projectData, id: projectSnap.id };
+            return { 
+              ...projectData, 
+              id: projectSnap.id,
+              installments: (projectData.installments || []).map((inst: any) => ({
+                ...inst,
+                date: (inst.date as Timestamp).toDate()
+              })),
+            };
         }
     }
     return null;
@@ -59,7 +81,14 @@ export const getProject = async (projectId: string): Promise<Project | null> => 
 
 export const updateProject = async (projectId: string, projectData: Partial<Omit<Project, 'id' | 'userId'>>) => {
   const projectRef = doc(db, 'projects', projectId);
-  await updateDoc(projectRef, projectData);
+  const dataToUpdate: Record<string, any> = { ...projectData };
+  if (projectData.installments) {
+    dataToUpdate.installments = projectData.installments.map(inst => ({
+      ...inst,
+      date: Timestamp.fromDate(inst.date),
+    }));
+  }
+  await updateDoc(projectRef, dataToUpdate);
 };
 
 export const deleteProject = async (projectId: string) => {
