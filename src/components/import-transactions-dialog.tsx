@@ -110,19 +110,19 @@ export function ImportTransactionsDialog({ isOpen, setIsOpen, onSubmit, project 
           const { Descricao, Valor, Data, Categoria } = row;
 
           if (!Descricao || typeof Descricao !== 'string' || Descricao.trim() === '') {
-            invalidRows.push({ row: originalRow, message: "A 'Descricao' é obrigatória.", data: row });
+            invalidRows.push({ row: originalRow, message: "A coluna 'Descricao' não pode estar vazia.", data: row });
             return;
           }
 
           const amount = parseFloat(Valor);
           if (isNaN(amount) || amount <= 0) {
-            invalidRows.push({ row: originalRow, message: "O 'Valor' deve ser um número positivo.", data: row });
+            invalidRows.push({ row: originalRow, message: "O 'Valor' deve ser um número positivo, sem formatação de moeda. Ex: 1500.50", data: row });
             return;
           }
 
           const date = new Date(Data);
           if (isNaN(date.getTime())) {
-            invalidRows.push({ row: originalRow, message: "A 'Data' está em um formato inválido.", data: row });
+            invalidRows.push({ row: originalRow, message: "A 'Data' está em formato inválido. Use o formato DD/MM/AAAA.", data: row });
             return;
           }
 
