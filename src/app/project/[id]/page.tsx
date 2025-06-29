@@ -9,6 +9,8 @@ import AuthGuard from '@/components/auth-guard';
 import * as api from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
+import { db } from '@/lib/firebase/config';
+import { writeBatch, doc } from 'firebase/firestore';
 
 
 function ProjectPageDetail() {
@@ -73,26 +75,27 @@ function ProjectPageDetail() {
         try {
             // Check if talent fees have changed and update associated transactions
             if (updatedProjectData.talents && project.talents) {
-                const talentFeeChanges = new Map<string, number>();
-
-                updatedProjectData.talents.forEach(updatedTalent => {
+                const changedTalents = updatedProjectData.talents.filter(updatedTalent => {
                     const originalTalent = project.talents.find(t => t.id === updatedTalent.id);
-                    if (originalTalent && originalTalent.fee !== updatedTalent.fee) {
-                        talentFeeChanges.set(updatedTalent.id, updatedTalent.fee);
-                    }
+                    return originalTalent && originalTalent.fee !== updatedTalent.fee;
                 });
 
-                if (talentFeeChanges.size > 0) {
-                    const transactionUpdates: Promise<void>[] = [];
-                    transactions.forEach(tx => {
-                        if (tx.talentId && talentFeeChanges.has(tx.talentId)) {
-                            const newFee = talentFeeChanges.get(tx.talentId)!;
-                            if (tx.amount !== newFee) {
-                                transactionUpdates.push(api.updateTransaction(tx.id, { amount: newFee }));
+                if (changedTalents.length > 0) {
+                    const currentTransactions = await api.getTransactions(project.id);
+                    const batch = writeBatch(db);
+
+                    changedTalents.forEach(changedTalent => {
+                        const transactionsToUpdate = currentTransactions.filter(tx => tx.talentId === changedTalent.id);
+                        
+                        transactionsToUpdate.forEach(tx => {
+                            if (tx.amount !== changedTalent.fee) {
+                                const txRef = doc(db, 'transactions', tx.id);
+                                batch.update(txRef, { amount: changedTalent.fee });
                             }
-                        }
+                        });
                     });
-                    await Promise.all(transactionUpdates);
+                    
+                    await batch.commit();
                 }
             }
 
