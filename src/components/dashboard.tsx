@@ -30,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DEFAULT_EXPENSE_CATEGORIES } from "@/lib/types";
 import { UserNav } from "@/components/user-nav";
 import { useToast } from "@/hooks/use-toast";
@@ -87,26 +88,62 @@ export default function Dashboard({
     return project.budget - totalPlanned;
   }, [project.budget, project.includeProductionCostsInBudget, totalTalentFee, totalGeneralExpenses, project.productionCosts]);
   
-  const breakdownData = useMemo(() => {
-    const data = [
-      { name: "Saldo Previsto", value: remainingBudget < 0 ? 0 : remainingBudget, fill: "hsl(var(--chart-2))" },
+  // Data for Tab 1: Visão Geral
+  const geralChartData = useMemo(() => {
+    return [
+      { name: "Orçamento Total", value: project.budget, fill: "hsl(var(--chart-3))" },
       { name: "Cachês Planejados", value: totalTalentFee, fill: "hsl(var(--chart-1))" },
-      {
-        name: "Custos de Produção",
-        value: project.productionCosts,
-        fill: "hsl(var(--chart-4))",
-      },
-      {
-        name: "Despesas Gerais",
-        value: totalGeneralExpenses,
-        fill: "hsl(var(--muted-foreground))",
-      },
-    ];
+      { name: "Custos de Produção", value: project.productionCosts, fill: "hsl(var(--chart-4))" },
+      { name: "Despesas Pagas", value: totalExpenses, fill: "hsl(var(--destructive))" },
+      { name: "Saldo Atual", value: balance, fill: "hsl(var(--chart-2))" },
+    ].filter(d => d.value > 0 || d.name === "Saldo Atual" || d.name === "Orçamento Total");
+  }, [project.budget, totalTalentFee, project.productionCosts, totalExpenses, balance]);
 
-    // Show items with value, but always show saldo.
-    return data.filter((item) => item.value > 0 || item.name === 'Saldo Previsto');
-  }, [remainingBudget, totalTalentFee, project.productionCosts, totalGeneralExpenses]);
+  // Data for Tab 2: Situação Paga
+  const totalPaidTalentFees = useMemo(() => {
+    return paidTransactions
+      .filter(t => t.category === 'Cachê de Equipe e Talentos')
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [paidTransactions]);
+
+  const paidChartData = useMemo(() => {
+    return [
+      { name: "Orçamento Total", value: project.budget, fill: "hsl(var(--chart-3))" },
+      { name: "Total Pago", value: totalExpenses, fill: "hsl(var(--destructive))" },
+      { name: "Cachês Pagos", value: totalPaidTalentFees, fill: "hsl(var(--chart-1))" },
+      { name: "Saldo Atual", value: balance, fill: "hsl(var(--chart-2))" },
+    ].filter(d => d.value > 0 || d.name === "Saldo Atual" || d.name === "Orçamento Total");
+  }, [project.budget, totalExpenses, totalPaidTalentFees, balance]);
   
+  // Data for Tab 3: Pagamentos por Categoria
+  const categoryChartData = useMemo(() => {
+    const categoryTotals: { [key: string]: number } = {};
+    let paidTalentFeesTotal = 0;
+
+    paidTransactions.forEach(t => {
+      if (t.category === 'Cachê de Equipe e Talentos') {
+        paidTalentFeesTotal += t.amount;
+      } else {
+        const category = t.category || 'Outros';
+        categoryTotals[category] = (categoryTotals[category] || 0) + t.amount;
+      }
+    });
+
+    const data = [];
+
+    if (paidTalentFeesTotal > 0) {
+      data.push({ name: 'Total Cachês Pagos', value: paidTalentFeesTotal, fill: 'hsl(var(--chart-1))' });
+    }
+
+    Object.entries(categoryTotals).forEach(([name, value], index) => {
+      if (value > 0) {
+        data.push({ name, value, fill: `hsl(var(--chart-${(index % 4) + 2}))` });
+      }
+    });
+
+    return data.sort((a, b) => b.value - a.value);
+  }, [paidTransactions]);
+
    const allCategories = useMemo(() => {
     const categoriesInUse = new Set(transactions.map(t => t.category).filter(Boolean) as string[]);
     const projectCustomCategories = project.customCategories || [];
@@ -388,7 +425,22 @@ export default function Dashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <BudgetBreakdownChart data={breakdownData} />
+                <Tabs defaultValue="overview">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+                    <TabsTrigger value="paid">Situação Paga</TabsTrigger>
+                    <TabsTrigger value="categories">Categorias</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="overview" className="mt-4">
+                     <BudgetBreakdownChart data={geralChartData} />
+                  </TabsContent>
+                  <TabsContent value="paid" className="mt-4">
+                    <BudgetBreakdownChart data={paidChartData} />
+                  </TabsContent>
+                  <TabsContent value="categories" className="mt-4">
+                     <BudgetBreakdownChart data={categoryChartData} />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
             <Card>
