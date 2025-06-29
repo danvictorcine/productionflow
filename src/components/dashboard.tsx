@@ -65,7 +65,7 @@ export default function Dashboard({
   
   const transactionsByCategory = useMemo(() => {
     return transactions
-      .filter(t => t.category !== "Cachê do Talento")
+      .filter(t => t.category !== "Cachê de Equipe e Talentos")
       .reduce((acc, t) => {
           const category = t.category || 'Outros';
           if (!acc[category]) {
@@ -91,7 +91,7 @@ export default function Dashboard({
   
   const breakdownData = useMemo(() => {
     const paidTalentFees = paidTransactions
-      .filter((t) => t.category === "Cachê do Talento")
+      .filter((t) => t.category === "Cachê de Equipe e Talentos")
       .reduce((sum, t) => sum + t.amount, 0);
 
     const paidProductionCosts = paidTransactions
@@ -101,7 +101,7 @@ export default function Dashboard({
     const otherExpenses = paidTransactions
       .filter(
         (t) =>
-          !["Cachê do Talento", "Custos de Produção"].includes(t.category || "")
+          !["Cachê de Equipe e Talentos", "Custos de Produção"].includes(t.category || "")
       )
       .reduce((sum, t) => sum + t.amount, 0);
       
@@ -126,14 +126,14 @@ export default function Dashboard({
   }, [paidTransactions, balance]);
   
    const allCategories = useMemo(() => {
-    const categoriesInUse = new Set(transactions.map(t => t.category).filter(Boolean).filter(c => c !== "Cachê do Talento") as string[]);
+    const categoriesInUse = new Set(transactions.map(t => t.category).filter(Boolean) as string[]);
     const projectCustomCategories = project.customCategories || [];
     return Array.from(new Set([...DEFAULT_EXPENSE_CATEGORIES, ...projectCustomCategories, ...categoriesInUse])).sort();
   }, [transactions, project.customCategories]);
   
   const filteredPaidTransactions = useMemo(() => {
     if (categoryFilter === 'all') {
-      return paidTransactions.filter(t => t.category !== "Cachê do Talento");
+      return paidTransactions;
     }
     return paidTransactions.filter(t => t.category === categoryFilter);
   }, [paidTransactions, categoryFilter]);
@@ -183,7 +183,7 @@ export default function Dashboard({
         type: 'expense',
         amount: talent.fee,
         description: `Cachê: ${talent.name}`,
-        category: 'Cachê do Talento',
+        category: 'Cachê de Equipe e Talentos',
         date: new Date(),
         talentId: talent.id,
         status: 'paid',
@@ -239,7 +239,7 @@ export default function Dashboard({
     // --- 2. Talents Sheet ---
     const talentData = project.talents.map(talent => {
         const paidAmount = paidTransactions
-            .filter(t => t.talentId === talent.id && t.category === "Cachê do Talento")
+            .filter(t => t.talentId === talent.id && t.category === "Cachê de Equipe e Talentos")
             .reduce((sum, t) => sum + t.amount, 0);
         return [
             talent.name,
@@ -291,7 +291,6 @@ export default function Dashboard({
     };
 
     const allOtherTransactions = transactions
-        .filter(t => t.category !== 'Cachê do Talento')
         .map(t => ([
             t.description,
             t.category || 'Não especificada',

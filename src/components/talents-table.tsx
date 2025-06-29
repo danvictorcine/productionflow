@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -49,7 +50,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
   const transactionsByTalentId = useMemo(() => {
     const map = new Map<string, Transaction>();
     transactions
-        .filter(t => t.talentId && t.category === "Cachê do Talento")
+        .filter(t => t.talentId && t.category === "Cachê de Equipe e Talentos")
         .forEach(t => map.set(t.talentId!, t));
     return map;
   }, [transactions]);
