@@ -24,9 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DEFAULT_EXPENSE_CATEGORIES } from "@/lib/types";
 import { UserNav } from "@/components/user-nav";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 
@@ -326,18 +331,19 @@ export default function Dashboard({
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Despesa
           </Button>
-          <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button onClick={handleExportToExcel} variant="outline" size="icon" aria-label="Exportar para Excel">
-                        <FileSpreadsheet className="h-4 w-4" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Exportar para Excel</p>
-                </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" aria-label="Opções de Exportação">
+                  <FileSpreadsheet className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportToExcel}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    <span>Exportar para Excel</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <UserNav />
         </div>
       </header>
@@ -414,11 +420,11 @@ export default function Dashboard({
           <div className="lg:col-span-1">
             <Card className="h-full flex flex-col">
                 <CardHeader>
-                    <CardTitle>Histórico de Transações</CardTitle>
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground">Filtrar:</label>
+                    <CardTitle>Histórico de Transações Pagas</CardTitle>
+                    <div className="flex items-center gap-2 pt-2">
+                        <label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground">Filtrar por Categoria:</label>
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger id="category-filter" className="w-[220px]">
+                            <SelectTrigger id="category-filter" className="w-full sm:w-[220px]">
                                 <SelectValue placeholder="Selecionar categoria" />
                             </SelectTrigger>
                             <SelectContent>
@@ -432,10 +438,10 @@ export default function Dashboard({
                 </CardHeader>
                 <CardContent className="flex-1 overflow-hidden p-0">
                     <ScrollArea className="h-full whitespace-nowrap">
-                      <TransactionsTable 
+                      <TransactionsTable
                         transactions={filteredPaidTransactions}
-                        onDelete={onDeleteTransaction}
-                        onEdit={handleStartEditTransaction} 
+                        variant="history"
+                        onUndo={handleUndoPayment}
                       />
                       <ScrollBar orientation="horizontal" />
                     </ScrollArea>
