@@ -71,8 +71,34 @@ function ProjectPageDetail() {
     const handleUpdateProject = async (updatedProjectData: Partial<Project>) => {
         if (!project) return;
         try {
+            // Check if talent fees have changed and update associated transactions
+            if (updatedProjectData.talents && project.talents) {
+                const talentFeeChanges = new Map<string, number>();
+
+                updatedProjectData.talents.forEach(updatedTalent => {
+                    const originalTalent = project.talents.find(t => t.id === updatedTalent.id);
+                    if (originalTalent && originalTalent.fee !== updatedTalent.fee) {
+                        talentFeeChanges.set(updatedTalent.id, updatedTalent.fee);
+                    }
+                });
+
+                if (talentFeeChanges.size > 0) {
+                    const transactionUpdates: Promise<void>[] = [];
+                    transactions.forEach(tx => {
+                        if (tx.talentId && talentFeeChanges.has(tx.talentId)) {
+                            const newFee = talentFeeChanges.get(tx.talentId)!;
+                            if (tx.amount !== newFee) {
+                                transactionUpdates.push(api.updateTransaction(tx.id, { amount: newFee }));
+                            }
+                        }
+                    });
+                    await Promise.all(transactionUpdates);
+                }
+            }
+
             await api.updateProject(project.id, updatedProjectData);
-            await fetchProject(); // Re-fetch to get latest data with converted dates
+            await fetchProject(); // Re-fetch to get latest data
+            await fetchTransactions(); // Re-fetch transactions to update UI
             toast({ title: "Projeto atualizado!" });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Erro ao atualizar projeto', description: (error as Error).message });
