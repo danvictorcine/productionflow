@@ -65,45 +65,39 @@ export default function Dashboard({
   
   const breakdownData = useMemo(() => {
     const paidTalentFees = transactions
-      .filter(t => t.category === "Cachê do Talento")
+      .filter((t) => t.category === "Cachê do Talento")
       .reduce((sum, t) => sum + t.amount, 0);
 
     const paidProductionCosts = transactions
-        .filter(t => t.category === "Custos de Produção")
-        .reduce((sum, t) => sum + t.amount, 0);
-      
-    const otherExpenses = transactions
-      .filter(t => !["Cachê do Talento", "Custos de Produção"].includes(t.category || ''))
+      .filter((t) => t.category === "Custos de Produção")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const unpaidTalentFees = Math.max(0, totalTalentFee - paidTalentFees);
-    
-    const unpaidProductionCosts = project.includeProductionCostsInBudget
-      ? Math.max(0, project.productionCosts - paidProductionCosts)
-      : 0;
-    
-    const moneyAccountedFor = totalExpenses + unpaidTalentFees + unpaidProductionCosts;
-    const projectedBalance = project.budget - moneyAccountedFor;
+    const otherExpenses = transactions
+      .filter(
+        (t) =>
+          !["Cachê do Talento", "Custos de Produção"].includes(t.category || "")
+      )
+      .reduce((sum, t) => sum + t.amount, 0);
+      
+    const chartBalance = balance < 0 ? 0 : balance;
 
-    const finalBalance = projectedBalance < 0 ? 0 : projectedBalance;
-    const overBudget = projectedBalance < 0 ? Math.abs(projectedBalance) : 0;
-    
-    let data = [
-        { name: 'Saldo Disponível', value: finalBalance, fill: 'hsl(var(--chart-2))' },
-        { name: 'Cachês Pagos', value: paidTalentFees, fill: 'hsl(var(--chart-1))' },
-        { name: 'Cachês a Pagar', value: unpaidTalentFees, fill: 'hsl(var(--chart-3))' },
-        { name: 'Custos de Produção Pagos', value: paidProductionCosts, fill: 'hsl(var(--chart-4))' },
-        { name: 'Custos de Produção a Pagar', value: unpaidProductionCosts, fill: 'hsl(var(--chart-5))' },
-        { name: 'Outras Despesas', value: otherExpenses, fill: 'hsl(var(--muted-foreground))' },
+    const data = [
+      { name: "Saldo Atual", value: chartBalance, fill: "hsl(var(--chart-2))" },
+      { name: "Cachês Pagos", value: paidTalentFees, fill: "hsl(var(--chart-1))" },
+      {
+        name: "Custos de Produção Pagos",
+        value: paidProductionCosts,
+        fill: "hsl(var(--chart-4))",
+      },
+      {
+        name: "Outras Despesas",
+        value: otherExpenses,
+        fill: "hsl(var(--muted-foreground))",
+      },
     ];
-    
-    if (overBudget > 0) {
-        data.push({ name: 'Acima do Orçamento', value: overBudget, fill: 'hsl(var(--destructive))'});
-    }
-    
-    return data.filter(item => item.value > 0);
 
-  }, [project, transactions, totalTalentFee]);
+    return data.filter((item) => item.value > 0);
+  }, [transactions, balance]);
 
   const productionCostsTransactions = useMemo(() => {
     return transactions.filter(t => t.category === 'Custos de Produção');
@@ -388,23 +382,21 @@ export default function Dashboard({
           </div>
           <div className="lg:col-span-1">
             <Card className="h-full flex flex-col">
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle>Histórico</CardTitle>
-                        <div className="flex items-center gap-2">
-                            <label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground">Filtrar:</label>
-                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                <SelectTrigger id="category-filter" className="w-[220px]">
-                                    <SelectValue placeholder="Selecionar categoria" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Todas as Categorias</SelectItem>
-                                    {EXPENSE_CATEGORIES.map(cat => (
-                                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                <CardHeader className="flex flex-col gap-4">
+                    <CardTitle>Histórico de Transações</CardTitle>
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground">Filtrar:</label>
+                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <SelectTrigger id="category-filter" className="w-[220px]">
+                                <SelectValue placeholder="Selecionar categoria" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas as Categorias</SelectItem>
+                                {EXPENSE_CATEGORIES.map(cat => (
+                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </CardHeader>
                 <CardContent className="flex-1 relative min-h-0">
