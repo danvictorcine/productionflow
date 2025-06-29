@@ -163,12 +163,12 @@ export default function TransactionsTable({
                          <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => onUndo(t.id)} aria-label={`Reverter pagamento de ${t.description}`}>
-                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                <Button variant="ghost" size="icon" onClick={() => onUndo(t.id)} aria-label={`Desfazer pagamento de ${t.description}`}>
+                                  <Undo2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Reverter Pagamento</p>
+                                <p>Desfazer Pagamento</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
