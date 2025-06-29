@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, ChevronDown, ChevronUp } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, ChevronDown } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
@@ -306,8 +306,6 @@ export default function Dashboard({
     setAddSheetOpen(true);
   };
   
-  const categoryOrder = EXPENSE_CATEGORIES;
-
   return (
     <div className="flex flex-col min-h-screen w-full">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
@@ -378,22 +376,24 @@ export default function Dashboard({
                     onEdit={() => setEditDialogOpen(true)}
                     onDelete={handleDeleteTalent}
                     onLaunchPayment={handleLaunchTalentPayment}
+                    onPay={handlePayTransaction}
+                    onUndo={handleUndoPayment}
                 />
               </CardContent>
             </Card>
 
-            {categoryOrder
-              .filter(cat => plannedTransactionsByCategory[cat]?.length > 0)
+            {EXPENSE_CATEGORIES
+              .filter(cat => cat !== 'Cachê do Talento' && plannedTransactionsByCategory[cat]?.length > 0)
               .map(category => (
                 <Collapsible key={category} defaultOpen>
                     <Card>
                         <CollapsibleTrigger asChild>
-                            <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
-                                <CardTitle>{`Despesas Planejadas: ${category}`}</CardTitle>
+                            <div className="flex cursor-pointer items-center justify-between p-6">
+                                <CardTitle>{category}</CardTitle>
                                 <Button variant="ghost" size="icon" className="data-[state=open]:rotate-180">
                                     <ChevronDown className="h-5 w-5"/>
                                 </Button>
-                            </CardHeader>
+                            </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                             <CardContent>
@@ -430,7 +430,7 @@ export default function Dashboard({
                         </Select>
                     </div>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-hidden">
+                <CardContent className="flex-1 overflow-hidden p-0">
                     <ScrollArea className="h-full">
                       <TransactionsTable 
                         transactions={filteredPaidTransactions}

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -74,7 +75,7 @@ export default function TransactionsTable({
                 <TableRow key={t.id}>
                   <TableCell>
                     <div className="font-medium">{t.description}</div>
-                    {t.category && (
+                    {t.category && mode === 'paid' && (
                       <Badge variant="outline" className="mt-1 font-normal">{t.category}</Badge>
                     )}
                   </TableCell>
