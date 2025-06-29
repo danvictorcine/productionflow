@@ -125,9 +125,7 @@ export function AddTransactionSheet({
     if (!newCategoryName || !project) return;
     
     const normalizedNewCategory = newCategoryName.trim();
-    const existingCategories = allCategories.map(c => c.toLowerCase());
-
-    if (existingCategories.includes(normalizedNewCategory.toLowerCase())) {
+    if (allCategories.map(c => c.toLowerCase()).includes(normalizedNewCategory.toLowerCase())) {
         toast({ variant: "destructive", title: "Categoria já existe." });
         return;
     }

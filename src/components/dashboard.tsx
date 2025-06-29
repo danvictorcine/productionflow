@@ -384,7 +384,7 @@ export default function Dashboard({
             </Card>
 
             {Object.entries(transactionsByCategory)
-              .filter(([category]) => category !== 'Cachê do Talento' && categoryTransactions.length > 0)
+              .filter(([category, categoryTransactions]) => category !== 'Cachê do Talento' && categoryTransactions.length > 0)
               .map(([category, categoryTransactions]) => (
                 <Collapsible key={category} defaultOpen>
                     <Card>
