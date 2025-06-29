@@ -27,11 +27,7 @@ const getUserId = () => {
 // Project Functions
 export const addProject = async (projectData: Omit<Project, 'id' | 'userId'>) => {
   const userId = getUserId();
-  const docRef = await addDoc(collection(db, 'projects'), {
-    ...projectData,
-    userId,
-    customCategories: [],
-  });
+  const docRef = await addDoc(collection(db, 'projects'), { ...projectData, userId });
   return docRef.id;
 };
 
@@ -41,13 +37,8 @@ export const getProjects = async (): Promise<Project[]> => {
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
   querySnapshot.forEach((doc) => {
-    const data = doc.data();
-    projects.push({
-        ...data,
-        id: doc.id,
-    } as Project);
+    projects.push({ ...doc.data(), id: doc.id } as Project);
   });
-  // Sort projects alphabetically by name in the code
   projects.sort((a, b) => a.name.localeCompare(b.name));
   return projects;
 };
@@ -73,18 +64,13 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
 
 export const deleteProject = async (projectId: string) => {
     const batch = writeBatch(db);
-
-    // Delete project
     const projectRef = doc(db, 'projects', projectId);
     batch.delete(projectRef);
-
-    // Delete associated transactions
     const transQuery = query(collection(db, 'transactions'), where('projectId', '==', projectId));
     const transSnapshot = await getDocs(transQuery);
     transSnapshot.forEach(doc => {
         batch.delete(doc.ref);
     });
-    
     await batch.commit();
 };
 
@@ -111,10 +97,7 @@ export const getUserProfile = async (uid:string): Promise<UserProfile | null> =>
 
 export const updateUserProfile = async (uid: string, data: { name: string }) => {
     const userRef = doc(db, 'users', uid);
-    // Use setDoc with merge:true to create the doc if it doesn't exist, or update it if it does.
     await setDoc(userRef, data, { merge: true });
-
-    // Also update the auth profile display name
     if (auth.currentUser && auth.currentUser.uid === uid) {
       await updateAuthProfile(auth.currentUser, { displayName: data.name });
     }
@@ -128,12 +111,14 @@ export const sendPasswordReset = async (email: string) => {
 // Transaction Functions
 export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>) => {
   const userId = getUserId();
-  await addDoc(collection(db, 'transactions'), {
+  const data = {
     ...transactionData,
+    amount: transactionData.amount,
     date: Timestamp.fromDate(transactionData.date),
     userId,
     status: transactionData.status || 'planned',
-  });
+  };
+  await addDoc(collection(db, 'transactions'), data);
 };
 
 export const getTransactions = async (projectId: string): Promise<Transaction[]> => {
@@ -153,7 +138,6 @@ export const getTransactions = async (projectId: string): Promise<Transaction[]>
             date: (data.date as Timestamp).toDate(),
         } as Transaction);
     });
-    // Sort transactions by date descending in the code
     transactions.sort((a, b) => b.date.getTime() - a.date.getTime());
     return transactions;
 };
@@ -161,8 +145,7 @@ export const getTransactions = async (projectId: string): Promise<Transaction[]>
 export const updateTransaction = async (transactionId: string, transactionData: Partial<Transaction>) => {
     const transRef = doc(db, 'transactions', transactionId);
     
-    // Convert Date back to Timestamp if it exists
-    const dataToUpdate: any = { ...transactionData };
+    const dataToUpdate: Record<string, any> = { ...transactionData };
     if (transactionData.date) {
         dataToUpdate.date = Timestamp.fromDate(transactionData.date);
     }

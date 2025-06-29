@@ -65,16 +65,16 @@ export default function SignupPage() {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
+      const newUser = userCredential.user;
       
-      await updateProfile(user, { displayName: values.name });
-      await firestoreApi.createUserProfile(user.uid, values.name, values.email);
+      await updateProfile(newUser, { displayName: values.name });
+      await firestoreApi.createUserProfile(newUser.uid, values.name, values.email);
       
       toast({
         title: 'Conta Criada!',
-        description: 'Você será redirecionado para a página de login.',
+        description: 'Você será redirecionado para a página de projetos.',
       });
-      router.push('/login');
+      router.push('/');
     } catch (error: any) {
       toast({
         variant: 'destructive',

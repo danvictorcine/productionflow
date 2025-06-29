@@ -40,7 +40,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (firebaseUser) {
         const userProfile = await getUserProfile(firebaseUser.uid);
         
-        // Ensure auth displayName is consistent with Firestore profile
         if (userProfile && firebaseUser.displayName !== userProfile.name) {
           await updateProfile(firebaseUser, { displayName: userProfile.name });
         }
