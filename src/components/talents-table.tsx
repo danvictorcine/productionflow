@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -75,7 +74,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                   const transaction = transactionsByTalentId.get(talent.id);
 
                   return (
-                    <TableRow key={talent.id} className={transaction?.status === 'paid' ? 'bg-green-500/10' : ''}>
+                    <TableRow key={talent.id}>
                       <TableCell className="font-medium">{talent.name}</TableCell>
                       <TableCell>{talent.role}</TableCell>
                       <TableCell className="text-right font-mono">
