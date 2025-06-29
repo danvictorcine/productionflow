@@ -1,26 +1,28 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // A user's profile can only be read or updated by that same user.
-    // A user can only create a profile for themselves.
-    match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
-      allow create: if request.auth.uid == userId;
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // Projects can be read, updated, or deleted only by the user who created them.
-    // New projects can be created by any authenticated user for themselves.
+    match /users/{userId} {
+      allow read, update: if isOwner(userId);
+      allow create: if isOwner(userId);
+    }
+
     match /projects/{projectId} {
-      allow read, update, delete: if resource.data.userId == request.auth.uid;
-      allow create: if request.resource.data.userId == request.auth.uid;
+      allow create: if isOwner(request.resource.data.userId);
+      allow read, delete: if isOwner(resource.data.userId);
+      allow update: if isOwner(resource.data.userId) && request.resource.data.userId == resource.data.userId;
     }
     
-    // Transactions can be read, written, or deleted only by the user who created them.
     match /transactions/{transactionId} {
-      allow read, update, delete: if resource.data.userId == request.auth.uid;
-      allow create: if request.resource.data.userId == request.auth.uid;
+      allow create: if isOwner(request.resource.data.userId);
+      allow read, delete: if isOwner(resource.data.userId);
+      allow update: if isOwner(resource.data.userId) && request.resource.data.userId == resource.data.userId;
     }
   }
 }
