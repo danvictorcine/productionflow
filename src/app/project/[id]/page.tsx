@@ -73,6 +73,8 @@ function ProjectPageDetail() {
     const handleUpdateProject = async (updatedProjectData: Partial<Project>) => {
         if (!project) return;
         try {
+            const batch = writeBatch(db);
+
             // Check if talent fees have changed and update associated transactions
             if (updatedProjectData.talents && project.talents) {
                 const changedTalents = updatedProjectData.talents.filter(updatedTalent => {
@@ -82,8 +84,7 @@ function ProjectPageDetail() {
 
                 if (changedTalents.length > 0) {
                     const currentTransactions = await api.getTransactions(project.id);
-                    const batch = writeBatch(db);
-
+                    
                     changedTalents.forEach(changedTalent => {
                         const transactionsToUpdate = currentTransactions.filter(tx => tx.talentId === changedTalent.id);
                         
@@ -94,12 +95,21 @@ function ProjectPageDetail() {
                             }
                         });
                     });
-                    
-                    await batch.commit();
                 }
             }
 
-            await api.updateProject(project.id, updatedProjectData);
+            const projectRef = doc(db, 'projects', project.id);
+            const dataToUpdate: Record<string, any> = { ...updatedProjectData };
+             if (updatedProjectData.installments) {
+                dataToUpdate.installments = updatedProjectData.installments.map(inst => ({
+                    ...inst,
+                    date: new Date(inst.date),
+                }));
+            }
+            batch.update(projectRef, dataToUpdate);
+            
+            await batch.commit();
+            
             await fetchProject(); // Re-fetch to get latest data
             await fetchTransactions(); // Re-fetch transactions to update UI
             toast({ title: "Projeto atualizado!" });
