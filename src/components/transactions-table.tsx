@@ -1,11 +1,10 @@
-
 "use client";
 
 import { useState } from 'react';
 import type { Transaction } from "@/lib/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MoreHorizontal, Trash2, Edit, Banknote, Check, Undo2 } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit, Banknote, Check, Undo2, CheckCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 import {
@@ -34,6 +33,12 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TransactionsTableProps {
   transactions: Transaction[];
@@ -70,12 +75,28 @@ export default function TransactionsTable({
           <TableBody>
             {transactions.length > 0 ? (
               transactions.map((t) => (
-                <TableRow key={t.id} className={t.status === 'paid' ? 'bg-green-500/10' : ''}>
-                  <TableCell>
-                    <div className="font-medium">{t.description}</div>
-                    {t.category && (
-                      <Badge variant="outline" className="mt-1 font-normal">{t.category}</Badge>
-                    )}
+                <TableRow key={t.id} data-state={t.status} className="data-[state=paid]:bg-accent/10">
+                   <TableCell>
+                    <div className="flex items-center gap-3">
+                      {t.status === 'paid' && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <CheckCircle className="h-5 w-5 text-accent" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Pago</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      <div>
+                        <div className="font-medium">{t.description}</div>
+                        {t.category && (
+                          <Badge variant="outline" className="mt-1 font-normal">{t.category}</Badge>
+                        )}
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell className="text-right font-mono">
                     {formatCurrency(t.amount)}
@@ -93,7 +114,7 @@ export default function TransactionsTable({
                           <Button
                               size="sm"
                               variant="outline"
-                              className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none"
+                              className="absolute inset-0 w-full h-full border-accent bg-accent/10 text-accent transition-opacity group-hover:opacity-0 pointer-events-none rounded-md"
                               aria-hidden="true"
                               tabIndex={-1}
                           >
@@ -103,7 +124,7 @@ export default function TransactionsTable({
                           <Button
                               size="sm"
                               variant="ghost"
-                              className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md"
                               onClick={() => onUndo(t.id)}
                               aria-label={`Desfazer pagamento de ${t.description}`}
                           >
