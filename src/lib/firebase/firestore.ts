@@ -121,6 +121,26 @@ export const addTransaction = async (transactionData: Omit<Transaction, 'id' | '
   await addDoc(collection(db, 'transactions'), data);
 };
 
+export const addTransactionsBatch = async (transactionsData: Omit<Transaction, 'id' | 'userId'>[]) => {
+  const userId = getUserId();
+  const batch = writeBatch(db);
+
+  transactionsData.forEach(transaction => {
+    const transactionCollection = collection(db, 'transactions');
+    const docRef = doc(transactionCollection);
+    const data = {
+      ...transaction,
+      amount: transaction.amount,
+      date: Timestamp.fromDate(transaction.date),
+      userId,
+      status: transaction.status || 'planned',
+    };
+    batch.set(docRef, data);
+  });
+
+  await batch.commit();
+};
+
 export const getTransactions = async (projectId: string): Promise<Transaction[]> => {
     const userId = getUserId();
     const q = query(

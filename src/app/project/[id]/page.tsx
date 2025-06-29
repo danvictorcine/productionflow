@@ -79,6 +79,20 @@ function ProjectPageDetail() {
             toast({ variant: 'destructive', title: 'Erro ao adicionar despesa', description: (error as Error).message });
         }
     };
+    
+    const handleAddTransactionsBatch = async (transactionsData: Omit<Transaction, 'id' | 'userId'>[]) => {
+        if (transactionsData.length === 0) {
+            toast({ variant: 'destructive', title: 'Nenhuma transação válida para importar.' });
+            return;
+        }
+        try {
+            await api.addTransactionsBatch(transactionsData);
+            await fetchTransactions();
+            toast({ title: `${transactionsData.length} transações importadas com sucesso!` });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Erro ao importar transações', description: (error as Error).message });
+        }
+    };
 
     const handleUpdateTransaction = async (transactionId: string, transactionData: Partial<Transaction>) => {
         try {
@@ -135,6 +149,7 @@ function ProjectPageDetail() {
             transactions={transactions} 
             onProjectUpdate={handleUpdateProject}
             onAddTransaction={handleAddTransaction}
+            onAddTransactionsBatch={handleAddTransactionsBatch}
             onUpdateTransaction={handleUpdateTransaction}
             onDeleteTransaction={handleDeleteTransaction}
         />

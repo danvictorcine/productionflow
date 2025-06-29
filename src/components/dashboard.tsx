@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, FileText, ClipboardList } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, FileText, Upload, ClipboardList } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
@@ -34,6 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DEFAULT_EXPENSE_CATEGORIES } from "@/lib/types";
 import { UserNav } from "@/components/user-nav";
 import { useToast } from "@/hooks/use-toast";
+import { ImportTransactionsDialog } from "./import-transactions-dialog";
 
 
 interface DashboardProps {
@@ -41,6 +42,7 @@ interface DashboardProps {
   transactions: Transaction[];
   onProjectUpdate: (data: Partial<Project>) => Promise<void>;
   onAddTransaction: (data: Omit<Transaction, "id" | "userId">) => void;
+  onAddTransactionsBatch: (data: Omit<Transaction, "id" | "userId">[]) => void;
   onUpdateTransaction: (id: string, data: Partial<Transaction>) => void;
   onDeleteTransaction: (id: string) => void;
 }
@@ -50,11 +52,13 @@ export default function Dashboard({
     transactions, 
     onProjectUpdate, 
     onAddTransaction,
+    onAddTransactionsBatch,
     onUpdateTransaction,
     onDeleteTransaction
 }: DashboardProps) {
   const [isAddSheetOpen, setAddSheetOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { toast } = useToast();
@@ -83,11 +87,6 @@ export default function Dashboard({
     return generalExpenses.reduce((sum, t) => sum + t.amount, 0);
   }, [generalExpenses]);
 
-  const remainingBudget = useMemo(() => {
-    const totalPlanned = totalTalentFee + totalGeneralExpenses + (project.includeProductionCostsInBudget ? project.productionCosts : 0);
-    return project.budget - totalPlanned;
-  }, [project.budget, project.includeProductionCostsInBudget, totalTalentFee, totalGeneralExpenses, project.productionCosts]);
-  
   // Data for Tab 1: Visão Geral
   const geralChartData = useMemo(() => {
     return [
@@ -386,6 +385,10 @@ export default function Dashboard({
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Despesa
           </Button>
+          <Button onClick={() => setIsImportDialogOpen(true)} variant="outline">
+            <Upload className="mr-2 h-4 w-4" />
+            Importar
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" aria-label="Opções de Exportação">
@@ -463,21 +466,21 @@ export default function Dashboard({
             </Card>
             
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ClipboardList className="h-5 w-5 text-muted-foreground" />
-                  Despesas Gerais
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                 <TransactionsTable
-                    transactions={generalExpenses}
-                    onDelete={onDeleteTransaction}
-                    onEdit={handleStartEditTransaction}
-                    onPay={handlePayTransaction}
-                    onUndo={handleUndoPayment}
-                />
-              </CardContent>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5 text-muted-foreground" />
+                    Despesas Gerais
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <TransactionsTable
+                        transactions={generalExpenses}
+                        onDelete={onDeleteTransaction}
+                        onEdit={handleStartEditTransaction}
+                        onPay={handlePayTransaction}
+                        onUndo={handleUndoPayment}
+                    />
+                </CardContent>
             </Card>
 
           </div>
@@ -526,6 +529,12 @@ export default function Dashboard({
         isOpen={isEditDialogOpen}
         setIsOpen={setEditDialogOpen}
         onSubmit={handleEditProject}
+        project={project}
+      />
+       <ImportTransactionsDialog
+        isOpen={isImportDialogOpen}
+        setIsOpen={setIsImportDialogOpen}
+        onSubmit={onAddTransactionsBatch}
         project={project}
       />
     </div>
