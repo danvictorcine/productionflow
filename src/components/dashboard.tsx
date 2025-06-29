@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, ChevronDown, FileText } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, FileText, ClipboardList } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DEFAULT_EXPENSE_CATEGORIES } from "@/lib/types";
 import { UserNav } from "@/components/user-nav";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -58,24 +57,14 @@ export default function Dashboard({
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { toast } = useToast();
+  
+  const plannedTransactions = useMemo(() => {
+    return transactions.filter(t => t.status === 'planned');
+  }, [transactions]);
 
   const paidTransactions = useMemo(() => {
     return transactions.filter(t => t.status === 'paid');
   }, [transactions]);
-  
-  const transactionsByCategory = useMemo(() => {
-    return transactions
-      .filter(t => t.category !== "Cachê de Equipe e Talentos")
-      .reduce((acc, t) => {
-          const category = t.category || 'Outros';
-          if (!acc[category]) {
-              acc[category] = [];
-          }
-          acc[category].push(t);
-          return acc;
-      }, {} as Record<ExpenseCategory, Transaction[]>)
-  }, [transactions]);
-
 
   const totalExpenses = useMemo(() => {
     return paidTransactions.reduce((sum, t) => sum + t.amount, 0);
@@ -427,34 +416,26 @@ export default function Dashboard({
                 />
               </CardContent>
             </Card>
-
-            {Object.entries(transactionsByCategory)
-              .filter(([category, categoryTransactions]) => categoryTransactions.length > 0)
-              .map(([category, categoryTransactions]) => (
-                <Collapsible key={category} defaultOpen>
-                    <Card>
-                        <CollapsibleTrigger asChild>
-                            <div className="flex cursor-pointer items-center justify-between p-6">
-                                <CardTitle>{category}</CardTitle>
-                                <Button variant="ghost" size="icon" className="data-[state=open]:rotate-180">
-                                    <ChevronDown className="h-5 w-5"/>
-                                </Button>
-                            </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                            <CardContent>
-                                <TransactionsTable 
-                                    transactions={categoryTransactions} 
-                                    onDelete={onDeleteTransaction} 
-                                    onEdit={handleStartEditTransaction}
-                                    onPay={handlePayTransaction}
-                                    onUndo={handleUndoPayment}
-                                />
-                            </CardContent>
-                        </CollapsibleContent>
-                    </Card>
-                </Collapsible>
-            ))}
+            
+            {plannedTransactions.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5 text-muted-foreground" />
+                    Despesas Planejadas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TransactionsTable
+                    transactions={plannedTransactions}
+                    onDelete={onDeleteTransaction}
+                    onEdit={handleStartEditTransaction}
+                    onPay={handlePayTransaction}
+                    onUndo={handleUndoPayment}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
           </div>
           <div className="lg:col-span-1">
