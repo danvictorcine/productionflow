@@ -64,14 +64,16 @@ export default function Dashboard({
   }, [transactions]);
   
   const transactionsByCategory = useMemo(() => {
-    return transactions.reduce((acc, t) => {
-        const category = t.category || 'Outros';
-        if (!acc[category]) {
-            acc[category] = [];
-        }
-        acc[category].push(t);
-        return acc;
-    }, {} as Record<ExpenseCategory, Transaction[]>)
+    return transactions
+      .filter(t => t.category !== "Cachê do Talento")
+      .reduce((acc, t) => {
+          const category = t.category || 'Outros';
+          if (!acc[category]) {
+              acc[category] = [];
+          }
+          acc[category].push(t);
+          return acc;
+      }, {} as Record<ExpenseCategory, Transaction[]>)
   }, [transactions]);
 
 
@@ -124,14 +126,14 @@ export default function Dashboard({
   }, [paidTransactions, balance]);
   
    const allCategories = useMemo(() => {
-    const categoriesInUse = new Set(transactions.map(t => t.category).filter(Boolean) as string[]);
+    const categoriesInUse = new Set(transactions.map(t => t.category).filter(Boolean).filter(c => c !== "Cachê do Talento") as string[]);
     const projectCustomCategories = project.customCategories || [];
     return Array.from(new Set([...DEFAULT_EXPENSE_CATEGORIES, ...projectCustomCategories, ...categoriesInUse])).sort();
   }, [transactions, project.customCategories]);
   
   const filteredPaidTransactions = useMemo(() => {
     if (categoryFilter === 'all') {
-      return paidTransactions;
+      return paidTransactions.filter(t => t.category !== "Cachê do Talento");
     }
     return paidTransactions.filter(t => t.category === categoryFilter);
   }, [paidTransactions, categoryFilter]);
@@ -428,7 +430,7 @@ export default function Dashboard({
             </Card>
 
             {Object.entries(transactionsByCategory)
-              .filter(([category, categoryTransactions]) => category !== 'Cachê do Talento' && categoryTransactions.length > 0)
+              .filter(([category, categoryTransactions]) => categoryTransactions.length > 0)
               .map(([category, categoryTransactions]) => (
                 <Collapsible key={category} defaultOpen>
                     <Card>

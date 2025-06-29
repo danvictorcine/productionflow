@@ -1,6 +1,5 @@
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
-  "Cachê do Talento",
   "Custos de Produção",
   "Pós-produção",
   "Marketing e Distribuição",
