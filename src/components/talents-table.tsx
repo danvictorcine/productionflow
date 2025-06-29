@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import type { Talent, Transaction } from "@/lib/types";
 import { MoreHorizontal, Trash2, Edit, Banknote, Check } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 import {
   Table,
@@ -42,13 +43,6 @@ interface TalentsTableProps {
 
 export default function TalentsTable({ talents, transactions, onEdit, onDelete, onPay }: TalentsTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
   
   const talentToDelete = talents.find(t => t.id === deleteId);
 
@@ -96,7 +90,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                                 Pago
                             </Badge>
                         ) : (
-                            <Button size="sm" variant="outline" onClick={() => onPay(talent)}>
+                            <Button size="sm" variant="outline" onClick={() => onPay(talent)} aria-label={`Pagar cachê de ${talent.name}`}>
                                 <Banknote className="mr-2 h-4 w-4" />
                                 Pagar
                             </Button>
@@ -105,18 +99,18 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Opções para ${talent.name}`}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => onEdit()}>
                               <Edit className="mr-2 h-4 w-4" />
-                              Editar
+                              Editar Projeto
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setDeleteId(talent.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
+                            Excluir Talento
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

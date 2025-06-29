@@ -31,6 +31,7 @@ import * as projectApi from '@/lib/firebase/firestore';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { UserNav } from "@/components/user-nav";
+import { formatCurrency } from "@/lib/utils";
 
 function HomePage() {
   const { user } = useAuth();
@@ -100,13 +101,6 @@ function HomePage() {
   const openEditDialog = (project: Project) => {
     setEditingProject(project);
     setIsDialogOpen(true);
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
   };
   
   const renderProjectCards = () => {

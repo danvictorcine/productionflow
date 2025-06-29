@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DollarSign, CreditCard, Wallet, Users, Wrench } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface SummaryCardsProps {
   budget: number;
@@ -23,13 +24,6 @@ export default function SummaryCards({
   paidExpenses,
   balance,
 }: SummaryCardsProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
       <Card>

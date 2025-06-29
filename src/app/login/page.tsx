@@ -42,20 +42,31 @@ export default function LoginPage() {
     },
   });
 
+  const getLoginErrorMessage = (errorCode: string) => {
+    switch (errorCode) {
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'E-mail ou senha incorretos. Por favor, tente novamente.';
+      case 'auth/invalid-email':
+        return 'O formato do e-mail é inválido.';
+      case 'auth/too-many-requests':
+        return 'Acesso bloqueado temporariamente devido a muitas tentativas. Tente novamente mais tarde.';
+      default:
+        return 'Ocorreu um erro desconhecido. Verifique suas credenciais ou a configuração do Firebase.';
+    }
+  }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       router.push('/');
     } catch (error: any) {
-      let description = 'Ocorreu um erro desconhecido. Verifique suas credenciais ou a configuração do Firebase.';
-      if (error.message) {
-        description = error.message;
-      }
       toast({
         variant: 'destructive',
         title: 'Erro de Login',
-        description,
+        description: getLoginErrorMessage(error.code),
       });
     } finally {
         setIsLoading(false);

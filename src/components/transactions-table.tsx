@@ -5,6 +5,7 @@ import type { Transaction } from "@/lib/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MoreHorizontal, Trash2, TrendingDown } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 import {
   Table,
@@ -41,12 +42,7 @@ interface TransactionsTableProps {
 export default function TransactionsTable({ transactions, onDelete }: TransactionsTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
+  const transactionToDelete = transactions.find(t => t.id === deleteId);
 
   return (
     <>
@@ -80,7 +76,7 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" aria-label={`Opções para transação ${t.description}`}>
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -108,8 +104,7 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
           <AlertDialogHeader>
             <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Isso excluirá permanentemente esta
-              transação de seus registros.
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente a transação "{transactionToDelete?.description}" de seus registros.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

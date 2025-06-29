@@ -46,16 +46,28 @@ export default function SignupPage() {
     },
   });
 
+  const getSignupErrorMessage = (errorCode: string) => {
+    switch (errorCode) {
+      case 'auth/email-already-in-use':
+        return 'Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.';
+      case 'auth/invalid-email':
+        return 'O formato do e-mail é inválido.';
+      case 'auth/weak-password':
+        return 'A senha é muito fraca. Use pelo menos 6 caracteres.';
+      case 'auth/operation-not-allowed':
+        return 'O cadastro com e-mail e senha não está habilitado. Contate o administrador.';
+      default:
+        return 'Ocorreu um erro desconhecido. Verifique seus dados ou a configuração do Firebase.';
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
-      // Update the auth profile display name
       await updateProfile(user, { displayName: values.name });
-
-      // Create user profile in Firestore
       await firestoreApi.createUserProfile(user.uid, values.name, values.email);
       
       toast({
@@ -64,11 +76,10 @@ export default function SignupPage() {
       });
       router.push('/login');
     } catch (error: any) {
-      const description = error.message || 'Ocorreu um erro desconhecido. Verifique os dados ou a configuração do Firebase.';
       toast({
         variant: 'destructive',
         title: 'Erro no Cadastro',
-        description,
+        description: getSignupErrorMessage(error.code),
       });
     } finally {
         setIsLoading(false);
