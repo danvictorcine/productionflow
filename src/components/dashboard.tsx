@@ -162,6 +162,10 @@ export default function Dashboard({
     onAddTransaction(newTransactionData);
   };
   
+  const handleUndoPayment = (transactionId: string) => {
+    onDeleteTransaction(transactionId);
+  }
+
   const handleExportToExcel = () => {
     const wb = XLSX.utils.book_new();
 
@@ -350,6 +354,7 @@ export default function Dashboard({
                     onEdit={() => setEditDialogOpen(true)}
                     onDelete={handleDeleteTalent}
                     onPay={handlePayTalent}
+                    onUndoPayment={handleUndoPayment}
                 />
               </CardContent>
             </Card>
@@ -393,7 +398,7 @@ export default function Dashboard({
                             </SelectContent>
                           </Select>
                       </div>
-                      <div className="flex-1 relative">
+                      <div className="flex-1 relative min-h-0">
                           <ScrollArea className="absolute inset-0 pr-4">
                             <TransactionsTable transactions={filteredTransactionsForHistory} onDelete={onDeleteTransaction} />
                           </ScrollArea>

@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
 import type { Talent, Transaction } from "@/lib/types";
-import { MoreHorizontal, Trash2, Edit, Banknote, Check } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit, Banknote, Check, Undo2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 import {
@@ -39,9 +40,10 @@ interface TalentsTableProps {
   onEdit: () => void;
   onDelete: (id: string) => void;
   onPay: (talent: Talent) => void;
+  onUndoPayment: (transactionId: string) => void;
 }
 
-export default function TalentsTable({ talents, transactions, onEdit, onDelete, onPay }: TalentsTableProps) {
+export default function TalentsTable({ talents, transactions, onEdit, onDelete, onPay, onUndoPayment }: TalentsTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
   const talentToDelete = talents.find(t => t.id === deleteId);
@@ -85,10 +87,27 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                     </TableCell>
                     <TableCell className="text-center">
                         {isPaid ? (
-                             <Badge variant="secondary" className="border-green-500 text-green-600">
-                                <Check className="mr-1 h-4 w-4" />
-                                Pago
-                            </Badge>
+                             <div className="group relative w-fit mx-auto h-9 flex items-center">
+                                <Badge variant="secondary" className="border-green-500 text-green-600 transition-opacity group-hover:opacity-0">
+                                   <Check className="mr-1 h-4 w-4" />
+                                   Pago
+                                </Badge>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => {
+                                        const lastPayment = transactions.find(t => t.talentId === talent.id && t.category === "Cachê do Talento");
+                                        if (lastPayment) {
+                                            onUndoPayment(lastPayment.id);
+                                        }
+                                    }}
+                                    aria-label={`Desfazer pagamento de ${talent.name}`}
+                                >
+                                    <Undo2 className="mr-2 h-4 w-4" />
+                                    Desfazer
+                                </Button>
+                            </div>
                         ) : (
                             <Button size="sm" variant="outline" onClick={() => onPay(talent)} aria-label={`Pagar cachê de ${talent.name}`}>
                                 <Banknote className="mr-2 h-4 w-4" />
