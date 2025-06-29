@@ -78,41 +78,34 @@ export default function Dashboard({
     return project.budget - totalExpenses;
   }, [project.budget, totalExpenses]);
   
+  const totalGeneralExpenses = useMemo(() => {
+    return generalExpenses.reduce((sum, t) => sum + t.amount, 0);
+  }, [generalExpenses]);
+
+  const remainingBudget = useMemo(() => {
+    const totalPlanned = totalTalentFee + totalGeneralExpenses + (project.includeProductionCostsInBudget ? project.productionCosts : 0);
+    return project.budget - totalPlanned;
+  }, [project.budget, project.includeProductionCostsInBudget, totalTalentFee, totalGeneralExpenses, project.productionCosts]);
+  
   const breakdownData = useMemo(() => {
-    const paidTalentFees = paidTransactions
-      .filter((t) => t.category === "Cachê de Equipe e Talentos")
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const paidProductionCosts = paidTransactions
-      .filter((t) => t.category === "Custos de Produção")
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const otherExpenses = paidTransactions
-      .filter(
-        (t) =>
-          !["Cachê de Equipe e Talentos", "Custos de Produção"].includes(t.category || "")
-      )
-      .reduce((sum, t) => sum + t.amount, 0);
-      
-    const chartBalance = balance < 0 ? 0 : balance;
-
     const data = [
-      { name: "Saldo Atual", value: chartBalance, fill: "hsl(var(--chart-2))" },
-      { name: "Cachês Pagos", value: paidTalentFees, fill: "hsl(var(--chart-1))" },
+      { name: "Saldo Previsto", value: remainingBudget < 0 ? 0 : remainingBudget, fill: "hsl(var(--chart-2))" },
+      { name: "Cachês Planejados", value: totalTalentFee, fill: "hsl(var(--chart-1))" },
       {
-        name: "Custos de Produção Pagos",
-        value: paidProductionCosts,
+        name: "Custos de Produção",
+        value: project.productionCosts,
         fill: "hsl(var(--chart-4))",
       },
       {
-        name: "Outras Despesas",
-        value: otherExpenses,
+        name: "Despesas Gerais",
+        value: totalGeneralExpenses,
         fill: "hsl(var(--muted-foreground))",
       },
     ];
 
-    return data.filter((item) => item.value > 0);
-  }, [paidTransactions, balance]);
+    // Show items with value, but always show saldo.
+    return data.filter((item) => item.value > 0 || item.name === 'Saldo Previsto');
+  }, [remainingBudget, totalTalentFee, project.productionCosts, totalGeneralExpenses]);
   
    const allCategories = useMemo(() => {
     const categoriesInUse = new Set(transactions.map(t => t.category).filter(Boolean) as string[]);
@@ -425,12 +418,12 @@ export default function Dashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <TransactionsTable
-                  transactions={generalExpenses}
-                  onDelete={onDeleteTransaction}
-                  onEdit={handleStartEditTransaction}
-                  onPay={handlePayTransaction}
-                  onUndo={handleUndoPayment}
+                 <TransactionsTable
+                    transactions={generalExpenses}
+                    onDelete={onDeleteTransaction}
+                    onEdit={handleStartEditTransaction}
+                    onPay={handlePayTransaction}
+                    onUndo={handleUndoPayment}
                 />
               </CardContent>
             </Card>
