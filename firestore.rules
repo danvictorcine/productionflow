@@ -1,54 +1,43 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is signed in
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the signed-in user is the owner of a document
+    // Helper function to check if the user is the owner of a document
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    // Rules for the 'users' collection
+    // Helper function to check if the user is the owner of the project
+    function isProjectOwner(projectId) {
+      return isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.userId);
+    }
+    
+    // User Profiles
     match /users/{userId} {
-      // A user can read or update their own profile document.
-      // A user can create their own profile document upon signup.
-      allow read, update, create: if isSignedIn() && isOwner(userId);
+      // Allow users to create their own profile
+      allow create: if isOwner(userId);
+      // Allow users to read and update their own profile
+      allow read, update: if isOwner(userId);
+      // Deny deletion of user profiles
+      allow delete: if false;
     }
 
-    // Rules for the 'projects' collection
+    // Projects
     match /projects/{projectId} {
-      // A user can read, update, or delete projects they own.
-      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
-
-      // A user can create a project if they are authenticated and the owner.
-      // We also validate the data structure for security.
-      allow create: if isSignedIn()
-                    && isOwner(request.resource.data.userId)
-                    && request.resource.data.name is string
-                    && request.resource.data.budget is number;
+      // Allow read, update, delete only for the project owner
+      allow read, update, delete: if isProjectOwner(projectId);
+      // Allow create only if the new project's userId matches the authenticated user
+      allow create: if request.resource.data.userId == request.auth.uid;
     }
 
-    // Rules for the 'transactions' collection
+    // Transactions
     match /transactions/{transactionId} {
-      // A user can read, update, or delete transactions they own.
-      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
-
-      // A user can create a transaction if:
-      // 1. They are the owner of the transaction record.
-      // 2. The associated project exists and they also own it.
-      // 3. The incoming data has a valid structure.
-      allow create: if isSignedIn()
-                    && isOwner(request.resource.data.userId)
-                    && exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId))
-                    && get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.userId == request.auth.uid
-                    && request.resource.data.description is string
-                    && request.resource.data.amount is number
-                    && request.resource.data.date is timestamp;
+      // Allow create only if the user is the owner of the associated project
+      allow create: if isProjectOwner(request.resource.data.projectId);
+      // Allow read, update, delete only for the transaction's owner (project owner)
+      allow read, update, delete: if isProjectOwner(resource.data.projectId);
     }
   }
 }
