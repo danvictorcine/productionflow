@@ -126,13 +126,13 @@ export const sendPasswordReset = async (email: string) => {
 
 
 // Transaction Functions
-export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId' | 'status'>) => {
+export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>) => {
   const userId = getUserId();
   await addDoc(collection(db, 'transactions'), {
     ...transactionData,
     date: Timestamp.fromDate(transactionData.date),
     userId,
-    status: 'planned' // Default new transactions to 'planned'
+    status: transactionData.status || 'planned',
   });
 };
 

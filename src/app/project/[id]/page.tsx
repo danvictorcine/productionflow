@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -65,13 +65,18 @@ function ProjectPageDetail() {
         }
     };
     
-    const handleAddTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId' | 'status'>) => {
+    const handleAddTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>) => {
         try {
             await api.addTransaction(transactionData);
             await fetchTransactions();
-            toast({ title: 'Despesa planejada com sucesso!' });
+
+            if (transactionData.status === 'paid') {
+              toast({ title: 'Despesa paga com sucesso!' });
+            } else {
+              toast({ title: 'Despesa planejada com sucesso!' });
+            }
         } catch(error) {
-            toast({ variant: 'destructive', title: 'Erro ao planejar despesa', description: (error as Error).message });
+            toast({ variant: 'destructive', title: 'Erro ao adicionar despesa', description: (error as Error).message });
         }
     };
 

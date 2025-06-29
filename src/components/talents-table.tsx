@@ -37,12 +37,11 @@ interface TalentsTableProps {
   transactions: Transaction[];
   onEdit: () => void;
   onDelete: (id: string) => void;
-  onLaunchPayment: (talent: Talent) => void;
-  onPay: (id: string) => void;
+  onPay: (talent: Talent, transaction: Transaction | undefined) => void;
   onUndo: (id: string) => void;
 }
 
-export default function TalentsTable({ talents, transactions, onEdit, onDelete, onLaunchPayment, onPay, onUndo }: TalentsTableProps) {
+export default function TalentsTable({ talents, transactions, onEdit, onDelete, onPay, onUndo }: TalentsTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
   const talentToDelete = talents.find(t => t.id === deleteId);
@@ -82,14 +81,8 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                         {formatCurrency(talent.fee)}
                       </TableCell>
                       <TableCell className="text-center">
-                          {!transaction && (
-                              <Button size="sm" variant="outline" onClick={() => onLaunchPayment(talent)} aria-label={`Pagar ${talent.name}`} className="w-[100px]">
-                                  <Banknote className="mr-2 h-4 w-4" />
-                                  Pagar
-                              </Button>
-                          )}
-                          {transaction?.status === 'planned' && onPay && (
-                              <Button size="sm" variant="outline" onClick={() => onPay(transaction.id)} aria-label={`Pagar ${talent.name}`} className="w-[100px]">
+                          {(!transaction || transaction.status === 'planned') && (
+                              <Button size="sm" variant="outline" onClick={() => onPay(talent, transaction)} aria-label={`Pagar ${talent.name}`} className="w-[100px]">
                                   <Banknote className="mr-2 h-4 w-4" />
                                   Pagar
                               </Button>
@@ -99,7 +92,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none"
+                                    className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none rounded-md"
                                     aria-hidden="true"
                                     tabIndex={-1}
                                 >
@@ -109,7 +102,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                                 <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md"
                                     onClick={() => onUndo(transaction.id)}
                                     aria-label={`Desfazer pagamento de ${talent.name}`}
                                 >

@@ -27,13 +27,14 @@ import { DEFAULT_EXPENSE_CATEGORIES } from "@/lib/types";
 import { UserNav } from "@/components/user-nav";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useToast } from "@/hooks/use-toast";
 
 
 interface DashboardProps {
   project: Project;
   transactions: Transaction[];
   onProjectUpdate: (data: Partial<Project>) => Promise<void>;
-  onAddTransaction: (data: Omit<Transaction, "id" | "userId" | "status">) => void;
+  onAddTransaction: (data: Omit<Transaction, "id" | "userId">) => void;
   onUpdateTransaction: (id: string, data: Partial<Transaction>) => void;
   onDeleteTransaction: (id: string) => void;
 }
@@ -50,6 +51,7 @@ export default function Dashboard({
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const { toast } = useToast();
 
   const paidTransactions = useMemo(() => {
     return transactions.filter(t => t.status === 'paid');
@@ -142,6 +144,7 @@ export default function Dashboard({
             ...data,
             projectId: project.id,
             type: "expense",
+            status: 'planned'
         });
     }
     setAddSheetOpen(false);
@@ -163,17 +166,22 @@ export default function Dashboard({
     await onProjectUpdate({ talents: updatedTalents });
   };
   
-  const handleLaunchTalentPayment = (talent: Talent) => {
-    const newTransactionData: Omit<Transaction, "id" | "userId" | "status"> = {
-      projectId: project.id,
-      type: "expense",
-      amount: talent.fee,
-      description: `Cachê: ${talent.name}`,
-      category: "Cachê do Talento",
-      date: new Date(),
-      talentId: talent.id,
-    };
-    onAddTransaction(newTransactionData);
+  const handlePayTalent = async (talent: Talent, transaction: Transaction | undefined) => {
+    if (transaction && transaction.status === 'planned') {
+      await onUpdateTransaction(transaction.id, { status: 'paid' });
+    } else if (!transaction) {
+      const newTransactionData: Omit<Transaction, 'id' | 'userId'> = {
+        projectId: project.id,
+        type: 'expense',
+        amount: talent.fee,
+        description: `Cachê: ${talent.name}`,
+        category: 'Cachê do Talento',
+        date: new Date(),
+        talentId: talent.id,
+        status: 'paid',
+      };
+      await onAddTransaction(newTransactionData);
+    }
   };
   
   const handlePayTransaction = (transactionId: string) => {
@@ -376,8 +384,7 @@ export default function Dashboard({
                     transactions={transactions}
                     onEdit={() => setEditDialogOpen(true)}
                     onDelete={handleDeleteTalent}
-                    onLaunchPayment={handleLaunchTalentPayment}
-                    onPay={handlePayTransaction}
+                    onPay={handlePayTalent}
                     onUndo={handleUndoPayment}
                 />
               </CardContent>
