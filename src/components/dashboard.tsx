@@ -1,9 +1,12 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users, Wrench } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users, Wrench, FileSpreadsheet } from "lucide-react";
+import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { EXPENSE_CATEGORIES } from "@/lib/types";
 import { UserNav } from "@/components/user-nav";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 interface DashboardProps {
@@ -157,22 +161,101 @@ export default function Dashboard({
     };
     onAddTransaction(newTransactionData);
   };
+  
+  const handleExportToExcel = () => {
+    // 1. Prepare Talents Data
+    const talentDataForExport = project.talents.map(talent => {
+        const paidAmount = transactions
+            .filter(t => t.talentId === talent.id && t.category === "Cachê do Talento")
+            .reduce((sum, t) => sum + t.amount, 0);
+        const isPaid = paidAmount >= talent.fee;
+        return {
+            'Nome': talent.name,
+            'Função': talent.role,
+            'Cachê (R$)': talent.fee,
+            'Status do Pagamento': isPaid ? 'Pago' : 'Não Pago'
+        };
+    });
+
+    // 2. Prepare Production Costs Data
+    const productionCostsForExport = transactions
+        .filter(t => t.category === 'Custos de Produção')
+        .map(t => ({
+            'Descrição': t.description,
+            'Valor (R$)': t.amount,
+            'Data': format(t.date, "dd/MM/yyyy")
+        }));
+
+    // 3. Prepare Other Expenses Data
+    const otherExpensesForExport = transactions
+        .filter(t => t.category !== 'Custos de Produção' && t.category !== 'Cachê do Talento')
+        .map(t => ({
+            'Descrição': t.description,
+            'Categoria': t.category || 'Não especificada',
+            'Valor (R$)': t.amount,
+            'Data': format(t.date, "dd/MM/yyyy")
+        }));
+
+    // Create workbook and worksheets
+    const wb = XLSX.utils.book_new();
+    const wsTalents = XLSX.utils.json_to_sheet(talentDataForExport);
+    const wsProdCosts = XLSX.utils.json_to_sheet(productionCostsForExport);
+    const wsOtherExpenses = XLSX.utils.json_to_sheet(otherExpensesForExport);
+
+    // Append worksheets to the workbook
+    XLSX.utils.book_append_sheet(wb, wsTalents, "Equipe e Talentos");
+    XLSX.utils.book_append_sheet(wb, wsProdCosts, "Custos de Produção");
+    XLSX.utils.book_append_sheet(wb, wsOtherExpenses, "Outras Despesas");
+    
+    // Set column widths for better readability
+    const setColumnWidths = (ws: XLSX.WorkSheet) => {
+        const widths = Object.keys(ws).reduce((acc, key) => {
+            if (key.startsWith('!')) return acc;
+            const col = key.replace(/[0-9]/g, '');
+            const value = ws[key].v;
+            const len = value ? String(value).length + 2 : 10;
+            acc[col] = Math.max(acc[col] || 10, len);
+            return acc;
+        }, {} as Record<string, number>);
+
+        ws['!cols'] = Object.keys(widths).map(key => ({ wch: widths[key] }));
+    }
+
+    setColumnWidths(wsTalents);
+    setColumnWidths(wsProdCosts);
+    setColumnWidths(wsOtherExpenses);
+
+    // Trigger the download
+    XLSX.writeFile(wb, `${project.name}-relatorio.xlsx`);
+  };
 
   return (
     <div className="flex flex-col min-h-screen w-full">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold md:text-base">
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold md:text-base" aria-label="Voltar para a página de projetos">
             <Button variant="outline" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
                 <span className="sr-only">Voltar para Projetos</span>
             </Button>
         </Link>
         <h1 className="text-xl font-bold text-primary truncate">{project.name}</h1>
-        <div className="ml-auto flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-2">
           <Button onClick={() => setEditDialogOpen(true)} variant="outline">
             <Edit className="mr-2 h-4 w-4" />
             Editar Projeto
           </Button>
+          <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button onClick={handleExportToExcel} variant="outline" size="icon" aria-label="Exportar para Excel">
+                        <FileSpreadsheet className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Exportar para Excel</p>
+                </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button onClick={() => setAddSheetOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Despesa
