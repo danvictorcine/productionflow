@@ -385,9 +385,8 @@ export default function Dashboard({
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Despesa
           </Button>
-          <Button onClick={() => setIsImportDialogOpen(true)} variant="outline">
-            <Upload className="mr-2 h-4 w-4" />
-            Importar
+          <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" size="icon" aria-label="Importar Despesas">
+            <Upload className="h-4 w-4" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
