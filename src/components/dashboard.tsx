@@ -59,7 +59,7 @@ export default function Dashboard({
   const { toast } = useToast();
   
   const plannedTransactions = useMemo(() => {
-    return transactions.filter(t => t.status === 'planned');
+    return transactions.filter(t => t.status === 'planned' && t.category !== "Cachê de Equipe e Talentos");
   }, [transactions]);
 
   const paidTransactions = useMemo(() => {
