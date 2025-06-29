@@ -163,70 +163,121 @@ export default function Dashboard({
   };
   
   const handleExportToExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    const borderStyle = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
+    const titleStyle = { font: { sz: 16, bold: true }, alignment: { horizontal: "center" } };
+    const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFFFF" } },
+        fill: { fgColor: { rgb: "FF4F46E5" } }, // A primary-like color
+        border: borderStyle,
+        alignment: { horizontal: "center" }
+    };
+    const defaultCellStyle = { border: borderStyle };
+    const currencyCellStyle = { ...defaultCellStyle, numFmt: 'R$#,##0.00' };
+    const paidStyle = { ...defaultCellStyle, font: { color: { rgb: "FF16A34A" } }, fill: { fgColor: { rgb: "FFDCFCE7" }, patternType: "solid" } }; // Green
+    const unpaidStyle = { ...defaultCellStyle, font: { color: { rgb: "FFDC2626" } }, fill: { fgColor: { rgb: "FFFEE2E2" }, patternType: "solid" } }; // Red
+    
+    // Helper function to apply styles
+    const applyStylesToSheet = (ws: XLSX.WorkSheet, rowCount: number, colCount: number, colStyles: any) => {
+        const range = { s: { r: 0, c: 0 }, e: { r: rowCount, c: colCount } };
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cell_address = { c: C, r: R };
+                const cell_ref = XLSX.utils.encode_cell(cell_address);
+                if (!ws[cell_ref]) continue;
+
+                if (R === 0) { // Title
+                    ws[cell_ref].s = titleStyle;
+                } else if (R === 2) { // Header
+                    ws[cell_ref].s = headerStyle;
+                } else if (R > 2) { // Data
+                    const colStyle = colStyles[C];
+                    if (colStyle) {
+                        const cell = ws[cell_ref];
+                        if (colStyle.type === 'currency') {
+                            cell.s = currencyCellStyle;
+                        } else if (colStyle.type === 'conditional') {
+                            cell.s = colStyle.condition(cell.v) ? paidStyle : unpaidStyle;
+                        } else {
+                            cell.s = defaultCellStyle;
+                        }
+                    } else {
+                         ws[cell_ref].s = defaultCellStyle;
+                    }
+                }
+            }
+        }
+    };
+
+
     // 1. Prepare Talents Data
-    const talentDataForExport = project.talents.map(talent => {
+    const talentData = project.talents.map(talent => {
         const paidAmount = transactions
             .filter(t => t.talentId === talent.id && t.category === "Cachê do Talento")
             .reduce((sum, t) => sum + t.amount, 0);
-        const isPaid = paidAmount >= talent.fee;
-        return {
-            'Nome': talent.name,
-            'Função': talent.role,
-            'Cachê (R$)': talent.fee,
-            'Status do Pagamento': isPaid ? 'Pago' : 'Não Pago'
-        };
+        return [
+            talent.name,
+            talent.role,
+            talent.fee,
+            paidAmount >= talent.fee ? 'Pago' : 'Não Pago'
+        ];
     });
+
+    const talentSheetData = [
+        [`Relatório de Equipe e Talentos - ${project.name}`],
+        [],
+        ['Nome', 'Função', 'Cachê (R$)', 'Status do Pagamento'],
+        ...talentData
+    ];
+
+    const wsTalents = XLSX.utils.aoa_to_sheet(talentSheetData);
+    wsTalents['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+    wsTalents['!cols'] = [{ wch: 30 }, { wch: 30 }, { wch: 20 }, { wch: 20 }];
+    applyStylesToSheet(wsTalents, talentData.length + 2, 3, { 2: { type: 'currency' }, 3: { type: 'conditional', condition: (v: string) => v === 'Pago' } });
+    XLSX.utils.book_append_sheet(wb, wsTalents, "Equipe e Talentos");
+
 
     // 2. Prepare Production Costs Data
     const productionCostsForExport = transactions
         .filter(t => t.category === 'Custos de Produção')
-        .map(t => ({
-            'Descrição': t.description,
-            'Valor (R$)': t.amount,
-            'Data': format(t.date, "dd/MM/yyyy")
-        }));
+        .map(t => ([t.description, t.amount, format(t.date, "dd/MM/yyyy")]));
+    
+    const prodCostsSheetData = [
+        ["Relatório de Custos de Produção"],
+        [],
+        ['Descrição', 'Valor (R$)', 'Data'],
+        ...productionCostsForExport
+    ];
+
+    const wsProdCosts = XLSX.utils.aoa_to_sheet(prodCostsSheetData);
+    wsProdCosts['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }];
+    wsProdCosts['!cols'] = [{ wch: 50 }, { wch: 20 }, { wch: 20 }];
+    applyStylesToSheet(wsProdCosts, productionCostsForExport.length + 2, 2, { 1: { type: 'currency' } });
+    XLSX.utils.book_append_sheet(wb, wsProdCosts, "Custos de Produção");
+
 
     // 3. Prepare Other Expenses Data
     const otherExpensesForExport = transactions
         .filter(t => t.category !== 'Custos de Produção' && t.category !== 'Cachê do Talento')
-        .map(t => ({
-            'Descrição': t.description,
-            'Categoria': t.category || 'Não especificada',
-            'Valor (R$)': t.amount,
-            'Data': format(t.date, "dd/MM/yyyy")
-        }));
+        .map(t => ([t.description, t.category || 'Não especificada', t.amount, format(t.date, "dd/MM/yyyy")]));
 
-    // Create workbook and worksheets
-    const wb = XLSX.utils.book_new();
-    const wsTalents = XLSX.utils.json_to_sheet(talentDataForExport);
-    const wsProdCosts = XLSX.utils.json_to_sheet(productionCostsForExport);
-    const wsOtherExpenses = XLSX.utils.json_to_sheet(otherExpensesForExport);
-
-    // Append worksheets to the workbook
-    XLSX.utils.book_append_sheet(wb, wsTalents, "Equipe e Talentos");
-    XLSX.utils.book_append_sheet(wb, wsProdCosts, "Custos de Produção");
-    XLSX.utils.book_append_sheet(wb, wsOtherExpenses, "Outras Despesas");
+    const otherExpensesSheetData = [
+        ["Relatório de Outras Despesas"],
+        [],
+        ['Descrição', 'Categoria', 'Valor (R$)', 'Data'],
+        ...otherExpensesForExport
+    ];
     
-    // Set column widths for better readability
-    const setColumnWidths = (ws: XLSX.WorkSheet) => {
-        const widths = Object.keys(ws).reduce((acc, key) => {
-            if (key.startsWith('!')) return acc;
-            const col = key.replace(/[0-9]/g, '');
-            const value = ws[key].v;
-            const len = value ? String(value).length + 2 : 10;
-            acc[col] = Math.max(acc[col] || 10, len);
-            return acc;
-        }, {} as Record<string, number>);
+    const wsOtherExpenses = XLSX.utils.aoa_to_sheet(otherExpensesSheetData);
+    wsOtherExpenses['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+    wsOtherExpenses['!cols'] = [{ wch: 50 }, { wch: 30 }, { wch: 20 }, { wch: 20 }];
+    applyStylesToSheet(wsOtherExpenses, otherExpensesForExport.length + 2, 3, { 2: { type: 'currency' } });
+    XLSX.utils.book_append_sheet(wb, wsOtherExpenses, "Outras Despesas");
 
-        ws['!cols'] = Object.keys(widths).map(key => ({ wch: widths[key] }));
-    }
-
-    setColumnWidths(wsTalents);
-    setColumnWidths(wsProdCosts);
-    setColumnWidths(wsOtherExpenses);
 
     // Trigger the download
-    XLSX.writeFile(wb, `${project.name}-relatorio.xlsx`);
+    XLSX.writeFile(wb, `${project.name}-relatorio-formatado.xlsx`);
   };
 
   return (
