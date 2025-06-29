@@ -31,7 +31,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TalentsTableProps {
@@ -61,7 +60,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
 
   return (
     <>
-      <ScrollArea className="h-[265px] pr-4">
+      <ScrollArea className="h-[265px]">
         <Table>
           <TableHeader>
             <TableRow>
@@ -87,11 +86,17 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                     </TableCell>
                     <TableCell className="text-center">
                         {isPaid ? (
-                             <div className="group relative w-fit mx-auto h-9 flex items-center">
-                                <Badge variant="secondary" className="border-green-500 text-green-600 transition-opacity group-hover:opacity-0">
+                             <div className="group relative w-[100px] h-9 mx-auto">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none"
+                                    aria-hidden="true"
+                                    tabIndex={-1}
+                                >
                                    <Check className="mr-1 h-4 w-4" />
                                    Pago
-                                </Badge>
+                                </Button>
                                 <Button
                                     size="sm"
                                     variant="ghost"
@@ -109,7 +114,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                                 </Button>
                             </div>
                         ) : (
-                            <Button size="sm" variant="outline" onClick={() => onPay(talent)} aria-label={`Pagar cachê de ${talent.name}`}>
+                            <Button size="sm" variant="outline" onClick={() => onPay(talent)} aria-label={`Pagar cachê de ${talent.name}`} className="w-[100px]">
                                 <Banknote className="mr-2 h-4 w-4" />
                                 Pagar
                             </Button>

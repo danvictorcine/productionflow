@@ -366,7 +366,7 @@ export default function Dashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[265px] pr-4">
+                <ScrollArea className="h-[265px]">
                   <TransactionsTable transactions={productionCostsTransactions} onDelete={onDeleteTransaction} />
                 </ScrollArea>
               </CardContent>
@@ -399,7 +399,7 @@ export default function Dashboard({
                           </Select>
                       </div>
                       <div className="flex-1 relative min-h-0">
-                          <ScrollArea className="absolute inset-0 pr-4">
+                          <ScrollArea className="absolute inset-0">
                             <TransactionsTable transactions={filteredTransactionsForHistory} onDelete={onDeleteTransaction} />
                           </ScrollArea>
                       </div>
