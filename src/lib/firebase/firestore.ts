@@ -30,6 +30,7 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId'>) =>
   const docRef = await addDoc(collection(db, 'projects'), {
     ...projectData,
     userId,
+    customCategories: [],
   });
   return docRef.id;
 };

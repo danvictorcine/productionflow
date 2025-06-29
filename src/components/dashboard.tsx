@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, ChevronDown, CheckCircle, Clock } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, ChevronDown } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
@@ -15,7 +15,7 @@ import TransactionsTable from "@/components/transactions-table";
 import { AddTransactionSheet } from "@/components/add-transaction-sheet";
 import { CreateEditProjectDialog } from "@/components/create-edit-project-dialog";
 import TalentsTable from "@/components/talents-table";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EXPENSE_CATEGORIES } from "@/lib/types";
+import { DEFAULT_EXPENSE_CATEGORIES } from "@/lib/types";
 import { UserNav } from "@/components/user-nav";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -32,7 +32,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 interface DashboardProps {
   project: Project;
   transactions: Transaction[];
-  onProjectUpdate: (data: Partial<Project>) => void;
+  onProjectUpdate: (data: Partial<Project>) => Promise<void>;
   onAddTransaction: (data: Omit<Transaction, "id" | "userId" | "status">) => void;
   onUpdateTransaction: (id: string, data: Partial<Transaction>) => void;
   onDeleteTransaction: (id: string) => void;
@@ -63,7 +63,7 @@ export default function Dashboard({
         }
         acc[category].push(t);
         return acc;
-    }, {} as Record<ExpenseCategory | 'Outros', Transaction[]>)
+    }, {} as Record<ExpenseCategory, Transaction[]>)
   }, [transactions]);
 
 
@@ -115,6 +115,12 @@ export default function Dashboard({
     return data.filter((item) => item.value > 0);
   }, [paidTransactions, balance]);
   
+   const allCategories = useMemo(() => {
+    const categoriesInUse = new Set(transactions.map(t => t.category).filter(Boolean) as string[]);
+    const projectCustomCategories = project.customCategories || [];
+    return Array.from(new Set([...DEFAULT_EXPENSE_CATEGORIES, ...projectCustomCategories, ...categoriesInUse])).sort();
+  }, [transactions, project.customCategories]);
+  
   const filteredPaidTransactions = useMemo(() => {
     if (categoryFilter === 'all') {
       return paidTransactions;
@@ -147,14 +153,14 @@ export default function Dashboard({
     setAddSheetOpen(true);
   };
   
-  const handleEditProject = (projectData: Omit<Project, 'id' | 'userId'>) => {
-      onProjectUpdate(projectData);
+  const handleEditProject = async (projectData: Omit<Project, 'id' | 'userId'>) => {
+      await onProjectUpdate(projectData);
       setEditDialogOpen(false);
   };
 
-  const handleDeleteTalent = (talentId: string) => {
+  const handleDeleteTalent = async (talentId: string) => {
     const updatedTalents = project.talents.filter(t => t.id !== talentId);
-    onProjectUpdate({ talents: updatedTalents });
+    await onProjectUpdate({ talents: updatedTalents });
   };
   
   const handleLaunchTalentPayment = (talent: Talent) => {
@@ -378,7 +384,7 @@ export default function Dashboard({
             </Card>
 
             {Object.entries(transactionsByCategory)
-              .filter(([category]) => category !== 'Cachê do Talento')
+              .filter(([category]) => category !== 'Cachê do Talento' && categoryTransactions.length > 0)
               .map(([category, categoryTransactions]) => (
                 <Collapsible key={category} defaultOpen>
                     <Card>
@@ -418,7 +424,7 @@ export default function Dashboard({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">Todas as Categorias</SelectItem>
-                                {EXPENSE_CATEGORIES.map(cat => (
+                                {allCategories.map(cat => (
                                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -426,12 +432,13 @@ export default function Dashboard({
                     </div>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-hidden p-0">
-                    <ScrollArea className="h-full">
+                    <ScrollArea className="h-full whitespace-nowrap">
                       <TransactionsTable 
                         transactions={filteredPaidTransactions}
                         onDelete={onDeleteTransaction}
                         onEdit={handleStartEditTransaction} 
                       />
+                      <ScrollBar orientation="horizontal" />
                     </ScrollArea>
                 </CardContent>
             </Card>
@@ -443,6 +450,8 @@ export default function Dashboard({
         setIsOpen={setAddSheetOpen}
         onSubmit={handleSaveTransaction}
         transactionToEdit={editingTransaction}
+        project={project}
+        onProjectUpdate={onProjectUpdate}
       />
       <CreateEditProjectDialog
         isOpen={isEditDialogOpen}

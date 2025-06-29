@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Lightbulb, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Plus } from "lucide-react";
 
 import {
   Sheet,
@@ -40,9 +40,19 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { getCategorySuggestions } from "@/app/actions";
 import { cn } from "@/lib/utils";
-import { EXPENSE_CATEGORIES, type Transaction, type ExpenseCategory } from "@/lib/types";
+import { DEFAULT_EXPENSE_CATEGORIES, type Transaction, type ExpenseCategory, type Project } from "@/lib/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 const formSchema = z.object({
   description: z
@@ -50,7 +60,7 @@ const formSchema = z.object({
     .min(2, { message: "A descrição deve ter pelo menos 2 caracteres." }),
   amount: z.coerce.number().positive({ message: "O valor deve ser positivo." }),
   date: z.date(),
-  category: z.enum(EXPENSE_CATEGORIES).optional(),
+  category: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -60,6 +70,8 @@ interface AddTransactionSheetProps {
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (transaction: Omit<Transaction, "projectId" | "type" | "userId"> & { id?: string }) => void;
   transactionToEdit?: Transaction | null;
+  project: Project;
+  onProjectUpdate: (data: Partial<Project>) => Promise<void>;
 }
 
 export function AddTransactionSheet({
@@ -67,9 +79,11 @@ export function AddTransactionSheet({
   setIsOpen,
   onSubmit,
   transactionToEdit,
+  project,
+  onProjectUpdate,
 }: AddTransactionSheetProps) {
-  const [isSuggesting, setIsSuggesting] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isAddCategoryOpen, setAddCategoryOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const { toast } = useToast();
 
   const isEditMode = !!transactionToEdit;
@@ -83,6 +97,11 @@ export function AddTransactionSheet({
       category: undefined,
     },
   });
+
+  const allCategories = [
+    ...DEFAULT_EXPENSE_CATEGORIES,
+    ...(project.customCategories || []),
+  ];
 
   useEffect(() => {
     if (isOpen) {
@@ -99,39 +118,32 @@ export function AddTransactionSheet({
           category: undefined,
         });
       }
-      setSuggestions([]);
     }
   }, [isOpen, isEditMode, transactionToEdit, form]);
+  
+  const handleAddNewCategory = async () => {
+    if (!newCategoryName || !project) return;
+    
+    const normalizedNewCategory = newCategoryName.trim();
+    const existingCategories = allCategories.map(c => c.toLowerCase());
 
-  const handleSuggestCategory = async () => {
-    const description = form.getValues("description");
-    if (!description) {
-      toast({
-        variant: "destructive",
-        title: "Sem Descrição",
-        description: "Por favor, insira uma descrição para obter sugestões.",
-      });
-      return;
+    if (existingCategories.includes(normalizedNewCategory.toLowerCase())) {
+        toast({ variant: "destructive", title: "Categoria já existe." });
+        return;
     }
 
-    setIsSuggesting(true);
-    setSuggestions([]);
+    const updatedCategories = [...(project.customCategories || []), normalizedNewCategory];
     try {
-      const result = await getCategorySuggestions(description);
-      setSuggestions(result);
-      if(result.length === 0){
-        toast({ title: "Nenhuma sugestão específica encontrada." });
-      }
+        await onProjectUpdate({ customCategories: updatedCategories });
+        form.setValue('category', normalizedNewCategory, { shouldValidate: true });
+        setNewCategoryName('');
+        setAddCategoryOpen(false);
+        toast({ title: "Categoria adicionada!" });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro na Sugestão",
-        description: "Não foi possível buscar sugestões de categoria.",
-      });
-    } finally {
-      setIsSuggesting(false);
+        toast({ variant: "destructive", title: "Erro ao adicionar categoria" });
     }
   };
+
 
   const handleSubmit = (values: FormValues) => {
     onSubmit({
@@ -145,173 +157,174 @@ export function AddTransactionSheet({
     setIsOpen(open);
     if (!open) {
       form.reset();
-      setSuggestions([]);
     }
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md flex flex-col">
-        <SheetHeader>
-          <SheetTitle>{isEditMode ? "Editar Despesa" : "Adicionar Despesa"}</SheetTitle>
-          <SheetDescription>
-            {isEditMode ? "Atualize os detalhes da sua despesa." : "Insira os detalhes da sua despesa."}
-          </SheetDescription>
-        </SheetHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="flex-1 flex flex-col overflow-hidden"
-          >
-            <div className="flex-1 overflow-y-auto p-4">
-                <div className="space-y-4">
-                    <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Descrição</FormLabel>
-                        <FormControl>
-                            <Input placeholder="ex: Aluguel de câmera" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
+    <>
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetContent className="sm:max-w-md flex flex-col">
+          <SheetHeader>
+            <SheetTitle>{isEditMode ? "Editar Despesa" : "Adicionar Despesa"}</SheetTitle>
+            <SheetDescription>
+              {isEditMode ? "Atualize os detalhes da sua despesa." : "Insira os detalhes da sua despesa."}
+            </SheetDescription>
+          </SheetHeader>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className="flex-1 flex flex-col overflow-hidden"
+            >
+              <div className="flex-1 overflow-y-auto p-4">
+                  <div className="space-y-4">
+                      <FormField
                       control={form.control}
-                      name="amount"
+                      name="description"
                       render={({ field }) => (
                           <FormItem>
-                          <FormLabel>Valor</FormLabel>
+                          <FormLabel>Descrição</FormLabel>
                           <FormControl>
-                              <Input
-                                type="text"
-                                placeholder="R$ 0,00"
-                                value={
-                                  field.value
-                                    ? new Intl.NumberFormat("pt-BR", {
-                                        style: "currency",
-                                        currency: "BRL",
-                                      }).format(field.value)
-                                    : ""
-                                }
-                                onChange={(e) => {
-                                  const numericValue = e.target.value.replace(/\D/g, "");
-                                  field.onChange(Number(numericValue) / 100);
-                                }}
-                              />
+                              <Input placeholder="ex: Aluguel de câmera" {...field} />
                           </FormControl>
                           <FormMessage />
                           </FormItem>
                       )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="date"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                        <FormLabel>Data</FormLabel>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                )}
-                                >
-                                {field.value ? (
-                                    format(field.value, "PPP", { locale: ptBR })
-                                ) : (
-                                    <span>Escolha uma data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                            </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                                locale={ptBR}
-                            />
-                            </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
+                      />
+                      <FormField
                         control={form.control}
-                        name="category"
+                        name="amount"
                         render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Categoria</FormLabel>
-                            <div className="flex gap-2">
-                            <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                value={field.value}
-                                >
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Selecione uma categoria" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {EXPENSE_CATEGORIES.map((cat) => (
-                                    <SelectItem key={cat} value={cat}>
-                                        {cat}
-                                    </SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={handleSuggestCategory}
-                                disabled={isSuggesting}
-                                aria-label="Sugerir Categoria"
-                            >
-                                {isSuggesting ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                <Lightbulb className="h-4 w-4" />
-                                )}
-                            </Button>
-                            </div>
-                            {suggestions.length > 0 && (
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                {suggestions.map((s) => (
-                                    <Button
-                                        key={s}
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => form.setValue('category', s as ExpenseCategory, { shouldValidate: true })}
-                                    >
-                                        {s}
-                                    </Button>
-                                ))}
-                            </div>
-                            )}
+                            <FormItem>
+                            <FormLabel>Valor</FormLabel>
+                            <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder="R$ 0,00"
+                                  value={
+                                    field.value
+                                      ? new Intl.NumberFormat("pt-BR", {
+                                          style: "currency",
+                                          currency: "BRL",
+                                        }).format(field.value)
+                                      : ""
+                                  }
+                                  onChange={(e) => {
+                                    const numericValue = e.target.value.replace(/\D/g, "");
+                                    field.onChange(Number(numericValue) / 100);
+                                  }}
+                                />
+                            </FormControl>
                             <FormMessage />
-                        </FormItem>
+                            </FormItem>
                         )}
-                    />
-                </div>
-            </div>
-            <SheetFooter className="flex-shrink-0 pt-4 border-t">
-              <Button type="submit">{isEditMode ? "Salvar Alterações" : "Salvar Despesa"}</Button>
-            </SheetFooter>
-          </form>
-        </Form>
-      </SheetContent>
-    </Sheet>
+                      />
+                      <FormField
+                      control={form.control}
+                      name="date"
+                      render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                          <FormLabel>Data</FormLabel>
+                          <Popover>
+                              <PopoverTrigger asChild>
+                              <FormControl>
+                                  <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                      "w-full pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                  )}
+                                  >
+                                  {field.value ? (
+                                      format(field.value, "PPP", { locale: ptBR })
+                                  ) : (
+                                      <span>Escolha uma data</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                              </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
+                                  locale={ptBR}
+                              />
+                              </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="category"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Categoria</FormLabel>
+                              <div className="flex gap-2">
+                              <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                  value={field.value}
+                                  >
+                                  <FormControl>
+                                      <SelectTrigger>
+                                      <SelectValue placeholder="Selecione uma categoria" />
+                                      </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                      {allCategories.map((cat) => (
+                                      <SelectItem key={cat} value={cat}>
+                                          {cat}
+                                      </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                  </Select>
+                              <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => setAddCategoryOpen(true)}
+                                  aria-label="Adicionar Nova Categoria"
+                              >
+                                  <Plus className="h-4 w-4" />
+                              </Button>
+                              </div>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                  </div>
+              </div>
+              <SheetFooter className="flex-shrink-0 pt-4 border-t">
+                <Button type="submit">{isEditMode ? "Salvar Alterações" : "Salvar Despesa"}</Button>
+              </SheetFooter>
+            </form>
+          </Form>
+        </SheetContent>
+      </Sheet>
+      <AlertDialog open={isAddCategoryOpen} onOpenChange={setAddCategoryOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Adicionar Nova Categoria</AlertDialogTitle>
+            <AlertDialogDescription>
+              Digite o nome para a nova categoria de despesa.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            placeholder="ex: Catering"
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewCategory(); } }}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleAddNewCategory}>Adicionar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

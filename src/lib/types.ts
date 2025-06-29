@@ -1,4 +1,5 @@
-export const EXPENSE_CATEGORIES = [
+export const DEFAULT_EXPENSE_CATEGORIES = [
+  "Aluguel de Equipamentos",
   "Cachê do Talento",
   "Custos de Produção",
   "Pós-produção",
@@ -7,7 +8,7 @@ export const EXPENSE_CATEGORIES = [
   "Outros",
 ] as const;
 
-export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+export type ExpenseCategory = string;
 
 export type Talent = {
   id: string;
@@ -24,6 +25,7 @@ export type Project = {
   productionCosts: number;
   talents: Talent[];
   includeProductionCostsInBudget: boolean;
+  customCategories?: string[];
 };
 
 export type Transaction = {
