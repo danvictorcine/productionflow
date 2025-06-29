@@ -58,8 +58,8 @@ export default function Dashboard({
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { toast } = useToast();
   
-  const plannedTransactions = useMemo(() => {
-    return transactions.filter(t => t.status === 'planned' && t.category !== "Cachê de Equipe e Talentos");
+  const generalExpenses = useMemo(() => {
+    return transactions.filter(t => t.category !== "Cachê de Equipe e Talentos");
   }, [transactions]);
 
   const paidTransactions = useMemo(() => {
@@ -421,12 +421,12 @@ export default function Dashboard({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ClipboardList className="h-5 w-5 text-muted-foreground" />
-                  Despesas Planejadas
+                  Despesas Gerais
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <TransactionsTable
-                  transactions={plannedTransactions}
+                  transactions={generalExpenses}
                   onDelete={onDeleteTransaction}
                   onEdit={handleStartEditTransaction}
                   onPay={handlePayTransaction}
