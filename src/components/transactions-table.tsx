@@ -81,7 +81,7 @@ export default function TransactionsTable({
                 <TableRow key={t.id} data-state={t.status === 'paid' ? 'paid' : 'planned'}>
                    <TableCell>
                     <div className="flex items-center gap-3">
-                      {t.status === 'paid' && variant === 'default' && (
+                      {t.status === 'paid' && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
