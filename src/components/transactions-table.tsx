@@ -37,7 +37,6 @@ import { Button } from "@/components/ui/button";
 
 interface TransactionsTableProps {
   transactions: Transaction[];
-  mode: 'planned' | 'paid';
   onDelete: (id: string) => void;
   onEdit: (transaction: Transaction) => void;
   onPay?: (id: string) => void;
@@ -46,7 +45,6 @@ interface TransactionsTableProps {
 
 export default function TransactionsTable({ 
   transactions, 
-  mode,
   onDelete, 
   onEdit,
   onPay,
@@ -72,10 +70,10 @@ export default function TransactionsTable({
           <TableBody>
             {transactions.length > 0 ? (
               transactions.map((t) => (
-                <TableRow key={t.id}>
+                <TableRow key={t.id} className={t.status === 'paid' ? 'bg-green-500/10' : ''}>
                   <TableCell>
                     <div className="font-medium">{t.description}</div>
-                    {t.category && mode === 'paid' && (
+                    {t.category && (
                       <Badge variant="outline" className="mt-1 font-normal">{t.category}</Badge>
                     )}
                   </TableCell>
@@ -84,13 +82,13 @@ export default function TransactionsTable({
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{format(t.date, "d MMM, yyyy", { locale: ptBR })}</TableCell>
                   <TableCell className="text-center">
-                    {mode === 'planned' && onPay && (
+                    {t.status === 'planned' && onPay && (
                       <Button size="sm" variant="outline" onClick={() => onPay(t.id)} aria-label={`Pagar ${t.description}`} className="w-[100px]">
                           <Banknote className="mr-2 h-4 w-4" />
                           Pagar
                       </Button>
                     )}
-                    {mode === 'paid' && onUndo && (
+                    {t.status === 'paid' && onUndo && (
                       <div className="group relative w-[100px] h-9 mx-auto">
                           <Button
                               size="sm"

@@ -51,7 +51,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
   const transactionsByTalentId = useMemo(() => {
     const map = new Map<string, Transaction>();
     transactions
-        .filter(t => t.talentId)
+        .filter(t => t.talentId && t.category === "Cachê do Talento")
         .forEach(t => map.set(t.talentId!, t));
     return map;
   }, [transactions]);
@@ -76,7 +76,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                   const transaction = transactionsByTalentId.get(talent.id);
 
                   return (
-                    <TableRow key={talent.id}>
+                    <TableRow key={talent.id} className={transaction?.status === 'paid' ? 'bg-green-500/10' : ''}>
                       <TableCell className="font-medium">{talent.name}</TableCell>
                       <TableCell>{talent.role}</TableCell>
                       <TableCell className="text-right font-mono">

@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, ChevronDown } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, ChevronDown, CheckCircle, Clock } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
@@ -56,12 +55,8 @@ export default function Dashboard({
     return transactions.filter(t => t.status === 'paid');
   }, [transactions]);
   
-  const plannedTransactions = useMemo(() => {
-    return transactions.filter(t => t.status === 'planned');
-  }, [transactions]);
-  
-  const plannedTransactionsByCategory = useMemo(() => {
-    return plannedTransactions.reduce((acc, t) => {
+  const transactionsByCategory = useMemo(() => {
+    return transactions.reduce((acc, t) => {
         const category = t.category || 'Outros';
         if (!acc[category]) {
             acc[category] = [];
@@ -69,7 +64,7 @@ export default function Dashboard({
         acc[category].push(t);
         return acc;
     }, {} as Record<ExpenseCategory | 'Outros', Transaction[]>)
-  }, [plannedTransactions]);
+  }, [transactions]);
 
 
   const totalExpenses = useMemo(() => {
@@ -382,9 +377,9 @@ export default function Dashboard({
               </CardContent>
             </Card>
 
-            {EXPENSE_CATEGORIES
-              .filter(cat => cat !== 'Cachê do Talento' && plannedTransactionsByCategory[cat]?.length > 0)
-              .map(category => (
+            {Object.entries(transactionsByCategory)
+              .filter(([category]) => category !== 'Cachê do Talento')
+              .map(([category, categoryTransactions]) => (
                 <Collapsible key={category} defaultOpen>
                     <Card>
                         <CollapsibleTrigger asChild>
@@ -398,11 +393,11 @@ export default function Dashboard({
                         <CollapsibleContent>
                             <CardContent>
                                 <TransactionsTable 
-                                    transactions={plannedTransactionsByCategory[category]} 
-                                    mode="planned"
+                                    transactions={categoryTransactions} 
                                     onDelete={onDeleteTransaction} 
                                     onEdit={handleStartEditTransaction}
                                     onPay={handlePayTransaction}
+                                    onUndo={handleUndoPayment}
                                 />
                             </CardContent>
                         </CollapsibleContent>
@@ -413,7 +408,7 @@ export default function Dashboard({
           </div>
           <div className="lg:col-span-1">
             <Card className="h-full flex flex-col">
-                <CardHeader className="flex flex-col gap-4">
+                <CardHeader>
                     <CardTitle>Histórico de Transações</CardTitle>
                     <div className="flex items-center gap-2">
                         <label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground">Filtrar:</label>
@@ -434,10 +429,8 @@ export default function Dashboard({
                     <ScrollArea className="h-full">
                       <TransactionsTable 
                         transactions={filteredPaidTransactions}
-                        mode="paid"
                         onDelete={onDeleteTransaction}
                         onEdit={handleStartEditTransaction} 
-                        onUndo={handleUndoPayment}
                       />
                     </ScrollArea>
                 </CardContent>
