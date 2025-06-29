@@ -38,7 +38,7 @@ const talentSchema = z.object({
 const projectFormSchema = z.object({
   name: z.string().min(2, "O nome do projeto deve ter pelo menos 2 caracteres."),
   budget: z.coerce.number().positive("O orçamento deve ser um número positivo."),
-  productionCosts: z.coerce.number().min(0, "Custos de produção não podem ser negativos."),
+  productionCosts: z.coerce.number().min(0, "O valor de produção não pode ser negativo."),
   includeProductionCostsInBudget: z.boolean().default(true),
   talents: z.array(talentSchema),
 });
@@ -160,7 +160,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                     name="productionCosts"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Custos de Produção</FormLabel>
+                        <FormLabel>Valor de Produção</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
@@ -190,9 +190,9 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-background">
                       <div className="space-y-0.5">
-                        <FormLabel>Subtrair custos de produção do orçamento?</FormLabel>
+                        <FormLabel>Subtrair valor de produção do orçamento?</FormLabel>
                         <FormDescription>
-                            Se ativado, o valor planejado para custos de produção será deduzido do orçamento.
+                            Se ativado, o valor de produção planejado será deduzido do orçamento.
                         </FormDescription>
                       </div>
                       <FormControl>

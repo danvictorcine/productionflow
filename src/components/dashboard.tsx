@@ -92,7 +92,7 @@ export default function Dashboard({
     return [
       { name: "Orçamento Total", value: project.budget, fill: "hsl(var(--chart-3))" },
       { name: "Cachês Planejados", value: totalTalentFee, fill: "hsl(var(--chart-1))" },
-      { name: "Custos de Produção", value: project.productionCosts, fill: "hsl(var(--chart-4))" },
+      { name: "Valor de Produção", value: project.productionCosts, fill: "hsl(var(--chart-4))" },
       { name: "Despesas Pagas", value: totalExpenses, fill: "hsl(var(--destructive))" },
       { name: "Saldo Atual", value: balance, fill: "hsl(var(--chart-2))" },
     ].filter(d => d.value > 0 || d.name === "Saldo Atual" || d.name === "Orçamento Total");
@@ -232,7 +232,7 @@ export default function Dashboard({
     const summaryDataForSheet = [
         ['Orçamento Total', project.budget],
         ['Cachês Planejados (Total)', totalTalentFee],
-        ['Custos de Produção Planejados', project.productionCosts],
+        ['Valor de Produção Planejado', project.productionCosts],
         ['Despesas Totais Pagas', totalExpenses],
         ['Saldo Atual', balance],
     ];
