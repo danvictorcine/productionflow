@@ -3,8 +3,8 @@
 
 import { useState, useMemo } from "react";
 import Link from 'next/link';
-import type { Transaction, Project, Talent } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, Wrench, FileSpreadsheet } from "lucide-react";
+import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, ChevronDown, ChevronUp } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
@@ -27,13 +27,14 @@ import {
 import { EXPENSE_CATEGORIES } from "@/lib/types";
 import { UserNav } from "@/components/user-nav";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 
 interface DashboardProps {
   project: Project;
   transactions: Transaction[];
   onProjectUpdate: (data: Partial<Project>) => void;
-  onAddTransaction: (data: Omit<Transaction, "id" | "userId">) => void;
+  onAddTransaction: (data: Omit<Transaction, "id" | "userId" | "status">) => void;
   onUpdateTransaction: (id: string, data: Partial<Transaction>) => void;
   onDeleteTransaction: (id: string) => void;
 }
@@ -51,9 +52,29 @@ export default function Dashboard({
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
-  const totalExpenses = useMemo(() => {
-    return transactions.reduce((sum, t) => sum + t.amount, 0);
+  const paidTransactions = useMemo(() => {
+    return transactions.filter(t => t.status === 'paid');
   }, [transactions]);
+  
+  const plannedTransactions = useMemo(() => {
+    return transactions.filter(t => t.status === 'planned');
+  }, [transactions]);
+  
+  const plannedTransactionsByCategory = useMemo(() => {
+    return plannedTransactions.reduce((acc, t) => {
+        const category = t.category || 'Outros';
+        if (!acc[category]) {
+            acc[category] = [];
+        }
+        acc[category].push(t);
+        return acc;
+    }, {} as Record<ExpenseCategory | 'Outros', Transaction[]>)
+  }, [plannedTransactions]);
+
+
+  const totalExpenses = useMemo(() => {
+    return paidTransactions.reduce((sum, t) => sum + t.amount, 0);
+  }, [paidTransactions]);
   
   const totalTalentFee = useMemo(() => {
     return project.talents.reduce((sum, t) => sum + t.fee, 0);
@@ -64,15 +85,15 @@ export default function Dashboard({
   }, [project.budget, totalExpenses]);
   
   const breakdownData = useMemo(() => {
-    const paidTalentFees = transactions
+    const paidTalentFees = paidTransactions
       .filter((t) => t.category === "Cachê do Talento")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const paidProductionCosts = transactions
+    const paidProductionCosts = paidTransactions
       .filter((t) => t.category === "Custos de Produção")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const otherExpenses = transactions
+    const otherExpenses = paidTransactions
       .filter(
         (t) =>
           !["Cachê do Talento", "Custos de Produção"].includes(t.category || "")
@@ -97,25 +118,25 @@ export default function Dashboard({
     ];
 
     return data.filter((item) => item.value > 0);
-  }, [transactions, balance]);
-
-  const productionCostsTransactions = useMemo(() => {
-    return transactions.filter(t => t.category === 'Custos de Produção');
-  }, [transactions]);
+  }, [paidTransactions, balance]);
   
-  const filteredTransactionsForHistory = useMemo(() => {
+  const filteredPaidTransactions = useMemo(() => {
     if (categoryFilter === 'all') {
-      return transactions;
+      return paidTransactions;
     }
-    return transactions.filter(t => t.category === categoryFilter);
-  }, [transactions, categoryFilter]);
+    return paidTransactions.filter(t => t.category === categoryFilter);
+  }, [paidTransactions, categoryFilter]);
 
 
-  const handleSaveTransaction = (transaction: Omit<Transaction, "id" | "projectId" | "type" | "userId"> & { id?: string }) => {
+  const handleSaveTransaction = (transaction: Omit<Transaction, "id" | "projectId" | "type" | "userId" | "status"> & { id?: string }) => {
     const { id, ...data } = transaction;
-    if (id) {
-        onUpdateTransaction(id, data);
-    } else {
+    if (id) { // Editing existing transaction
+        const originalTransaction = transactions.find(t => t.id === id);
+        onUpdateTransaction(id, {
+            ...data,
+            status: originalTransaction?.status || 'planned' // Preserve status on edit
+        });
+    } else { // Adding new transaction
         onAddTransaction({
             ...data,
             projectId: project.id,
@@ -141,20 +162,11 @@ export default function Dashboard({
     onProjectUpdate({ talents: updatedTalents });
   };
   
-  const handlePayTalent = (talent: Talent) => {
-    const paidAmount = transactions
-      .filter(t => t.talentId === talent.id)
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    if (paidAmount >= talent.fee) {
-        console.warn("Este talento já foi pago.");
-        return;
-    }
-
-    const newTransactionData: Omit<Transaction, "id" | "userId"> = {
+  const handleLaunchTalentPayment = (talent: Talent) => {
+    const newTransactionData: Omit<Transaction, "id" | "userId" | "status"> = {
       projectId: project.id,
       type: "expense",
-      amount: talent.fee, // Assumes full payment
+      amount: talent.fee,
       description: `Cachê: ${talent.name}`,
       category: "Cachê do Talento",
       date: new Date(),
@@ -163,8 +175,12 @@ export default function Dashboard({
     onAddTransaction(newTransactionData);
   };
   
+  const handlePayTransaction = (transactionId: string) => {
+    onUpdateTransaction(transactionId, { status: 'paid' });
+  };
+
   const handleUndoPayment = (transactionId: string) => {
-    onDeleteTransaction(transactionId);
+    onUpdateTransaction(transactionId, { status: 'planned' });
   }
 
   const handleExportToExcel = () => {
@@ -218,7 +234,7 @@ export default function Dashboard({
 
     // 1. Prepare Talents Data
     const talentData = project.talents.map(talent => {
-        const paidAmount = transactions
+        const paidAmount = paidTransactions
             .filter(t => t.talentId === talent.id && t.category === "Cachê do Talento")
             .reduce((sum, t) => sum + t.amount, 0);
         return [
@@ -289,6 +305,8 @@ export default function Dashboard({
     setEditingTransaction(null);
     setAddSheetOpen(true);
   };
+  
+  const categoryOrder = EXPENSE_CATEGORIES;
 
   return (
     <div className="flex flex-col min-h-screen w-full">
@@ -354,31 +372,44 @@ export default function Dashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[265px] w-full">
-                  <TalentsTable
-                      talents={project.talents}
-                      transactions={transactions}
-                      onEdit={() => setEditDialogOpen(true)}
-                      onDelete={handleDeleteTalent}
-                      onPay={handlePayTalent}
-                      onUndoPayment={handleUndoPayment}
-                  />
-                </ScrollArea>
+                <TalentsTable
+                    talents={project.talents}
+                    transactions={transactions}
+                    onEdit={() => setEditDialogOpen(true)}
+                    onDelete={handleDeleteTalent}
+                    onLaunchPayment={handleLaunchTalentPayment}
+                />
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wrench className="h-5 w-5 text-muted-foreground" />
-                  Custos de Produção
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[265px] w-full">
-                  <TransactionsTable transactions={productionCostsTransactions} onDelete={onDeleteTransaction} onEdit={handleStartEditTransaction} />
-                </ScrollArea>
-              </CardContent>
-            </Card>
+
+            {categoryOrder
+              .filter(cat => plannedTransactionsByCategory[cat]?.length > 0)
+              .map(category => (
+                <Collapsible key={category} defaultOpen>
+                    <Card>
+                        <CollapsibleTrigger asChild>
+                            <CardHeader className="flex flex-row items-center justify-between cursor-pointer">
+                                <CardTitle>{`Despesas Planejadas: ${category}`}</CardTitle>
+                                <Button variant="ghost" size="icon" className="data-[state=open]:rotate-180">
+                                    <ChevronDown className="h-5 w-5"/>
+                                </Button>
+                            </CardHeader>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <CardContent>
+                                <TransactionsTable 
+                                    transactions={plannedTransactionsByCategory[category]} 
+                                    mode="planned"
+                                    onDelete={onDeleteTransaction} 
+                                    onEdit={handleStartEditTransaction}
+                                    onPay={handlePayTransaction}
+                                />
+                            </CardContent>
+                        </CollapsibleContent>
+                    </Card>
+                </Collapsible>
+            ))}
+
           </div>
           <div className="lg:col-span-1">
             <Card className="h-full flex flex-col">
@@ -399,9 +430,15 @@ export default function Dashboard({
                         </Select>
                     </div>
                 </CardHeader>
-                <CardContent className="flex-1 relative min-h-0">
-                    <ScrollArea className="absolute inset-0">
-                      <TransactionsTable transactions={filteredTransactionsForHistory} onDelete={onDeleteTransaction} onEdit={handleStartEditTransaction} />
+                <CardContent className="flex-1 overflow-hidden">
+                    <ScrollArea className="h-full">
+                      <TransactionsTable 
+                        transactions={filteredPaidTransactions}
+                        mode="paid"
+                        onDelete={onDeleteTransaction}
+                        onEdit={handleStartEditTransaction} 
+                        onUndo={handleUndoPayment}
+                      />
                     </ScrollArea>
                 </CardContent>
             </Card>

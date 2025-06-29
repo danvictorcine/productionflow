@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import type { Talent, Transaction } from "@/lib/types";
-import { MoreHorizontal, Trash2, Edit, Banknote, Check, Undo2 } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit, Banknote, CheckCircle2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 import {
@@ -38,44 +38,39 @@ interface TalentsTableProps {
   transactions: Transaction[];
   onEdit: () => void;
   onDelete: (id: string) => void;
-  onPay: (talent: Talent) => void;
-  onUndoPayment: (transactionId: string) => void;
+  onLaunchPayment: (talent: Talent) => void;
 }
 
-export default function TalentsTable({ talents, transactions, onEdit, onDelete, onPay, onUndoPayment }: TalentsTableProps) {
+export default function TalentsTable({ talents, transactions, onEdit, onDelete, onLaunchPayment }: TalentsTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
   const talentToDelete = talents.find(t => t.id === deleteId);
 
-  const paidAmounts = useMemo(() => {
-    const amounts = new Map<string, number>();
+  const launchedTalentIds = useMemo(() => {
+    const ids = new Set<string>();
     transactions
-        .filter(t => t.category === 'Cachê do Talento' && t.talentId)
-        .forEach(t => {
-            const currentAmount = amounts.get(t.talentId!) || 0;
-            amounts.set(t.talentId!, currentAmount + t.amount);
-        });
-    return amounts;
+        .filter(t => t.talentId)
+        .forEach(t => ids.add(t.talentId!));
+    return ids;
   }, [transactions]);
 
   return (
     <>
-      <ScrollArea className="h-[265px]">
+      <ScrollArea className="h-[265px] w-full">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>Função</TableHead>
               <TableHead className="text-right">Cachê</TableHead>
-              <TableHead className="text-center w-[120px]">Pagamento</TableHead>
+              <TableHead className="text-center w-[120px]">Ação</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {talents.length > 0 ? (
               talents.map((talent) => {
-                const paidAmount = paidAmounts.get(talent.id) || 0;
-                const isPaid = paidAmount >= talent.fee;
+                const isLaunched = launchedTalentIds.has(talent.id);
 
                 return (
                   <TableRow key={talent.id}>
@@ -85,38 +80,21 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                       {formatCurrency(talent.fee)}
                     </TableCell>
                     <TableCell className="text-center">
-                        {isPaid ? (
-                             <div className="group relative w-[100px] h-9 mx-auto">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none"
-                                    aria-hidden="true"
-                                    tabIndex={-1}
-                                >
-                                   <Check className="mr-1 h-4 w-4" />
-                                   Pago
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    onClick={() => {
-                                        const lastPayment = transactions.find(t => t.talentId === talent.id && t.category === "Cachê do Talento");
-                                        if (lastPayment) {
-                                            onUndoPayment(lastPayment.id);
-                                        }
-                                    }}
-                                    aria-label={`Desfazer pagamento de ${talent.name}`}
-                                >
-                                    <Undo2 className="mr-2 h-4 w-4" />
-                                    Desfazer
-                                </Button>
-                            </div>
+                        {isLaunched ? (
+                             <Button
+                                size="sm"
+                                variant="outline"
+                                disabled
+                                className="w-[100px] border-green-500 bg-green-50 text-green-700"
+                                aria-label={`Pagamento para ${talent.name} lançado`}
+                            >
+                                <CheckCircle2 className="mr-1 h-4 w-4" />
+                                Lançado
+                            </Button>
                         ) : (
-                            <Button size="sm" variant="outline" onClick={() => onPay(talent)} aria-label={`Pagar cachê de ${talent.name}`} className="w-[100px]">
+                            <Button size="sm" variant="outline" onClick={() => onLaunchPayment(talent)} aria-label={`Lançar pagamento para ${talent.name}`} className="w-[100px]">
                                 <Banknote className="mr-2 h-4 w-4" />
-                                Pagar
+                                Lançar
                             </Button>
                         )}
                     </TableCell>

@@ -65,13 +65,13 @@ function ProjectPageDetail() {
         }
     };
     
-    const handleAddTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>) => {
+    const handleAddTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId' | 'status'>) => {
         try {
             await api.addTransaction(transactionData);
             await fetchTransactions();
-            toast({ title: 'Despesa adicionada com sucesso!' });
+            toast({ title: 'Despesa planejada com sucesso!' });
         } catch(error) {
-            toast({ variant: 'destructive', title: 'Erro ao adicionar despesa', description: (error as Error).message });
+            toast({ variant: 'destructive', title: 'Erro ao planejar despesa', description: (error as Error).message });
         }
     };
 
@@ -79,7 +79,13 @@ function ProjectPageDetail() {
         try {
             await api.updateTransaction(transactionId, transactionData);
             await fetchTransactions();
-            toast({ title: 'Despesa atualizada com sucesso!' });
+            
+            if(transactionData.status) {
+                const message = transactionData.status === 'paid' ? 'Despesa paga com sucesso!' : 'Pagamento desfeito.';
+                toast({ title: message });
+            } else {
+                toast({ title: 'Despesa atualizada com sucesso!' });
+            }
         } catch(error) {
             toast({ variant: 'destructive', title: 'Erro ao atualizar despesa', description: (error as Error).message });
         }

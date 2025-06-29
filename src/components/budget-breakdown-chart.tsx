@@ -36,7 +36,7 @@ export default function BudgetBreakdownChart({ data }: BreakdownChartProps) {
             data={data}
             layout="vertical"
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-            barSize={30}
+            barSize={50}
         >
             <XAxis type="number" hide />
             <YAxis

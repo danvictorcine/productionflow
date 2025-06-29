@@ -124,12 +124,13 @@ export const sendPasswordReset = async (email: string) => {
 
 
 // Transaction Functions
-export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>) => {
+export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId' | 'status'>) => {
   const userId = getUserId();
   await addDoc(collection(db, 'transactions'), {
     ...transactionData,
     date: Timestamp.fromDate(transactionData.date),
-    userId
+    userId,
+    status: 'planned' // Default new transactions to 'planned'
   });
 };
 
@@ -155,7 +156,7 @@ export const getTransactions = async (projectId: string): Promise<Transaction[]>
     return transactions;
 };
 
-export const updateTransaction = async (transactionId: string, transactionData: Partial<Omit<Transaction, 'id' | 'userId' | 'projectId'>>) => {
+export const updateTransaction = async (transactionId: string, transactionData: Partial<Transaction>) => {
     const transRef = doc(db, 'transactions', transactionId);
     
     // Convert Date back to Timestamp if it exists

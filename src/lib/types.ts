@@ -35,6 +35,7 @@ export type Transaction = {
   description: string;
   category?: ExpenseCategory;
   date: Date;
+  status: 'planned' | 'paid';
   talentId?: string;
 };
 
