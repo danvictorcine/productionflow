@@ -132,7 +132,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                     name="budget"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Orçamento Global</FormLabel>
+                        <FormLabel>Orçamento Total</FormLabel>
                         <FormControl>
                           <Input
                             type="text"

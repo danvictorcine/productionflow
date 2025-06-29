@@ -84,18 +84,18 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                       </TableCell>
                       <TableCell className="text-center">
                           {!transaction && (
-                              <Button size="sm" variant="outline" onClick={() => onLaunchPayment(talent)} aria-label={`Lançar pagamento para ${talent.name}`} className="w-[100px]">
-                                  <Banknote className="mr-2 h-4 w-4" />
-                                  Lançar
-                              </Button>
-                          )}
-                          {transaction?.status === 'planned' && (
-                              <Button size="sm" variant="outline" onClick={() => onPay(transaction.id)} aria-label={`Pagar ${talent.name}`} className="w-[100px]">
+                              <Button size="sm" variant="outline" onClick={() => onLaunchPayment(talent)} aria-label={`Pagar ${talent.name}`} className="w-[100px]">
                                   <Banknote className="mr-2 h-4 w-4" />
                                   Pagar
                               </Button>
                           )}
-                          {transaction?.status === 'paid' && (
+                          {transaction?.status === 'planned' && onPay && (
+                              <Button size="sm" variant="outline" onClick={() => onPay(transaction.id)} aria-label={`Confirmar pagamento para ${talent.name}`} className="w-[100px]">
+                                  <Banknote className="mr-2 h-4 w-4" />
+                                  Confirmar
+                              </Button>
+                          )}
+                          {transaction?.status === 'paid' && onUndo && (
                             <div className="group relative w-[100px] h-9 mx-auto">
                                 <Button
                                     size="sm"
