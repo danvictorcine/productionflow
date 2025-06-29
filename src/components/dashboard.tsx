@@ -244,6 +244,10 @@ export default function Dashboard({
             <Edit className="mr-2 h-4 w-4" />
             Editar Projeto
           </Button>
+          <Button onClick={() => setAddSheetOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Adicionar Despesa
+          </Button>
           <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
@@ -256,10 +260,6 @@ export default function Dashboard({
                 </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <Button onClick={() => setAddSheetOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Adicionar Despesa
-          </Button>
           <UserNav />
         </div>
       </header>
