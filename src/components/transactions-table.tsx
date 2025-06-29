@@ -78,10 +78,10 @@ export default function TransactionsTable({
           <TableBody>
             {transactions.length > 0 ? (
               transactions.map((t) => (
-                <TableRow key={t.id} data-state={t.status} className="data-[state=paid]:bg-accent/10">
+                <TableRow key={t.id} data-state={t.status === 'paid' ? 'paid' : 'planned'}>
                    <TableCell>
                     <div className="flex items-center gap-3">
-                      {t.status === 'paid' && (
+                      {t.status === 'paid' && variant === 'default' && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
@@ -159,7 +159,7 @@ export default function TransactionsTable({
                         </DropdownMenuContent>
                       </DropdownMenu>
                     ) : (
-                      variant === 'history' && onUndo && (
+                      variant === 'history' && onUndo && t.status === 'paid' &&(
                          <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -179,7 +179,7 @@ export default function TransactionsTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={colSpan} className="text-center h-24">
+                <TableCell colSpan={colSpan + 1} className="text-center h-24">
                   Nenhuma despesa encontrada.
                 </TableCell>
               </TableRow>
