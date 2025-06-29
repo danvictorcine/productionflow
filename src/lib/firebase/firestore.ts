@@ -36,7 +36,7 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId'>) =>
 
 export const getProjects = async (): Promise<Project[]> => {
   const userId = getUserId();
-  const q = query(collection(db, 'projects'), where('userId', '==', userId), orderBy('name'));
+  const q = query(collection(db, 'projects'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
   querySnapshot.forEach((doc) => {
@@ -46,6 +46,8 @@ export const getProjects = async (): Promise<Project[]> => {
         id: doc.id,
     } as Project);
   });
+  // Sort projects alphabetically by name in the code
+  projects.sort((a, b) => a.name.localeCompare(b.name));
   return projects;
 };
 
@@ -136,8 +138,7 @@ export const getTransactions = async (projectId: string): Promise<Transaction[]>
     const q = query(
         collection(db, 'transactions'), 
         where('projectId', '==', projectId),
-        where('userId', '==', userId),
-        orderBy('date', 'desc')
+        where('userId', '==', userId)
     );
     const querySnapshot = await getDocs(q);
     const transactions: Transaction[] = [];
@@ -149,6 +150,8 @@ export const getTransactions = async (projectId: string): Promise<Transaction[]>
             date: (data.date as Timestamp).toDate(),
         } as Transaction);
     });
+    // Sort transactions by date descending in the code
+    transactions.sort((a, b) => b.date.getTime() - a.date.getTime());
     return transactions;
 };
 
