@@ -117,7 +117,7 @@ export default function Dashboard({
    const allCategories = useMemo(() => {
     const categoriesInUse = new Set(transactions.map(t => t.category).filter(Boolean) as string[]);
     const projectCustomCategories = project.customCategories || [];
-    return Array.from(new Set([...DEFAULT_EXPENSE_CATEGORIES, ...projectCustomCategories, ...categoriesInUse])).sort();
+    return Array.from(new Set([...DEFAULT_EXPENSE_CATEGORIES, ...projectCustomCategories, ...categoriesInUse, "Cachê de Equipe e Talentos"])).sort();
   }, [transactions, project.customCategories]);
   
   const filteredPaidTransactions = useMemo(() => {
@@ -417,25 +417,23 @@ export default function Dashboard({
               </CardContent>
             </Card>
             
-            {plannedTransactions.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5 text-muted-foreground" />
-                    Despesas Planejadas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <TransactionsTable
-                    transactions={plannedTransactions}
-                    onDelete={onDeleteTransaction}
-                    onEdit={handleStartEditTransaction}
-                    onPay={handlePayTransaction}
-                    onUndo={handleUndoPayment}
-                  />
-                </CardContent>
-              </Card>
-            )}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-muted-foreground" />
+                  Despesas Planejadas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TransactionsTable
+                  transactions={plannedTransactions}
+                  onDelete={onDeleteTransaction}
+                  onEdit={handleStartEditTransaction}
+                  onPay={handlePayTransaction}
+                  onUndo={handleUndoPayment}
+                />
+              </CardContent>
+            </Card>
 
           </div>
           <div className="lg:col-span-1">
