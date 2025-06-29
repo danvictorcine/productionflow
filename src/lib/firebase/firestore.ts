@@ -155,6 +155,18 @@ export const getTransactions = async (projectId: string): Promise<Transaction[]>
     return transactions;
 };
 
+export const updateTransaction = async (transactionId: string, transactionData: Partial<Omit<Transaction, 'id' | 'userId' | 'projectId'>>) => {
+    const transRef = doc(db, 'transactions', transactionId);
+    
+    // Convert Date back to Timestamp if it exists
+    const dataToUpdate: any = { ...transactionData };
+    if (transactionData.date) {
+        dataToUpdate.date = Timestamp.fromDate(transactionData.date);
+    }
+    
+    await updateDoc(transRef, dataToUpdate);
+};
+
 export const deleteTransaction = async (transactionId: string) => {
     const transRef = doc(db, 'transactions', transactionId);
     await deleteDoc(transRef);

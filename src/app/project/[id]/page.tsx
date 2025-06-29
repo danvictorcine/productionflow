@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { Project, Transaction } from '@/lib/types';
 import Dashboard from '@/components/dashboard';
@@ -22,6 +22,12 @@ function ProjectPageDetail() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    const fetchTransactions = useCallback(async () => {
+        if (!projectId) return;
+        const transactionsData = await api.getTransactions(projectId);
+        setTransactions(transactionsData);
+    }, [projectId]);
+
     useEffect(() => {
         if (!projectId || !user) return;
 
@@ -32,8 +38,7 @@ function ProjectPageDetail() {
 
                 if (projectData) {
                     setProject(projectData);
-                    const transactionsData = await api.getTransactions(projectId);
-                    setTransactions(transactionsData);
+                    await fetchTransactions();
                 } else {
                     toast({ variant: "destructive", title: "Erro", description: "Projeto não encontrado ou você não tem permissão para acessá-lo." });
                     router.push('/');
@@ -47,7 +52,7 @@ function ProjectPageDetail() {
         };
 
         fetchData();
-    }, [projectId, user, router, toast]);
+    }, [projectId, user, router, toast, fetchTransactions]);
 
     const handleUpdateProject = async (updatedProjectData: Partial<Project>) => {
         if (!project) return;
@@ -63,18 +68,27 @@ function ProjectPageDetail() {
     const handleAddTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>) => {
         try {
             await api.addTransaction(transactionData);
-            const updatedTransactions = await api.getTransactions(projectId);
-            setTransactions(updatedTransactions);
+            await fetchTransactions();
             toast({ title: 'Despesa adicionada com sucesso!' });
         } catch(error) {
             toast({ variant: 'destructive', title: 'Erro ao adicionar despesa', description: (error as Error).message });
         }
     };
+
+    const handleUpdateTransaction = async (transactionId: string, transactionData: Partial<Transaction>) => {
+        try {
+            await api.updateTransaction(transactionId, transactionData);
+            await fetchTransactions();
+            toast({ title: 'Despesa atualizada com sucesso!' });
+        } catch(error) {
+            toast({ variant: 'destructive', title: 'Erro ao atualizar despesa', description: (error as Error).message });
+        }
+    }
     
     const handleDeleteTransaction = async (transactionId: string) => {
         try {
             await api.deleteTransaction(transactionId);
-            setTransactions(prev => prev.filter(t => t.id !== transactionId));
+            await fetchTransactions();
             toast({ title: 'Despesa excluída.' });
         } catch(error) {
             toast({ variant: 'destructive', title: 'Erro ao excluir despesa', description: (error as Error).message });
@@ -110,6 +124,7 @@ function ProjectPageDetail() {
             transactions={transactions} 
             onProjectUpdate={handleUpdateProject}
             onAddTransaction={handleAddTransaction}
+            onUpdateTransaction={handleUpdateTransaction}
             onDeleteTransaction={handleDeleteTransaction}
         />
     );

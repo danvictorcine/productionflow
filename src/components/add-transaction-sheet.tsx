@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -50,7 +50,7 @@ const formSchema = z.object({
     .min(2, { message: "A descrição deve ter pelo menos 2 caracteres." }),
   amount: z.coerce.number().positive({ message: "O valor deve ser positivo." }),
   date: z.date(),
-  category: z.enum(EXPENSE_CATEGORIES),
+  category: z.enum(EXPENSE_CATEGORIES).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -58,17 +58,21 @@ type FormValues = z.infer<typeof formSchema>;
 interface AddTransactionSheetProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onSubmit: (transaction: Omit<Transaction, "id" | "projectId" | "type">) => void;
+  onSubmit: (transaction: Omit<Transaction, "projectId" | "type" | "userId"> & { id?: string }) => void;
+  transactionToEdit?: Transaction | null;
 }
 
 export function AddTransactionSheet({
   isOpen,
   setIsOpen,
   onSubmit,
+  transactionToEdit,
 }: AddTransactionSheetProps) {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const { toast } = useToast();
+
+  const isEditMode = !!transactionToEdit;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -76,8 +80,28 @@ export function AddTransactionSheet({
       description: "",
       amount: 0,
       date: new Date(),
+      category: undefined,
     },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      if (isEditMode && transactionToEdit) {
+        form.reset({
+          ...transactionToEdit,
+          category: transactionToEdit.category || undefined,
+        });
+      } else {
+        form.reset({
+          description: "",
+          amount: 0,
+          date: new Date(),
+          category: undefined,
+        });
+      }
+      setSuggestions([]);
+    }
+  }, [isOpen, isEditMode, transactionToEdit, form]);
 
   const handleSuggestCategory = async () => {
     const description = form.getValues("description");
@@ -112,10 +136,9 @@ export function AddTransactionSheet({
   const handleSubmit = (values: FormValues) => {
     onSubmit({
         ...values,
+        id: isEditMode ? transactionToEdit.id : undefined,
         amount: Number(values.amount)
     });
-    form.reset();
-    setSuggestions([]);
   };
 
   const onOpenChange = (open: boolean) => {
@@ -130,9 +153,9 @@ export function AddTransactionSheet({
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-md flex flex-col">
         <SheetHeader>
-          <SheetTitle>Adicionar Despesa</SheetTitle>
+          <SheetTitle>{isEditMode ? "Editar Despesa" : "Adicionar Despesa"}</SheetTitle>
           <SheetDescription>
-            Insira os detalhes da sua despesa.
+            {isEditMode ? "Atualize os detalhes da sua despesa." : "Insira os detalhes da sua despesa."}
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
@@ -142,7 +165,6 @@ export function AddTransactionSheet({
           >
             <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-4">
-
                     <FormField
                     control={form.control}
                     name="description"
@@ -285,7 +307,7 @@ export function AddTransactionSheet({
                 </div>
             </div>
             <SheetFooter className="flex-shrink-0 pt-4 border-t">
-              <Button type="submit">Salvar Despesa</Button>
+              <Button type="submit">{isEditMode ? "Salvar Alterações" : "Salvar Despesa"}</Button>
             </SheetFooter>
           </form>
         </Form>

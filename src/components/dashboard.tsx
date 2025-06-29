@@ -4,15 +4,13 @@
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, PieChart as PieChartIcon, Users, Wrench, FileSpreadsheet } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, Wrench, FileSpreadsheet } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SummaryCards from "@/components/summary-cards";
-import ExpenseChart from "@/components/expense-chart";
 import BudgetBreakdownChart from "@/components/budget-breakdown-chart";
 import TransactionsTable from "@/components/transactions-table";
 import { AddTransactionSheet } from "@/components/add-transaction-sheet";
@@ -36,6 +34,7 @@ interface DashboardProps {
   transactions: Transaction[];
   onProjectUpdate: (data: Partial<Project>) => void;
   onAddTransaction: (data: Omit<Transaction, "id" | "userId">) => void;
+  onUpdateTransaction: (id: string, data: Partial<Transaction>) => void;
   onDeleteTransaction: (id: string) => void;
 }
 
@@ -44,11 +43,13 @@ export default function Dashboard({
     transactions, 
     onProjectUpdate, 
     onAddTransaction,
+    onUpdateTransaction,
     onDeleteTransaction
 }: DashboardProps) {
   const [isAddSheetOpen, setAddSheetOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   const totalExpenses = useMemo(() => {
     return transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -61,11 +62,6 @@ export default function Dashboard({
   const balance = useMemo(() => {
     return project.budget - totalExpenses;
   }, [project.budget, totalExpenses]);
-
-  const expenses = useMemo(
-    () => transactions.filter((t) => t.type === "expense"),
-    [transactions]
-  );
   
   const breakdownData = useMemo(() => {
     const paidTalentFees = transactions
@@ -121,13 +117,24 @@ export default function Dashboard({
   }, [transactions, categoryFilter]);
 
 
-  const handleAddTransaction = (transaction: Omit<Transaction, "id" | "projectId" | "type" | "userId">) => {
-    onAddTransaction({
-      ...transaction,
-      projectId: project.id,
-      type: "expense",
-    });
+  const handleSaveTransaction = (transaction: Omit<Transaction, "id" | "projectId" | "type" | "userId"> & { id?: string }) => {
+    const { id, ...data } = transaction;
+    if (id) {
+        onUpdateTransaction(id, data);
+    } else {
+        onAddTransaction({
+            ...data,
+            projectId: project.id,
+            type: "expense",
+        });
+    }
     setAddSheetOpen(false);
+    setEditingTransaction(null);
+  };
+  
+  const handleStartEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setAddSheetOpen(true);
   };
   
   const handleEditProject = (projectData: Omit<Project, 'id' | 'userId'>) => {
@@ -284,6 +291,11 @@ export default function Dashboard({
     XLSX.writeFile(wb, `${project.name}-relatorio-formatado.xlsx`);
   };
 
+  const openAddSheet = () => {
+    setEditingTransaction(null);
+    setAddSheetOpen(true);
+  };
+
   return (
     <div className="flex flex-col min-h-screen w-full">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
@@ -299,7 +311,7 @@ export default function Dashboard({
             <Edit className="mr-2 h-4 w-4" />
             Editar Projeto
           </Button>
-          <Button onClick={() => setAddSheetOpen(true)}>
+          <Button onClick={openAddSheet}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Despesa
           </Button>
@@ -332,7 +344,7 @@ export default function Dashboard({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <PieChartIcon className="h-5 w-5 text-muted-foreground" />
+                  <BarChart2 className="h-5 w-5 text-muted-foreground" />
                   Balanço do Orçamento
                 </CardTitle>
               </CardHeader>
@@ -348,14 +360,16 @@ export default function Dashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <TalentsTable
-                    talents={project.talents}
-                    transactions={transactions}
-                    onEdit={() => setEditDialogOpen(true)}
-                    onDelete={handleDeleteTalent}
-                    onPay={handlePayTalent}
-                    onUndoPayment={handleUndoPayment}
-                />
+                <ScrollArea className="h-[265px] w-full">
+                  <TalentsTable
+                      talents={project.talents}
+                      transactions={transactions}
+                      onEdit={() => setEditDialogOpen(true)}
+                      onDelete={handleDeleteTalent}
+                      onPay={handlePayTalent}
+                      onUndoPayment={handleUndoPayment}
+                  />
+                </ScrollArea>
               </CardContent>
             </Card>
             <Card>
@@ -366,49 +380,38 @@ export default function Dashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[265px]">
-                  <TransactionsTable transactions={productionCostsTransactions} onDelete={onDeleteTransaction} />
+                <ScrollArea className="h-[265px] w-full">
+                  <TransactionsTable transactions={productionCostsTransactions} onDelete={onDeleteTransaction} onEdit={handleStartEditTransaction} />
                 </ScrollArea>
               </CardContent>
             </Card>
           </div>
           <div className="lg:col-span-1">
-            <Card className="h-full">
-              <Tabs defaultValue="all" className="flex flex-col h-full">
-                <div className="flex justify-between items-center px-6 pt-4">
-                  <CardTitle>Histórico</CardTitle>
-                  <TabsList>
-                    <TabsTrigger value="all">Transações</TabsTrigger>
-                    <TabsTrigger value="categories">Categorias</TabsTrigger>
-                  </TabsList>
-                </div>
-                <CardContent className="pt-4 flex-1 flex flex-col">
-                    <TabsContent value="all" className="flex-1 flex flex-col gap-2">
-                      <div className="flex-shrink-0 flex items-center gap-2">
-                          <label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground">Filtrar:</label>
-                          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger id="category-filter" className="w-[220px]">
-                              <SelectValue placeholder="Selecionar categoria" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">Todas as Categorias</SelectItem>
-                              {EXPENSE_CATEGORIES.map(cat => (
-                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                      </div>
-                      <div className="flex-1 relative min-h-0">
-                          <ScrollArea className="absolute inset-0">
-                            <TransactionsTable transactions={filteredTransactionsForHistory} onDelete={onDeleteTransaction} />
-                          </ScrollArea>
-                      </div>
-                    </TabsContent>
-                    <TabsContent value="categories" className="flex-1">
-                      <ExpenseChart expenses={expenses} />
-                    </TabsContent>
+            <Card className="h-full flex flex-col">
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <CardTitle>Histórico</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground">Filtrar:</label>
+                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                <SelectTrigger id="category-filter" className="w-[220px]">
+                                    <SelectValue placeholder="Selecionar categoria" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todas as Categorias</SelectItem>
+                                    {EXPENSE_CATEGORIES.map(cat => (
+                                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="flex-1 relative min-h-0">
+                    <ScrollArea className="absolute inset-0">
+                      <TransactionsTable transactions={filteredTransactionsForHistory} onDelete={onDeleteTransaction} onEdit={handleStartEditTransaction} />
+                    </ScrollArea>
                 </CardContent>
-              </Tabs>
             </Card>
           </div>
         </div>
@@ -416,7 +419,8 @@ export default function Dashboard({
       <AddTransactionSheet
         isOpen={isAddSheetOpen}
         setIsOpen={setAddSheetOpen}
-        onSubmit={handleAddTransaction}
+        onSubmit={handleSaveTransaction}
+        transactionToEdit={editingTransaction}
       />
       <CreateEditProjectDialog
         isOpen={isEditDialogOpen}

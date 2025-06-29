@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { Transaction } from "@/lib/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MoreHorizontal, Trash2, TrendingDown } from "lucide-react";
+import { MoreHorizontal, Trash2, TrendingDown, Edit } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 import {
@@ -37,9 +37,10 @@ import { Button } from "@/components/ui/button";
 interface TransactionsTableProps {
   transactions: Transaction[];
   onDelete: (id: string) => void;
+  onEdit: (transaction: Transaction) => void;
 }
 
-export default function TransactionsTable({ transactions, onDelete }: TransactionsTableProps) {
+export default function TransactionsTable({ transactions, onDelete, onEdit }: TransactionsTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const transactionToDelete = transactions.find(t => t.id === deleteId);
@@ -81,7 +82,11 @@ export default function TransactionsTable({ transactions, onDelete }: Transactio
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => setDeleteId(t.id)} className="text-destructive">
+                      <DropdownMenuItem onClick={() => onEdit(t)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setDeleteId(t.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Excluir
                       </DropdownMenuItem>
