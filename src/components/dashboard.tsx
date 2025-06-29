@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, ChevronDown } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, ChevronDown, FileText } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
@@ -305,6 +305,41 @@ export default function Dashboard({
     XLSX.writeFile(wb, `Relatorio_Financeiro_${project.name.replace(/ /g, "_")}.xlsx`);
     toast({ title: "Exportação Concluída", description: "Seu relatório do Excel foi baixado." });
   };
+  
+  const handleExportTransactionReceipt = () => {
+    const wb = XLSX.utils.book_new();
+    const currencyFormat = 'R$#,##0.00';
+    const titleStyle = { font: { sz: 16, bold: true }, alignment: { horizontal: "center" } };
+    const headerStyle = { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF3F51B5" } }, alignment: { horizontal: "center" } };
+
+    const paidData = paidTransactions.map(t => ([
+        format(t.date, "dd/MM/yyyy"),
+        t.description,
+        t.category || 'Não especificada',
+        t.amount,
+        'Pago'
+    ]));
+
+    const ws = XLSX.utils.aoa_to_sheet([
+        [`Comprovante de Transações Pagas - ${project.name}`],
+        [],
+        ['Data', 'Descrição', 'Categoria', 'Valor', 'Status'],
+        ...paidData
+    ]);
+
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }];
+    ws['!cols'] = [{ wch: 15 }, { wch: 40 }, { wch: 25 }, { wch: 15 }, { wch: 15 }];
+    ws['A1'].s = titleStyle;
+    ['A3', 'B3', 'C3', 'D3', 'E3'].forEach(cell => { ws[cell].s = headerStyle; });
+    paidData.forEach((row, i) => {
+        ws[`D${i + 4}`].z = currencyFormat;
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws, "Transações Pagas");
+
+    XLSX.writeFile(wb, `Comprovante_Transacoes_${project.name.replace(/ /g, "_")}.xlsx`);
+    toast({ title: "Exportação Concluída", description: "Seu comprovante de transações foi baixado." });
+  };
 
 
   const openAddSheet = () => {
@@ -340,7 +375,11 @@ export default function Dashboard({
             <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={handleExportToExcel}>
                     <FileSpreadsheet className="mr-2 h-4 w-4" />
-                    <span>Exportar para Excel</span>
+                    <span>Relatório Financeiro</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportTransactionReceipt}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>Relatório de Transações</span>
                 </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
