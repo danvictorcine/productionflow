@@ -111,7 +111,8 @@ export const getUserProfile = async (uid:string): Promise<UserProfile | null> =>
 
 export const updateUserProfile = async (uid: string, data: { name: string }) => {
     const userRef = doc(db, 'users', uid);
-    await updateDoc(userRef, data);
+    // Use setDoc with merge:true to create the doc if it doesn't exist, or update it if it does.
+    await setDoc(userRef, data, { merge: true });
 
     // Also update the auth profile display name
     if (auth.currentUser && auth.currentUser.uid === uid) {
