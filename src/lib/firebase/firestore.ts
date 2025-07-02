@@ -1,4 +1,4 @@
-import { db, auth } from './config';
+import { db, auth, storage } from './config';
 import {
   collection,
   addDoc,
@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
 import type { Project, Transaction, UserProfile, Installment } from '@/lib/types';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Helper to get current user ID
 const getUserId = () => {
@@ -106,7 +107,7 @@ export const deleteProject = async (projectId: string) => {
 
 // User Profile Functions
 export const createUserProfile = async (uid: string, name: string, email: string) => {
-  await setDoc(doc(db, 'users', uid), { name, email });
+  await setDoc(doc(db, 'users', uid), { name, email, photoURL: null });
 };
 
 export const getUserProfile = async (uid:string): Promise<UserProfile | null> => {
@@ -119,18 +120,42 @@ export const getUserProfile = async (uid:string): Promise<UserProfile | null> =>
       uid,
       name: data.name,
       email: data.email,
+      photoURL: data.photoURL,
     };
   }
   return null;
 }
 
-export const updateUserProfile = async (uid: string, data: { name: string }) => {
+export const updateUserProfile = async (uid: string, data: Partial<Omit<UserProfile, 'uid'>>) => {
     const userRef = doc(db, 'users', uid);
     await setDoc(userRef, data, { merge: true });
+
     if (auth.currentUser && auth.currentUser.uid === uid) {
-      await updateAuthProfile(auth.currentUser, { displayName: data.name });
+      const authUpdateData: { displayName?: string; photoURL?: string | null } = {};
+      if (data.name) {
+        authUpdateData.displayName = data.name;
+      }
+      // Check for photoURL specifically, including null to remove it
+      if (data.hasOwnProperty('photoURL')) {
+        authUpdateData.photoURL = data.photoURL || null;
+      }
+
+      if (Object.keys(authUpdateData).length > 0) {
+        await updateAuthProfile(auth.currentUser, authUpdateData);
+      }
     }
 };
+
+export const uploadProfilePhoto = async (uid: string, file: Blob): Promise<string> => {
+    const filePath = `users/${uid}/profile.jpg`;
+    const storageRef = ref(storage, filePath);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+    
+    await updateUserProfile(uid, { photoURL: downloadURL });
+    
+    return downloadURL;
+}
 
 export const sendPasswordReset = async (email: string) => {
     await sendPasswordResetEmail(auth, email);

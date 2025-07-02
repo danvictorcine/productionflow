@@ -40,8 +40,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (firebaseUser) {
         const userProfile = await getUserProfile(firebaseUser.uid);
         
-        if (userProfile && firebaseUser.displayName !== userProfile.name) {
-          await updateProfile(firebaseUser, { displayName: userProfile.name });
+        // Sync Firestore profile to Auth profile if they differ
+        if (userProfile) {
+          const authNeedsUpdate: { displayName?: string; photoURL?: string | null } = {};
+          if (firebaseUser.displayName !== userProfile.name) {
+            authNeedsUpdate.displayName = userProfile.name;
+          }
+          if (firebaseUser.photoURL !== userProfile.photoURL) {
+            authNeedsUpdate.photoURL = userProfile.photoURL || null;
+          }
+          if (Object.keys(authNeedsUpdate).length > 0) {
+             await updateProfile(firebaseUser, authNeedsUpdate);
+          }
         }
         
         setUser(userProfile ? { ...firebaseUser, ...userProfile } : (firebaseUser as AppUser));

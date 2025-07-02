@@ -4,9 +4,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Camera, User as UserIcon } from 'lucide-react';
 
 import AuthGuard from '@/components/auth-guard';
 import { useAuth } from '@/context/auth-context';
@@ -17,11 +17,58 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import * as firestoreApi from '@/lib/firebase/firestore';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
   email: z.string().email(),
 });
+
+// Helper function to resize images client-side
+const resizeImage = (file: File, maxSize: number): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      if (!event.target?.result) return reject(new Error("Failed to read file"));
+      const img = new Image();
+      img.src = event.target.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error("Failed to get canvas context"));
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Canvas to Blob conversion failed'));
+          }
+        }, 'image/jpeg', 0.9); // 90% quality JPEG
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 
 function SettingsPageDetail() {
   const router = useRouter();
@@ -29,6 +76,8 @@ function SettingsPageDetail() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,7 +97,7 @@ function SettingsPageDetail() {
   }, [user, form]);
 
   const handleUpdateName = async (values: z.infer<typeof formSchema>) => {
-    if (!user) return;
+    if (!user || user.name === values.name) return;
     setIsSaving(true);
     try {
       await firestoreApi.updateUserProfile(user.uid, { name: values.name });
@@ -74,6 +123,32 @@ function SettingsPageDetail() {
     }
   };
 
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || !event.target.files[0] || !user) return;
+
+    const file = event.target.files[0];
+    setIsUploading(true);
+
+    try {
+        const resizedImageBlob = await resizeImage(file, 256);
+        await firestoreApi.uploadProfilePhoto(user.uid, resizedImageBlob);
+        await refreshUser();
+        toast({ title: 'Foto atualizada!', description: 'Sua nova foto de perfil foi salva.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Erro no Upload', description: error.message });
+    } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    }
+  };
+  
+  const getInitials = (name: string) => {
+    if (!name) return '';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  }
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
        <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
@@ -94,35 +169,64 @@ function SettingsPageDetail() {
                 <CardDescription>Gerencie as informações da sua conta e senha.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                 <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Seu nome completo" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input readOnly disabled {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                 </div>
-                 <Button type="submit" disabled={isSaving}>
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                    <div className="relative group">
+                        <Avatar className="h-24 w-24">
+                          <AvatarImage src={user?.photoURL || undefined} alt={user?.name || 'Avatar'} />
+                          <AvatarFallback className="text-3xl">
+                            {user?.name ? getInitials(user.name) : <UserIcon />}
+                          </AvatarFallback>
+                        </Avatar>
+                        <label 
+                          htmlFor="photo-upload" 
+                          className="absolute inset-0 bg-black/40 flex items-center justify-center text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        >
+                          {isUploading ? (
+                              <Loader2 className="h-6 w-6 animate-spin" />
+                          ) : (
+                              <Camera className="h-6 w-6" />
+                          )}
+                        </label>
+                        <input
+                            ref={fileInputRef}
+                            id="photo-upload"
+                            type="file"
+                            className="hidden"
+                            accept="image/png, image/jpeg"
+                            onChange={handlePhotoUpload}
+                            disabled={isUploading}
+                        />
+                    </div>
+                    <div className="space-y-4 flex-1 w-full">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Seu nome completo" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input readOnly disabled {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                </div>
+                 <Button type="submit" disabled={isSaving || isUploading}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Salvar Alterações no Perfil
                  </Button>
