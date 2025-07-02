@@ -5,7 +5,7 @@ import type { User } from 'firebase/auth';
 import { onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getUserProfile } from '@/lib/firebase/firestore';
+import { getUserProfile, updateUserProfile } from '@/lib/firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 
 
@@ -38,15 +38,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userProfile = await getUserProfile(firebaseUser.uid);
+        let userProfile = await getUserProfile(firebaseUser.uid);
         
-        // Sync Firestore profile to Auth profile if they differ
         if (userProfile) {
+          // Sync Auth email to Firestore if it's different
+          if (firebaseUser.email && firebaseUser.email !== userProfile.email) {
+            await updateUserProfile(firebaseUser.uid, { email: firebaseUser.email });
+            // Re-fetch profile after update to have the latest data
+            userProfile = await getUserProfile(firebaseUser.uid);
+          }
+
+          // Sync Firestore profile (name, photo) to Auth profile if they differ
           const authNeedsUpdate: { displayName?: string; photoURL?: string | null } = {};
-          if (firebaseUser.displayName !== userProfile.name) {
+          if (userProfile && firebaseUser.displayName !== userProfile.name) {
             authNeedsUpdate.displayName = userProfile.name;
           }
-          if (firebaseUser.photoURL !== userProfile.photoURL) {
+          if (userProfile && firebaseUser.photoURL !== userProfile.photoURL) {
             authNeedsUpdate.photoURL = userProfile.photoURL || null;
           }
           if (Object.keys(authNeedsUpdate).length > 0) {
