@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { PlusCircle, Film, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, Film, MoreVertical, Edit, Trash2, Rocket } from "lucide-react";
 import { useRouter } from 'next/navigation';
 
 import type { Project } from "@/lib/types";
@@ -32,6 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { UserNav } from "@/components/user-nav";
 import { formatCurrency } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function HomePage() {
   const { user } = useAuth();
@@ -43,6 +44,10 @@ function HomePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+
+  const FREE_PLAN_PROJECT_LIMIT = 1;
+  const isFreePlan = user?.subscriptionStatus !== 'active';
+  const hasReachedFreeLimit = isFreePlan && projects.length >= FREE_PLAN_PROJECT_LIMIT;
 
   useEffect(() => {
     if (user) {
@@ -94,6 +99,7 @@ function HomePage() {
   };
 
   const openCreateDialog = () => {
+    if (hasReachedFreeLimit) return;
     setEditingProject(null);
     setIsDialogOpen(true);
   };
@@ -118,7 +124,7 @@ function HomePage() {
                 <Film className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-semibold">Nenhum projeto encontrado</h3>
                 <p className="mt-2 text-sm text-muted-foreground">Comece criando seu primeiro projeto de produção.</p>
-                <Button className="mt-6" onClick={openCreateDialog}>
+                <Button className="mt-6" onClick={openCreateDialog} disabled={hasReachedFreeLimit}>
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Criar Projeto
                 </Button>
@@ -177,7 +183,7 @@ function HomePage() {
           {user?.name && <span className="text-lg font-normal text-muted-foreground ml-2">/ {user.name}</span>}
         </h1>
         <div className="ml-auto flex items-center gap-4">
-          <Button onClick={openCreateDialog}>
+          <Button onClick={openCreateDialog} disabled={hasReachedFreeLimit}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Criar Novo Projeto
           </Button>
@@ -186,6 +192,18 @@ function HomePage() {
       </header>
 
       <main className="flex-1 p-4 sm:p-6 md:p-8">
+        {hasReachedFreeLimit && (
+          <Alert className="mb-6 border-primary/50 text-primary bg-primary/5">
+            <Rocket className="h-4 w-4" />
+            <AlertTitle>Plano Gratuito</AlertTitle>
+            <AlertDescription>
+              Você atingiu o limite de {FREE_PLAN_PROJECT_LIMIT} projeto.{" "}
+              <Link href="/settings" className="font-semibold underline">
+                Faça um upgrade para criar projetos ilimitados.
+              </Link>
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="mb-6">
           <h2 className="text-3xl font-bold tracking-tight">Meus Projetos</h2>
           <p className="text-muted-foreground">Selecione um projeto para gerenciar ou crie um novo.</p>

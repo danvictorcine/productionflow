@@ -117,7 +117,12 @@ export const deleteProject = async (projectId: string) => {
 
 // User Profile Functions
 export const createUserProfile = async (uid: string, name: string, email: string, photoURL: string | null = null) => {
-  await setDoc(doc(db, 'users', uid), { name, email, photoURL });
+  await setDoc(doc(db, 'users', uid), { 
+    name, 
+    email, 
+    photoURL,
+    subscriptionStatus: 'inactive',
+  });
 };
 
 export const getUserProfile = async (uid:string): Promise<UserProfile | null> => {
@@ -131,6 +136,8 @@ export const getUserProfile = async (uid:string): Promise<UserProfile | null> =>
       name: data.name,
       email: data.email,
       photoURL: data.photoURL,
+      subscriptionStatus: data.subscriptionStatus || 'inactive',
+      stripeCustomerId: data.stripeCustomerId,
     };
   }
   return null;
