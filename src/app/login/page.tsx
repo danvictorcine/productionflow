@@ -78,7 +78,7 @@ export default function LoginPage() {
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
-      <div className="hidden bg-muted lg:flex lg:flex-col lg:items-center lg:justify-center p-8">
+      <div className="hidden bg-muted lg:flex lg:flex-col lg:items-center lg:justify-center p-8 relative">
         <div className="mx-auto w-full max-w-md space-y-4">
             <h1 className="text-4xl font-bold text-primary">ProductionFlow</h1>
             <p className="text-lg text-muted-foreground">
@@ -119,6 +119,11 @@ export default function LoginPage() {
                     </p>
                 </div>
             </div>
+        </div>
+        <div className="absolute bottom-8">
+            <p className="text-sm text-muted-foreground">
+                Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span>
+            </p>
         </div>
       </div>
       <div className="flex items-center justify-center py-12 px-4">
