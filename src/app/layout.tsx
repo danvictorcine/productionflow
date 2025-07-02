@@ -7,6 +7,9 @@ import { ThemeProvider } from '@/components/theme-provider';
 export const metadata: Metadata = {
   title: 'ProductionFlow',
   description: 'Gerenciamento financeiro para produções audiovisuais.',
+  icons: {
+    icon: "data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22hsl(231%2C%2048%25%2C%2048%25)%22%2F%3E%3Cpath%20d%3D%22M22%2016L12%2022V10L22%2016Z%22%20fill%3D%22white%22%2F%3E%3C%2Fsvg%3E"
+  }
 };
 
 export default function RootLayout({
