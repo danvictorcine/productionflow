@@ -126,7 +126,7 @@ export default function SignupPage() {
                   <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
                   <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
               </svg>
-              <h1 className="text-4xl font-bold text-primary">ProductionFlow</h1>
+              <h1 className="text-4xl font-bold text-primary tracking-tighter">ProductionFlow</h1>
             </div>
             <p className="text-lg text-muted-foreground">
                 Sua plataforma completa para a gestão financeira de produções audiovisuais.
