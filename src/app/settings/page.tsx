@@ -79,30 +79,46 @@ function SettingsPageDetail() {
     }
   };
 
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || !event.target.files[0] || !user) return;
 
     const file = event.target.files[0];
+    
+    // Set loading state immediately
     setIsUploading(true);
 
-    try {
-        const options = {
-            maxSizeMB: 0.5, // 500KB is a good target for a profile picture
+    // Defer the heavy work to the next event loop tick
+    // This allows the UI to update and show the spinner before compression starts
+    setTimeout(() => {
+      const processImage = async () => {
+        try {
+          const options = {
+            maxSizeMB: 0.5,
             maxWidthOrHeight: 256,
             useWebWorker: true,
-        };
-        const compressedFile = await imageCompression(file, options);
-        await firestoreApi.uploadProfilePhoto(user.uid, compressedFile);
-        await refreshUser();
-        toast({ title: 'Foto atualizada!', description: 'Sua nova foto de perfil foi salva.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Erro no Upload', description: error.message });
-    } finally {
+          };
+          const compressedFile = await imageCompression(file, options);
+          await firestoreApi.uploadProfilePhoto(user.uid, compressedFile);
+          await refreshUser();
+          toast({ title: 'Foto atualizada!', description: 'Sua nova foto de perfil foi salva.' });
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Erro no Upload', description: error.message });
+        } finally {
+          setIsUploading(false);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        }
+      };
+      
+      processImage().catch(error => {
+        toast({ variant: 'destructive', title: 'Erro Inesperado', description: (error as Error).message });
         setIsUploading(false);
         if (fileInputRef.current) {
-            fileInputRef.current.value = "";
+          fileInputRef.current.value = "";
         }
-    }
+      });
+    }, 0);
   };
   
   const getInitials = (name: string) => {
