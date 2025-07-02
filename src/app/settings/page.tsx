@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Camera, User as UserIcon } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 
 import AuthGuard from '@/components/auth-guard';
 import { useAuth } from '@/context/auth-context';
@@ -23,56 +24,6 @@ const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
   email: z.string().email(),
 });
-
-// Helper function to resize images client-side efficiently
-const resizeImage = (file: File, maxSize: number): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const imageUrl = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = imageUrl;
-
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let { width, height } = img;
-
-      if (width > height) {
-        if (width > maxSize) {
-          height = Math.round((height * maxSize) / width);
-          width = maxSize;
-        }
-      } else {
-        if (height > maxSize) {
-          width = Math.round((width * maxSize) / height);
-          height = maxSize;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        URL.revokeObjectURL(imageUrl);
-        return reject(new Error("Failed to get canvas context"));
-      }
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      URL.revokeObjectURL(imageUrl); // Clean up memory
-
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Canvas to Blob conversion failed'));
-        }
-      }, 'image/jpeg', 0.9); // 90% quality JPEG
-    };
-
-    img.onerror = (err) => {
-      URL.revokeObjectURL(imageUrl); // Clean up memory on error
-      reject(err);
-    };
-  });
-};
 
 
 function SettingsPageDetail() {
@@ -135,8 +86,13 @@ function SettingsPageDetail() {
     setIsUploading(true);
 
     try {
-        const resizedImageBlob = await resizeImage(file, 256);
-        await firestoreApi.uploadProfilePhoto(user.uid, resizedImageBlob);
+        const options = {
+            maxSizeMB: 0.5, // 500KB is a good target for a profile picture
+            maxWidthOrHeight: 256,
+            useWebWorker: true,
+        };
+        const compressedFile = await imageCompression(file, options);
+        await firestoreApi.uploadProfilePhoto(user.uid, compressedFile);
         await refreshUser();
         toast({ title: 'Foto atualizada!', description: 'Sua nova foto de perfil foi salva.' });
     } catch (error: any) {
