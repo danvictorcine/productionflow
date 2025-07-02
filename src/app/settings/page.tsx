@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserNav } from '@/components/user-nav';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
@@ -136,6 +137,10 @@ function SettingsPageDetail() {
             </Button>
         </Link>
         <h1 className="text-xl font-bold">Configurações da Conta</h1>
+        <div className="ml-auto flex items-center gap-4">
+          <p className="text-lg font-semibold text-primary">ProductionFlow</p>
+          <UserNav />
+        </div>
       </header>
        <main className="flex-1 p-4 sm:p-6 md:p-8 flex justify-center items-start">
         <Card className="w-full max-w-2xl">
