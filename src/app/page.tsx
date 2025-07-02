@@ -172,10 +172,16 @@ function HomePage() {
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
-        <h1 className="text-2xl font-bold text-primary truncate">
-          ProductionFlow
-          {user?.name && <span className="text-lg font-normal text-muted-foreground ml-2">/ {user.name}</span>}
-        </h1>
+        <div className="flex items-center gap-2">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
+                <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
+                <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
+            </svg>
+            <h1 className="text-2xl font-bold text-primary truncate">
+              ProductionFlow
+              {user?.name && <span className="text-lg font-normal text-muted-foreground ml-2">/ {user.name}</span>}
+            </h1>
+        </div>
         <div className="ml-auto flex items-center gap-4">
           <Button onClick={openCreateDialog}>
             <PlusCircle className="mr-2 h-4 w-4" />
