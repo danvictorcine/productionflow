@@ -106,8 +106,8 @@ export const deleteProject = async (projectId: string) => {
 
 
 // User Profile Functions
-export const createUserProfile = async (uid: string, name: string, email: string) => {
-  await setDoc(doc(db, 'users', uid), { name, email, photoURL: null });
+export const createUserProfile = async (uid: string, name: string, email: string, photoURL: string | null = null) => {
+  await setDoc(doc(db, 'users', uid), { name, email, photoURL });
 };
 
 export const getUserProfile = async (uid:string): Promise<UserProfile | null> => {
