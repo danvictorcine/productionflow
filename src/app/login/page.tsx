@@ -79,8 +79,14 @@ export default function LoginPage() {
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
       <div className="hidden bg-muted lg:flex lg:flex-col lg:items-center lg:justify-center p-8 relative">
-        <div className="mx-auto w-full max-w-md space-y-4">
-            <h1 className="text-4xl font-bold text-primary">ProductionFlow</h1>
+        <div className="mx-auto w-full max-w-md space-y-4 text-center">
+            <div className="flex items-center justify-center gap-3">
+              <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
+                  <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
+                  <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
+              </svg>
+              <h1 className="text-4xl font-bold text-primary">ProductionFlow</h1>
+            </div>
             <p className="text-lg text-muted-foreground">
                 Sua plataforma completa para a gestão financeira de produções audiovisuais.
             </p>
