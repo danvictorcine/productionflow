@@ -93,14 +93,24 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
 };
 
 export const deleteProject = async (projectId: string) => {
+    const userId = getUserId();
     const batch = writeBatch(db);
+    
+    // Delete the project document
     const projectRef = doc(db, 'projects', projectId);
     batch.delete(projectRef);
-    const transQuery = query(collection(db, 'transactions'), where('projectId', '==', projectId));
+
+    // Find and delete all associated transactions securely
+    const transQuery = query(
+        collection(db, 'transactions'), 
+        where('projectId', '==', projectId), 
+        where('userId', '==', userId) // This makes the query secure
+    );
     const transSnapshot = await getDocs(transQuery);
     transSnapshot.forEach(doc => {
         batch.delete(doc.ref);
     });
+
     await batch.commit();
 };
 
