@@ -263,3 +263,51 @@ export const renameTransactionCategory = async (projectId: string, oldCategory: 
 
     await batch.commit();
 };
+
+// Data Import/Export
+export const importData = async (data: { projects: Project[], transactions: Transaction[] }) => {
+  const userId = getUserId();
+  const batch = writeBatch(db);
+  const projectIdMap = new Map<string, string>();
+
+  // Process projects
+  for (const project of data.projects) {
+    const { id: oldProjectId, userId: oldUserId, ...restOfProject } = project;
+    const newProjectRef = doc(collection(db, 'projects'));
+    projectIdMap.set(oldProjectId, newProjectRef.id);
+
+    const newProjectData = {
+      ...restOfProject,
+      userId,
+      installments: (project.installments || []).map(inst => ({
+        ...inst,
+        date: Timestamp.fromDate(new Date(inst.date)),
+      })),
+    };
+    
+    batch.set(newProjectRef, newProjectData);
+  }
+
+  // Process transactions
+  for (const transaction of data.transactions) {
+    const { id: oldTxId, userId: oldTxUserId, projectId: oldTxProjectId, ...restOfTx } = transaction;
+
+    const newProjectId = projectIdMap.get(oldTxProjectId);
+    if (!newProjectId) {
+      console.warn(`Skipping transaction for unknown project ID: ${oldTxProjectId}`);
+      continue;
+    }
+
+    const newTransactionRef = doc(collection(db, 'transactions'));
+    const newTransactionData = {
+      ...restOfTx,
+      userId,
+      projectId: newProjectId,
+      date: Timestamp.fromDate(new Date(transaction.date)),
+    };
+
+    batch.set(newTransactionRef, newTransactionData);
+  }
+
+  await batch.commit();
+};
