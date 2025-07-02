@@ -11,11 +11,10 @@ import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/context/auth-context';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, DollarSign, Users, FileSpreadsheet } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -74,19 +73,64 @@ export default function LoginPage() {
   }
 
   if (loading || user) {
-      return null; // Don't render the login page if user is already logged in or loading
+      return null;
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">ProductionFlow</CardTitle>
-          <CardDescription>Faça login para acessar seus projetos.</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
+      <div className="hidden bg-muted lg:flex lg:flex-col lg:items-center lg:justify-center p-8">
+        <div className="mx-auto w-full max-w-md space-y-4">
+            <h1 className="text-4xl font-bold text-primary">ProductionFlow</h1>
+            <p className="text-lg text-muted-foreground">
+                Sua plataforma completa para a gestão financeira de produções audiovisuais.
+            </p>
+        </div>
+        <div className="mt-12 grid gap-8 w-full max-w-md">
+            <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                    <DollarSign className="h-6 w-6" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-semibold">Orçamento Inteligente</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Controle seu orçamento, despesas e saldo em tempo real, com gráficos claros e detalhados.
+                    </p>
+                </div>
+            </div>
+            <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                    <Users className="h-6 w-6" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-semibold">Gestão de Equipe Flexível</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Gerencie cachês fixos e pagamentos por diária, garantindo precisão e controle total sobre os custos.
+                    </p>
+                </div>
+            </div>
+            <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                    <FileSpreadsheet className="h-6 w-6" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-semibold">Relatórios Simplificados</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Exporte relatórios financeiros para Excel com um clique, simplificando a prestação de contas.
+                    </p>
+                </div>
+            </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-center py-12 px-4">
+        <div className="mx-auto grid w-full max-w-sm gap-6">
+          <div className="grid gap-2 text-center">
+            <h1 className="text-3xl font-bold">Acesse sua Conta</h1>
+            <p className="text-balance text-muted-foreground">
+              Entre com seu email para continuar.
+            </p>
+          </div>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
               <FormField
                 control={form.control}
                 name="email"
@@ -115,7 +159,7 @@ export default function LoginPage() {
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Login
+                Entrar
               </Button>
             </form>
           </Form>
@@ -125,8 +169,8 @@ export default function LoginPage() {
               Cadastre-se
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
