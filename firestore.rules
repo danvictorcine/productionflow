@@ -2,24 +2,22 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can only read/write their own profile
+
+    // Users can read and write their own profile
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Projects can only be managed by their owner
+    // Users can manage their own projects
     match /projects/{projectId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read, delete, update: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-    // Transactions can only be managed by their owner and within their own project
+    // Users can manage transactions for their own projects
     match /transactions/{transactionId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid &&
-                       exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
-                       get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.userId == request.auth.uid;
+      allow read, delete, update: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }
