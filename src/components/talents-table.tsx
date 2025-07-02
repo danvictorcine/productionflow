@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import type { Talent, Transaction } from "@/lib/types";
-import { MoreHorizontal, Trash2, Edit, Banknote, Check, Undo2 } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit, Banknote, Check, Undo2, CalendarDays } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 import {
@@ -31,26 +31,33 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from './ui/badge';
 
 interface TalentsTableProps {
   talents: Talent[];
   transactions: Transaction[];
   onEdit: () => void;
   onDelete: (id: string) => void;
-  onPay: (talent: Talent, transaction: Transaction | undefined) => void;
-  onUndo: (id: string) => void;
+  onPayFixedFee: (talent: Talent, transaction: Transaction | undefined) => void;
+  onUndoPayment: (id: string) => void;
+  onManageDailyPayment: (talent: Talent) => void;
 }
 
-export default function TalentsTable({ talents, transactions, onEdit, onDelete, onPay, onUndo }: TalentsTableProps) {
+export default function TalentsTable({ talents, transactions, onEdit, onDelete, onPayFixedFee, onUndoPayment, onManageDailyPayment }: TalentsTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
   const talentToDelete = talents.find(t => t.id === deleteId);
 
   const transactionsByTalentId = useMemo(() => {
-    const map = new Map<string, Transaction>();
+    const map = new Map<string, Transaction[]>();
     transactions
         .filter(t => t.talentId && t.category === "Cachê de Equipe e Talentos")
-        .forEach(t => map.set(t.talentId!, t));
+        .forEach(t => {
+            if (!map.has(t.talentId!)) {
+                map.set(t.talentId!, []);
+            }
+            map.get(t.talentId!)?.push(t);
+        });
     return map;
   }, [transactions]);
 
@@ -64,52 +71,53 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                 <TableHead>Nome</TableHead>
                 <TableHead>Função</TableHead>
                 <TableHead className="text-right">Cachê</TableHead>
-                <TableHead className="text-center w-[120px]">Ação</TableHead>
+                <TableHead className="text-center w-[150px]">Status</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {talents.length > 0 ? (
                 talents.map((talent) => {
-                  const transaction = transactionsByTalentId.get(talent.id);
-
+                  const talentTransactions = transactionsByTalentId.get(talent.id) || [];
+                  const isFixedFee = talent.paymentType === 'fixed' || !talent.paymentType;
+                  
                   return (
                     <TableRow key={talent.id}>
                       <TableCell className="font-medium">{talent.name}</TableCell>
                       <TableCell>{talent.role}</TableCell>
                       <TableCell className="text-right font-mono">
-                        {formatCurrency(talent.fee)}
+                        {isFixedFee
+                          ? formatCurrency(talent.fee || 0)
+                          : `${formatCurrency(talent.dailyRate || 0)} x ${talent.days} diárias`
+                        }
                       </TableCell>
                       <TableCell className="text-center">
-                          {(!transaction || transaction.status === 'planned') && (
-                              <Button size="sm" variant="outline" onClick={() => onPay(talent, transaction)} aria-label={`Pagar ${talent.name}`} className="w-[100px]">
-                                  <Banknote className="mr-2 h-4 w-4" />
-                                  Pagar
-                              </Button>
-                          )}
-                          {transaction?.status === 'paid' && onUndo && (
-                            <div className="group relative w-[100px] h-9 mx-auto">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none rounded-md"
-                                    aria-hidden="true"
-                                    tabIndex={-1}
-                                >
-                                    <Check className="mr-1 h-4 w-4" />
-                                    Pago
+                          {isFixedFee ? (
+                              talentTransactions.length > 0 && talentTransactions[0].status === 'paid' ? (
+                                  <div className="group relative w-[120px] h-9 mx-auto">
+                                    <Button size="sm" variant="outline" className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none rounded-md" aria-hidden="true" tabIndex={-1}>
+                                      <Check className="mr-1 h-4 w-4" /> Pago
+                                    </Button>
+                                    <Button size="sm" variant="ghost" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md" onClick={() => onUndoPayment(talentTransactions[0].id)} aria-label={`Desfazer pagamento de ${talent.name}`}>
+                                      <Undo2 className="mr-2 h-4 w-4" /> Desfazer
+                                    </Button>
+                                  </div>
+                              ) : (
+                                  <Button size="sm" variant="outline" onClick={() => onPayFixedFee(talent, talentTransactions[0])} aria-label={`Pagar ${talent.name}`} className="w-[120px]">
+                                      <Banknote className="mr-2 h-4 w-4" /> Pagar
+                                  </Button>
+                              )
+                          ) : (
+                             <div className="flex flex-col items-center gap-1">
+                                <Button size="sm" variant="outline" onClick={() => onManageDailyPayment(talent)} aria-label={`Gerenciar Diárias de ${talent.name}`} className="w-[120px]">
+                                    <CalendarDays className="mr-2 h-4 w-4" /> Gerenciar
                                 </Button>
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md"
-                                    onClick={() => onUndo(transaction.id)}
-                                    aria-label={`Desfazer pagamento de ${talent.name}`}
-                                >
-                                    <Undo2 className="mr-2 h-4 w-4" />
-                                    Desfazer
-                                </Button>
-                            </div>
+                                {talentTransactions.length > 0 && (
+                                  <Badge variant="secondary" className="font-normal">
+                                    {talentTransactions.length} / {talent.days} pagas
+                                  </Badge>
+                                )}
+                              </div>
                           )}
                       </TableCell>
                       <TableCell>

@@ -13,7 +13,10 @@ export type Talent = {
   id: string;
   name: string;
   role: string;
-  fee: number;
+  paymentType: 'fixed' | 'daily';
+  fee?: number; // For fixed payment
+  dailyRate?: number; // For daily payment
+  days?: number; // For daily payment
 };
 
 export type Installment = {
@@ -47,6 +50,7 @@ export type Transaction = {
   date: Date;
   status: 'planned' | 'paid';
   talentId?: string;
+  paidDay?: number; // For daily payments
 };
 
 export type UserProfile = {

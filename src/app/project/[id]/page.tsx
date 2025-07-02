@@ -40,7 +40,7 @@ function ProjectPageDetail() {
                 ...projectData,
                 isBudgetParcelado: projectData.isBudgetParcelado ?? false,
                 installments: projectData.installments ?? [],
-                talents: projectData.talents ?? [],
+                talents: (projectData.talents ?? []).map(t => ({...t, paymentType: t.paymentType || 'fixed'})),
                 customCategories: projectData.customCategories ?? [],
                 includeProductionCostsInBudget: projectData.includeProductionCostsInBudget ?? true,
             };
@@ -77,25 +77,27 @@ function ProjectPageDetail() {
 
             // Check if talent fees have changed and update associated transactions
             if (updatedProjectData.talents && project.talents) {
-                const changedTalents = updatedProjectData.talents.filter(updatedTalent => {
+                const currentTransactions = await api.getTransactions(project.id);
+                
+                updatedProjectData.talents.forEach(updatedTalent => {
                     const originalTalent = project.talents.find(t => t.id === updatedTalent.id);
-                    return originalTalent && originalTalent.fee !== updatedTalent.fee;
-                });
+                    if (!originalTalent) return;
 
-                if (changedTalents.length > 0) {
-                    const currentTransactions = await api.getTransactions(project.id);
-                    
-                    changedTalents.forEach(changedTalent => {
-                        const transactionsToUpdate = currentTransactions.filter(tx => tx.talentId === changedTalent.id);
+                    const talentFeeChanged = originalTalent.paymentType === 'fixed' && originalTalent.fee !== updatedTalent.fee;
+                    const dailyRateChanged = originalTalent.paymentType === 'daily' && originalTalent.dailyRate !== updatedTalent.dailyRate;
+
+                    if (talentFeeChanged || dailyRateChanged) {
+                        const transactionsToUpdate = currentTransactions.filter(tx => tx.talentId === updatedTalent.id);
                         
                         transactionsToUpdate.forEach(tx => {
-                            if (tx.amount !== changedTalent.fee) {
+                            const newAmount = updatedTalent.paymentType === 'daily' ? updatedTalent.dailyRate : updatedTalent.fee;
+                            if (newAmount !== undefined && tx.amount !== newAmount) {
                                 const txRef = doc(db, 'transactions', tx.id);
-                                batch.update(txRef, { amount: changedTalent.fee });
+                                batch.update(txRef, { amount: newAmount });
                             }
                         });
-                    });
-                }
+                    }
+                });
             }
 
             const projectRef = doc(db, 'projects', project.id);

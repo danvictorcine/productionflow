@@ -37,14 +37,43 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription } from "./ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 
 const talentSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Nome do talento é obrigatório."),
   role: z.string().min(1, "Função é obrigatória."),
-  fee: z.coerce.number().min(0, "Cachê não pode ser negativo."),
+  paymentType: z.enum(['fixed', 'daily']).default('fixed'),
+  fee: z.coerce.number().optional(),
+  dailyRate: z.coerce.number().optional(),
+  days: z.coerce.number().optional(),
+}).superRefine((data, ctx) => {
+    if (data.paymentType === 'fixed' && (data.fee === undefined || data.fee <= 0)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Cachê deve ser positivo.",
+            path: ["fee"],
+        });
+    }
+    if (data.paymentType === 'daily') {
+        if (data.dailyRate === undefined || data.dailyRate <= 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Valor da diária deve ser positivo.",
+                path: ["dailyRate"],
+            });
+        }
+        if (data.days === undefined || data.days <= 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Nº de diárias deve ser positivo.",
+                path: ["days"],
+            });
+        }
+    }
 });
+
 
 const installmentSchema = z.object({
   id: z.string(),
@@ -100,7 +129,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
     },
   });
   
-  const { formState: { errors } } = form;
+  const { formState: { errors }, control } = form;
 
   useEffect(() => {
     if (isOpen) {
@@ -110,7 +139,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
             budget: project.budget,
             productionCosts: project.productionCosts,
             includeProductionCostsInBudget: project.includeProductionCostsInBudget ?? true,
-            talents: project.talents?.map(t => ({...t})) ?? [],
+            talents: project.talents?.map(t => ({...t, paymentType: t.paymentType || 'fixed'})) ?? [],
             isBudgetParcelado: project.isBudgetParcelado ?? false,
             installments: project.installments?.map(i => ({ ...i, date: new Date(i.date) })) ?? [],
           }
@@ -153,7 +182,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
   
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
+      <DialogContent className="sm:max-w-4xl flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</DialogTitle>
           <DialogDescription>
@@ -163,7 +192,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-6 pt-2">
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <FormField
                     control={form.control}
                     name="name"
@@ -362,72 +391,72 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   <div>
                     <FormLabel>Equipe e Talentos</FormLabel>
                     <div className="space-y-3 mt-2">
-                      {talentFields.map((field, index) => (
-                        <div key={field.id} className="grid grid-cols-1 items-end gap-3 rounded-md border p-3 md:grid-cols-[1fr_1fr_130px_auto]">
-                          <FormField
-                            control={form.control}
-                            name={`talents.${index}.name`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs">Nome</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Nome do Talento" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
+                      {talentFields.map((field, index) => {
+                        const paymentType = form.watch(`talents.${index}.paymentType`);
+                        return (
+                          <div key={field.id} className="grid grid-cols-1 gap-4 rounded-md border p-4">
+                            <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+                                <FormField control={control} name={`talents.${index}.name`} render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do Talento" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={control} name={`talents.${index}.role`} render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Função</FormLabel><FormControl><Input placeholder="ex: Ator Principal" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={control} name={`talents.${index}.paymentType`} render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Tipo de Pagamento</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="fixed">Cachê Fixo</SelectItem>
+                                            <SelectItem value="daily">Por Diária</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage /></FormItem>
+                                )}/>
+                                <Button type="button" variant="destructive" size="icon" onClick={() => removeTalent(index)} className="self-end"><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                            {paymentType === 'fixed' && (
+                                <FormField control={control} name={`talents.${index}.fee`} render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs">Cachê Fixo</FormLabel>
+                                        <FormControl>
+                                            <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
+                                                const numericValue = e.target.value.replace(/\D/g, ""); field.onChange(Number(numericValue) / 100);
+                                            }}/>
+                                        </FormControl><FormMessage />
+                                    </FormItem>
+                                )}/>
                             )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`talents.${index}.role`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs">Função</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="ex: Ator Principal" {...field} />
-                                </FormControl>
-                                 <FormMessage />
-                              </FormItem>
+                            {paymentType === 'daily' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <FormField control={control} name={`talents.${index}.dailyRate`} render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs">Valor da Diária</FormLabel>
+                                            <FormControl>
+                                                <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
+                                                    const numericValue = e.target.value.replace(/\D/g, ""); field.onChange(Number(numericValue) / 100);
+                                                }}/>
+                                            </FormControl><FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                    <FormField control={control} name={`talents.${index}.days`} render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs">Nº de Diárias</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="ex: 3" {...field} onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}/>
+                                            </FormControl><FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                </div>
                             )}
-                          />
-                           <FormField
-                            control={form.control}
-                            name={`talents.${index}.fee`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs">Cachê</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="text"
-                                    placeholder="R$ 0,00"
-                                    value={
-                                      field.value
-                                        ? new Intl.NumberFormat("pt-BR", {
-                                            style: "currency",
-                                            currency: "BRL",
-                                          }).format(field.value)
-                                        : ""
-                                    }
-                                    onChange={(e) => {
-                                      const numericValue = e.target.value.replace(/\D/g, "");
-                                      field.onChange(Number(numericValue) / 100);
-                                    }}
-                                  />
-                                </FormControl>
-                                 <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <Button type="button" variant="destructive" size="icon" onClick={() => removeTalent(index)} className="w-full md:w-auto">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
+                          </div>
+                        )
+                      })}
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => appendTalent({ id: crypto.randomUUID(), name: "", role: "", fee: 0 })}
+                        onClick={() => appendTalent({ id: crypto.randomUUID(), name: "", role: "", paymentType: "fixed", fee: 0 })}
                       >
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adicionar Talento

@@ -35,6 +35,7 @@ import { DEFAULT_EXPENSE_CATEGORIES } from "@/lib/types";
 import { UserNav } from "@/components/user-nav";
 import { useToast } from "@/hooks/use-toast";
 import { ImportTransactionsDialog } from "./import-transactions-dialog";
+import { PayDailyRateDialog } from "./pay-daily-rate-dialog";
 
 
 interface DashboardProps {
@@ -59,6 +60,8 @@ export default function Dashboard({
   const [isAddSheetOpen, setAddSheetOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isDailyPaymentOpen, setDailyPaymentOpen] = useState(false);
+  const [selectedTalent, setSelectedTalent] = useState<Talent | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { toast } = useToast();
@@ -76,8 +79,15 @@ export default function Dashboard({
   }, [paidTransactions]);
   
   const totalTalentFee = useMemo(() => {
-    return project.talents.reduce((sum, t) => sum + t.fee, 0);
+    return project.talents.reduce((sum, talent) => {
+        if (talent.paymentType === 'daily') {
+            return sum + (talent.dailyRate || 0) * (talent.days || 0);
+        }
+        // Also handles legacy projects where paymentType might be undefined
+        return sum + (talent.fee || 0);
+    }, 0);
   }, [project.talents]);
+
 
   const totalInstallments = useMemo(() => {
     if (!project.isBudgetParcelado || !project.installments) return 0;
@@ -208,14 +218,14 @@ export default function Dashboard({
     await onProjectUpdate({ talents: updatedTalents });
   };
   
-  const handlePayTalent = async (talent: Talent, transaction: Transaction | undefined) => {
+  const handlePayFixedFeeTalent = async (talent: Talent, transaction: Transaction | undefined) => {
     if (transaction && transaction.status === 'planned') {
       await onUpdateTransaction(transaction.id, { status: 'paid' });
     } else if (!transaction) {
       const newTransactionData: Omit<Transaction, 'id' | 'userId'> = {
         projectId: project.id,
         type: 'expense',
-        amount: talent.fee,
+        amount: talent.fee || 0,
         description: `Cachê: ${talent.name}`,
         category: 'Cachê de Equipe e Talentos',
         date: new Date(),
@@ -224,6 +234,32 @@ export default function Dashboard({
       };
       await onAddTransaction(newTransactionData);
     }
+  };
+
+  const handleManageDailyPayment = (talent: Talent) => {
+      setSelectedTalent(talent);
+      setDailyPaymentOpen(true);
+  };
+
+  const handlePayDailyRate = async (talent: Talent, dayNumber: number) => {
+      const newTransactionData: Omit<Transaction, 'id' | 'userId'> = {
+        projectId: project.id,
+        type: 'expense',
+        amount: talent.dailyRate || 0,
+        description: `Diária ${dayNumber}/${talent.days}: ${talent.name}`,
+        category: 'Cachê de Equipe e Talentos',
+        date: new Date(),
+        talentId: talent.id,
+        status: 'paid',
+        paidDay: dayNumber,
+      };
+      await onAddTransaction(newTransactionData);
+      toast({ title: `Diária ${dayNumber} paga!`});
+  };
+
+  const handleUndoDailyPayment = async (transactionId: string) => {
+      await onDeleteTransaction(transactionId);
+      toast({ title: 'Pagamento da diária desfeito.'});
   };
   
   const handlePayTransaction = (transactionId: string) => {
@@ -273,15 +309,33 @@ export default function Dashboard({
 
     // --- 2. Talents Sheet ---
     const talentData = project.talents.map(talent => {
-        const paidAmount = paidTransactions
-            .filter(t => t.talentId === talent.id && t.category === "Cachê de Equipe e Talentos")
-            .reduce((sum, t) => sum + t.amount, 0);
+        const talentTransactions = paidTransactions.filter(t => t.talentId === talent.id && t.category === "Cachê de Equipe e Talentos");
+        const paidAmount = talentTransactions.reduce((sum, t) => sum + t.amount, 0);
+        
+        let paymentDetail = '';
+        let status = 'Não Pago';
+        
+        if (talent.paymentType === 'daily') {
+            const totalPlanned = (talent.dailyRate || 0) * (talent.days || 0);
+            paymentDetail = `${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(talent.dailyRate || 0)} x ${talent.days} diárias`;
+            if (paidAmount >= totalPlanned) {
+                status = 'Totalmente Pago';
+            } else if (paidAmount > 0) {
+                status = `Parcialmente Pago (${talentTransactions.length}/${talent.days})`;
+            }
+        } else {
+            paymentDetail = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(talent.fee || 0);
+             if (paidAmount >= (talent.fee || 0)) {
+                status = 'Pago';
+            }
+        }
+
         return [
             talent.name,
             talent.role,
-            talent.fee,
+            paymentDetail,
             paidAmount,
-            paidAmount >= talent.fee ? 'Pago' : 'Não Pago'
+            status
         ];
     });
 
@@ -293,14 +347,11 @@ export default function Dashboard({
     ]);
 
     wsTalents['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }];
-    wsTalents['!cols'] = [{ wch: 30 }, { wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+    wsTalents['!cols'] = [{ wch: 30 }, { wch: 30 }, { wch: 25 }, { wch: 20 }, { wch: 25 }];
     wsTalents['A1'].s = titleStyle;
     ['A3', 'B3', 'C3', 'D3', 'E3'].forEach(cell => { wsTalents[cell].s = headerStyle; });
     talentData.forEach((row, i) => {
-        wsTalents[`C${i + 4}`].z = currencyFormat;
         wsTalents[`D${i + 4}`].z = currencyFormat;
-        const statusCell = wsTalents[`E${i + 4}`];
-        statusCell.s = row[4] === 'Pago' ? paidStyle : plannedStyle;
     });
     XLSX.utils.book_append_sheet(wb, wsTalents, "Equipe e Talentos");
     
@@ -477,8 +528,9 @@ export default function Dashboard({
                     transactions={transactions}
                     onEdit={() => setEditDialogOpen(true)}
                     onDelete={handleDeleteTalent}
-                    onPay={handlePayTalent}
-                    onUndo={handleUndoPayment}
+                    onPayFixedFee={handlePayFixedFeeTalent}
+                    onUndoPayment={handleUndoPayment}
+                    onManageDailyPayment={handleManageDailyPayment}
                 />
               </CardContent>
             </Card>
@@ -555,6 +607,16 @@ export default function Dashboard({
         onSubmit={onAddTransactionsBatch}
         project={project}
       />
+      {selectedTalent && (
+        <PayDailyRateDialog
+            isOpen={isDailyPaymentOpen}
+            setIsOpen={setDailyPaymentOpen}
+            talent={selectedTalent}
+            transactions={transactions.filter(t => t.talentId === selectedTalent.id)}
+            onPay={handlePayDailyRate}
+            onUndo={handleUndoDailyPayment}
+        />
+      )}
     </div>
   );
 }
