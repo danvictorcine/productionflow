@@ -177,7 +177,7 @@ function HomePage() {
                 <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
                 <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
             </svg>
-            <h1 className="text-2xl font-bold text-primary truncate tracking-tight">
+            <h1 className="text-2xl font-bold text-primary truncate tracking-tighter">
               ProductionFlow
               {user?.name && <span className="text-lg font-normal text-muted-foreground ml-2">/ {user.name}</span>}
             </h1>
