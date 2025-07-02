@@ -58,6 +58,4 @@ export type UserProfile = {
   name: string;
   email: string;
   photoURL?: string;
-  subscriptionStatus?: 'active' | 'inactive';
-  stripeCustomerId?: string;
 };

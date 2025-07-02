@@ -120,8 +120,7 @@ export const createUserProfile = async (uid: string, name: string, email: string
   await setDoc(doc(db, 'users', uid), { 
     name, 
     email, 
-    photoURL,
-    subscriptionStatus: 'inactive',
+    photoURL
   });
 };
 
@@ -136,8 +135,6 @@ export const getUserProfile = async (uid:string): Promise<UserProfile | null> =>
       name: data.name,
       email: data.email,
       photoURL: data.photoURL,
-      subscriptionStatus: data.subscriptionStatus || 'inactive',
-      stripeCustomerId: data.stripeCustomerId,
     };
   }
   return null;

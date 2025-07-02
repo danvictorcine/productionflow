@@ -6,7 +6,7 @@ import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Camera, User as UserIcon, Upload, Download, Rocket } from 'lucide-react';
+import { ArrowLeft, Loader2, Camera, User as UserIcon, Upload, Download } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 import AuthGuard from '@/components/auth-guard';
@@ -52,7 +52,6 @@ function SettingsPageDetail() {
   const [isImporting, setIsImporting] = useState(false);
   const [fileToImport, setFileToImport] = useState<File | null>(null);
   
-  const FREE_PLAN_PROJECT_LIMIT = 1;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -326,33 +325,6 @@ function SettingsPageDetail() {
                         Enviar e-mail para alterar senha
                     </Button>
                  </div>
-                 <Separator />
-
-                 <div className="space-y-4">
-                    <FormLabel>Gerenciamento da Assinatura</FormLabel>
-                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border p-4">
-                        <div>
-                            <p className="font-semibold">
-                                Seu Plano Atual: <span className="text-primary">{user?.subscriptionStatus === 'active' ? 'Premium' : 'Gratuito'}</span>
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                                {user?.subscriptionStatus === 'active' 
-                                ? 'Projetos ilimitados habilitados.' 
-                                : `Limite de ${FREE_PLAN_PROJECT_LIMIT} projeto.`}
-                            </p>
-                        </div>
-                        <Button type="button" className="mt-2 sm:mt-0" disabled>
-                            Gerenciar Assinatura
-                        </Button>
-                    </div>
-                    <Alert>
-                        <Rocket className="h-4 w-4" />
-                        <AlertTitle>Configuração da Assinatura</AlertTitle>
-                        <AlertDescription>
-                            A integração com pagamentos (Stripe) precisa ser configurada no back-end. Este botão será habilitado para levar ao portal do cliente após a configuração da extensão "Run Payments with Stripe" do Firebase.
-                        </AlertDescription>
-                    </Alert>
-                </div>
 
                  <Separator />
 
