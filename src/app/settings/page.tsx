@@ -253,7 +253,7 @@ function SettingsPageDetail() {
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                     <div className="relative group">
                         <Avatar className="h-24 w-24">
-                          <AvatarImage src={user?.photoURL || undefined} alt={user?.name || 'Avatar'} />
+                          <AvatarImage src={user?.photoURL || undefined} alt={user?.name || 'Avatar'} className="object-cover" />
                           <AvatarFallback className="text-3xl">
                             {user?.name ? getInitials(user.name) : <UserIcon />}
                           </AvatarFallback>
@@ -331,7 +331,7 @@ function SettingsPageDetail() {
                     <Alert>
                         <AlertTitle>Backup e Migração</AlertTitle>
                         <AlertDescription>
-                            Exporte todos os seus projetos e transações para um arquivo de backup (.json). Use este arquivo para migrar seus dados para uma nova conta. A importação adicionará os dados à conta atual sem apagar os existentes.
+                            Exporte todos os seus projetos e transações para um arquivo de backup (.json). Use este arquivo para migrar seus dados. A importação adicionará os dados à conta atual; projetos com nomes duplicados serão renomeados (ex: "Meu Projeto (2)").
                         </AlertDescription>
                     </Alert>
                     <div className="flex gap-4">
@@ -365,8 +365,8 @@ function SettingsPageDetail() {
                 <AlertDialogTitle>Confirmar Importação de Dados?</AlertDialogTitle>
                 <AlertDialogDescription>
                     Você está prestes a importar dados do arquivo <span className="font-semibold">{fileToImport?.name}</span>. 
-                    Esta ação adicionará todos os projetos e transações contidos no arquivo à sua conta atual. 
-                    Isso não pode ser desfeito. Deseja continuar?
+                    Esta ação adicionará todos os projetos e transações contidos no arquivo à sua conta atual. Projetos com nomes existentes serão renomeados.
+                    Esta ação não pode ser desfeita. Deseja continuar?
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

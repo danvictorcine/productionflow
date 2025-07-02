@@ -270,14 +270,28 @@ export const importData = async (data: { projects: Project[], transactions: Tran
   const batch = writeBatch(db);
   const projectIdMap = new Map<string, string>();
 
+  // Fetch existing projects to check for name collisions
+  const existingProjects = await getProjects();
+  const existingProjectNames = new Set(existingProjects.map(p => p.name));
+
   // Process projects
   for (const project of data.projects) {
     const { id: oldProjectId, userId: oldUserId, ...restOfProject } = project;
+    
+    let newName = project.name;
+    let counter = 2;
+    while (existingProjectNames.has(newName)) {
+        newName = `${project.name} (${counter})`;
+        counter++;
+    }
+    existingProjectNames.add(newName); // Add to set to handle duplicates within the import file itself
+
     const newProjectRef = doc(collection(db, 'projects'));
     projectIdMap.set(oldProjectId, newProjectRef.id);
 
     const newProjectData = {
       ...restOfProject,
+      name: newName,
       userId,
       installments: (project.installments || []).map(inst => ({
         ...inst,
