@@ -24,48 +24,53 @@ const formSchema = z.object({
   email: z.string().email(),
 });
 
-// Helper function to resize images client-side
+// Helper function to resize images client-side efficiently
 const resizeImage = (file: File, maxSize: number): Promise<Blob> => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      if (!event.target?.result) return reject(new Error("Failed to read file"));
-      const img = new Image();
-      img.src = event.target.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let { width, height } = img;
+    const imageUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.src = imageUrl;
 
-        if (width > height) {
-          if (width > maxSize) {
-            height = Math.round((height * maxSize) / width);
-            width = maxSize;
-          }
-        } else {
-          if (height > maxSize) {
-            width = Math.round((width * maxSize) / height);
-            height = maxSize;
-          }
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+
+      if (width > height) {
+        if (width > maxSize) {
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
         }
+      } else {
+        if (height > maxSize) {
+          width = Math.round((width * maxSize) / height);
+          height = maxSize;
+        }
+      }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error("Failed to get canvas context"));
-        ctx.drawImage(img, 0, 0, width, height);
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(imageUrl);
+        return reject(new Error("Failed to get canvas context"));
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      URL.revokeObjectURL(imageUrl); // Clean up memory
 
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Canvas to Blob conversion failed'));
-          }
-        }, 'image/jpeg', 0.9); // 90% quality JPEG
-      };
-      img.onerror = (err) => reject(err);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Canvas to Blob conversion failed'));
+        }
+      }, 'image/jpeg', 0.9); // 90% quality JPEG
     };
-    reader.onerror = (err) => reject(err);
+
+    img.onerror = (err) => {
+      URL.revokeObjectURL(imageUrl); // Clean up memory on error
+      reject(err);
+    };
   });
 };
 
