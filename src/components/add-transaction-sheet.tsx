@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Plus } from "lucide-react";
+import { Calendar as CalendarIcon, Settings } from "lucide-react";
 
 import {
   Sheet,
@@ -39,19 +39,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { DEFAULT_EXPENSE_CATEGORIES, type Transaction, type ExpenseCategory, type Project } from "@/lib/types";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DEFAULT_EXPENSE_CATEGORIES, type Transaction, type Project } from "@/lib/types";
 
 
 const formSchema = z.object({
@@ -71,7 +60,7 @@ interface AddTransactionSheetProps {
   onSubmit: (transaction: Omit<Transaction, "projectId" | "type" | "userId"> & { id?: string }) => void;
   transactionToEdit?: Transaction | null;
   project: Project;
-  onProjectUpdate: (data: Partial<Project>) => Promise<void>;
+  onManageCategories: () => void;
 }
 
 export function AddTransactionSheet({
@@ -80,11 +69,8 @@ export function AddTransactionSheet({
   onSubmit,
   transactionToEdit,
   project,
-  onProjectUpdate,
+  onManageCategories,
 }: AddTransactionSheetProps) {
-  const [isAddCategoryOpen, setAddCategoryOpen] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const { toast } = useToast();
 
   const isEditMode = !!transactionToEdit;
 
@@ -121,27 +107,6 @@ export function AddTransactionSheet({
     }
   }, [isOpen, isEditMode, transactionToEdit, form]);
   
-  const handleAddNewCategory = async () => {
-    if (!newCategoryName || !project) return;
-    
-    const normalizedNewCategory = newCategoryName.trim();
-    if (allCategories.map(c => c.toLowerCase()).includes(normalizedNewCategory.toLowerCase())) {
-        toast({ variant: "destructive", title: "Categoria já existe." });
-        return;
-    }
-
-    const updatedCategories = [...(project.customCategories || []), normalizedNewCategory];
-    try {
-        await onProjectUpdate({ customCategories: updatedCategories });
-        form.setValue('category', normalizedNewCategory, { shouldValidate: true });
-        setNewCategoryName('');
-        setAddCategoryOpen(false);
-        toast({ title: "Categoria adicionada!" });
-    } catch (error) {
-        toast({ variant: "destructive", title: "Erro ao adicionar categoria" });
-    }
-  };
-
 
   const handleSubmit = (values: FormValues) => {
     onSubmit({
@@ -284,10 +249,10 @@ export function AddTransactionSheet({
                                   type="button"
                                   variant="outline"
                                   size="icon"
-                                  onClick={() => setAddCategoryOpen(true)}
-                                  aria-label="Adicionar Nova Categoria"
+                                  onClick={onManageCategories}
+                                  aria-label="Gerenciar Categorias"
                               >
-                                  <Plus className="h-4 w-4" />
+                                  <Settings className="h-4 w-4" />
                               </Button>
                               </div>
                               <FormMessage />
@@ -303,26 +268,6 @@ export function AddTransactionSheet({
           </Form>
         </SheetContent>
       </Sheet>
-      <AlertDialog open={isAddCategoryOpen} onOpenChange={setAddCategoryOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Adicionar Nova Categoria</AlertDialogTitle>
-            <AlertDialogDescription>
-              Digite o nome para a nova categoria de despesa.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Input
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-            placeholder="ex: Catering"
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewCategory(); } }}
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleAddNewCategory}>Adicionar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

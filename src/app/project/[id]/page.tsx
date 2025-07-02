@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { db } from '@/lib/firebase/config';
 import { writeBatch, doc } from 'firebase/firestore';
+import { DEFAULT_EXPENSE_CATEGORIES } from '@/lib/types';
 
 
 function ProjectPageDetail() {
@@ -175,6 +176,57 @@ function ProjectPageDetail() {
         }
     }
 
+    const handleAddCategory = async (name: string) => {
+        if (!project) return;
+        const newName = name.trim();
+        if (!newName) return;
+
+        const allCategories = [...DEFAULT_EXPENSE_CATEGORIES, ...(project.customCategories || [])];
+        if (allCategories.map(c => c.toLowerCase()).includes(newName.toLowerCase())) {
+            toast({ variant: 'destructive', title: 'Categoria já existe' });
+            return;
+        }
+
+        const updatedCategories = [...(project.customCategories || []), newName];
+        await api.updateProject(project.id, { customCategories: updatedCategories });
+        await fetchProject();
+        toast({ title: 'Categoria adicionada!' });
+    };
+
+    const handleDeleteCategory = async (name: string): Promise<boolean> => {
+        if (!project) return false;
+
+        const isUsed = transactions.some(t => t.category === name);
+        if (isUsed) {
+            toast({ variant: 'destructive', title: 'Não é possível excluir', description: `A categoria "${name}" está em uso por uma ou mais transações.` });
+            return false;
+        }
+
+        const updatedCategories = (project.customCategories || []).filter(c => c !== name);
+        await api.updateProject(project.id, { customCategories: updatedCategories });
+        await fetchProject();
+        toast({ title: 'Categoria excluída!' });
+        return true;
+    };
+
+    const handleUpdateCategory = async (oldName: string, newName: string) => {
+        if (!project) return;
+        const newTrimmedName = newName.trim();
+        if (!newTrimmedName || oldName === newTrimmedName) return;
+
+        const allCategories = [...DEFAULT_EXPENSE_CATEGORIES, ...(project.customCategories || [])];
+        if (allCategories.filter(c => c !== oldName).map(c => c.toLowerCase()).includes(newTrimmedName.toLowerCase())) {
+            toast({ variant: 'destructive', title: 'Nome de categoria já existe' });
+            return;
+        }
+        
+        await api.renameTransactionCategory(project.id, oldName, newTrimmedName);
+        
+        await fetchProject();
+        await fetchTransactions();
+        toast({ title: 'Categoria atualizada!' });
+    };
+
 
     if (isLoading) {
         return (
@@ -207,6 +259,9 @@ function ProjectPageDetail() {
             onAddTransactionsBatch={handleAddTransactionsBatch}
             onUpdateTransaction={handleUpdateTransaction}
             onDeleteTransaction={handleDeleteTransaction}
+            onAddCategory={handleAddCategory}
+            onUpdateCategory={handleUpdateCategory}
+            onDeleteCategory={handleDeleteCategory}
         />
     );
 }

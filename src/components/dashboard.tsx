@@ -36,6 +36,7 @@ import { UserNav } from "@/components/user-nav";
 import { useToast } from "@/hooks/use-toast";
 import { ImportTransactionsDialog } from "./import-transactions-dialog";
 import { PayDailyRateDialog } from "./pay-daily-rate-dialog";
+import { ManageCategoriesDialog } from "./manage-categories-dialog";
 
 
 interface DashboardProps {
@@ -46,6 +47,9 @@ interface DashboardProps {
   onAddTransactionsBatch: (data: Omit<Transaction, "id" | "userId">[]) => void;
   onUpdateTransaction: (id: string, data: Partial<Transaction>) => void;
   onDeleteTransaction: (id: string) => void;
+  onAddCategory: (name: string) => Promise<void>;
+  onUpdateCategory: (oldName: string, newName: string) => Promise<void>;
+  onDeleteCategory: (name: string) => Promise<boolean>;
 }
 
 export default function Dashboard({ 
@@ -55,12 +59,16 @@ export default function Dashboard({
     onAddTransaction,
     onAddTransactionsBatch,
     onUpdateTransaction,
-    onDeleteTransaction
+    onDeleteTransaction,
+    onAddCategory,
+    onUpdateCategory,
+    onDeleteCategory,
 }: DashboardProps) {
   const [isAddSheetOpen, setAddSheetOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isDailyPaymentOpen, setDailyPaymentOpen] = useState(false);
+  const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
   const [selectedTalent, setSelectedTalent] = useState<Talent | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -593,7 +601,7 @@ export default function Dashboard({
         onSubmit={handleSaveTransaction}
         transactionToEdit={editingTransaction}
         project={project}
-        onProjectUpdate={onProjectUpdate}
+        onManageCategories={() => setIsManageCategoriesOpen(true)}
       />
       <CreateEditProjectDialog
         isOpen={isEditDialogOpen}
@@ -606,6 +614,14 @@ export default function Dashboard({
         setIsOpen={setIsImportDialogOpen}
         onSubmit={onAddTransactionsBatch}
         project={project}
+      />
+      <ManageCategoriesDialog
+        isOpen={isManageCategoriesOpen}
+        setIsOpen={setIsManageCategoriesOpen}
+        customCategories={project.customCategories || []}
+        onAddCategory={onAddCategory}
+        onUpdateCategory={onUpdateCategory}
+        onDeleteCategory={onDeleteCategory}
       />
       {selectedTalent && (
         <PayDailyRateDialog

@@ -231,3 +231,35 @@ export const deleteTransaction = async (transactionId: string) => {
     const transRef = doc(db, 'transactions', transactionId);
     await deleteDoc(transRef);
 };
+
+
+// Category Management
+export const renameTransactionCategory = async (projectId: string, oldCategory: string, newCategory: string) => {
+    const userId = getUserId();
+    const batch = writeBatch(db);
+
+    // 1. Update transactions
+    const transQuery = query(
+        collection(db, 'transactions'),
+        where('projectId', '==', projectId),
+        where('userId', '==', userId),
+        where('category', '==', oldCategory)
+    );
+    const transSnapshot = await getDocs(transQuery);
+    transSnapshot.forEach(doc => {
+        batch.update(doc.ref, { category: newCategory });
+    });
+
+    // 2. Update project's customCategories array
+    const projectRef = doc(db, 'projects', projectId);
+    const projectSnap = await getDoc(projectRef);
+    if (projectSnap.exists()) {
+        const projectData = projectSnap.data() as Project;
+        if (projectData.userId === userId) {
+            const updatedCategories = (projectData.customCategories || []).map(c => c === oldCategory ? newCategory : c);
+            batch.update(projectRef, { customCategories: updatedCategories });
+        }
+    }
+
+    await batch.commit();
+};
