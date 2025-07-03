@@ -95,17 +95,3 @@ export type ShootingDay = {
   props: string; // Using textarea
   presentTeam: TeamMember[];
 };
-
-// Weather data from API
-export interface WeatherData {
-  weather: {
-    temp: number;
-    description: string;
-    iconUrl: string;
-    precipitation: number;
-  };
-  sun: {
-    sunrise: string;
-    sunset: string;
-  };
-}
