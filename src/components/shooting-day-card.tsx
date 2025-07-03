@@ -91,41 +91,38 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete }: Sh
             </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col justify-between space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[250px_1fr] gap-6">
-          <div className="space-y-4">
+      <CardContent className="flex-grow flex flex-col justify-between space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="h-[180px]">
             {isFetchingWeather ? (
-              <Skeleton className="h-[180px] w-full" />
+              <Skeleton className="h-full w-full" />
             ) : day.weather ? (
               <WeatherCard weather={day.weather} />
             ) : (
-              <div className="h-[180px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+              <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                  <p className="text-sm font-semibold">Sem dados de clima</p>
                  <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
                  <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>
               </div>
             )}
-            
+          </div>
+          <div className="h-[180px]">
             {day.latitude && day.longitude ? (
-              <div className="h-[180px] w-full">
                 <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" />
-              </div>
             ) : (
-              <div className="h-[180px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+              <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                 <p className="text-sm font-semibold">Sem mapa</p>
                 <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
               </div>
             )}
-          </div>
-          <div className="space-y-6 md:col-span-1 lg:col-span-1">
-              <DetailSection icon={Clock} title="Horários de Chamada" content={day.callTimes} />
-              <DetailSection icon={Clapperboard} title="Cenas a Gravar" content={day.scenes} />
           </div>
         </div>
 
         <Separator />
         
         <div className="space-y-6">
+            <DetailSection icon={Clock} title="Horários de Chamada" content={day.callTimes} />
+            <DetailSection icon={Clapperboard} title="Cenas a Gravar" content={day.scenes} />
             <DetailSection
                 icon={Users}
                 title="Equipe Presente"
