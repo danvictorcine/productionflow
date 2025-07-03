@@ -40,12 +40,30 @@ export function LocationPicker({ initialPosition, onLocationChange }: LocationPi
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
+  const formatAddress = (address: any, fallback: string): string => {
+    if (!address) return fallback;
+    // Parts requested: nome da rua, numero, bairro, cep e estado
+    const { road, house_number, suburb, postcode, state, town, village } = address;
+
+    const formatted = [
+        road || town || village, // Fallback to town/village if road is not present
+        house_number,
+        suburb,
+        postcode,
+        state,
+    ].filter(Boolean).join(', ');
+
+    return formatted || fallback;
+  }
+
   const handleMapClick = async (latlng: { lat: number, lng: number }) => {
     setPosition([latlng.lat, latlng.lng]);
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`);
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&addressdetails=1`);
       const data = await response.json();
-      onLocationChange(latlng.lat, latlng.lng, data.display_name || `Lat: ${latlng.lat.toFixed(4)}, Lon: ${latlng.lng.toFixed(4)}`);
+      const fallbackName = data.display_name || `Lat: ${latlng.lat.toFixed(4)}, Lon: ${latlng.lng.toFixed(4)}`;
+      const displayName = formatAddress(data.address, fallbackName);
+      onLocationChange(latlng.lat, latlng.lng, displayName);
     } catch (error) {
       console.error("Reverse geocoding failed", error);
       onLocationChange(latlng.lat, latlng.lng, `Lat: ${latlng.lat.toFixed(4)}, Lon: ${latlng.lng.toFixed(4)}`);
@@ -58,10 +76,11 @@ export function LocationPicker({ initialPosition, onLocationChange }: LocationPi
       const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchTerm)}&format=json&limit=1&addressdetails=1`);
       const data = await response.json();
       if (data && data.length > 0) {
-        const { lat, lon, display_name } = data[0];
+        const { lat, lon, address, display_name } = data[0];
         const newPos: [number, number] = [parseFloat(lat), parseFloat(lon)];
         setPosition(newPos);
-        onLocationChange(newPos[0], newPos[1], display_name);
+        const displayName = formatAddress(address, display_name);
+        onLocationChange(newPos[0], newPos[1], displayName);
       } else {
         toast({ variant: 'destructive', title: 'Localização não encontrada.'});
       }
