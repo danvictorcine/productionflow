@@ -418,11 +418,10 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
   const q = query(
     collection(db, 'shooting_days'),
     where('productionId', '==', productionId),
-    where('userId', '==', userId),
-    orderBy('date', 'asc')
+    where('userId', '==', userId)
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => {
+  const days = querySnapshot.docs.map(doc => {
     const data = doc.data();
     return {
       id: doc.id,
@@ -430,6 +429,8 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
       date: (data.date as Timestamp).toDate(),
     } as ShootingDay;
   });
+  days.sort((a, b) => a.date.getTime() - b.date.getTime());
+  return days;
 };
 
 export const updateShootingDay = async (dayId: string, data: Partial<Omit<ShootingDay, 'id' | 'userId' | 'productionId'>>) => {
