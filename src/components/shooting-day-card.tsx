@@ -61,8 +61,8 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete }: Sh
   return (
     <AccordionItem value={day.id} className="border-none">
       <Card className="flex flex-col w-full">
-        <div className="flex items-start p-6">
-          <AccordionTrigger className="flex-1 text-left p-0 hover:no-underline">
+        <div className="relative">
+          <AccordionTrigger className="flex w-full items-center p-6 text-left hover:no-underline">
             <div className="flex items-center gap-4">
                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                   <Calendar className="h-6 w-6" />
@@ -75,7 +75,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete }: Sh
                 </div>
             </div>
           </AccordionTrigger>
-          <div className="pl-4">
+          <div className="absolute top-1/2 right-12 -translate-y-1/2">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
