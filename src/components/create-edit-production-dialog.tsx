@@ -108,10 +108,11 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
       ...t,
       id: t.id || crypto.randomUUID(),
     }));
+    // By spreading values, empty strings for client/producer are preserved,
+    // which is valid for Firestore. The previous implementation converted
+    // them to `undefined`, causing the "invalid-argument" error.
     const dataToSubmit = {
       ...values,
-      client: values.client || undefined,
-      producer: values.producer || undefined,
       team: teamWithIds,
     };
     onSubmit(dataToSubmit);
