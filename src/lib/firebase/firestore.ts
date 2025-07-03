@@ -351,14 +351,14 @@ export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'cr
 
 export const getProductions = async (): Promise<Production[]> => {
   const userId = getUserId();
-  const q = query(collection(db, 'productions'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  const q = query(collection(db, 'productions'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
     const data = doc.data();
     return {
       id: doc.id,
       ...data,
-      createdAt: (data.createdAt as Timestamp).toDate(),
+      createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
     } as Production;
   });
 };
