@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format, isToday } from "date-fns";
 import {
   Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, CloudSnow,
-  Wind, Sunrise, Sunset, Haze, CloudFog, Timer
+  Wind, Sunrise, Sunset, Haze, CloudFog, Timer, CloudSun
 } from "lucide-react";
 
 interface WeatherCardProps {
@@ -18,10 +18,11 @@ interface WeatherCardProps {
 const getWeatherIcon = (code: number) => {
   switch (code) {
     case 0: return <Sun className="h-10 w-10 text-yellow-500" />;
-    case 1: case 2: return <Cloud className="h-10 w-10 text-gray-400" />;
-    case 3: return <Cloud className="h-10 w-10 text-gray-500" />;
+    case 1: return <Sun className="h-10 w-10 text-yellow-500" />; // Mainly clear
+    case 2: return <CloudSun className="h-10 w-10 text-yellow-400" />; // Partly cloudy
+    case 3: return <Cloud className="h-10 w-10 text-gray-500" />; // Overcast
     case 45: case 48: return <CloudFog className="h-10 w-10 text-gray-400" />;
-    case 51: case 53: case 55: return <CloudDrizzle className="h-10 w-10 text-blue-400" />;
+    case 51: case 53: case 55: case 56: case 57: return <CloudDrizzle className="h-10 w-10 text-blue-400" />;
     case 61: case 63: case 65: return <CloudRain className="h-10 w-10 text-blue-500" />;
     case 66: case 67: return <CloudRain className="h-10 w-10 text-blue-500" />; // Freezing Rain
     case 71: case 73: case 75: case 77: return <CloudSnow className="h-10 w-10 text-blue-300" />;
@@ -35,33 +36,15 @@ const getWeatherIcon = (code: number) => {
 const getWeatherDescription = (code: number): string => {
     switch (code) {
         case 0: return "Ensolarado";
-        case 1:
+        case 1: return "Céu Limpo";
         case 2: return "Parcialmente Nublado";
         case 3: return "Nublado";
-        case 45:
-        case 48: return "Nevoeiro";
-        case 51:
-        case 53:
-        case 55:
-        case 56:
-        case 57: return "Garoa";
-        case 61:
-        case 63:
-        case 65:
-        case 66:
-        case 67: return "Chuva";
-        case 80:
-        case 81:
-        case 82: return "Pancadas de Chuva";
-        case 71:
-        case 73:
-        case 75:
-        case 77:
-        case 85:
-        case 86: return "Neve";
-        case 95:
-        case 96:
-        case 99: return "Trovoadas";
+        case 45: case 48: return "Nevoeiro";
+        case 51: case 53: case 55: case 56: case 57: return "Garoa";
+        case 61: case 63: case 65: case 66: case 67: return "Chuva";
+        case 80: case 81: case 82: return "Pancadas de Chuva";
+        case 71: case 73: case 75: case 77: case 85: case 86: return "Neve";
+        case 95: case 96: case 99: return "Trovoadas";
         default: return "Condição Incerta";
     }
 };
