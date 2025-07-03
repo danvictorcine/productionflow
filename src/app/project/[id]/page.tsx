@@ -39,6 +39,7 @@ function ProjectPageDetail() {
             // Add default values for backward compatibility
             const projectWithDefaults: Project = {
                 ...projectData,
+                hasProductionCosts: projectData.hasProductionCosts ?? true,
                 isBudgetParcelado: projectData.isBudgetParcelado ?? false,
                 installments: projectData.installments ?? [],
                 talents: (projectData.talents ?? []).map(t => ({...t, paymentType: t.paymentType || 'fixed'})),

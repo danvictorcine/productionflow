@@ -31,6 +31,7 @@ export type Project = {
   userId: string;
   name: string;
   budget: number;
+  hasProductionCosts: boolean;
   productionCosts: number;
   talents: Talent[];
   includeProductionCostsInBudget: boolean;

@@ -85,6 +85,7 @@ const installmentSchema = z.object({
 const projectFormSchema = z.object({
   name: z.string().min(2, "O nome do projeto deve ter pelo menos 2 caracteres."),
   budget: z.coerce.number().positive("O orçamento deve ser um número positivo."),
+  hasProductionCosts: z.boolean().default(true),
   productionCosts: z.coerce.number().min(0, "O valor de produção não pode ser negativo."),
   includeProductionCostsInBudget: z.boolean().default(true),
   talents: z.array(talentSchema),
@@ -121,6 +122,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
     defaultValues: {
       name: "",
       budget: 0,
+      hasProductionCosts: true,
       productionCosts: 0,
       includeProductionCostsInBudget: true,
       talents: [],
@@ -137,6 +139,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
         ? { 
             name: project.name,
             budget: project.budget,
+            hasProductionCosts: project.hasProductionCosts ?? true,
             productionCosts: project.productionCosts,
             includeProductionCostsInBudget: project.includeProductionCostsInBudget ?? true,
             talents: project.talents?.map(t => ({...t, paymentType: t.paymentType || 'fixed'})) ?? [],
@@ -146,6 +149,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
         : {
             name: "",
             budget: 0,
+            hasProductionCosts: true,
             productionCosts: 0,
             includeProductionCostsInBudget: true,
             talents: [],
@@ -167,6 +171,14 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
   });
   
   const isParcelado = form.watch("isBudgetParcelado");
+  const hasProductionCosts = form.watch("hasProductionCosts");
+
+  useEffect(() => {
+    if (!hasProductionCosts) {
+      form.setValue("productionCosts", 0);
+      form.setValue("includeProductionCostsInBudget", false);
+    }
+  }, [hasProductionCosts, form]);
 
   const handleSubmit = (values: ProjectFormValues) => {
     const talentsWithIds = values.talents.map((t, index) => ({
@@ -206,73 +218,44 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="budget"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Orçamento Total</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="text"
-                              placeholder="R$ 0,00"
-                              value={
-                                field.value
-                                  ? new Intl.NumberFormat("pt-BR", {
-                                      style: "currency",
-                                      currency: "BRL",
-                                    }).format(field.value)
-                                  : ""
-                              }
-                              onChange={(e) => {
-                                const numericValue = e.target.value.replace(/\D/g, "");
-                                field.onChange(Number(numericValue) / 100);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="productionCosts"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Valor de Produção</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="text"
-                              placeholder="R$ 0,00"
-                              value={
-                                field.value
-                                  ? new Intl.NumberFormat("pt-BR", {
-                                      style: "currency",
-                                      currency: "BRL",
-                                    }).format(field.value)
-                                  : ""
-                              }
-                              onChange={(e) => {
-                                const numericValue = e.target.value.replace(/\D/g, "");
-                                field.onChange(Number(numericValue) / 100);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                   <FormField
+                  <FormField
                     control={form.control}
-                    name="includeProductionCostsInBudget"
+                    name="budget"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Orçamento Total</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="R$ 0,00"
+                            value={
+                              field.value
+                                ? new Intl.NumberFormat("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                  }).format(field.value)
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const numericValue = e.target.value.replace(/\D/g, "");
+                              field.onChange(Number(numericValue) / 100);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="hasProductionCosts"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-background">
                         <div className="space-y-0.5">
-                          <FormLabel>Subtrair valor de produção do orçamento?</FormLabel>
+                          <FormLabel>Trabalhar com Valor de Produção?</FormLabel>
                           <FormDescription>
-                              Se ativado, o valor de produção planejado será deduzido do orçamento.
+                              Ative para separar um valor de produção do orçamento total.
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -284,6 +267,59 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                       </FormItem>
                     )}
                   />
+                  
+                  {hasProductionCosts && (
+                    <div className="space-y-4 rounded-lg border p-4">
+                      <FormField
+                        control={form.control}
+                        name="productionCosts"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor de Produção</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="text"
+                                placeholder="R$ 0,00"
+                                value={
+                                  field.value
+                                    ? new Intl.NumberFormat("pt-BR", {
+                                        style: "currency",
+                                        currency: "BRL",
+                                      }).format(field.value)
+                                    : ""
+                                }
+                                onChange={(e) => {
+                                  const numericValue = e.target.value.replace(/\D/g, "");
+                                  field.onChange(Number(numericValue) / 100);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <FormField
+                        control={form.control}
+                        name="includeProductionCostsInBudget"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-background">
+                            <div className="space-y-0.5">
+                              <FormLabel>Subtrair valor de produção do orçamento?</FormLabel>
+                              <FormDescription>
+                                  Se ativado, o valor de produção planejado será deduzido do orçamento.
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
                   
                   <FormField
                     control={form.control}
