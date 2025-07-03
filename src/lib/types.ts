@@ -81,6 +81,16 @@ export type Production = {
   team: TeamMember[];
 };
 
+export type WeatherInfo = {
+  temperature: number;
+  windSpeed: number;
+  sunrise: string; // ISO String
+  sunset: string; // ISO String
+  weatherCode: number;
+  lastUpdated: string; // ISO String
+  locationName: string;
+};
+
 export type ShootingDay = {
   id: string;
   productionId: string;
@@ -94,4 +104,7 @@ export type ShootingDay = {
   costumes: string; // Using textarea
   props: string; // Using textarea
   presentTeam: TeamMember[];
+  latitude?: number;
+  longitude?: number;
+  weather?: WeatherInfo;
 };

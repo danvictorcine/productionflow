@@ -18,11 +18,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
+import { WeatherCard } from "./weather-card";
+import { Skeleton } from "./ui/skeleton";
 
 interface ShootingDayCardProps {
   day: ShootingDay;
+  isFetchingWeather: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onEditLocation: () => void;
 }
 
 const DetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType, title: string, content?: React.ReactNode }) => {
@@ -45,7 +49,7 @@ const DetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType
   )
 };
 
-export function ShootingDayCard({ day, onEdit, onDelete }: ShootingDayCardProps) {
+export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEditLocation }: ShootingDayCardProps) {
   return (
     <Card className="flex flex-col w-full">
       <CardHeader>
@@ -57,7 +61,7 @@ export function ShootingDayCard({ day, onEdit, onDelete }: ShootingDayCardProps)
                 <div>
                     <CardTitle>Dia {format(new Date(day.date), "dd/MM")}: {format(new Date(day.date), "eeee", { locale: ptBR })}</CardTitle>
                     <CardDescription className="flex items-center gap-1.5 pt-1">
-                      <MapPin className="h-3 w-3" /> {day.location}
+                      <MapPin className="h-3 w-3" /> {day.weather?.locationName || day.location}
                     </CardDescription>
                 </div>
             </div>
@@ -72,6 +76,10 @@ export function ShootingDayCard({ day, onEdit, onDelete }: ShootingDayCardProps)
                         <Edit className="mr-2 h-4 w-4" />
                         Editar Ordem do Dia
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onEditLocation}>
+                        <MapPin className="mr-2 h-4 w-4" />
+                        Editar Localização
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Excluir
@@ -81,10 +89,29 @@ export function ShootingDayCard({ day, onEdit, onDelete }: ShootingDayCardProps)
         </div>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col justify-between space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-6">
+          <div>
+            {isFetchingWeather ? (
+              <Skeleton className="h-[180px] w-full" />
+            ) : day.weather ? (
+              <WeatherCard weather={day.weather} onEdit={onEditLocation} />
+            ) : (
+              <div className="h-[180px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+                 <p className="text-sm font-semibold">Sem dados de clima</p>
+                 <p className="text-xs text-muted-foreground mt-1">Edite a localização para buscar a previsão do tempo.</p>
+                 <Button size="sm" variant="outline" className="mt-3" onClick={onEditLocation}>Editar Local</Button>
+              </div>
+            )}
+          </div>
+          <div className="space-y-6">
+              <DetailSection icon={Clock} title="Horários de Chamada" content={day.callTimes} />
+              <DetailSection icon={Clapperboard} title="Cenas a Gravar" content={day.scenes} />
+          </div>
+        </div>
+
         <Separator />
+        
         <div className="space-y-6">
-            <DetailSection icon={Clock} title="Horários de Chamada" content={day.callTimes} />
-            <DetailSection icon={Clapperboard} title="Cenas a Gravar" content={day.scenes} />
             <DetailSection
                 icon={Users}
                 title="Equipe Presente"
