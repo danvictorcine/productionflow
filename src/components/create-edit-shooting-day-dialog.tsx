@@ -31,7 +31,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 const shootingDaySchema = z.object({
@@ -114,7 +113,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 pr-6">
+            <div className="flex-1 overflow-y-auto p-6 pt-2">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -232,8 +231,8 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                   )}
                 />
               </div>
-            </ScrollArea>
-            <DialogFooter className="pt-4 mt-4 border-t">
+            </div>
+            <DialogFooter className="flex-shrink-0 border-t p-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Ordem do Dia"}</Button>
             </DialogFooter>
