@@ -205,7 +205,9 @@ function HomePage() {
           const isFinancial = item.itemType === 'financial';
           const link = isFinancial ? `/project/${item.id}` : `/production/${item.id}`;
           const Icon = isFinancial ? Film : Clapperboard;
-          const description = isFinancial ? `Orçamento: ${formatCurrency(item.budget)}` : item.type;
+          const description = isFinancial
+            ? `Orçamento: ${formatCurrency(item.budget)}`
+            : `${item.type} • Dir: ${item.director}`;
 
           return (
             <Card key={item.id} className="hover:shadow-lg transition-shadow h-full flex flex-col relative">
