@@ -104,17 +104,24 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
   }, [isOpen, isEditMode, production, form]);
 
   const handleSubmit = (values: ProductionFormValues) => {
-    const teamWithIds = values.team.map((t) => ({
-      ...t,
-      id: t.id || crypto.randomUUID(),
+    // Sanitize team members' optional fields to prevent `undefined` values.
+    const sanitizedTeam = values.team.map((member) => ({
+      ...member,
+      id: member.id || crypto.randomUUID(),
+      dietaryRestriction: member.dietaryRestriction || "",
+      extraNotes: member.extraNotes || "",
     }));
-    // By spreading values, empty strings for client/producer are preserved,
-    // which is valid for Firestore. The previous implementation converted
-    // them to `undefined`, causing the "invalid-argument" error.
+
+    // Prepare the final object for submission, ensuring no `undefined` values.
     const dataToSubmit = {
-      ...values,
-      team: teamWithIds,
+      name: values.name,
+      type: values.type,
+      director: values.director,
+      client: values.client || "",
+      producer: values.producer || "",
+      team: sanitizedTeam,
     };
+    
     onSubmit(dataToSubmit);
   };
 
