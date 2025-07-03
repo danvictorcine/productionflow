@@ -1,32 +1,34 @@
 // @/src/components/weather-card.tsx
 "use client";
 
-import { WeatherInfo } from "@/lib/types";
+import { useState, useEffect } from "react";
+import type { WeatherInfo } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import {
   Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, CloudSnow,
-  Wind, Sunrise, Sunset, Haze, CloudFog
+  Wind, Sunrise, Sunset, Haze, CloudFog, Timer
 } from "lucide-react";
 
 interface WeatherCardProps {
   weather: WeatherInfo;
+  shootingDate: Date;
 }
 
 const getWeatherIcon = (code: number) => {
   switch (code) {
-    case 0: return <Sun className="h-12 w-12 text-yellow-500" />;
-    case 1: case 2: return <Cloud className="h-12 w-12 text-gray-400" />;
-    case 3: return <Cloud className="h-12 w-12 text-gray-500" />;
-    case 45: case 48: return <CloudFog className="h-12 w-12 text-gray-400" />;
-    case 51: case 53: case 55: return <CloudDrizzle className="h-12 w-12 text-blue-400" />;
-    case 61: case 63: case 65: return <CloudRain className="h-12 w-12 text-blue-500" />;
-    case 66: case 67: return <CloudRain className="h-12 w-12 text-blue-500" />; // Freezing Rain
-    case 71: case 73: case 75: case 77: return <CloudSnow className="h-12 w-12 text-blue-300" />;
-    case 80: case 81: case 82: return <CloudRain className="h-12 w-12 text-blue-600" />; // Rain showers
-    case 85: case 86: return <CloudSnow className="h-12 w-12 text-blue-400" />; // Snow showers
-    case 95: case 96: case 99: return <CloudLightning className="h-12 w-12 text-yellow-600" />;
-    default: return <Haze className="h-12 w-12 text-gray-500" />;
+    case 0: return <Sun className="h-10 w-10 text-yellow-500" />;
+    case 1: case 2: return <Cloud className="h-10 w-10 text-gray-400" />;
+    case 3: return <Cloud className="h-10 w-10 text-gray-500" />;
+    case 45: case 48: return <CloudFog className="h-10 w-10 text-gray-400" />;
+    case 51: case 53: case 55: return <CloudDrizzle className="h-10 w-10 text-blue-400" />;
+    case 61: case 63: case 65: return <CloudRain className="h-10 w-10 text-blue-500" />;
+    case 66: case 67: return <CloudRain className="h-10 w-10 text-blue-500" />; // Freezing Rain
+    case 71: case 73: case 75: case 77: return <CloudSnow className="h-10 w-10 text-blue-300" />;
+    case 80: case 81: case 82: return <CloudRain className="h-10 w-10 text-blue-600" />; // Rain showers
+    case 85: case 86: return <CloudSnow className="h-10 w-10 text-blue-400" />; // Snow showers
+    case 95: case 96: case 99: return <CloudLightning className="h-10 w-10 text-yellow-600" />;
+    default: return <Haze className="h-10 w-10 text-gray-500" />;
   }
 };
 
@@ -65,14 +67,48 @@ const getWeatherDescription = (code: number): string => {
 };
 
 
-export function WeatherCard({ weather }: WeatherCardProps) {
+export function WeatherCard({ weather, shootingDate }: WeatherCardProps) {
+  const [remainingDaylight, setRemainingDaylight] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isToday(shootingDate)) {
+        setRemainingDaylight(null);
+        return;
+    }
+
+    const calculateRemaining = () => {
+        const now = new Date();
+        const sunrise = new Date(weather.sunrise);
+        const sunset = new Date(weather.sunset);
+
+        if (now.getTime() < sunrise.getTime()) {
+            const totalDaylightMs = sunset.getTime() - sunrise.getTime();
+            const hours = Math.floor(totalDaylightMs / 3600000);
+            const minutes = Math.floor((totalDaylightMs % 3600000) / 60000);
+            setRemainingDaylight(`${hours}h ${minutes}m (Total)`);
+        } else if (now.getTime() > sunset.getTime()) {
+            setRemainingDaylight("0h 0m");
+        } else {
+            const remainingMs = sunset.getTime() - now.getTime();
+            const hours = Math.floor(remainingMs / 3600000);
+            const minutes = Math.floor((remainingMs % 3600000) / 60000);
+            setRemainingDaylight(`${hours}h ${minutes}m`);
+        }
+    };
+
+    calculateRemaining();
+    const intervalId = setInterval(calculateRemaining, 60000); // Update every minute
+
+    return () => clearInterval(intervalId);
+  }, [weather, shootingDate]);
+  
   return (
     <Card className="relative bg-card/50 h-full">
       <CardContent className="flex flex-col justify-between p-4 h-full">
-        <div className="flex items-center justify-around">
+        <div className="flex items-start justify-around">
             <div className="flex flex-col items-center gap-1">
                 {getWeatherIcon(weather.weatherCode)}
-                <p className="text-sm font-medium text-muted-foreground">{getWeatherDescription(weather.weatherCode)}</p>
+                <p className="text-xs font-medium text-muted-foreground">{getWeatherDescription(weather.weatherCode)}</p>
             </div>
             <div className="text-center">
                 <p className="text-4xl font-bold">{weather.temperature}°C</p>
@@ -82,15 +118,25 @@ export function WeatherCard({ weather }: WeatherCardProps) {
                 </div>
             </div>
         </div>
-        <div className="mt-4 flex w-full justify-around text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Sunrise className="h-5 w-5 text-yellow-500" />
+        
+        <div className="mt-2 grid grid-cols-2 lg:grid-cols-3 gap-2 w-full text-xs text-muted-foreground">
+          <div className="flex flex-col items-center text-center">
+            <Sunrise className="h-5 w-5 text-yellow-500 mb-1" />
+            <span className="font-semibold">Nascer do Sol</span>
             <span>{format(new Date(weather.sunrise), "HH:mm")}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Sunset className="h-5 w-5 text-orange-500" />
+          <div className="flex flex-col items-center text-center">
+            <Sunset className="h-5 w-5 text-orange-500 mb-1" />
+             <span className="font-semibold">Pôr do Sol</span>
             <span>{format(new Date(weather.sunset), "HH:mm")}</span>
           </div>
+          {remainingDaylight && (
+             <div className="flex flex-col items-center text-center col-span-2 lg:col-span-1 mt-2 lg:mt-0">
+                <Timer className="h-5 w-5 text-primary mb-1" />
+                <span className="font-semibold">Luz do Dia Restante</span>
+                <span className="font-bold text-sm text-foreground">{remainingDaylight}</span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

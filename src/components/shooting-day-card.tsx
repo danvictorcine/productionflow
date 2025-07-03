@@ -97,7 +97,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete }: Sh
             {isFetchingWeather ? (
               <Skeleton className="h-full w-full" />
             ) : day.weather ? (
-              <WeatherCard weather={day.weather} />
+              <WeatherCard weather={day.weather} shootingDate={day.date} />
             ) : (
               <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                  <p className="text-sm font-semibold">Sem dados de clima</p>
