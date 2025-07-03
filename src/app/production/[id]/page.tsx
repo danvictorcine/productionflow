@@ -146,23 +146,30 @@ function ProductionPageDetail() {
   };
 
   const handleShootingDaySubmit = async (data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => {
+    const sanitizedData = {
+      ...data,
+      equipment: data.equipment || "",
+      costumes: data.costumes || "",
+      props: data.props || "",
+      generalNotes: data.generalNotes || "",
+      presentTeam: data.presentTeam || [],
+    };
+    
     try {
       if (editingShootingDay) {
-        // When editing, if location name changed, but not lat/lng, weather needs re-fetch.
-        // We handle this by removing old weather data if location name has changed, forcing a re-fetch.
         const originalDay = shootingDays.find(d => d.id === editingShootingDay.id);
-        const hasLocationNameChanged = originalDay && originalDay.location !== data.location;
-        const hasCoordsChanged = originalDay && (originalDay.latitude !== data.latitude || originalDay.longitude !== data.longitude);
+        const hasLocationNameChanged = originalDay && originalDay.location !== sanitizedData.location;
+        const hasCoordsChanged = originalDay && (originalDay.latitude !== sanitizedData.latitude || originalDay.longitude !== sanitizedData.longitude);
 
-        let dataToUpdate: Partial<ShootingDay> = { ...data };
+        let dataToUpdate: Partial<ShootingDay> = { ...sanitizedData };
         if (hasLocationNameChanged || hasCoordsChanged) {
-           dataToUpdate.weather = undefined; // Force re-fetch
+           dataToUpdate.weather = undefined; // Force re-fetch by removing weather data
         }
 
         await firestoreApi.updateShootingDay(editingShootingDay.id, dataToUpdate);
         toast({ title: 'Ordem do Dia atualizada!' });
       } else {
-        await firestoreApi.addShootingDay(productionId, data);
+        await firestoreApi.addShootingDay(productionId, sanitizedData);
         toast({ title: 'Ordem do Dia criada!' });
       }
       await fetchProductionData();
