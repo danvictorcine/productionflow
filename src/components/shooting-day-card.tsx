@@ -22,7 +22,7 @@ import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { WeatherCard } from "./weather-card";
 import { Skeleton } from "./ui/skeleton";
-import { AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
 const DisplayMap = dynamic(() => import('./display-map').then(mod => mod.DisplayMap), {
