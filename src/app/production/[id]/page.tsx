@@ -1,12 +1,15 @@
 // @/src/app/production/[id]/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 import type { Production, ShootingDay, WeatherInfo } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -29,6 +32,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { CopyableError } from '@/components/copyable-error';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -41,11 +50,13 @@ function ProductionPageDetail() {
   const productionId = params.id as string;
   const { user } = useAuth();
   const { toast } = useToast();
+  const mainRef = useRef<HTMLElement>(null);
 
   const [production, setProduction] = useState<Production | null>(null);
   const [shootingDays, setShootingDays] = useState<ShootingDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingWeather, setIsFetchingWeather] = useState<Record<string, boolean>>({});
+  const [isExporting, setIsExporting] = useState(false);
 
   // Dialog states
   const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
@@ -209,6 +220,143 @@ function ProductionPageDetail() {
     }
   };
 
+  const handleExportToExcel = () => {
+    if (!production) return;
+    setIsExporting(true);
+
+    try {
+        const wb = XLSX.utils.book_new();
+
+        // --- Summary & Team Sheet ---
+        const summaryData = [
+            { Item: "Nome da Produção", Valor: production.name },
+            { Item: "Tipo", Valor: production.type },
+            { Item: "Diretor(a)", Valor: production.director },
+            { Item: "Produtor(a) Responsável", Valor: production.responsibleProducer || 'N/A' },
+            { Item: "Produtora", Valor: production.producer || 'N/A' },
+            { Item: "Cliente", Valor: production.client || 'N/A' },
+        ];
+        const teamData = (production.team || []).map(member => ({
+            Nome: member.name,
+            Função: member.role,
+            Contato: member.contact || '',
+            'Restrição Alimentar': member.dietaryRestriction || 'Nenhuma',
+            Observações: member.extraNotes || '',
+        }));
+
+        const wsSummary = XLSX.utils.json_to_sheet(summaryData, { skipHeader: true });
+        XLSX.utils.sheet_add_aoa(wsSummary, [["Resumo da Produção"]], { origin: "A1" });
+        wsSummary["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
+        wsSummary['!cols'] = [{ wch: 25 }, { wch: 40 }];
+        XLSX.utils.sheet_add_aoa(wsSummary, [[]], { origin: -1 });
+        XLSX.utils.sheet_add_aoa(wsSummary, [["Equipe e Elenco"]], { origin: -1 });
+        XLSX.utils.sheet_add_json(wsSummary, teamData, { origin: -1, skipHeader: false });
+        XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo e Equipe");
+
+        // --- Shooting Day Sheets ---
+        shootingDays.forEach(day => {
+            const dateStr = format(day.date, "dd_MM_yyyy");
+            const sheetName = `Diaria_${dateStr}`.substring(0, 31);
+
+            const dayInfo = [
+                ["Data", format(day.date, "PPP", { locale: ptBR })],
+                ["Diária", `${day.dayNumber || 'N/A'} de ${day.totalDays || 'N/A'}`],
+                ["Localização", day.location],
+            ];
+            const logisticsInfo = [
+                [], ["Logística e Segurança"],
+                ["Estacionamento", day.parkingInfo || 'N/A'],
+                ["Refeição", day.mealTime || 'N/A'],
+                ["Canais de Rádio", day.radioChannels || 'N/A'],
+                ["Hospital", `${day.nearestHospital?.name || 'N/A'} | ${day.nearestHospital?.address || ''} | ${day.nearestHospital?.phone || ''}`],
+            ];
+            const notesInfo = [
+                [], ["Notas dos Departamentos"],
+                ["Equipamentos", day.equipment || 'N/A'],
+                ["Figurino", day.costumes || 'N/A'],
+                ["Objetos de Cena e Direção de Arte", day.props || 'N/A'],
+                ["Observações Gerais", day.generalNotes || 'N/A'],
+            ];
+            const presentTeamInfo = [[], ["Equipe Presente"], [(day.presentTeam || []).map(p => p.name).join(', ') || 'N/A']];
+            
+            const wsDay = XLSX.utils.aoa_to_sheet([...dayInfo, ...logisticsInfo]);
+            wsDay['!cols'] = [{ wch: 30 }, { wch: 70 }];
+
+            XLSX.utils.sheet_add_aoa(wsDay, [[]], { origin: -1 });
+            XLSX.utils.sheet_add_aoa(wsDay, [["Horários de Chamada"]], { origin: -1 });
+            const callTimes = (day.callTimes && Array.isArray(day.callTimes) ? day.callTimes : []).map(ct => ({ Departamento: ct.department, Horário: ct.time }));
+            XLSX.utils.sheet_add_json(wsDay, callTimes, { origin: -1, skipHeader: false });
+
+            XLSX.utils.sheet_add_aoa(wsDay, [[]], { origin: -1 });
+            XLSX.utils.sheet_add_aoa(wsDay, [["Cenas a Gravar"]], { origin: -1 });
+            const scenes = (day.scenes && Array.isArray(day.scenes) ? day.scenes : []).map(s => ({
+                'Cena Nº': s.sceneNumber, Título: s.title, Páginas: s.pages, Descrição: s.description,
+                'Elenco na Cena': (s.presentInScene || []).map(p => p.name).join(', '),
+            }));
+            XLSX.utils.sheet_add_json(wsDay, scenes, { origin: -1, skipHeader: false });
+
+            XLSX.utils.sheet_add_aoa(wsDay, [...notesInfo, ...presentTeamInfo], { origin: -1 });
+            
+            XLSX.utils.book_append_sheet(wb, wsDay, sheetName);
+        });
+
+        XLSX.writeFile(wb, `Producao_${production.name.replace(/ /g, "_")}.xlsx`);
+        toast({ title: "Exportação para Excel Concluída" });
+    } catch (error) {
+        console.error(error);
+        toast({ variant: 'destructive', title: 'Erro ao exportar para Excel' });
+    } finally {
+        setIsExporting(false);
+    }
+  };
+
+  const handleExportToPdf = () => {
+    if (!mainRef.current) return;
+    setIsExporting(true);
+
+    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
+
+    html2canvas(mainRef.current, {
+        useCORS: true,
+        scale: 2,
+        logging: false,
+        backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4',
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const ratio = canvasWidth / canvasHeight;
+        const imgHeight = pdfWidth / ratio;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdf.internal.pageSize.getHeight();
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pdf.internal.pageSize.getHeight();
+        }
+
+        pdf.save(`Producao_${production?.name.replace(/ /g, "_")}.pdf`);
+        toast({ title: "Exportação para PDF Concluída!" });
+    }).catch(error => {
+        console.error("Error generating PDF", error);
+        toast({ variant: 'destructive', title: 'Erro ao gerar PDF' });
+    }).finally(() => {
+        setIsExporting(false);
+    });
+  };
+
   const openEditShootingDayDialog = (day: ShootingDay) => {
     setEditingShootingDay(day);
     setIsShootingDayDialogOpen(true);
@@ -249,11 +397,29 @@ function ProductionPageDetail() {
             <PlusCircle className="mr-2 h-4 w-4" />
             Criar Ordem do Dia
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={isExporting}>
+                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportToExcel} disabled={isExporting}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                <span>Exportar para Excel (.xlsx)</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportToPdf} disabled={isExporting}>
+                <FileDown className="mr-2 h-4 w-4" />
+                <span>Salvar como PDF</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <UserNav />
         </div>
       </header>
 
-      <main className="flex-1 p-4 sm:p-6 md:p-8">
+      <main ref={mainRef} className="flex-1 p-4 sm:p-6 md:p-8">
         <div className="mb-6 p-4 border rounded-lg bg-card">
           <h2 className="text-2xl font-bold tracking-tight">{production.name}</h2>
           <p className="text-muted-foreground">{production.type}</p>
