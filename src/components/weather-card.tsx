@@ -2,17 +2,15 @@
 "use client";
 
 import { WeatherInfo } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import {
   Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, CloudSnow,
-  Wind, Sunrise, Sunset, Haze, CloudFog, Edit
+  Wind, Sunrise, Sunset, Haze, CloudFog
 } from "lucide-react";
-import { Button } from "./ui/button";
 
 interface WeatherCardProps {
   weather: WeatherInfo;
-  onEdit: () => void;
 }
 
 const getWeatherIcon = (code: number) => {
@@ -32,12 +30,9 @@ const getWeatherIcon = (code: number) => {
   }
 };
 
-export function WeatherCard({ weather, onEdit }: WeatherCardProps) {
+export function WeatherCard({ weather }: WeatherCardProps) {
   return (
     <Card className="relative bg-card/50 h-full">
-      <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={onEdit}>
-        <Edit className="h-4 w-4" />
-      </Button>
       <CardContent className="flex flex-col items-center justify-center p-4 h-full">
         <div className="flex items-center gap-4">
           {getWeatherIcon(weather.weatherCode)}

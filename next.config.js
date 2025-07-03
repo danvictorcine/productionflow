@@ -15,6 +15,10 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '**.tile.openstreetmap.org',
+      }
     ],
   },
   devIndicators: {

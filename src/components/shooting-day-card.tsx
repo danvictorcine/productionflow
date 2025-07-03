@@ -8,6 +8,8 @@ import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clapperboard, Clock,
   Users, Truck, Shirt, Star, FileText
 } from "lucide-react";
+import dynamic from 'next/dynamic';
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,12 +23,17 @@ import { Separator } from "./ui/separator";
 import { WeatherCard } from "./weather-card";
 import { Skeleton } from "./ui/skeleton";
 
+const DisplayMap = dynamic(() => import('./display-map').then(mod => mod.DisplayMap), {
+  ssr: false,
+  loading: () => <Skeleton className="h-full w-full rounded-lg" />,
+});
+
+
 interface ShootingDayCardProps {
   day: ShootingDay;
   isFetchingWeather: boolean;
   onEdit: () => void;
   onDelete: () => void;
-  onEditLocation: () => void;
 }
 
 const DetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType, title: string, content?: React.ReactNode }) => {
@@ -49,7 +56,7 @@ const DetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType
   )
 };
 
-export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEditLocation }: ShootingDayCardProps) {
+export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete }: ShootingDayCardProps) {
   return (
     <Card className="flex flex-col w-full">
       <CardHeader>
@@ -61,7 +68,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEd
                 <div>
                     <CardTitle>Dia {format(new Date(day.date), "dd/MM")}: {format(new Date(day.date), "eeee", { locale: ptBR })}</CardTitle>
                     <CardDescription className="flex items-center gap-1.5 pt-1">
-                      <MapPin className="h-3 w-3" /> {day.weather?.locationName || day.location}
+                      <MapPin className="h-3 w-3" /> {day.location}
                     </CardDescription>
                 </div>
             </div>
@@ -76,10 +83,6 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEd
                         <Edit className="mr-2 h-4 w-4" />
                         Editar Ordem do Dia
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onEditLocation}>
-                        <MapPin className="mr-2 h-4 w-4" />
-                        Editar Localização
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Excluir
@@ -89,21 +92,32 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEd
         </div>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col justify-between space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-6">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[250px_1fr] gap-6">
+          <div className="space-y-4">
             {isFetchingWeather ? (
               <Skeleton className="h-[180px] w-full" />
             ) : day.weather ? (
-              <WeatherCard weather={day.weather} onEdit={onEditLocation} />
+              <WeatherCard weather={day.weather} />
             ) : (
               <div className="h-[180px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                  <p className="text-sm font-semibold">Sem dados de clima</p>
-                 <p className="text-xs text-muted-foreground mt-1">Edite a localização para buscar a previsão do tempo.</p>
-                 <Button size="sm" variant="outline" className="mt-3" onClick={onEditLocation}>Editar Local</Button>
+                 <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
+                 <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>
+              </div>
+            )}
+            
+            {day.latitude && day.longitude ? (
+              <div className="h-[180px] w-full">
+                <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" />
+              </div>
+            ) : (
+              <div className="h-[180px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+                <p className="text-sm font-semibold">Sem mapa</p>
+                <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
               </div>
             )}
           </div>
-          <div className="space-y-6">
+          <div className="space-y-6 md:col-span-1 lg:col-span-1">
               <DetailSection icon={Clock} title="Horários de Chamada" content={day.callTimes} />
               <DetailSection icon={Clapperboard} title="Cenas a Gravar" content={day.scenes} />
           </div>

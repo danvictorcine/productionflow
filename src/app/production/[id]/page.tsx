@@ -19,7 +19,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CreateEditProductionDialog } from '@/components/create-edit-production-dialog';
 import { CreateEditShootingDayDialog } from '@/components/create-edit-shooting-day-dialog';
 import { ShootingDayCard } from '@/components/shooting-day-card';
-import { EditLocationDialog } from '@/components/edit-location-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +30,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CopyableError } from '@/components/copyable-error';
-import { deleteField } from 'firebase/firestore';
 
 
 function ProductionPageDetail() {
@@ -51,24 +49,14 @@ function ProductionPageDetail() {
   const [isShootingDayDialogOpen, setIsShootingDayDialogOpen] = useState(false);
   const [editingShootingDay, setEditingShootingDay] = useState<ShootingDay | null>(null);
   const [dayToDelete, setDayToDelete] = useState<ShootingDay | null>(null);
-  const [editingDayLocation, setEditingDayLocation] = useState<ShootingDay | null>(null);
 
   const fetchAndUpdateWeather = useCallback(async (day: ShootingDay) => {
-    if (!day.location) return;
+    if (!day.latitude || !day.longitude) return;
+
     setIsFetchingWeather(prev => ({ ...prev, [day.id]: true }));
   
     try {
-      const geoResponse = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(day.location)}&count=1&language=pt&format=json`);
-      if (!geoResponse.ok) throw new Error('Geocoding API failed');
-      const geoData = await geoResponse.json();
-  
-      if (!geoData.results || geoData.results.length === 0) {
-        toast({ variant: 'destructive', title: 'Localização não encontrada', description: `Não foi possível encontrar coordenadas para "${day.location}".` });
-        setIsFetchingWeather(prev => ({ ...prev, [day.id]: false }));
-        return;
-      }
-      
-      const { latitude, longitude, name: locationName } = geoData.results[0];
+      const { latitude, longitude } = day;
   
       const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,wind_speed_10m&daily=sunrise,sunset&timezone=auto`);
       if (!weatherResponse.ok) throw new Error('Weather API failed');
@@ -81,13 +69,13 @@ function ProductionPageDetail() {
         sunset: weatherData.daily.sunset[0],
         weatherCode: weatherData.current.weather_code,
         lastUpdated: new Date().toISOString(),
-        locationName,
+        locationName: day.location,
       };
   
-      await firestoreApi.updateShootingDay(day.id, { weather: newWeather, latitude, longitude });
+      await firestoreApi.updateShootingDay(day.id, { weather: newWeather });
   
       setShootingDays(prevDays => prevDays.map(d => 
-        d.id === day.id ? { ...d, weather: newWeather, latitude, longitude } : d
+        d.id === day.id ? { ...d, weather: newWeather } : d
       ));
   
     } catch (error) {
@@ -113,7 +101,7 @@ function ProductionPageDetail() {
         daysData.forEach(day => {
           const weather = day.weather;
           const needsUpdate = !weather || !weather.lastUpdated || !isSameDay(new Date(weather.lastUpdated), new Date());
-          if (needsUpdate && day.location) {
+          if (needsUpdate && day.latitude && day.longitude) {
             fetchAndUpdateWeather(day);
           }
         });
@@ -136,18 +124,6 @@ function ProductionPageDetail() {
   useEffect(() => {
     fetchProductionData();
   }, [fetchProductionData]);
-  
-  const handleLocationUpdate = async (dayId: string, newLocation: string) => {
-    await firestoreApi.updateShootingDay(dayId, {
-      location: newLocation,
-      weather: deleteField(),
-      latitude: deleteField(),
-      longitude: deleteField(),
-    });
-    setEditingDayLocation(null);
-    await fetchProductionData();
-    toast({ title: 'Localização atualizada!', description: 'Buscando novos dados de clima...' });
-  };
 
   const handleProductionSubmit = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
     if (!production) return;
@@ -169,7 +145,18 @@ function ProductionPageDetail() {
   const handleShootingDaySubmit = async (data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => {
     try {
       if (editingShootingDay) {
-        await firestoreApi.updateShootingDay(editingShootingDay.id, data);
+        // When editing, if location name changed, but not lat/lng, weather needs re-fetch.
+        // We handle this by removing old weather data if location name has changed, forcing a re-fetch.
+        const originalDay = shootingDays.find(d => d.id === editingShootingDay.id);
+        const hasLocationNameChanged = originalDay && originalDay.location !== data.location;
+        const hasCoordsChanged = originalDay && (originalDay.latitude !== data.latitude || originalDay.longitude !== data.longitude);
+
+        let dataToUpdate: Partial<ShootingDay> = { ...data };
+        if (hasLocationNameChanged || hasCoordsChanged) {
+           dataToUpdate.weather = undefined; // Force re-fetch
+        }
+
+        await firestoreApi.updateShootingDay(editingShootingDay.id, dataToUpdate);
         toast({ title: 'Ordem do Dia atualizada!' });
       } else {
         await firestoreApi.addShootingDay(productionId, data);
@@ -275,7 +262,6 @@ function ProductionPageDetail() {
                 isFetchingWeather={isFetchingWeather[day.id] ?? false}
                 onEdit={() => openEditShootingDayDialog(day)}
                 onDelete={() => setDayToDelete(day)}
-                onEditLocation={() => setEditingDayLocation(day)}
               />
             ))}
           </div>
@@ -315,15 +301,6 @@ function ProductionPageDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {editingDayLocation && (
-        <EditLocationDialog
-          isOpen={!!editingDayLocation}
-          setIsOpen={() => setEditingDayLocation(null)}
-          day={editingDayLocation}
-          onSubmit={handleLocationUpdate}
-        />
-      )}
     </div>
   );
 }
