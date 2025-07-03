@@ -77,7 +77,7 @@ export const getProject = async (projectId: string): Promise<Project | null> => 
                 ...inst,
                 date: (inst.date as Timestamp).toDate()
               })),
-               createdAt: (projectData.createdAt as Timestamp).toDate(),
+               createdAt: projectData.createdAt ? (projectData.createdAt as Timestamp).toDate() : new Date(0),
             };
         }
     }
@@ -372,7 +372,7 @@ export const getProduction = async (productionId: string): Promise<Production | 
     return {
       id: docSnap.id,
       ...data,
-      createdAt: (data.createdAt as Timestamp).toDate(),
+      createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
     } as Production;
   }
   return null;
