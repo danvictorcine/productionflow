@@ -87,8 +87,6 @@ export type ShootingDay = {
   userId: string;
   date: Date;
   location: string;
-  latitude?: number;
-  longitude?: number;
   scenes: string; // Using textarea
   generalNotes: string; // Using textarea
   callTimes: string; // Using textarea

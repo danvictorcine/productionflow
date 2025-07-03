@@ -1,13 +1,13 @@
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
 
 import type { ShootingDay, TeamMember } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -34,8 +34,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { getLocationData } from "@/ai/flows/get-location-data-flow";
-import { useToast } from "@/hooks/use-toast";
 
 const teamMemberSchema = z.object({
   id: z.string(),
@@ -67,8 +65,6 @@ interface CreateEditShootingDayDialogProps {
 
 export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shootingDay, productionTeam }: CreateEditShootingDayDialogProps) {
   const isEditMode = !!shootingDay;
-  const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(shootingDaySchema),
@@ -115,37 +111,8 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     }
   }, [isOpen, isEditMode, shootingDay, form, productionTeam]);
 
-  const handleSubmit = async (values: FormValues) => {
-    setIsSaving(true);
-    try {
-      // Only fetch new coordinates if location has changed or it's a new entry
-      const locationChanged = isEditMode ? shootingDay?.location !== values.location : true;
-      let submissionData: any = { ...values };
-
-      if (locationChanged && values.location) {
-          const locationData = await getLocationData({ location: values.location });
-          if (locationData?.coordinates) {
-              submissionData.latitude = locationData.coordinates.lat;
-              submissionData.longitude = locationData.coordinates.lon;
-          } else {
-            toast({ variant: "destructive", title: "Localização não encontrada", description: "Não foi possível encontrar as coordenadas para o local informado. Verifique o endereço e tente novamente."});
-            setIsSaving(false);
-            return;
-          }
-      } else if (isEditMode) {
-          // Carry over existing coordinates if location hasn't changed
-          submissionData.latitude = shootingDay?.latitude;
-          submissionData.longitude = shootingDay?.longitude;
-      }
-      
-      onSubmit(submissionData);
-
-    } catch (error) {
-        console.error("Error getting location data:", error);
-        toast({ variant: "destructive", title: "Erro ao buscar dados da localização", description: "Houve um problema ao contatar o serviço de geolocalização. Verifique sua chave de API ou tente novamente mais tarde."});
-    } finally {
-        setIsSaving(false);
-    }
+  const handleSubmit = (values: FormValues) => {
+    onSubmit(values);
   };
 
   return (
@@ -319,10 +286,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
             </div>
             <DialogFooter className="flex-shrink-0 border-t p-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditMode ? "Salvar Alterações" : "Criar Ordem do Dia"}
-              </Button>
+              <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Ordem do Dia"}</Button>
             </DialogFooter>
           </form>
         </Form>
