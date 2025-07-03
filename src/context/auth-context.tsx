@@ -3,10 +3,10 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
-import { Skeleton } from '@/components/ui/skeleton';
+import { auth, firebaseError } from '@/lib/firebase/config';
 import { getUserProfile, updateUserProfile } from '@/lib/firebase/firestore';
 import type { UserProfile } from '@/lib/types';
+import { AlertCircle } from 'lucide-react';
 
 
 export type AppUser = User & UserProfile;
@@ -24,8 +24,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    const firebaseUser = auth.currentUser;
-    if (firebaseUser) {
+    // Only proceed if auth is initialized
+    if (auth && auth.currentUser) {
+        const firebaseUser = auth.currentUser;
         setLoading(true);
         const userProfile = await getUserProfile(firebaseUser.uid);
         if (userProfile) {
@@ -36,6 +37,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    // If auth object is not initialized due to an error, stop loading and do nothing.
+    if (!auth) {
+        setLoading(false);
+        return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         let userProfile = await getUserProfile(firebaseUser.uid);
@@ -71,6 +78,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => unsubscribe();
   }, []);
+
+  // If there was an error during Firebase initialization, show a helpful error screen.
+  if (firebaseError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
+        <div className="w-full max-w-lg p-6 mx-4 text-center bg-card border border-destructive rounded-lg shadow-lg">
+          <div className="flex flex-col items-center">
+            <AlertCircle className="w-12 h-12 text-destructive" />
+            <h1 className="mt-4 text-2xl font-bold text-destructive">Erro de Configuração do Firebase</h1>
+          </div>
+          <p className="mt-2 text-foreground">Não foi possível conectar ao seu projeto Firebase.</p>
+          <div className="p-3 mt-4 text-sm text-left bg-muted text-destructive rounded-md">
+            <p className="font-semibold">Mensagem de Erro:</p>
+            <p className="mt-1 font-mono text-xs break-words">{firebaseError.message}</p>
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Por favor, verifique se o arquivo <code className="px-1 py-0.5 font-mono text-sm bg-muted rounded">.env</code> na raiz do seu projeto está presente e preenchido com as credenciais corretas do seu projeto Firebase.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

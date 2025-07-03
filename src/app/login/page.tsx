@@ -42,6 +42,11 @@ export default function LoginPage() {
   });
 
   const getLoginErrorMessage = (errorCode: string) => {
+    // This provides a specific, helpful message if the environment variables are missing.
+    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        return 'A configuração do Firebase está ausente. Por favor, verifique se o arquivo .env na raiz do seu projeto está preenchido com as chaves do seu projeto Firebase.'
+    }
+    
     switch (errorCode) {
       case 'auth/user-not-found':
       case 'auth/wrong-password':
@@ -52,7 +57,7 @@ export default function LoginPage() {
       case 'auth/too-many-requests':
         return 'Acesso bloqueado temporariamente devido a muitas tentativas. Tente novamente mais tarde.';
       default:
-        return 'Ocorreu um erro desconhecido. Verifique suas credenciais ou a configuração do Firebase.';
+        return `Ocorreu um erro inesperado (código: ${errorCode}). Verifique a configuração do seu projeto Firebase.`;
     }
   }
 
