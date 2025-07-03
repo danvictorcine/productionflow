@@ -45,6 +45,7 @@ const productionFormSchema = z.object({
   name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres."),
   type: z.string().min(2, "O tipo é obrigatório (ex: Curta-metragem)."),
   director: z.string().min(2, "O nome do diretor(a) é obrigatório."),
+  responsibleProducer: z.string().optional(),
   client: z.string().optional(),
   producer: z.string().optional(),
   team: z.array(teamMemberSchema),
@@ -68,6 +69,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
       name: "",
       type: "",
       director: "",
+      responsibleProducer: "",
       client: "",
       producer: "",
       team: [],
@@ -88,6 +90,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
             name: production.name,
             type: production.type,
             director: production.director,
+            responsibleProducer: production.responsibleProducer || "",
             client: production.client || "",
             producer: production.producer || "",
             team: production.team || [],
@@ -96,6 +99,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
             name: "",
             type: "",
             director: "",
+            responsibleProducer: "",
             client: "",
             producer: "",
             team: [],
@@ -105,7 +109,6 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
   }, [isOpen, isEditMode, production, form]);
 
   const handleSubmit = (values: ProductionFormValues) => {
-    // Sanitize team members' optional fields to prevent `undefined` values.
     const sanitizedTeam = values.team.map((member) => ({
       ...member,
       id: member.id || crypto.randomUUID(),
@@ -114,11 +117,11 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
       extraNotes: member.extraNotes || "",
     }));
 
-    // Prepare the final object for submission, ensuring no `undefined` values.
     const dataToSubmit = {
       name: values.name,
       type: values.type,
       director: values.director,
+      responsibleProducer: values.responsibleProducer || "",
       client: values.client || "",
       producer: values.producer || "",
       team: sanitizedTeam,
@@ -182,6 +185,21 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                     />
                     <FormField
                       control={form.control}
+                      name="responsibleProducer"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Produtor(a) Responsável <span className="text-xs text-muted-foreground">(Opcional)</span></FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nome do(a) produtor(a)" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
                       name="producer"
                       render={({ field }) => (
                         <FormItem>
@@ -193,20 +211,20 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                         </FormItem>
                       )}
                     />
+                     <FormField
+                      control={form.control}
+                      name="client"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cliente <span className="text-xs text-muted-foreground">(Opcional)</span></FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nome do(a) cliente" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                    </div>
-                  <FormField
-                    control={form.control}
-                    name="client"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cliente <span className="text-xs text-muted-foreground">(Opcional)</span></FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome do(a) cliente" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                   
                   <Separator />
 

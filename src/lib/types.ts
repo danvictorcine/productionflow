@@ -80,6 +80,7 @@ export type Production = {
   name: string;
   type: string; // e.g., 'Curta-metragem', 'Publicidade'
   director: string;
+  responsibleProducer?: string;
   client?: string;
   producer?: string;
   createdAt: Date;

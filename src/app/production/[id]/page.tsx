@@ -259,6 +259,7 @@ function ProductionPageDetail() {
           <p className="text-muted-foreground">{production.type}</p>
           <div className="text-sm mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
             <p><span className="font-semibold">Diretor(a):</span> {production.director}</p>
+            {production.responsibleProducer && <p><span className="font-semibold">Produtor(a) Responsável:</span> {production.responsibleProducer}</p>}
             {production.producer && <p><span className="font-semibold">Produtora:</span> {production.producer}</p>}
             {production.client && <p><span className="font-semibold">Cliente:</span> {production.client}</p>}
           </div>
