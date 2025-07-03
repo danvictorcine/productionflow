@@ -127,7 +127,7 @@ function ProductionPageDetail() {
       <div className="p-8 space-y-6">
         <Skeleton className="h-[60px] w-full" />
         <Skeleton className="h-[80px] w-full" />
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-6">
           <Skeleton className="h-[200px] w-full" />
           <Skeleton className="h-[200px] w-full" />
         </div>
@@ -178,7 +178,7 @@ function ProductionPageDetail() {
             <p className="mt-1 text-sm text-muted-foreground">Crie a primeira Ordem do Dia para esta produção.</p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-6">
             {shootingDays.map(day => (
               <ShootingDayCard 
                 key={day.id} 
@@ -205,6 +205,7 @@ function ProductionPageDetail() {
         }}
         onSubmit={handleShootingDaySubmit}
         shootingDay={editingShootingDay || undefined}
+        productionTeam={production?.team || []}
       />
       
        <AlertDialog open={!!dayToDelete} onOpenChange={(open) => !open && setDayToDelete(null)}>

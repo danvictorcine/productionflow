@@ -9,8 +9,9 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon } from "lucide-react";
 
-import type { ShootingDay } from "@/lib/types";
+import type { ShootingDay, TeamMember } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,6 +35,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
+const teamMemberSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  role: z.string(),
+});
+
 const shootingDaySchema = z.object({
   date: z.date({ required_error: "A data da filmagem é obrigatória." }),
   location: z.string().min(1, "A localização é obrigatória."),
@@ -42,6 +50,7 @@ const shootingDaySchema = z.object({
   costumes: z.string().optional(),
   props: z.string().optional(),
   generalNotes: z.string().optional(),
+  presentTeam: z.array(teamMemberSchema).optional(),
 });
 
 type FormValues = z.infer<typeof shootingDaySchema>;
@@ -51,9 +60,10 @@ interface CreateEditShootingDayDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => void;
   shootingDay?: ShootingDay;
+  productionTeam: TeamMember[];
 }
 
-export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shootingDay }: CreateEditShootingDayDialogProps) {
+export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shootingDay, productionTeam }: CreateEditShootingDayDialogProps) {
   const isEditMode = !!shootingDay;
 
   const form = useForm<FormValues>({
@@ -67,6 +77,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       costumes: "",
       props: "",
       generalNotes: "",
+      presentTeam: [],
     },
   });
 
@@ -82,6 +93,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           costumes: shootingDay.costumes,
           props: shootingDay.props,
           generalNotes: shootingDay.generalNotes,
+          presentTeam: shootingDay.presentTeam || [],
         });
       } else {
         form.reset({
@@ -93,10 +105,11 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           costumes: "",
           props: "",
           generalNotes: "",
+          presentTeam: [],
         });
       }
     }
-  }, [isOpen, isEditMode, shootingDay, form]);
+  }, [isOpen, isEditMode, shootingDay, form, productionTeam]);
 
   const handleSubmit = (values: FormValues) => {
     onSubmit(values);
@@ -165,6 +178,45 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                       <FormControl>
                         <Textarea placeholder="Chamada Geral - 08:00&#10;Elenco - 08:30&#10;Direção - 07:30" {...field} rows={4} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="presentTeam"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>Equipe Presente no Dia</FormLabel>
+                      <FormDescription>Selecione quem da equipe principal estará presente nesta diária.</FormDescription>
+                      <div className="space-y-2 rounded-md border p-4 max-h-48 overflow-y-auto">
+                        {productionTeam.length > 0 ? productionTeam.map((member) => (
+                          <FormField
+                            key={member.id}
+                            control={form.control}
+                            name="presentTeam"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.some(p => p.id === member.id)}
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([...(field.value || []), member])
+                                        : field.onChange(field.value?.filter((p) => p.id !== member.id));
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                  {member.name} <span className="text-muted-foreground">({member.role})</span>
+                                </FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                        )) : (
+                          <p className="text-sm text-muted-foreground text-center">Nenhum membro da equipe cadastrado na produção.</p>
+                        )}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}

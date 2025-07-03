@@ -64,6 +64,12 @@ export type UserProfile = {
 
 
 // New types for Production (Call Sheet) Module
+export type TeamMember = {
+  id: string;
+  name: string;
+  role: string;
+};
+
 export type Production = {
   id: string;
   userId: string;
@@ -72,6 +78,7 @@ export type Production = {
   director: string;
   client: string;
   createdAt: Date;
+  team: TeamMember[];
 };
 
 export type ShootingDay = {
@@ -86,4 +93,5 @@ export type ShootingDay = {
   equipment: string; // Using textarea
   costumes: string; // Using textarea
   props: string; // Using textarea
+  presentTeam: TeamMember[];
 };
