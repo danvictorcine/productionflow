@@ -100,7 +100,7 @@ function ProductionPageDetail() {
 
       if (prodData) {
         setProduction(prodData);
-        setShootingDays(daysData);
+        
         daysData.forEach(day => {
           const weather = day.weather;
           
@@ -111,6 +111,8 @@ function ProductionPageDetail() {
             fetchAndUpdateWeather(day);
           }
         });
+        
+        setShootingDays(daysData);
       } else {
         toast({ variant: 'destructive', title: 'Erro', description: 'Produção não encontrada.' });
         router.push('/');
