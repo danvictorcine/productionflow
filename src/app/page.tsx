@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { PlusCircle, Film, MoreVertical, Edit, Trash2, Clapperboard } from "lucide-react";
+import { PlusCircle, Film, MoreVertical, Edit, Trash2, Clapperboard, DollarSign } from "lucide-react";
 
 import type { Project, Production } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -204,7 +204,7 @@ function HomePage() {
         {items.map((item) => {
           const isFinancial = item.itemType === 'financial';
           const link = isFinancial ? `/project/${item.id}` : `/production/${item.id}`;
-          const Icon = isFinancial ? Film : Clapperboard;
+          const Icon = isFinancial ? DollarSign : Clapperboard;
 
           return (
             <Card key={item.id} className="hover:shadow-lg transition-shadow h-full flex flex-col relative">
