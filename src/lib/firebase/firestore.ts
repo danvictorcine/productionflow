@@ -42,7 +42,8 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
 
 export const getProjects = async (): Promise<Project[]> => {
   const userId = getUserId();
-  const q = query(collection(db, 'projects'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  // Removed orderBy to fetch all projects, including legacy ones without 'createdAt'
+  const q = query(collection(db, 'projects'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
   querySnapshot.forEach((doc) => {
@@ -54,7 +55,8 @@ export const getProjects = async (): Promise<Project[]> => {
         ...inst,
         date: (inst.date as Timestamp).toDate()
       })),
-      createdAt: (data.createdAt as Timestamp).toDate(),
+      // Safely handle projects without a createdAt field by providing a fallback date
+      createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
     } as Project);
   });
   return projects;
