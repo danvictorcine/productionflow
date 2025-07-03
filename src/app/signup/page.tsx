@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, DollarSign, Users, FileSpreadsheet, Camera, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CopyableError } from '@/components/copyable-error';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
@@ -106,7 +107,7 @@ export default function SignupPage() {
       toast({
         variant: 'destructive',
         title: 'Erro no Cadastro',
-        description: getSignupErrorMessage(error.code),
+        description: <CopyableError userMessage={getSignupErrorMessage(error.code)} errorCode={error.code} />,
       });
     } finally {
         setIsLoading(false);

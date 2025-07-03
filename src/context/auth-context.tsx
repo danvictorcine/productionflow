@@ -90,8 +90,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           </div>
           <p className="mt-2 text-foreground">Não foi possível conectar ao seu projeto Firebase.</p>
           <div className="p-3 mt-4 text-sm text-left bg-muted text-destructive rounded-md">
-            <p className="font-semibold">Mensagem de Erro:</p>
-            <p className="mt-1 font-mono text-xs break-words">{firebaseError.message}</p>
+            <p className="font-semibold">Detalhes do Erro:</p>
+            <div className="mt-1 select-all font-mono text-xs break-words">
+              {'code' in firebaseError && (
+                <p>Código: {(firebaseError as any).code}</p>
+              )}
+              <p>Mensagem: {firebaseError.message}</p>
+            </div>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
             Por favor, verifique se o arquivo <code className="px-1 py-0.5 font-mono text-sm bg-muted rounded">.env</code> na raiz do seu projeto está presente e preenchido com as credenciais corretas do seu projeto Firebase.

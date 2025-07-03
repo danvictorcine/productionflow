@@ -12,6 +12,7 @@ import { useAuth } from '@/context/auth-context';
 import { db } from '@/lib/firebase/config';
 import { writeBatch, doc } from 'firebase/firestore';
 import { DEFAULT_EXPENSE_CATEGORIES } from '@/lib/types';
+import { CopyableError } from '@/components/copyable-error';
 
 
 function ProjectPageDetail() {
@@ -62,7 +63,12 @@ function ProjectPageDetail() {
                 await fetchProject();
                 await fetchTransactions();
             } catch (error) {
-                toast({ variant: "destructive", title: "Erro ao carregar dados", description: (error as Error).message });
+                const errorTyped = error as { code?: string; message: string };
+                toast({ 
+                    variant: "destructive", 
+                    title: "Erro ao carregar dados", 
+                    description: <CopyableError userMessage="Não foi possível carregar os dados do projeto." errorCode={errorTyped.code || errorTyped.message} />,
+                });
                 router.push('/');
             } finally {
                 setIsLoading(false);
@@ -118,7 +124,12 @@ function ProjectPageDetail() {
             await fetchTransactions(); // Re-fetch transactions to update UI
             toast({ title: "Projeto atualizado!" });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro ao atualizar projeto', description: (error as Error).message });
+            const errorTyped = error as { code?: string; message: string };
+            toast({ 
+                variant: 'destructive', 
+                title: 'Erro ao atualizar projeto', 
+                description: <CopyableError userMessage="Não foi possível atualizar o projeto." errorCode={errorTyped.code || errorTyped.message} /> 
+            });
         }
     };
     
@@ -133,7 +144,12 @@ function ProjectPageDetail() {
               toast({ title: 'Despesa planejada com sucesso!' });
             }
         } catch(error) {
-            toast({ variant: 'destructive', title: 'Erro ao adicionar despesa', description: (error as Error).message });
+            const errorTyped = error as { code?: string; message: string };
+            toast({ 
+                variant: 'destructive', 
+                title: 'Erro ao adicionar despesa', 
+                description: <CopyableError userMessage="Não foi possível adicionar a despesa." errorCode={errorTyped.code || errorTyped.message} /> 
+            });
         }
     };
     
@@ -147,7 +163,12 @@ function ProjectPageDetail() {
             await fetchTransactions();
             toast({ title: `${transactionsData.length} transações importadas com sucesso!` });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro ao importar transações', description: (error as Error).message });
+             const errorTyped = error as { code?: string; message: string };
+            toast({ 
+                variant: 'destructive', 
+                title: 'Erro ao importar transações', 
+                description: <CopyableError userMessage="Não foi possível importar as transações." errorCode={errorTyped.code || errorTyped.message} /> 
+            });
         }
     };
 
@@ -163,7 +184,12 @@ function ProjectPageDetail() {
                 toast({ title: 'Despesa atualizada com sucesso!' });
             }
         } catch(error) {
-            toast({ variant: 'destructive', title: 'Erro ao atualizar despesa', description: (error as Error).message });
+            const errorTyped = error as { code?: string; message: string };
+            toast({ 
+                variant: 'destructive', 
+                title: 'Erro ao atualizar despesa', 
+                description: <CopyableError userMessage="Não foi possível atualizar a despesa." errorCode={errorTyped.code || errorTyped.message} /> 
+            });
         }
     }
     
@@ -173,7 +199,12 @@ function ProjectPageDetail() {
             await fetchTransactions();
             toast({ title: 'Despesa excluída.' });
         } catch(error) {
-            toast({ variant: 'destructive', title: 'Erro ao excluir despesa', description: (error as Error).message });
+            const errorTyped = error as { code?: string; message: string };
+            toast({ 
+                variant: 'destructive', 
+                title: 'Erro ao excluir despesa', 
+                description: <CopyableError userMessage="Não foi possível excluir a despesa." errorCode={errorTyped.code || errorTyped.message} /> 
+            });
         }
     }
 

@@ -33,6 +33,7 @@ import { UserNav } from "@/components/user-nav";
 import { formatCurrency } from "@/lib/utils";
 import { ProjectTypeDialog } from "@/components/project-type-dialog";
 import { CreateEditProductionDialog } from "@/components/create-edit-production-dialog";
+import { CopyableError } from "@/components/copyable-error";
 
 type DisplayableItem = (Project & { itemType: 'financial' }) | (Production & { itemType: 'production' });
 
@@ -74,7 +75,12 @@ function HomePage() {
 
       setItems(displayableItems);
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao buscar projetos', description: (error as Error).message });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao buscar projetos',
+        description: <CopyableError userMessage="Não foi possível carregar seus projetos." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +112,12 @@ function HomePage() {
       }
       await fetchItems();
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao salvar projeto', description: (error as Error).message });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar projeto',
+        description: <CopyableError userMessage="Não foi possível salvar o projeto." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     }
     setIsProjectDialogOpen(false);
     setEditingProject(null);
@@ -123,7 +134,12 @@ function HomePage() {
       }
       await fetchItems();
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao salvar produção', description: (error as Error).message });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar produção',
+        description: <CopyableError userMessage="Não foi possível salvar a produção." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     }
     setIsProductionDialogOpen(false);
     setEditingProduction(null);
@@ -140,7 +156,12 @@ function HomePage() {
       toast({ title: `"${itemToDelete.name}" excluído(a).` });
       await fetchItems();
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao excluir', description: (error as Error).message });
+       const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir',
+        description: <CopyableError userMessage="Não foi possível excluir o item." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     }
     setItemToDelete(null);
   };

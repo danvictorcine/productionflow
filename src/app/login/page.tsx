@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, DollarSign, Users, FileSpreadsheet } from 'lucide-react';
+import { CopyableError } from '@/components/copyable-error';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -57,7 +58,7 @@ export default function LoginPage() {
       case 'auth/too-many-requests':
         return 'Acesso bloqueado temporariamente devido a muitas tentativas. Tente novamente mais tarde.';
       default:
-        return `Ocorreu um erro inesperado (código: ${errorCode}). Verifique a configuração do seu projeto Firebase.`;
+        return `Ocorreu um erro inesperado. Verifique a configuração do seu projeto Firebase.`;
     }
   }
 
@@ -70,7 +71,7 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Erro de Login',
-        description: getLoginErrorMessage(error.code),
+        description: <CopyableError userMessage={getLoginErrorMessage(error.code)} errorCode={error.code} />,
       });
     } finally {
         setIsLoading(false);

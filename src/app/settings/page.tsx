@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CopyableError } from '@/components/copyable-error';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
@@ -78,7 +79,11 @@ function SettingsPageDetail() {
       await refreshUser();
       toast({ title: 'Sucesso!', description: 'Seu nome foi atualizado.' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar nome',
+        description: <CopyableError userMessage="Não foi possível salvar seu nome." errorCode={error.code || error.message} />,
+      });
     } finally {
       setIsSaving(false);
     }
@@ -91,7 +96,11 @@ function SettingsPageDetail() {
       await firestoreApi.sendPasswordReset(user.email);
       toast({ title: 'E-mail Enviado', description: 'Verifique sua caixa de entrada para redefinir sua senha.' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao enviar e-mail',
+        description: <CopyableError userMessage="Não foi possível enviar o e-mail de redefinição." errorCode={error.code || error.message} />,
+      });
     } finally {
       setIsSendingEmail(false);
     }
@@ -117,7 +126,11 @@ function SettingsPageDetail() {
           await refreshUser();
           toast({ title: 'Foto atualizada!', description: 'Sua nova foto de perfil foi salva.' });
         } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Erro no Upload', description: error.message });
+          toast({
+            variant: 'destructive',
+            title: 'Erro no Upload',
+            description: <CopyableError userMessage="Não foi possível salvar sua foto." errorCode={error.code || error.message} />,
+          });
         } finally {
           setIsUploading(false);
           if (fileInputRef.current) {
@@ -127,7 +140,11 @@ function SettingsPageDetail() {
       };
       
       processImage().catch(error => {
-        toast({ variant: 'destructive', title: 'Erro Inesperado', description: (error as Error).message });
+        toast({
+          variant: 'destructive',
+          title: 'Erro Inesperado',
+          description: <CopyableError userMessage="Ocorreu um erro ao processar a imagem." errorCode={(error as Error).message} />,
+        });
         setIsUploading(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -167,7 +184,11 @@ function SettingsPageDetail() {
         
         toast({ title: "Exportação Concluída", description: "Seus dados foram baixados com sucesso." });
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Erro na Exportação', description: error.message });
+        toast({
+          variant: 'destructive',
+          title: 'Erro na Exportação',
+          description: <CopyableError userMessage="Não foi possível exportar seus dados." errorCode={error.code || error.message} />,
+        });
     } finally {
         setIsExporting(false);
     }
@@ -208,7 +229,11 @@ function SettingsPageDetail() {
             router.push('/');
 
         } catch (error: any) {
-             toast({ variant: 'destructive', title: 'Erro na Importação', description: error.message });
+             toast({
+              variant: 'destructive',
+              title: 'Erro na Importação',
+              description: <CopyableError userMessage={error.message || "Ocorreu um erro ao importar os dados."} errorCode={error.code} />,
+            });
         } finally {
              setIsImporting(false);
              setFileToImport(null);

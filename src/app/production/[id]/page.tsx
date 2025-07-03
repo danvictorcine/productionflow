@@ -29,6 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CopyableError } from '@/components/copyable-error';
 
 
 function ProductionPageDetail() {
@@ -65,7 +66,12 @@ function ProductionPageDetail() {
         router.push('/');
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao carregar dados', description: (error as Error).message });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao carregar dados',
+        description: <CopyableError userMessage="Não foi possível carregar os dados da produção." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +89,12 @@ function ProductionPageDetail() {
       setIsProductionDialogOpen(false);
       toast({ title: 'Produção atualizada com sucesso!' });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao atualizar', description: (error as Error).message });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar',
+        description: <CopyableError userMessage="Não foi possível atualizar a produção." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     }
   };
 
@@ -100,7 +111,12 @@ function ProductionPageDetail() {
       setIsShootingDayDialogOpen(false);
       setEditingShootingDay(null);
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao salvar', description: (error as Error).message });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar',
+        description: <CopyableError userMessage="Não foi possível salvar a Ordem do Dia." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     }
   };
 
@@ -111,7 +127,12 @@ function ProductionPageDetail() {
       toast({ title: 'Ordem do Dia excluída.' });
       fetchProductionData();
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao excluir', description: (error as Error).message });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir',
+        description: <CopyableError userMessage="Não foi possível excluir a Ordem do Dia." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     } finally {
       setDayToDelete(null);
     }
