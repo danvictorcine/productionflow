@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -279,6 +279,15 @@ function ProductionPageDetail() {
                                             <p className="text-sm text-muted-foreground">{member.role}</p>
                                         </div>
                                     </div>
+                                     {member.contact && (
+                                        <div className="mt-2 flex items-start gap-2 text-sm p-2 bg-background rounded">
+                                            <Phone className="h-4 w-4 mt-0.5 text-sky-600 flex-shrink-0" />
+                                            <div>
+                                                <span className="font-semibold">Contato: </span>
+                                                <a href={`tel:${member.contact.replace(/\D/g, '')}`} className="text-muted-foreground hover:underline">{member.contact}</a>
+                                            </div>
+                                        </div>
+                                    )}
                                     {member.hasDietaryRestriction && (
                                         <div className="mt-2 flex items-start gap-2 text-sm p-2 bg-background rounded">
                                             <Utensils className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0" />

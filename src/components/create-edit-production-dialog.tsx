@@ -35,6 +35,7 @@ const teamMemberSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Nome é obrigatório."),
   role: z.string().min(1, "Função é obrigatória."),
+  contact: z.string().optional(),
   hasDietaryRestriction: z.boolean().optional().default(false),
   dietaryRestriction: z.string().optional(),
   extraNotes: z.string().optional(),
@@ -108,6 +109,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
     const sanitizedTeam = values.team.map((member) => ({
       ...member,
       id: member.id || crypto.randomUUID(),
+      contact: member.contact || "",
       dietaryRestriction: member.dietaryRestriction || "",
       extraNotes: member.extraNotes || "",
     }));
@@ -226,6 +228,19 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                               <Button type="button" variant="destructive" size="icon" onClick={() => removeTeam(index)}><Trash2 className="h-4 w-4" /></Button>
                             </div>
                              <div className="space-y-4">
+                                <FormField
+                                  control={control}
+                                  name={`team.${index}.contact`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-xs">Contato (Telefone) <span className="text-muted-foreground">(Opcional)</span></FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="ex: (75) 99123-4567" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
                                <FormField
                                 control={control}
                                 name={`team.${index}.hasDietaryRestriction`}
@@ -275,7 +290,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                           </div>
                         )
                       })}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ id: crypto.randomUUID(), name: "", role: "", hasDietaryRestriction: false, dietaryRestriction: "", extraNotes: "" })}>
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ id: crypto.randomUUID(), name: "", role: "", contact: "", hasDietaryRestriction: false, dietaryRestriction: "", extraNotes: "" })}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adicionar Membro
                       </Button>

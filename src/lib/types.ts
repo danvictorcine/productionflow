@@ -68,6 +68,7 @@ export type TeamMember = {
   id:string;
   name: string;
   role: string;
+  contact?: string;
   hasDietaryRestriction?: boolean;
   dietaryRestriction?: string;
   extraNotes?: string;
