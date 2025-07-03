@@ -103,8 +103,11 @@ function ProductionPageDetail() {
         setShootingDays(daysData);
         daysData.forEach(day => {
           const weather = day.weather;
-          const needsUpdate = !weather || !weather.lastUpdated || !isSameDay(new Date(weather.lastUpdated), new Date());
-          if (needsUpdate && day.latitude && day.longitude) {
+          
+          const isStale = !weather || !weather.lastUpdated || !isSameDay(new Date(weather.lastUpdated), new Date());
+          const locationMismatch = weather && weather.locationName !== day.location;
+          
+          if ((isStale || locationMismatch) && day.latitude && day.longitude) {
             fetchAndUpdateWeather(day);
           }
         });
@@ -157,16 +160,7 @@ function ProductionPageDetail() {
     
     try {
       if (editingShootingDay) {
-        const originalDay = shootingDays.find(d => d.id === editingShootingDay.id);
-        const hasLocationNameChanged = originalDay && originalDay.location !== sanitizedData.location;
-        const hasCoordsChanged = originalDay && (originalDay.latitude !== sanitizedData.latitude || originalDay.longitude !== sanitizedData.longitude);
-
-        let dataToUpdate: Partial<ShootingDay> = { ...sanitizedData };
-        if (hasLocationNameChanged || hasCoordsChanged) {
-           dataToUpdate.weather = undefined; // Force re-fetch by removing weather data
-        }
-
-        await firestoreApi.updateShootingDay(editingShootingDay.id, dataToUpdate);
+        await firestoreApi.updateShootingDay(editingShootingDay.id, sanitizedData);
         toast({ title: 'Ordem do Dia atualizada!' });
       } else {
         await firestoreApi.addShootingDay(productionId, sanitizedData);
