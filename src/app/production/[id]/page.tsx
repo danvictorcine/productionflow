@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -30,6 +30,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CopyableError } from '@/components/copyable-error';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 
 function ProductionPageDetail() {
@@ -202,10 +205,10 @@ function ProductionPageDetail() {
     return (
       <div className="p-8 space-y-6">
         <Skeleton className="h-[60px] w-full" />
-        <Skeleton className="h-[80px] w-full" />
+        <Skeleton className="h-[100px] w-full" />
         <div className="space-y-6">
-          <Skeleton className="h-[200px] w-full" />
-          <Skeleton className="h-[200px] w-full" />
+          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[300px] w-full" />
         </div>
       </div>
     );
@@ -241,31 +244,84 @@ function ProductionPageDetail() {
         <div className="mb-6 p-4 border rounded-lg bg-card">
           <h2 className="text-2xl font-bold tracking-tight">{production.name}</h2>
           <p className="text-muted-foreground">{production.type}</p>
-          <div className="text-sm mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+          <div className="text-sm mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
             <p><span className="font-semibold">Diretor(a):</span> {production.director}</p>
-            <p><span className="font-semibold">Cliente:</span> {production.client}</p>
+            {production.producer && <p><span className="font-semibold">Produtora:</span> {production.producer}</p>}
+            {production.client && <p><span className="font-semibold">Cliente:</span> {production.client}</p>}
           </div>
         </div>
 
-        {shootingDays.length === 0 ? (
-          <div className="text-center p-12 border-2 border-dashed rounded-lg">
-            <Clapperboard className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">Nenhuma Ordem do Dia</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Crie a primeira Ordem do Dia para esta produção.</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {shootingDays.map(day => (
-              <ShootingDayCard 
-                key={day.id} 
-                day={day} 
-                isFetchingWeather={isFetchingWeather[day.id] ?? false}
-                onEdit={() => openEditShootingDayDialog(day)}
-                onDelete={() => setDayToDelete(day)}
-              />
-            ))}
-          </div>
-        )}
+        <Accordion type="multiple" defaultValue={['team', ...(shootingDays.length > 0 ? [shootingDays[0].id] : [])]} className="w-full space-y-4">
+            <AccordionItem value="team" className="border-none">
+                <Card>
+                    <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
+                       <CardHeader className="flex-1">
+                           <CardTitle className="flex items-center text-left">
+                               <Users className="h-6 w-6 mr-3 text-primary" />
+                               Equipe e Elenco
+                           </CardTitle>
+                           <CardDescription className="text-left">
+                               Informações detalhadas sobre todos os envolvidos na produção.
+                           </CardDescription>
+                       </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-6 pt-0">
+                        <div className="space-y-4">
+                        {production.team && production.team.length > 0 ? (
+                            production.team.map(member => (
+                                <div key={member.id} className="p-3 rounded-md border bg-muted/50">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="font-semibold">{member.name}</p>
+                                            <p className="text-sm text-muted-foreground">{member.role}</p>
+                                        </div>
+                                    </div>
+                                    {member.hasDietaryRestriction && (
+                                        <div className="mt-2 flex items-start gap-2 text-sm p-2 bg-background rounded">
+                                            <Utensils className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0" />
+                                            <div>
+                                                <span className="font-semibold">Restrição Alimentar: </span>
+                                                <span className="text-muted-foreground">{member.dietaryRestriction || 'Não especificada'}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {member.extraNotes && (
+                                        <div className="mt-2 flex items-start gap-2 text-sm p-2 bg-background rounded">
+                                            <Info className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
+                                            <div>
+                                                <span className="font-semibold">Observação: </span>
+                                                <span className="text-muted-foreground">{member.extraNotes}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                             <p className="text-sm text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado.</p>
+                        )}
+                        </div>
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
+
+            {shootingDays.length === 0 && !isLoading ? (
+              <div className="text-center p-12 border-2 border-dashed rounded-lg mt-6">
+                <Clapperboard className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold">Nenhuma Ordem do Dia</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Crie a primeira Ordem do Dia para esta produção.</p>
+              </div>
+            ) : (
+                shootingDays.map(day => (
+                  <ShootingDayCard 
+                    key={day.id} 
+                    day={day} 
+                    isFetchingWeather={isFetchingWeather[day.id] ?? false}
+                    onEdit={() => openEditShootingDayDialog(day)}
+                    onDelete={() => setDayToDelete(day)}
+                  />
+                ))
+            )}
+        </Accordion>
       </main>
       
       <CreateEditProductionDialog

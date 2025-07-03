@@ -68,6 +68,9 @@ export type TeamMember = {
   id:string;
   name: string;
   role: string;
+  hasDietaryRestriction?: boolean;
+  dietaryRestriction?: string;
+  extraNotes?: string;
 };
 
 export type Production = {
@@ -76,7 +79,8 @@ export type Production = {
   name: string;
   type: string; // e.g., 'Curta-metragem', 'Publicidade'
   director: string;
-  client: string;
+  client?: string;
+  producer?: string;
   createdAt: Date;
   team: TeamMember[];
 };
