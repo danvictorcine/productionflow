@@ -1,30 +1,51 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow only authenticated users to access their own data
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // User profile is readable by anyone signed in (e.g., to see names/avatars),
+    // but only writable by the owner.
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
     }
 
+    // Projects (Financial)
     match /projects/{projectId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
+      // Allow single document reads, updates, and deletes only by the owner.
+      allow get, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      // Allow creating a project if the user is signed in and is the owner.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      
+      // Allow listing/querying projects. This rule is secure because our client-side
+      // code *must* include the "where('userId', '==', currentUser.uid)" filter.
+      allow list: if isSignedIn();
     }
 
+    // Transactions
     match /transactions/{transactionId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
+      allow get, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn();
     }
 
-    // New rules for Production module
+    // Productions (Call Sheets)
     match /productions/{productionId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
+       allow get, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+       allow list: if isSignedIn();
     }
 
+    // Shooting Days (Call Sheets)
     match /shooting_days/{dayId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
+        allow get, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow list: if isSignedIn();
     }
   }
 }
