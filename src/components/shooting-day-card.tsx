@@ -38,6 +38,7 @@ interface ShootingDayCardProps {
   onDelete: () => void;
 }
 
+// Collapsible section
 const DetailSection = ({ icon: Icon, title, content, defaultOpen = false }: { icon: React.ElementType, title: string, content?: React.ReactNode, defaultOpen?: boolean }) => {
   const hasContent = typeof content === 'string' ? !!content.trim() : !!content;
 
@@ -59,6 +60,23 @@ const DetailSection = ({ icon: Icon, title, content, defaultOpen = false }: { ic
     </Accordion>
   )
 };
+
+// Always-visible section
+const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType, title: string, content?: React.ReactNode }) => {
+  const hasContent = typeof content === 'string' ? !!content.trim() : !!content;
+  if (!hasContent) return null;
+
+  return (
+    <div className="py-2">
+        <h4 className="flex items-center text-md font-semibold">
+            <Icon className="h-4 w-4 mr-2 text-primary" />
+            {title}
+        </h4>
+        <div className="text-sm text-muted-foreground whitespace-pre-wrap pt-1 pl-6">{content}</div>
+    </div>
+  );
+};
+
 
 const SceneCard = ({ scene }: { scene: Scene }) => (
     <div className="p-4 rounded-lg border bg-background/50 space-y-3">
@@ -162,13 +180,13 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete }: Sh
             
             <div className="space-y-4">
                 {/* Logistics Section */}
-                <div className="p-4 border rounded-lg space-y-4">
+                <div className="p-4 border rounded-lg space-y-2">
                     <h4 className="font-semibold text-lg flex items-center"><Hash className="h-5 w-5 mr-2 text-primary"/>Logística e Segurança</h4>
-                    <DetailSection icon={ParkingCircle} title="Estacionamento" content={day.parkingInfo} />
-                    <DetailSection icon={Utensils} title="Refeição" content={day.mealTime} />
+                    <StaticDetailSection icon={ParkingCircle} title="Estacionamento" content={day.parkingInfo} />
+                    <StaticDetailSection icon={Utensils} title="Refeição" content={day.mealTime} />
                     <DetailSection icon={Radio} title="Rádios" content={day.radioChannels} />
                     {day.nearestHospital && day.nearestHospital.name && (
-                         <DetailSection icon={Hospital} title="Hospital Mais Próximo" content={
+                         <StaticDetailSection icon={Hospital} title="Hospital Mais Próximo" content={
                             <div className="space-y-1">
                                 <p><span className="font-semibold text-foreground">Nome:</span> {day.nearestHospital.name}</p>
                                 <p><span className="font-semibold text-foreground">Endereço:</span> {day.nearestHospital.address}</p>
@@ -218,9 +236,9 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete }: Sh
                 {/* Department Notes */}
                 <div className="p-4 border rounded-lg space-y-2">
                      <h4 className="font-semibold text-lg flex items-center"><Users className="h-5 w-5 mr-2 text-primary"/>Notas dos Departamentos</h4>
-                     <DetailSection icon={Truck} title="Equipamentos" content={day.equipment} />
-                     <DetailSection icon={Shirt} title="Figurino" content={day.costumes} />
-                     <DetailSection icon={Star} title="Objetos de Cena (Props)" content={day.props} />
+                     <StaticDetailSection icon={Truck} title="Equipamentos" content={day.equipment} />
+                     <StaticDetailSection icon={Shirt} title="Figurino" content={day.costumes} />
+                     <StaticDetailSection icon={Star} title="Objetos de Cena e Direção de Arte" content={day.props} />
                 </div>
                 
                  {/* Present Team & General Notes */}
