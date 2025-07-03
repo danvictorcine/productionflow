@@ -389,7 +389,10 @@ function ProductionPageDetail() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <h1 className="text-xl font-bold text-primary truncate">{production.name}</h1>
+        <div className="flex items-center gap-3">
+          <Clapperboard className="h-6 w-6 text-muted-foreground" />
+          <h1 className="text-xl font-bold text-primary truncate">{production.name}</h1>
+        </div>
         <div className="ml-auto flex items-center gap-2">
           <Button onClick={() => setIsProductionDialogOpen(true)} variant="outline">
             <Edit className="mr-2 h-4 w-4" />

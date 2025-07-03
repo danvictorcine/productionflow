@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, FileText, Upload, ClipboardList } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, FileText, Upload, ClipboardList, DollarSign } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
@@ -451,7 +451,10 @@ export default function Dashboard({
                 <span className="sr-only">Voltar para Projetos</span>
             </Button>
         </Link>
-        <h1 className="text-xl font-bold text-primary truncate">{project.name}</h1>
+        <div className="flex items-center gap-3">
+          <DollarSign className="h-6 w-6 text-muted-foreground" />
+          <h1 className="text-xl font-bold text-primary truncate">{project.name}</h1>
+        </div>
         <div className="ml-auto flex items-center gap-2">
           <Button onClick={() => setEditDialogOpen(true)} variant="outline">
             <Edit className="mr-2 h-4 w-4" />
