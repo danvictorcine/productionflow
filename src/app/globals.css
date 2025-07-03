@@ -66,3 +66,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Fix for Leaflet map appearing over dialogs */
+.leaflet-container {
+  z-index: 1;
+}
