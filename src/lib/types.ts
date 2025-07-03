@@ -65,7 +65,7 @@ export type UserProfile = {
 
 // New types for Production (Call Sheet) Module
 export type TeamMember = {
-  id: string;
+  id:string;
   name: string;
   role: string;
 };
@@ -87,6 +87,8 @@ export type ShootingDay = {
   userId: string;
   date: Date;
   location: string;
+  latitude?: number;
+  longitude?: number;
   scenes: string; // Using textarea
   generalNotes: string; // Using textarea
   callTimes: string; // Using textarea
