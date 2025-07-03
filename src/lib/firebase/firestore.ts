@@ -13,6 +13,7 @@ import {
   writeBatch,
   getDoc,
   setDoc,
+  deleteField,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
 import type { Project, Transaction, UserProfile, Production, ShootingDay } from '@/lib/types';
@@ -439,6 +440,11 @@ export const updateShootingDay = async (dayId: string, data: Partial<Omit<Shooti
    if (data.date) {
         dataToUpdate.date = Timestamp.fromDate(data.date);
     }
+  
+  if (data.hasOwnProperty('weather') && data.weather === undefined) {
+      dataToUpdate.weather = deleteField();
+  }
+
   await updateDoc(docRef, dataToUpdate);
 };
 
