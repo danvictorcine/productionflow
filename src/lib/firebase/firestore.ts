@@ -15,7 +15,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Installment } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -25,12 +25,13 @@ const getUserId = () => {
   return user.uid;
 };
 
-// Project Functions
-export const addProject = async (projectData: Omit<Project, 'id' | 'userId'>) => {
+// Project Functions (Financial)
+export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'createdAt'>) => {
   const userId = getUserId();
-  const docRef = await addDoc(collection(db, 'projects'), { 
-    ...projectData, 
+  const docRef = await addDoc(collection(db, 'projects'), {
+    ...projectData,
     userId,
+    createdAt: Timestamp.now(),
     installments: (projectData.installments || []).map(inst => ({
       ...inst,
       date: Timestamp.fromDate(inst.date),
@@ -41,21 +42,21 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId'>) =>
 
 export const getProjects = async (): Promise<Project[]> => {
   const userId = getUserId();
-  const q = query(collection(db, 'projects'), where('userId', '==', userId));
+  const q = query(collection(db, 'projects'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
   querySnapshot.forEach((doc) => {
     const data = doc.data();
-    projects.push({ 
-      ...data, 
+    projects.push({
+      ...data,
       id: doc.id,
       installments: (data.installments || []).map((inst: any) => ({
         ...inst,
         date: (inst.date as Timestamp).toDate()
       })),
+      createdAt: (data.createdAt as Timestamp).toDate(),
     } as Project);
   });
-  projects.sort((a, b) => a.name.localeCompare(b.name));
   return projects;
 };
 
@@ -67,20 +68,21 @@ export const getProject = async (projectId: string): Promise<Project | null> => 
     if (projectSnap.exists()) {
         const projectData = projectSnap.data() as Omit<Project, 'id'>;
         if (projectData.userId === userId) {
-            return { 
-              ...projectData, 
+            return {
+              ...projectData,
               id: projectSnap.id,
               installments: (projectData.installments || []).map((inst: any) => ({
                 ...inst,
                 date: (inst.date as Timestamp).toDate()
               })),
+               createdAt: (projectData.createdAt as Timestamp).toDate(),
             };
         }
     }
     return null;
 }
 
-export const updateProject = async (projectId: string, projectData: Partial<Omit<Project, 'id' | 'userId'>>) => {
+export const updateProject = async (projectId: string, projectData: Partial<Omit<Project, 'id' | 'userId' | 'createdAt'>>) => {
   const projectRef = doc(db, 'projects', projectId);
   const dataToUpdate: Record<string, any> = { ...projectData };
   if (projectData.installments) {
@@ -95,16 +97,14 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
 export const deleteProject = async (projectId: string) => {
     const userId = getUserId();
     const batch = writeBatch(db);
-    
-    // Delete the project document
+
     const projectRef = doc(db, 'projects', projectId);
     batch.delete(projectRef);
 
-    // Find and delete all associated transactions securely
     const transQuery = query(
-        collection(db, 'transactions'), 
-        where('projectId', '==', projectId), 
-        where('userId', '==', userId) // This makes the query secure
+        collection(db, 'transactions'),
+        where('projectId', '==', projectId),
+        where('userId', '==', userId)
     );
     const transSnapshot = await getDocs(transQuery);
     transSnapshot.forEach(doc => {
@@ -117,9 +117,9 @@ export const deleteProject = async (projectId: string) => {
 
 // User Profile Functions
 export const createUserProfile = async (uid: string, name: string, email: string, photoURL: string | null = null) => {
-  await setDoc(doc(db, 'users', uid), { 
-    name, 
-    email, 
+  await setDoc(doc(db, 'users', uid), {
+    name,
+    email,
     photoURL
   });
 };
@@ -149,7 +149,6 @@ export const updateUserProfile = async (uid: string, data: Partial<Omit<UserProf
       if (data.name) {
         authUpdateData.displayName = data.name;
       }
-      // Check for photoURL specifically, including null to remove it
       if (data.hasOwnProperty('photoURL')) {
         authUpdateData.photoURL = data.photoURL || null;
       }
@@ -165,9 +164,9 @@ export const uploadProfilePhoto = async (uid: string, file: Blob): Promise<strin
     const storageRef = ref(storage, filePath);
     await uploadBytes(storageRef, file);
     const downloadURL = await getDownloadURL(storageRef);
-    
+
     await updateUserProfile(uid, { photoURL: downloadURL });
-    
+
     return downloadURL;
 }
 
@@ -212,7 +211,7 @@ export const addTransactionsBatch = async (transactionsData: Omit<Transaction, '
 export const getTransactions = async (projectId: string): Promise<Transaction[]> => {
     const userId = getUserId();
     const q = query(
-        collection(db, 'transactions'), 
+        collection(db, 'transactions'),
         where('projectId', '==', projectId),
         where('userId', '==', userId)
     );
@@ -232,12 +231,12 @@ export const getTransactions = async (projectId: string): Promise<Transaction[]>
 
 export const updateTransaction = async (transactionId: string, transactionData: Partial<Transaction>) => {
     const transRef = doc(db, 'transactions', transactionId);
-    
+
     const dataToUpdate: Record<string, any> = { ...transactionData };
     if (transactionData.date) {
         dataToUpdate.date = Timestamp.fromDate(transactionData.date);
     }
-    
+
     await updateDoc(transRef, dataToUpdate);
 };
 
@@ -252,7 +251,6 @@ export const renameTransactionCategory = async (projectId: string, oldCategory: 
     const userId = getUserId();
     const batch = writeBatch(db);
 
-    // 1. Update transactions
     const transQuery = query(
         collection(db, 'transactions'),
         where('projectId', '==', projectId),
@@ -264,7 +262,6 @@ export const renameTransactionCategory = async (projectId: string, oldCategory: 
         batch.update(doc.ref, { category: newCategory });
     });
 
-    // 2. Update project's customCategories array
     const projectRef = doc(db, 'projects', projectId);
     const projectSnap = await getDoc(projectRef);
     if (projectSnap.exists()) {
@@ -284,21 +281,19 @@ export const importData = async (data: { projects: Project[], transactions: Tran
   const batch = writeBatch(db);
   const projectIdMap = new Map<string, string>();
 
-  // Fetch existing projects to check for name collisions
   const existingProjects = await getProjects();
   const existingProjectNames = new Set(existingProjects.map(p => p.name));
 
-  // Process projects
   for (const project of data.projects) {
     const { id: oldProjectId, userId: oldUserId, ...restOfProject } = project;
-    
+
     let newName = project.name;
     let counter = 2;
     while (existingProjectNames.has(newName)) {
         newName = `${project.name} (${counter})`;
         counter++;
     }
-    existingProjectNames.add(newName); // Add to set to handle duplicates within the import file itself
+    existingProjectNames.add(newName);
 
     const newProjectRef = doc(collection(db, 'projects'));
     projectIdMap.set(oldProjectId, newProjectRef.id);
@@ -307,16 +302,16 @@ export const importData = async (data: { projects: Project[], transactions: Tran
       ...restOfProject,
       name: newName,
       userId,
+      createdAt: Timestamp.now(),
       installments: (project.installments || []).map(inst => ({
         ...inst,
         date: Timestamp.fromDate(new Date(inst.date)),
       })),
     };
-    
+
     batch.set(newProjectRef, newProjectData);
   }
 
-  // Process transactions
   for (const transaction of data.transactions) {
     const { id: oldTxId, userId: oldTxUserId, projectId: oldTxProjectId, ...restOfTx } = transaction;
 
@@ -338,4 +333,113 @@ export const importData = async (data: { projects: Project[], transactions: Tran
   }
 
   await batch.commit();
+};
+
+
+// === Production (Call Sheet) Functions ===
+
+export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
+  const userId = getUserId();
+  await addDoc(collection(db, 'productions'), {
+    ...data,
+    userId,
+    createdAt: Timestamp.now(),
+  });
+};
+
+export const getProductions = async (): Promise<Production[]> => {
+  const userId = getUserId();
+  const q = query(collection(db, 'productions'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: (data.createdAt as Timestamp).toDate(),
+    } as Production;
+  });
+};
+
+export const getProduction = async (productionId: string): Promise<Production | null> => {
+  const userId = getUserId();
+  const docRef = doc(db, 'productions', productionId);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists() && docSnap.data().userId === userId) {
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      ...data,
+      createdAt: (data.createdAt as Timestamp).toDate(),
+    } as Production;
+  }
+  return null;
+};
+
+export const updateProduction = async (productionId: string, data: Partial<Omit<Production, 'id' | 'userId' | 'createdAt'>>) => {
+  const docRef = doc(db, 'productions', productionId);
+  await updateDoc(docRef, data);
+};
+
+export const deleteProductionAndDays = async (productionId: string) => {
+  const userId = getUserId();
+  const batch = writeBatch(db);
+
+  const productionRef = doc(db, 'productions', productionId);
+  batch.delete(productionRef);
+
+  const daysQuery = query(
+    collection(db, 'shooting_days'),
+    where('productionId', '==', productionId),
+    where('userId', '==', userId)
+  );
+  const daysSnapshot = await getDocs(daysQuery);
+  daysSnapshot.forEach(doc => batch.delete(doc.ref));
+
+  await batch.commit();
+};
+
+// === Shooting Day Functions ===
+
+export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => {
+  const userId = getUserId();
+  await addDoc(collection(db, 'shooting_days'), {
+    ...data,
+    productionId,
+    userId,
+    date: Timestamp.fromDate(data.date),
+  });
+};
+
+export const getShootingDays = async (productionId: string): Promise<ShootingDay[]> => {
+  const userId = getUserId();
+  const q = query(
+    collection(db, 'shooting_days'),
+    where('productionId', '==', productionId),
+    where('userId', '==', userId),
+    orderBy('date', 'asc')
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      date: (data.date as Timestamp).toDate(),
+    } as ShootingDay;
+  });
+};
+
+export const updateShootingDay = async (dayId: string, data: Partial<Omit<ShootingDay, 'id' | 'userId' | 'productionId'>>) => {
+  const docRef = doc(db, 'shooting_days', dayId);
+  const dataToUpdate: Record<string, any> = { ...data };
+   if (data.date) {
+        dataToUpdate.date = Timestamp.fromDate(data.date);
+    }
+  await updateDoc(docRef, dataToUpdate);
+};
+
+export const deleteShootingDay = async (dayId: string) => {
+  const docRef = doc(db, 'shooting_days', dayId);
+  await deleteDoc(docRef);
 };

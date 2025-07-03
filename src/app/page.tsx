@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { PlusCircle, Film, MoreVertical, Edit, Trash2 } from "lucide-react";
-import { useRouter } from 'next/navigation';
+import { PlusCircle, Film, MoreVertical, Edit, Trash2, Clapperboard } from "lucide-react";
 
-import type { Project } from "@/lib/types";
+import type { Project, Production } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CreateEditProjectDialog } from "@/components/create-edit-project-dialog";
@@ -27,163 +26,223 @@ import {
 } from "@/components/ui/alert-dialog";
 import AuthGuard from "@/components/auth-guard";
 import { useAuth } from "@/context/auth-context";
-import * as projectApi from '@/lib/firebase/firestore';
+import * as firestoreApi from '@/lib/firebase/firestore';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { UserNav } from "@/components/user-nav";
 import { formatCurrency } from "@/lib/utils";
+import { ProjectTypeDialog } from "@/components/project-type-dialog";
+import { CreateEditProductionDialog } from "@/components/create-edit-production-dialog";
+
+type DisplayableItem = (Project & { itemType: 'financial' }) | (Production & { itemType: 'production' });
+
 
 function HomePage() {
   const { user } = useAuth();
-  const router = useRouter();
   const { toast } = useToast();
 
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [items, setItems] = useState<DisplayableItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Dialog states
+  const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false);
+  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
+  const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
+  
+  // Editing states
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [editingProduction, setEditingProduction] = useState<Production | null>(null);
+  
+  // Deleting state
+  const [itemToDelete, setItemToDelete] = useState<DisplayableItem | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchProjects();
-    }
-  }, [user]);
-
-  const fetchProjects = async () => {
+  const fetchItems = async () => {
+    if (!user) return;
     setIsLoading(true);
     try {
-        const userProjects = await projectApi.getProjects();
-        setProjects(userProjects);
-    } catch(error) {
-        toast({ variant: 'destructive', title: 'Erro ao buscar projetos', description: (error as Error).message });
-    } finally {
-        setIsLoading(false);
-    }
-  }
+      const [projects, productions] = await Promise.all([
+        firestoreApi.getProjects(),
+        firestoreApi.getProductions(),
+      ]);
 
-  const handleProjectSubmit = async (projectData: Omit<Project, 'id' | 'userId'>) => {
-    try {
-        if (editingProject) {
-          await projectApi.updateProject(editingProject.id, projectData);
-          toast({ title: 'Projeto atualizado com sucesso!' });
-        } else {
-          await projectApi.addProject(projectData);
-          toast({ title: 'Projeto criado com sucesso!' });
-        }
-        await fetchProjects(); // Refresh the list
+      const displayableItems: DisplayableItem[] = [
+        ...projects.map(p => ({ ...p, itemType: 'financial' as const })),
+        ...productions.map(p => ({ ...p, itemType: 'production' as const })),
+      ];
+
+      displayableItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+      setItems(displayableItems);
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Erro ao salvar projeto', description: (error as Error).message });
+      toast({ variant: 'destructive', title: 'Erro ao buscar projetos', description: (error as Error).message });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsDialogOpen(false);
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, [user]);
+
+  const handleSelectProjectType = (type: 'financial' | 'production') => {
+    setIsTypeDialogOpen(false);
+    if (type === 'financial') {
+      setEditingProject(null);
+      setIsProjectDialogOpen(true);
+    } else {
+      setEditingProduction(null);
+      setIsProductionDialogOpen(true);
+    }
+  };
+
+  const handleProjectSubmit = async (projectData: Omit<Project, 'id' | 'userId' | 'createdAt'>) => {
+    try {
+      if (editingProject) {
+        await firestoreApi.updateProject(editingProject.id, projectData);
+        toast({ title: 'Projeto financeiro atualizado!' });
+      } else {
+        await firestoreApi.addProject(projectData);
+        toast({ title: 'Projeto financeiro criado!' });
+      }
+      await fetchItems();
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro ao salvar projeto', description: (error as Error).message });
+    }
+    setIsProjectDialogOpen(false);
     setEditingProject(null);
+  };
+  
+  const handleProductionSubmit = async (productionData: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
+    try {
+      if (editingProduction) {
+        await firestoreApi.updateProduction(editingProduction.id, productionData);
+        toast({ title: 'Produção atualizada!' });
+      } else {
+        await firestoreApi.addProduction(productionData);
+        toast({ title: 'Produção criada!' });
+      }
+      await fetchItems();
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro ao salvar produção', description: (error as Error).message });
+    }
+    setIsProductionDialogOpen(false);
+    setEditingProduction(null);
   };
   
   const handleConfirmDelete = async () => {
-    if (!projectToDelete) return;
-
+    if (!itemToDelete) return;
     try {
-        await projectApi.deleteProject(projectToDelete.id);
-        toast({ title: `Projeto "${projectToDelete.name}" excluído.` });
-        await fetchProjects();
+      if (itemToDelete.itemType === 'financial') {
+        await firestoreApi.deleteProject(itemToDelete.id);
+      } else {
+        await firestoreApi.deleteProductionAndDays(itemToDelete.id);
+      }
+      toast({ title: `"${itemToDelete.name}" excluído(a).` });
+      await fetchItems();
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Erro ao excluir projeto', description: (error as Error).message });
+      toast({ variant: 'destructive', title: 'Erro ao excluir', description: (error as Error).message });
     }
-    setProjectToDelete(null);
+    setItemToDelete(null);
   };
 
-  const openCreateDialog = () => {
-    setEditingProject(null);
-    setIsDialogOpen(true);
+  const openEditDialog = (item: DisplayableItem) => {
+    if (item.itemType === 'financial') {
+      setEditingProject(item);
+      setIsProjectDialogOpen(true);
+    } else {
+      setEditingProduction(item);
+      setIsProductionDialogOpen(true);
+    }
   };
 
-  const openEditDialog = (project: Project) => {
-    setEditingProject(project);
-    setIsDialogOpen(true);
-  };
-  
-  const renderProjectCards = () => {
+  const renderCards = () => {
     if (isLoading) {
-        return (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[220px] w-full" />)}
-            </div>
-        )
+      return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[220px] w-full" />)}
+        </div>
+      );
     }
 
-    if (projects.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
-                <Film className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">Nenhum projeto encontrado</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Comece criando seu primeiro projeto de produção.</p>
-                <Button className="mt-6" onClick={openCreateDialog}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Criar Projeto
-                </Button>
-            </div>
-        )
+    if (items.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
+          <Film className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-semibold">Nenhum projeto encontrado</h3>
+          <p className="mt-2 text-sm text-muted-foreground">Comece criando seu primeiro projeto financeiro ou de produção.</p>
+          <Button className="mt-6" onClick={() => setIsTypeDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Criar Projeto
+          </Button>
+        </div>
+      );
     }
 
     return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {projects.map((project) => (
-          <Card key={project.id} className="hover:shadow-lg transition-shadow h-full flex flex-col relative">
-            <div className="absolute top-2 right-2 z-10">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {items.map((item) => {
+          const isFinancial = item.itemType === 'financial';
+          const link = isFinancial ? `/project/${item.id}` : `/production/${item.id}`;
+          const Icon = isFinancial ? Film : Clapperboard;
+          const description = isFinancial ? `Orçamento: ${formatCurrency(item.budget)}` : item.type;
+
+          return (
+            <Card key={item.id} className="hover:shadow-lg transition-shadow h-full flex flex-col relative">
+              <div className="absolute top-2 right-2 z-10">
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(project)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setProjectToDelete(project)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditDialog(item)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setItemToDelete(item)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
                 </DropdownMenu>
-            </div>
-             <Link href={`/project/${project.id}`} className="flex flex-col flex-grow">
+              </div>
+              <Link href={link} className="flex flex-col flex-grow">
                 <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10">
-                    <div className="p-3 rounded-full bg-primary/10">
-                    <Film className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                    <CardTitle>{project.name}</CardTitle>
-                    <CardDescription>Orçamento: {formatCurrency(project.budget)}</CardDescription>
-                    </div>
+                  <div className="p-3 rounded-full bg-primary/10">
+                    <Icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle>{item.name}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                  </div>
                 </CardHeader>
                 <CardContent className="mt-auto">
-                    <Button className="w-full">Gerenciar Projeto</Button>
+                  <Button className="w-full">Gerenciar</Button>
                 </CardContent>
-            </Link>
-          </Card>
-        ))}
+              </Link>
+            </Card>
+          );
+        })}
       </div>
     );
-  }
+  };
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
         <div className="flex items-center gap-2">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
-                <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
-                <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
-            </svg>
-            <h1 className="text-2xl font-bold text-primary truncate tracking-tighter">
-              ProductionFlow
-              {user?.name && <span className="text-lg font-normal text-muted-foreground ml-2">/ {user.name}</span>}
-            </h1>
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
+            <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
+            <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
+          </svg>
+          <h1 className="text-2xl font-bold text-primary tracking-tighter">
+            ProductionFlow
+            {user?.name && <span className="text-lg font-normal text-muted-foreground ml-2">/ {user.name}</span>}
+          </h1>
         </div>
         <div className="ml-auto flex items-center gap-4">
-          <Button onClick={openCreateDialog}>
+          <Button onClick={() => setIsTypeDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Criar Novo Projeto
           </Button>
@@ -196,27 +255,41 @@ function HomePage() {
           <h2 className="text-3xl font-bold tracking-tight">Meus Projetos</h2>
           <p className="text-muted-foreground">Selecione um projeto para gerenciar ou crie um novo.</p>
         </div>
-        {renderProjectCards()}
+        {renderCards()}
       </main>
 
+      <ProjectTypeDialog
+        isOpen={isTypeDialogOpen}
+        setIsOpen={setIsTypeDialogOpen}
+        onSelect={handleSelectProjectType}
+      />
+      
       <CreateEditProjectDialog
-        isOpen={isDialogOpen}
+        isOpen={isProjectDialogOpen}
         setIsOpen={(open) => {
-            if (!open) {
-                setEditingProject(null);
-            }
-            setIsDialogOpen(open);
+          if (!open) setEditingProject(null);
+          setIsProjectDialogOpen(open);
         }}
         onSubmit={handleProjectSubmit}
         project={editingProject || undefined}
       />
+
+      <CreateEditProductionDialog
+        isOpen={isProductionDialogOpen}
+        setIsOpen={(open) => {
+          if (!open) setEditingProduction(null);
+          setIsProductionDialogOpen(open);
+        }}
+        onSubmit={handleProductionSubmit}
+        production={editingProduction || undefined}
+      />
       
-      <AlertDialog open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
+      <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Isso excluirá permanentemente o projeto e todas as suas transações associadas.
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o projeto e todos os seus dados associados (financeiros ou de produção).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -234,11 +307,10 @@ function HomePage() {
   );
 }
 
-
 export default function Home() {
-    return (
-        <AuthGuard>
-            <HomePage />
-        </AuthGuard>
-    )
+  return (
+    <AuthGuard>
+      <HomePage />
+    </AuthGuard>
+  );
 }

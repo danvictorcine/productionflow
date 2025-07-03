@@ -38,6 +38,7 @@ export type Project = {
   customCategories?: string[];
   isBudgetParcelado: boolean;
   installments: Installment[];
+  createdAt: Date;
 };
 
 export type Transaction = {
@@ -59,4 +60,30 @@ export type UserProfile = {
   name: string;
   email: string;
   photoURL?: string;
+};
+
+
+// New types for Production (Call Sheet) Module
+export type Production = {
+  id: string;
+  userId: string;
+  name: string;
+  type: string; // e.g., 'Curta-metragem', 'Publicidade'
+  director: string;
+  client: string;
+  createdAt: Date;
+};
+
+export type ShootingDay = {
+  id: string;
+  productionId: string;
+  userId: string;
+  date: Date;
+  location: string;
+  scenes: string; // Using textarea
+  generalNotes: string; // Using textarea
+  callTimes: string; // Using textarea
+  equipment: string; // Using textarea
+  costumes: string; // Using textarea
+  props: string; // Using textarea
 };
