@@ -8,8 +8,6 @@ import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Inf
 import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 import type { Production, ShootingDay, WeatherInfo } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -310,51 +308,55 @@ function ProductionPageDetail() {
     }
   };
 
-  const handleExportToPdf = () => {
+  const handleExportToPdf = async () => {
     if (!mainRef.current) return;
     setIsExporting(true);
 
     toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
 
-    html2canvas(mainRef.current, {
-        useCORS: true,
-        scale: 2,
-        logging: false,
-        backgroundColor: window.getComputedStyle(document.body).backgroundColor,
-    }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'mm',
-            format: 'a4',
-        });
+    const { default: jsPDF } = await import('jspdf');
+    const { default: html2canvas } = await import('html2canvas');
 
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / canvasHeight;
-        const imgHeight = pdfWidth / ratio;
-        let heightLeft = imgHeight;
-        let position = 0;
+    try {
+      const canvas = await html2canvas(mainRef.current, {
+          useCORS: true,
+          scale: 2,
+          logging: false,
+          backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+          orientation: 'p',
+          unit: 'mm',
+          format: 'a4',
+      });
 
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdf.internal.pageSize.getHeight();
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      const ratio = canvasWidth / canvasHeight;
+      const imgHeight = pdfWidth / ratio;
+      let heightLeft = imgHeight;
+      let position = 0;
 
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdf.internal.pageSize.getHeight();
-        }
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdf.internal.pageSize.getHeight();
 
-        pdf.save(`Producao_${production?.name.replace(/ /g, "_")}.pdf`);
-        toast({ title: "Exportação para PDF Concluída!" });
-    }).catch(error => {
+      while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+          heightLeft -= pdf.internal.pageSize.getHeight();
+      }
+
+      pdf.save(`Producao_${production?.name.replace(/ /g, "_")}.pdf`);
+      toast({ title: "Exportação para PDF Concluída!" });
+    } catch (error) {
         console.error("Error generating PDF", error);
         toast({ variant: 'destructive', title: 'Erro ao gerar PDF' });
-    }).finally(() => {
+    } finally {
         setIsExporting(false);
-    });
+    }
   };
 
   const openEditShootingDayDialog = (day: ShootingDay) => {
