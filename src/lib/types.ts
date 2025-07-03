@@ -96,18 +96,49 @@ export type WeatherInfo = {
   locationName: string;
 };
 
+export type HospitalInfo = {
+  name: string;
+  address: string;
+  phone: string;
+};
+
+export type Scene = {
+  id: string;
+  sceneNumber: string;
+  title: string; // e.g., EXT. PARK - DAY
+  description: string;
+  pages: string; // e.g., "1 3/8"
+  presentInScene: TeamMember[];
+};
+
+export type CallTime = {
+  id: string;
+  department: string;
+  time: string; // e.g., "08:00"
+};
+
+
 export type ShootingDay = {
   id: string;
   productionId: string;
   userId: string;
   date: Date;
   location: string;
-  scenes: string; // Using textarea
-  generalNotes: string; // Using textarea
-  callTimes: string; // Using textarea
-  equipment: string; // Using textarea
-  costumes: string; // Using textarea
-  props: string; // Using textarea
+  // Deprecated fields, kept for backward compatibility during transition
+  scenes?: string | Scene[];
+  callTimes?: string | CallTime[];
+  // New structured fields
+  dayNumber?: number;
+  totalDays?: number;
+  mealTime?: string;
+  parkingInfo?: string;
+  radioChannels?: string;
+  nearestHospital?: HospitalInfo;
+  // Common fields
+  equipment: string;
+  costumes: string;
+  props: string;
+  generalNotes: string;
   presentTeam: TeamMember[];
   latitude?: number;
   longitude?: number;

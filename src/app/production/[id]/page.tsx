@@ -158,6 +158,16 @@ function ProductionPageDetail() {
       props: data.props || "",
       generalNotes: data.generalNotes || "",
       presentTeam: data.presentTeam || [],
+      mealTime: data.mealTime || "",
+      parkingInfo: data.parkingInfo || "",
+      radioChannels: data.radioChannels || "",
+      nearestHospital: {
+        name: data.nearestHospital?.name || "",
+        address: data.nearestHospital?.address || "",
+        phone: data.nearestHospital?.phone || "",
+      },
+      callTimes: Array.isArray(data.callTimes) ? data.callTimes.map(ct => ({ ...ct, id: ct.id || crypto.randomUUID() })) : [],
+      scenes: Array.isArray(data.scenes) ? data.scenes.map(s => ({ ...s, id: s.id || crypto.randomUUID() })) : [],
     };
     
     try {
