@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clapperboard, Clock,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft
+  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -17,6 +17,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
@@ -36,6 +37,9 @@ interface ShootingDayCardProps {
   isFetchingWeather: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onExportExcel: () => void;
+  onExportPdf: () => void;
+  isExporting: boolean;
 }
 
 // Collapsible section
@@ -107,10 +111,10 @@ const SceneCard = ({ scene }: { scene: Scene }) => (
 );
 
 
-export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete }: ShootingDayCardProps) {
+export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, isExporting }: ShootingDayCardProps) {
   return (
     <AccordionItem value={day.id} className="border-none">
-      <Card className="flex flex-col w-full">
+      <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
         <div className="relative">
           <AccordionTrigger className="flex w-full items-center p-6 text-left hover:no-underline">
             <div className="flex items-center gap-4">
@@ -136,11 +140,21 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete }: Sh
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onEdit}>
+                    <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
                         <Edit className="mr-2 h-4 w-4" />
                         Editar Ordem do Dia
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                        Exportar para Excel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
+                        <FileDown className="mr-2 h-4 w-4" />
+                        Exportar como PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Excluir
                     </DropdownMenuItem>

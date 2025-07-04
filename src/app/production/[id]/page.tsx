@@ -218,6 +218,50 @@ function ProductionPageDetail() {
     }
   };
 
+  const createShootingDaySheet = (day: ShootingDay): XLSX.WorkSheet => {
+    const dayInfo = [
+        ["Data", format(day.date, "PPP", { locale: ptBR })],
+        ["Diária", `${day.dayNumber || 'N/A'} de ${day.totalDays || 'N/A'}`],
+        ["Localização", day.location],
+    ];
+    const logisticsInfo = [
+        [], ["Logística e Segurança"],
+        ["Estacionamento", day.parkingInfo || 'N/A'],
+        ["Refeição", day.mealTime || 'N/A'],
+        ["Canais de Rádio", day.radioChannels || 'N/A'],
+        ["Hospital", `${day.nearestHospital?.name || 'N/A'} | ${day.nearestHospital?.address || ''} | ${day.nearestHospital?.phone || ''}`],
+    ];
+    const notesInfo = [
+        [], ["Notas dos Departamentos"],
+        ["Equipamentos", day.equipment || 'N/A'],
+        ["Figurino", day.costumes || 'N/A'],
+        ["Objetos de Cena e Direção de Arte", day.props || 'N/A'],
+        ["Observações Gerais", day.generalNotes || 'N/A'],
+    ];
+    const presentTeamInfo = [[], ["Equipe Presente"], [(day.presentTeam || []).map(p => p.name).join(', ') || 'N/A']];
+    
+    const wsDay = XLSX.utils.aoa_to_sheet([...dayInfo, ...logisticsInfo]);
+    wsDay['!cols'] = [{ wch: 30 }, { wch: 70 }];
+
+    XLSX.utils.sheet_add_aoa(wsDay, [[]], { origin: -1 });
+    XLSX.utils.sheet_add_aoa(wsDay, [["Horários de Chamada"]], { origin: -1 });
+    const callTimes = (day.callTimes && Array.isArray(day.callTimes) ? day.callTimes : []).map(ct => ({ Departamento: ct.department, Horário: ct.time }));
+    XLSX.utils.sheet_add_json(wsDay, callTimes, { origin: -1, skipHeader: false });
+
+    XLSX.utils.sheet_add_aoa(wsDay, [[]], { origin: -1 });
+    XLSX.utils.sheet_add_aoa(wsDay, [["Cenas a Gravar"]], { origin: -1 });
+    const scenes = (day.scenes && Array.isArray(day.scenes) ? day.scenes : []).map(s => ({
+        'Cena Nº': s.sceneNumber, Título: s.title, Páginas: s.pages, Descrição: s.description,
+        'Elenco na Cena': (s.presentInScene || []).map(p => p.name).join(', '),
+    }));
+    XLSX.utils.sheet_add_json(wsDay, scenes, { origin: -1, skipHeader: false });
+
+    XLSX.utils.sheet_add_aoa(wsDay, [...notesInfo, ...presentTeamInfo], { origin: -1 });
+
+    return wsDay;
+  };
+
+
   const handleExportToExcel = () => {
     if (!production) return;
     setIsExporting(true);
@@ -255,46 +299,7 @@ function ProductionPageDetail() {
         shootingDays.forEach(day => {
             const dateStr = format(day.date, "dd_MM_yyyy");
             const sheetName = `Diaria_${dateStr}`.substring(0, 31);
-
-            const dayInfo = [
-                ["Data", format(day.date, "PPP", { locale: ptBR })],
-                ["Diária", `${day.dayNumber || 'N/A'} de ${day.totalDays || 'N/A'}`],
-                ["Localização", day.location],
-            ];
-            const logisticsInfo = [
-                [], ["Logística e Segurança"],
-                ["Estacionamento", day.parkingInfo || 'N/A'],
-                ["Refeição", day.mealTime || 'N/A'],
-                ["Canais de Rádio", day.radioChannels || 'N/A'],
-                ["Hospital", `${day.nearestHospital?.name || 'N/A'} | ${day.nearestHospital?.address || ''} | ${day.nearestHospital?.phone || ''}`],
-            ];
-            const notesInfo = [
-                [], ["Notas dos Departamentos"],
-                ["Equipamentos", day.equipment || 'N/A'],
-                ["Figurino", day.costumes || 'N/A'],
-                ["Objetos de Cena e Direção de Arte", day.props || 'N/A'],
-                ["Observações Gerais", day.generalNotes || 'N/A'],
-            ];
-            const presentTeamInfo = [[], ["Equipe Presente"], [(day.presentTeam || []).map(p => p.name).join(', ') || 'N/A']];
-            
-            const wsDay = XLSX.utils.aoa_to_sheet([...dayInfo, ...logisticsInfo]);
-            wsDay['!cols'] = [{ wch: 30 }, { wch: 70 }];
-
-            XLSX.utils.sheet_add_aoa(wsDay, [[]], { origin: -1 });
-            XLSX.utils.sheet_add_aoa(wsDay, [["Horários de Chamada"]], { origin: -1 });
-            const callTimes = (day.callTimes && Array.isArray(day.callTimes) ? day.callTimes : []).map(ct => ({ Departamento: ct.department, Horário: ct.time }));
-            XLSX.utils.sheet_add_json(wsDay, callTimes, { origin: -1, skipHeader: false });
-
-            XLSX.utils.sheet_add_aoa(wsDay, [[]], { origin: -1 });
-            XLSX.utils.sheet_add_aoa(wsDay, [["Cenas a Gravar"]], { origin: -1 });
-            const scenes = (day.scenes && Array.isArray(day.scenes) ? day.scenes : []).map(s => ({
-                'Cena Nº': s.sceneNumber, Título: s.title, Páginas: s.pages, Descrição: s.description,
-                'Elenco na Cena': (s.presentInScene || []).map(p => p.name).join(', '),
-            }));
-            XLSX.utils.sheet_add_json(wsDay, scenes, { origin: -1, skipHeader: false });
-
-            XLSX.utils.sheet_add_aoa(wsDay, [...notesInfo, ...presentTeamInfo], { origin: -1 });
-            
+            const wsDay = createShootingDaySheet(day);
             XLSX.utils.book_append_sheet(wb, wsDay, sheetName);
         });
 
@@ -358,6 +363,76 @@ function ProductionPageDetail() {
         setIsExporting(false);
     }
   };
+  
+  const handleExportDayToExcel = (day: ShootingDay) => {
+    if (!production) return;
+    setIsExporting(true);
+
+    try {
+        const wb = XLSX.utils.book_new();
+        const dateStr = format(day.date, "dd_MM_yyyy");
+        const sheetName = `Diaria_${dateStr}`.substring(0, 31);
+        const wsDay = createShootingDaySheet(day);
+        
+        XLSX.utils.book_append_sheet(wb, wsDay, sheetName);
+        
+        XLSX.writeFile(wb, `Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.xlsx`);
+        toast({ title: "Exportação para Excel Concluída" });
+    } catch (error) {
+        console.error(error);
+        toast({ variant: 'destructive', title: 'Erro ao exportar para Excel' });
+    } finally {
+        setIsExporting(false);
+    }
+  };
+  
+  const handleExportDayToPdf = async (dayId: string, day: ShootingDay) => {
+    const elementToCapture = document.getElementById(`shooting-day-card-${dayId}`);
+    if (!elementToCapture) {
+        toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
+        return;
+    }
+    
+    setIsExporting(true);
+    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
+    
+    const { default: jsPDF } = await import('jspdf');
+    const { default: html2canvas } = await import('html2canvas');
+
+    try {
+        const canvas = await html2canvas(elementToCapture, {
+            useCORS: true,
+            scale: 2,
+            logging: false,
+            backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4',
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const ratio = canvasWidth / canvasHeight;
+        const imgHeight = pdfWidth / ratio;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+        
+        const dateStr = format(day.date, "dd_MM_yyyy");
+        pdf.save(`Ordem_do_Dia_${production?.name.replace(/ /g, "_")}_${dateStr}.pdf`);
+        toast({ title: "Exportação para PDF Concluída!" });
+
+    } catch (error) {
+        console.error("Error generating PDF for single day", error);
+        toast({ variant: 'destructive', title: 'Erro ao gerar PDF' });
+    } finally {
+        setIsExporting(false);
+    }
+  };
+
 
   const openEditShootingDayDialog = (day: ShootingDay) => {
     setEditingShootingDay(day);
@@ -511,6 +586,9 @@ function ProductionPageDetail() {
                     isFetchingWeather={isFetchingWeather[day.id] ?? false}
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
+                    onExportExcel={() => handleExportDayToExcel(day)}
+                    onExportPdf={() => handleExportDayToPdf(day.id, day)}
+                    isExporting={isExporting}
                   />
                 ))
             )}
