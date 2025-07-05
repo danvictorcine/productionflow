@@ -134,6 +134,8 @@ export type ShootingDay = {
   callTimes: CallTime[];
   dayNumber?: number;
   totalDays?: number;
+  startTime?: string; // e.g., "08:00"
+  endTime?: string; // e.g., "18:00"
   mealTime?: string;
   parkingInfo?: string;
   radioChannels?: string;

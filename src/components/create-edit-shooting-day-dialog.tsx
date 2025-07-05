@@ -80,6 +80,8 @@ const shootingDaySchema = z.object({
   date: z.date({ required_error: "A data da filmagem é obrigatória." }),
   dayNumber: z.coerce.number().optional(),
   totalDays: z.coerce.number().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
   location: z.string().min(1, "A localização é obrigatória. Clique no mapa ou pesquise."),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
@@ -167,6 +169,8 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       presentTeam: [],
       dayNumber: undefined,
       totalDays: undefined,
+      startTime: "08:00",
+      endTime: "18:00",
       mealTime: "",
       parkingInfo: "",
       radioChannels: "",
@@ -195,6 +199,8 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           date: new Date(shootingDay.date),
           dayNumber: shootingDay.dayNumber,
           totalDays: shootingDay.totalDays,
+          startTime: shootingDay.startTime || "",
+          endTime: shootingDay.endTime || "",
           location: shootingDay.location,
           latitude: shootingDay.latitude || defaultPosition[0],
           longitude: shootingDay.longitude || defaultPosition[1],
@@ -225,6 +231,8 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
             presentTeam: [],
             dayNumber: undefined,
             totalDays: undefined,
+            startTime: "08:00",
+            endTime: "18:00",
             mealTime: "12:00 - 13:00",
             parkingInfo: "",
             radioChannels: "Canal 1 - Produção | Canal 2 - Direção",
@@ -260,39 +268,57 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     
                     <div>
                         <h3 className="text-lg font-semibold mb-2">Informações Gerais</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border p-4 rounded-lg">
-                            <FormField
-                                control={form.control}
-                                name="date"
-                                render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Data da Filmagem</FormLabel>
-                                    <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                        <Button
-                                            variant={"outline"}
-                                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                                        >
-                                            {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
-                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={ptBR} />
-                                    </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField control={form.control} name="dayNumber" render={({ field }) => (
-                                <FormItem><FormLabel>Diária Nº</FormLabel><FormControl><Input type="number" placeholder="Ex: 1" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="totalDays" render={({ field }) => (
-                                <FormItem><FormLabel>Total de Diárias</FormLabel><FormControl><Input type="number" placeholder="Ex: 10" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
+                        <div className="border p-4 rounded-lg space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="date"
+                                    render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Data da Filmagem</FormLabel>
+                                        <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                            <Button
+                                                variant={"outline"}
+                                                className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                                            >
+                                                {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={ptBR} />
+                                        </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField control={form.control} name="dayNumber" render={({ field }) => (
+                                    <FormItem><FormLabel>Diária Nº</FormLabel><FormControl><Input type="number" placeholder="Ex: 1" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="totalDays" render={({ field }) => (
+                                    <FormItem><FormLabel>Total de Diárias</FormLabel><FormControl><Input type="number" placeholder="Ex: 10" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="startTime" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Horário de Início</FormLabel>
+                                        <FormControl><Input type="time" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name="endTime" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Horário de Término</FormLabel>
+                                        <FormControl><Input type="time" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                            </div>
                         </div>
                     </div>
                     

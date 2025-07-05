@@ -197,6 +197,8 @@ function ProductionPageDetail() {
       mealTime: data.mealTime || "",
       parkingInfo: data.parkingInfo || "",
       radioChannels: data.radioChannels || "",
+      startTime: data.startTime || "",
+      endTime: data.endTime || "",
       nearestHospital: {
         name: data.nearestHospital?.name || "",
         address: data.nearestHospital?.address || "",
@@ -249,6 +251,7 @@ function ProductionPageDetail() {
     const dayInfo = [
         ["Data", format(day.date, "PPP", { locale: ptBR })],
         ["Diária", `${day.dayNumber || 'N/A'} de ${day.totalDays || 'N/A'}`],
+        ["Horários", `${day.startTime || 'N/A'} - ${day.endTime || 'N/A'}`],
         ["Localização", day.location],
     ];
     const logisticsInfo = [
@@ -549,7 +552,7 @@ function ProductionPageDetail() {
         <div className="mb-6 p-4 border rounded-lg bg-card">
           <h2 className="text-2xl font-bold tracking-tight">{production.name}</h2>
           <p className="text-muted-foreground">{production.type}</p>
-          <div className="text-sm mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+          <div className="text-sm mt-2 space-y-1">
             <p><span className="font-semibold">Diretor(a):</span> {production.director}</p>
             {production.responsibleProducer && <p><span className="font-semibold">Produtor(a) Responsável:</span> {production.responsibleProducer}</p>}
             {production.producer && <p><span className="font-semibold">Produtora:</span> {production.producer}</p>}

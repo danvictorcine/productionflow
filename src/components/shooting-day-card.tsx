@@ -1,16 +1,17 @@
 // @/src/components/shooting-day-card.tsx
 "use client";
 
+import { useState, useEffect } from "react";
 import type { ShootingDay, Scene, ChecklistItem } from "@/lib/types";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  MoreVertical, Edit, Trash2, Calendar, MapPin, Clapperboard, Clock,
+  MoreVertical, Edit, Trash2, Calendar, MapPin, Clapperboard, Clock, Hourglass,
   Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -124,8 +125,68 @@ const SceneCard = ({ scene }: { scene: Scene }) => (
     </div>
 );
 
+const calculateDuration = (start?: string, end?: string): string | null => {
+    if (!start || !end) return null;
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+    if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return null;
+
+    const startDate = new Date(0, 0, 0, startH, startM);
+    const endDate = new Date(0, 0, 0, endH, endM);
+
+    let diff = endDate.getTime() - startDate.getTime();
+    if (diff < 0) { // Handles overnight shoots
+        diff += 24 * 60 * 60 * 1000;
+    }
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    return `${hours}h ${minutes}m`;
+};
+
 
 export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting }: ShootingDayCardProps) {
+  const [remainingTime, setRemainingTime] = useState<string | null>(null);
+  const totalDuration = calculateDuration(day.startTime, day.endTime);
+
+  useEffect(() => {
+    if (!day.startTime || !day.endTime || !isToday(new Date(day.date))) {
+      setRemainingTime(null);
+      return;
+    }
+
+    const calculate = () => {
+      const now = new Date();
+      const date = new Date(day.date);
+      const [startH, startM] = day.startTime!.split(':').map(Number);
+      const [endH, endM] = day.endTime!.split(':').map(Number);
+
+      const startTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), startH, startM);
+      const endTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), endH, endM);
+
+      if (endTime < startTime) { // overnight
+        endTime.setDate(endTime.getDate() + 1);
+      }
+
+      if (now < startTime) {
+        setRemainingTime('Aguardando início');
+      } else if (now > endTime) {
+        setRemainingTime("Finalizado");
+      } else {
+        const remainingMs = endTime.getTime() - now.getTime();
+        const hours = Math.floor(remainingMs / 3600000);
+        const minutes = Math.floor((remainingMs % 3600000) / 60000);
+        setRemainingTime(`${hours}h ${minutes}m`);
+      }
+    };
+
+    calculate();
+    const intervalId = setInterval(calculate, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [day.date, day.startTime, day.endTime]);
+
   return (
     <AccordionItem value={day.id} className="border-none">
       <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
@@ -178,7 +239,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
         </div>
         <AccordionContent className="pt-0">
           <CardContent className="flex-grow flex flex-col justify-between space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="h-[180px]">
                 {isFetchingWeather ? (
                   <Skeleton className="h-full w-full" />
@@ -201,6 +262,38 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                     <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
                   </div>
                 )}
+              </div>
+              <div className="h-[180px]">
+                <Card className="h-full flex flex-col justify-center items-center text-center p-4 bg-card/50">
+                    <CardHeader className="p-0 mb-2">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Clock className="h-5 w-5 text-primary" />
+                            Horários da Diária
+                        </CardTitle>
+                    </CardHeader>
+                    {day.startTime && day.endTime ? (
+                        <div className="space-y-2">
+                            <p className="text-muted-foreground">
+                                <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
+                            </p>
+                            {totalDuration && <Badge variant="secondary">{totalDuration} de duração</Badge>}
+                            {remainingTime && (
+                                <div className="pt-2">
+                                     <p className="text-sm font-semibold flex items-center justify-center gap-1.5">
+                                        <Hourglass className="h-4 w-4 text-primary" />
+                                        Tempo Restante
+                                     </p>
+                                     <p className="text-xl font-bold text-foreground">{remainingTime}</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                         <div className="text-center text-sm text-muted-foreground">
+                            <p>Horários não definidos.</p>
+                            <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>
+                        </div>
+                    )}
+                </Card>
               </div>
             </div>
 
