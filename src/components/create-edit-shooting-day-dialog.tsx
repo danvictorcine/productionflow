@@ -256,7 +256,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Editar Ordem do Dia" : "Criar Ordem do Dia"}</DialogTitle>
+          <DialogTitle>Ordem do Dia</DialogTitle>
           <DialogDescription>
             {isEditMode ? "Atualize os detalhes do dia de filmagem." : "Preencha os detalhes para a Ordem do Dia."}
           </DialogDescription>
