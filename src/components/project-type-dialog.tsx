@@ -48,7 +48,7 @@ export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect }: ProjectTypeDi
               <div className="p-3 rounded-full bg-primary/10 mb-2">
                 <Clapperboard className="h-8 w-8 text-primary" />
               </div>
-              <CardTitle>Produção (Ordem do Dia)</CardTitle>
+              <CardTitle>Ordem do Dia</CardTitle>
               <CardDescription>Crie e gerencie as Ordens do Dia (Call Sheets).</CardDescription>
             </CardHeader>
           </Card>
