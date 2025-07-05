@@ -213,45 +213,50 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-6 pt-2">
                 <div className="space-y-6">
-                    {/* Date and Day Number */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="date"
-                            render={({ field }) => (
-                            <FormItem className="flex flex-col md:col-span-1">
-                                <FormLabel>Data da Filmagem</FormLabel>
-                                <Popover>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                                    >
-                                        {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={ptBR} />
-                                </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField control={form.control} name="dayNumber" render={({ field }) => (
-                            <FormItem><FormLabel>Diária Nº</FormLabel><FormControl><Input type="number" placeholder="Ex: 1" {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        <FormField control={form.control} name="totalDays" render={({ field }) => (
-                            <FormItem><FormLabel>Total de Diárias</FormLabel><FormControl><Input type="number" placeholder="Ex: 10" {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
+                    
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Informações Gerais</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border p-4 rounded-lg">
+                            <FormField
+                                control={form.control}
+                                name="date"
+                                render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Data da Filmagem</FormLabel>
+                                    <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                                        >
+                                            {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={ptBR} />
+                                    </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField control={form.control} name="dayNumber" render={({ field }) => (
+                                <FormItem><FormLabel>Diária Nº</FormLabel><FormControl><Input type="number" placeholder="Ex: 1" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="totalDays" render={({ field }) => (
+                                <FormItem><FormLabel>Total de Diárias</FormLabel><FormControl><Input type="number" placeholder="Ex: 10" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                        </div>
                     </div>
+                    
+                    <Separator />
 
-                    {/* Location */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <div className="space-y-4">
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Localização e Logística</h3>
+                        <div className="border p-4 rounded-lg space-y-4">
                             <FormField control={form.control} name="location" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Localização</FormLabel>
@@ -261,40 +266,45 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                 </FormItem>
                             )} />
                             <LocationPicker initialPosition={[lat || defaultPosition[0], lng || defaultPosition[1]]} onLocationChange={handleLocationChange} />
-                        </div>
-                        <div className="space-y-4">
                             <FormField control={form.control} name="parkingInfo" render={({ field }) => (
                                 <FormItem><FormLabel>Informações de Estacionamento</FormLabel><FormControl><Textarea placeholder="Ex: Estacionamento disponível na rua lateral..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>
                             )}/>
-                            <FormField control={form.control} name="mealTime" render={({ field }) => (
-                                <FormItem><FormLabel>Horário de Refeições</FormLabel><FormControl><Input placeholder="Ex: 12:00 - 13:00" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="radioChannels" render={({ field }) => (
-                                <FormItem><FormLabel>Canais de Rádio</FormLabel><FormControl><Input placeholder="Ex: Canal 1 - Geral, Canal 2 - Direção" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                        </div>
-                    </div>
-                     {/* Hospital Info */}
-                    <div>
-                        <FormLabel>Hospital Mais Próximo</FormLabel>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 border p-4 rounded-lg">
-                             <FormField control={form.control} name="nearestHospital.name" render={({ field }) => (
-                                <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do hospital" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                             <FormField control={form.control} name="nearestHospital.address" render={({ field }) => (
-                                <FormItem><FormLabel className="text-xs">Endereço</FormLabel><FormControl><Input placeholder="Endereço completo" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                             <FormField control={form.control} name="nearestHospital.phone" render={({ field }) => (
-                                <FormItem><FormLabel className="text-xs">Telefone</FormLabel><FormControl><Input placeholder="(XX) XXXX-XXXX" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="mealTime" render={({ field }) => (
+                                    <FormItem><FormLabel>Horário de Refeições</FormLabel><FormControl><Input placeholder="Ex: 12:00 - 13:00" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="radioChannels" render={({ field }) => (
+                                    <FormItem><FormLabel>Canais de Rádio</FormLabel><FormControl><Input placeholder="Ex: Canal 1 - Geral, Canal 2 - Direção" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                            </div>
                         </div>
                     </div>
 
                     <Separator />
-                    {/* Call Times */}
+                    
                     <div>
-                        <FormLabel>Horários de Chamada</FormLabel>
-                        <div className="space-y-2 mt-2">
+                        <h3 className="text-lg font-semibold mb-2">Informações de Segurança</h3>
+                        <div className="border p-4 rounded-lg">
+                            <FormLabel>Hospital Mais Próximo</FormLabel>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                                <FormField control={form.control} name="nearestHospital.name" render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do hospital" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="nearestHospital.address" render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Endereço</FormLabel><FormControl><Input placeholder="Endereço completo" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="nearestHospital.phone" render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Telefone</FormLabel><FormControl><Input placeholder="(XX) XXXX-XXXX" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Horários de Chamada</h3>
+                        <div className="space-y-2">
                             {callTimeFields.map((field, index) => (
                                 <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end p-2 border rounded-lg">
                                     <FormField control={form.control} name={`callTimes.${index}.department`} render={({ field }) => (
@@ -313,10 +323,10 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     </div>
                     
                     <Separator />
-                    {/* Scenes */}
+
                     <div>
-                         <FormLabel>Cenas a Gravar</FormLabel>
-                         <div className="space-y-4 mt-2">
+                         <h3 className="text-lg font-semibold mb-2">Cenas a Gravar</h3>
+                         <div className="space-y-4">
                             {sceneFields.map((field, index) => (
                                 <div key={field.id} className="p-4 border rounded-lg space-y-4">
                                     <div className="flex justify-between items-start">
@@ -379,55 +389,64 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     </div>
 
                     <Separator />
-                    {/* Department Notes */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="equipment" render={({ field }) => (<FormItem><FormLabel>Equipamentos</FormLabel><FormControl><Textarea placeholder="Notas do departamento de Câmera/Elétrica..." {...field} /></FormControl></FormItem>)}/>
-                        <FormField control={form.control} name="costumes" render={({ field }) => (<FormItem><FormLabel>Figurino</FormLabel><FormControl><Textarea placeholder="Notas do departamento de Figurino..." {...field} /></FormControl></FormItem>)}/>
-                        <FormField control={form.control} name="props" render={({ field }) => (<FormItem><FormLabel>Objetos de Cena (Arte)</FormLabel><FormControl><Textarea placeholder="Notas do departamento de Arte..." {...field} /></FormControl></FormItem>)}/>
-                        <FormField control={form.control} name="generalNotes" render={({ field }) => (<FormItem><FormLabel>Observações Gerais</FormLabel><FormControl><Textarea placeholder="Outras notas e observações importantes..." {...field} /></FormControl></FormItem>)}/>
+                    
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Notas dos Departamentos</h3>
+                         <div className="border p-4 rounded-lg space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="equipment" render={({ field }) => (<FormItem><FormLabel>Equipamentos</FormLabel><FormControl><Textarea placeholder="Notas do departamento de Câmera/Elétrica..." {...field} /></FormControl></FormItem>)}/>
+                                <FormField control={form.control} name="costumes" render={({ field }) => (<FormItem><FormLabel>Figurino</FormLabel><FormControl><Textarea placeholder="Notas do departamento de Figurino..." {...field} /></FormControl></FormItem>)}/>
+                            </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="props" render={({ field }) => (<FormItem><FormLabel>Objetos de Cena e Direção de Arte</FormLabel><FormControl><Textarea placeholder="Notas do departamento de Arte..." {...field} /></FormControl></FormItem>)}/>
+                                <FormField control={form.control} name="generalNotes" render={({ field }) => (<FormItem><FormLabel>Observações Gerais</FormLabel><FormControl><Textarea placeholder="Outras notas e observações importantes..." {...field} /></FormControl></FormItem>)}/>
+                            </div>
+                         </div>
                     </div>
 
                     <Separator />
-                    {/* Present Team */}
-                     <FormField
-                        control={form.control}
-                        name="presentTeam"
-                        render={() => (
-                        <FormItem>
-                            <FormLabel>Equipe Presente na Diária</FormLabel>
-                            <FormDescription>Selecione quem da equipe principal estará presente nesta diária (para fins de organização geral).</FormDescription>
-                            <div className="space-y-2 rounded-md border p-4 max-h-48 overflow-y-auto">
-                            {productionTeam.length > 0 ? productionTeam.map((member) => (
-                                <FormField
-                                key={member.id}
-                                control={form.control}
-                                name="presentTeam"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                    <FormControl>
-                                        <Checkbox
-                                        checked={field.value?.some(p => p.id === member.id)}
-                                        onCheckedChange={(checked) => {
-                                            return checked
-                                            ? field.onChange([...(field.value || []), member])
-                                            : field.onChange(field.value?.filter((p) => p.id !== member.id));
-                                        }}
-                                        />
-                                    </FormControl>
-                                    <FormLabel className="font-normal">
-                                        {member.name} <span className="text-muted-foreground">({member.role})</span>
-                                    </FormLabel>
-                                    </FormItem>
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Equipe Presente na Diária</h3>
+                         <FormField
+                            control={form.control}
+                            name="presentTeam"
+                            render={() => (
+                            <FormItem>
+                                <FormDescription>Selecione quem da equipe principal estará presente nesta diária (para fins de organização geral).</FormDescription>
+                                <div className="space-y-2 rounded-md border p-4 max-h-48 overflow-y-auto">
+                                {productionTeam.length > 0 ? productionTeam.map((member) => (
+                                    <FormField
+                                    key={member.id}
+                                    control={form.control}
+                                    name="presentTeam"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                        <FormControl>
+                                            <Checkbox
+                                            checked={field.value?.some(p => p.id === member.id)}
+                                            onCheckedChange={(checked) => {
+                                                return checked
+                                                ? field.onChange([...(field.value || []), member])
+                                                : field.onChange(field.value?.filter((p) => p.id !== member.id));
+                                            }}
+                                            />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                            {member.name} <span className="text-muted-foreground">({member.role})</span>
+                                        </FormLabel>
+                                        </FormItem>
+                                    )}
+                                    />
+                                )) : (
+                                    <p className="text-sm text-muted-foreground text-center">Nenhum membro da equipe cadastrado na produção.</p>
                                 )}
-                                />
-                            )) : (
-                                <p className="text-sm text-muted-foreground text-center">Nenhum membro da equipe cadastrado na produção.</p>
+                                </div>
+                                <FormMessage />
+                            </FormItem>
                             )}
-                            </div>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
+                        />
+                    </div>
                 </div>
             </div>
             <DialogFooter className="flex-shrink-0 border-t p-4">
