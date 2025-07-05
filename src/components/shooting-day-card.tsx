@@ -1,7 +1,7 @@
 // @/src/components/shooting-day-card.tsx
 "use client";
 
-import type { ShootingDay, Scene } from "@/lib/types";
+import type { ShootingDay, Scene, ChecklistItem } from "@/lib/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -25,6 +25,8 @@ import { WeatherCard } from "./weather-card";
 import { Skeleton } from "./ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { Checkbox } from "./ui/checkbox";
+import { Label } from "./ui/label";
 
 const DisplayMap = dynamic(() => import('./display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -33,39 +35,16 @@ const DisplayMap = dynamic(() => import('./display-map').then(mod => mod.Display
 
 
 interface ShootingDayCardProps {
-  day: ShootingDay;
+  day: Omit<ShootingDay, 'equipment'|'costumes'|'props'|'generalNotes'> & { equipment: ChecklistItem[], costumes: ChecklistItem[], props: ChecklistItem[], generalNotes: ChecklistItem[]};
   isFetchingWeather: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onExportExcel: () => void;
   onExportPdf: () => void;
+  onUpdateNotes: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
   isExporting: boolean;
 }
 
-// Collapsible section
-const DetailSection = ({ icon: Icon, title, content, defaultOpen = false }: { icon: React.ElementType, title: string, content?: React.ReactNode, defaultOpen?: boolean }) => {
-  const hasContent = typeof content === 'string' ? !!content.trim() : !!content;
-
-  if (!hasContent) return null;
-
-  return (
-    <Accordion type="single" collapsible className="w-full" defaultValue={defaultOpen ? "item-1" : ""}>
-        <AccordionItem value="item-1" className="border-b-0">
-            <AccordionTrigger className="py-2 hover:no-underline">
-                <h4 className="flex items-center text-md font-semibold">
-                    <Icon className="h-4 w-4 mr-2 text-primary" />
-                    {title}
-                </h4>
-            </AccordionTrigger>
-            <AccordionContent>
-                <div className="text-sm text-muted-foreground whitespace-pre-wrap pl-6">{content}</div>
-            </AccordionContent>
-        </AccordionItem>
-    </Accordion>
-  )
-};
-
-// Always-visible section
 const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType, title: string, content?: React.ReactNode }) => {
   const hasContent = typeof content === 'string' ? !!content.trim() : !!content;
   if (!hasContent) return null;
@@ -81,6 +60,41 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
   );
 };
 
+const ChecklistSection = ({ icon: Icon, title, items, onListUpdate }: { icon: React.ElementType; title: string; items: ChecklistItem[]; onListUpdate: (updatedList: ChecklistItem[]) => void; }) => {
+    if (!items || items.length === 0) {
+        return null;
+    }
+
+    const handleCheckChange = (itemId: string, newCheckedState: boolean) => {
+        const updatedList = items.map(item =>
+            item.id === itemId ? { ...item, checked: newCheckedState } : item
+        );
+        onListUpdate(updatedList);
+    };
+
+    return (
+        <div className="py-2">
+            <h4 className="flex items-center text-md font-semibold">
+                <Icon className="h-4 w-4 mr-2 text-primary" />
+                {title}
+            </h4>
+            <div className="space-y-2 pt-1 pl-6">
+                {items.map((item) => (
+                    <div key={item.id} className="flex items-center space-x-2">
+                        <Checkbox
+                            id={`${item.id}-checkbox`}
+                            checked={item.checked}
+                            onCheckedChange={(checked) => handleCheckChange(item.id, !!checked)}
+                        />
+                        <Label htmlFor={`${item.id}-checkbox`} className={`text-sm font-normal ${item.checked ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                            {item.text}
+                        </Label>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 const SceneCard = ({ scene }: { scene: Scene }) => (
     <div className="p-4 rounded-lg border bg-background/50 space-y-3">
@@ -111,7 +125,7 @@ const SceneCard = ({ scene }: { scene: Scene }) => (
 );
 
 
-export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, isExporting }: ShootingDayCardProps) {
+export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting }: ShootingDayCardProps) {
   return (
     <AccordionItem value={day.id} className="border-none">
       <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
@@ -198,7 +212,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                     <h4 className="font-semibold text-lg flex items-center"><Hash className="h-5 w-5 mr-2 text-primary"/>Logística e Segurança</h4>
                     <StaticDetailSection icon={ParkingCircle} title="Estacionamento" content={day.parkingInfo} />
                     <StaticDetailSection icon={Utensils} title="Refeição" content={day.mealTime} />
-                    <DetailSection icon={Radio} title="Rádios" content={day.radioChannels} />
+                    <StaticDetailSection icon={Radio} title="Rádios" content={day.radioChannels} />
                     {day.nearestHospital && day.nearestHospital.name && (
                          <StaticDetailSection icon={Hospital} title="Hospital Mais Próximo" content={
                             <div className="space-y-1">
@@ -228,7 +242,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                             </TableBody>
                         </Table>
                      ) : (
-                        <p className="text-sm text-muted-foreground pl-6">{typeof day.callTimes === 'string' ? day.callTimes : "Nenhum horário de chamada definido."}</p>
+                        <p className="text-sm text-muted-foreground pl-6">Nenhum horário de chamada definido.</p>
                      )}
                 </div>
 
@@ -242,7 +256,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                         {Array.isArray(day.scenes) && day.scenes.length > 0 ? (
                             day.scenes.map(scene => <SceneCard key={scene.id} scene={scene} />)
                         ) : (
-                             <p className="text-sm text-muted-foreground pl-6">{typeof day.scenes === 'string' ? day.scenes : "Nenhuma cena definida para hoje."}</p>
+                             <p className="text-sm text-muted-foreground pl-6">Nenhuma cena definida para hoje.</p>
                         )}
                     </div>
                 </div>
@@ -250,22 +264,24 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                 {/* Department Notes */}
                 <div className="p-4 border rounded-lg space-y-2">
                      <h4 className="font-semibold text-lg flex items-center"><Users className="h-5 w-5 mr-2 text-primary"/>Notas dos Departamentos</h4>
-                     <StaticDetailSection icon={Truck} title="Equipamentos" content={day.equipment} />
-                     <StaticDetailSection icon={Shirt} title="Figurino" content={day.costumes} />
-                     <StaticDetailSection icon={Star} title="Objetos de Cena e Direção de Arte" content={day.props} />
+                     <ChecklistSection icon={Truck} title="Equipamentos" items={day.equipment} onListUpdate={(list) => onUpdateNotes(day.id, 'equipment', list)} />
+                     <ChecklistSection icon={Shirt} title="Figurino" items={day.costumes} onListUpdate={(list) => onUpdateNotes(day.id, 'costumes', list)} />
+                     <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={day.props} onListUpdate={(list) => onUpdateNotes(day.id, 'props', list)} />
                 </div>
                 
                  {/* Present Team & General Notes */}
-                <DetailSection icon={Users} title="Equipe Presente na Diária" content={
-                    day.presentTeam && day.presentTeam.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                            {day.presentTeam.map(member => (
-                                <Badge key={member.id} variant="secondary" className="font-normal">{member.name} <span className="text-muted-foreground ml-1.5">({member.role})</span></Badge>
-                            ))}
-                        </div>
-                    ) : <p className="text-sm text-muted-foreground">Nenhuma equipe selecionada para este dia.</p>
-                }/>
-                <DetailSection icon={FileText} title="Observações Gerais" content={day.generalNotes} defaultOpen />
+                 <div className="p-4 border rounded-lg space-y-2">
+                    <ChecklistSection icon={FileText} title="Observações Gerais" items={day.generalNotes} onListUpdate={(list) => onUpdateNotes(day.id, 'generalNotes', list)} />
+                    <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
+                        day.presentTeam && day.presentTeam.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {day.presentTeam.map(member => (
+                                    <Badge key={member.id} variant="secondary" className="font-normal">{member.name} <span className="text-muted-foreground ml-1.5">({member.role})</span></Badge>
+                                ))}
+                            </div>
+                        ) : <p className="text-sm text-muted-foreground">Nenhuma equipe selecionada para este dia.</p>
+                    }/>
+                </div>
             </div>
           </CardContent>
         </AccordionContent>

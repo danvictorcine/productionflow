@@ -118,6 +118,11 @@ export type CallTime = {
   time: string; // e.g., "08:00"
 };
 
+export type ChecklistItem = {
+  id: string;
+  text: string;
+  checked: boolean;
+};
 
 export type ShootingDay = {
   id: string;
@@ -125,21 +130,18 @@ export type ShootingDay = {
   userId: string;
   date: Date;
   location: string;
-  // Deprecated fields, kept for backward compatibility during transition
-  scenes?: string | Scene[];
-  callTimes?: string | CallTime[];
-  // New structured fields
+  scenes: Scene[];
+  callTimes: CallTime[];
   dayNumber?: number;
   totalDays?: number;
   mealTime?: string;
   parkingInfo?: string;
   radioChannels?: string;
   nearestHospital?: HospitalInfo;
-  // Common fields
-  equipment: string;
-  costumes: string;
-  props: string;
-  generalNotes: string;
+  equipment: string | ChecklistItem[];
+  costumes: string | ChecklistItem[];
+  props: string | ChecklistItem[];
+  generalNotes: string | ChecklistItem[];
   presentTeam: TeamMember[];
   latitude?: number;
   longitude?: number;

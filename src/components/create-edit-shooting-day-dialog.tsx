@@ -10,7 +10,7 @@ import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
-import type { ShootingDay, TeamMember } from "@/lib/types";
+import type { ShootingDay, TeamMember, ChecklistItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -70,6 +70,12 @@ const sceneSchema = z.object({
     presentInScene: z.array(teamMemberSchema),
 });
 
+const checklistItemSchema = z.object({
+  id: z.string(),
+  text: z.string().min(1, "O texto do item não pode ser vazio."),
+  checked: z.boolean(),
+});
+
 const shootingDaySchema = z.object({
   date: z.date({ required_error: "A data da filmagem é obrigatória." }),
   dayNumber: z.coerce.number().optional(),
@@ -86,10 +92,10 @@ const shootingDaySchema = z.object({
   radioChannels: z.string().optional(),
   nearestHospital: hospitalSchema.optional(),
   // Department notes
-  equipment: z.string().optional(),
-  costumes: z.string().optional(),
-  props: z.string().optional(),
-  generalNotes: z.string().optional(),
+  equipment: z.array(checklistItemSchema).optional(),
+  costumes: z.array(checklistItemSchema).optional(),
+  props: z.array(checklistItemSchema).optional(),
+  generalNotes: z.array(checklistItemSchema).optional(),
 });
 
 
@@ -99,8 +105,46 @@ interface CreateEditShootingDayDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => void;
-  shootingDay?: ShootingDay;
+  shootingDay?: (Omit<ShootingDay, 'equipment'|'costumes'|'props'|'generalNotes'> & { equipment: ChecklistItem[], costumes: ChecklistItem[], props: ChecklistItem[], generalNotes: ChecklistItem[]}) | null;
   productionTeam: TeamMember[];
+}
+
+const ChecklistFormSection = ({ name, label, control }: { name: "equipment" | "costumes" | "props" | "generalNotes", label: string, control: any }) => {
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name,
+    });
+
+    return (
+        <div>
+            <FormLabel>{label}</FormLabel>
+            <div className="space-y-2 mt-2">
+                {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2">
+                        <FormField
+                            control={control}
+                            name={`${name}.${index}.text`}
+                            render={({ field }) => (
+                                <FormItem className="flex-1">
+                                    <FormControl>
+                                        <Input placeholder="Descreva o item..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    </div>
+                ))}
+                 <Button type="button" variant="outline" size="sm" onClick={() => append({ id: crypto.randomUUID(), text: "", checked: false })}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Adicionar Item
+                </Button>
+            </div>
+        </div>
+    );
 }
 
 export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shootingDay, productionTeam }: CreateEditShootingDayDialogProps) {
@@ -116,10 +160,10 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       longitude: defaultPosition[1],
       scenes: [],
       callTimes: [],
-      equipment: "",
-      costumes: "",
-      props: "",
-      generalNotes: "",
+      equipment: [],
+      costumes: [],
+      props: [],
+      generalNotes: [],
       presentTeam: [],
       dayNumber: undefined,
       totalDays: undefined,
@@ -174,10 +218,10 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
             longitude: defaultPosition[1],
             scenes: [],
             callTimes: [{ id: crypto.randomUUID(), department: "Chamada Geral", time: "08:00" }],
-            equipment: "",
-            costumes: "",
-            props: "",
-            generalNotes: "",
+            equipment: [],
+            costumes: [],
+            props: [],
+            generalNotes: [],
             presentTeam: [],
             dayNumber: undefined,
             totalDays: undefined,
@@ -393,14 +437,10 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <div>
                         <h3 className="text-lg font-semibold mb-2">Notas dos Departamentos</h3>
                          <div className="border p-4 rounded-lg space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="equipment" render={({ field }) => (<FormItem><FormLabel>Equipamentos</FormLabel><FormControl><Textarea placeholder="Notas do departamento de Câmera/Elétrica..." {...field} /></FormControl></FormItem>)}/>
-                                <FormField control={form.control} name="costumes" render={({ field }) => (<FormItem><FormLabel>Figurino</FormLabel><FormControl><Textarea placeholder="Notas do departamento de Figurino..." {...field} /></FormControl></FormItem>)}/>
-                            </div>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="props" render={({ field }) => (<FormItem><FormLabel>Objetos de Cena e Direção de Arte</FormLabel><FormControl><Textarea placeholder="Notas do departamento de Arte..." {...field} /></FormControl></FormItem>)}/>
-                                <FormField control={form.control} name="generalNotes" render={({ field }) => (<FormItem><FormLabel>Observações Gerais</FormLabel><FormControl><Textarea placeholder="Outras notas e observações importantes..." {...field} /></FormControl></FormItem>)}/>
-                            </div>
+                            <ChecklistFormSection name="equipment" label="Equipamentos" control={form.control} />
+                            <ChecklistFormSection name="costumes" label="Figurino" control={form.control} />
+                            <ChecklistFormSection name="props" label="Objetos de Cena e Direção de Arte" control={form.control} />
+                            <ChecklistFormSection name="generalNotes" label="Observações Gerais" control={form.control} />
                          </div>
                     </div>
 

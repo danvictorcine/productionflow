@@ -9,7 +9,7 @@ import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 
-import type { Production, ShootingDay, WeatherInfo } from '@/lib/types';
+import type { Production, ShootingDay, WeatherInfo, ChecklistItem } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -41,6 +41,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
+    equipment: ChecklistItem[];
+    costumes: ChecklistItem[];
+    props: ChecklistItem[];
+    generalNotes: ChecklistItem[];
+};
 
 function ProductionPageDetail() {
   const router = useRouter();
@@ -51,7 +57,7 @@ function ProductionPageDetail() {
   const mainRef = useRef<HTMLElement>(null);
 
   const [production, setProduction] = useState<Production | null>(null);
-  const [shootingDays, setShootingDays] = useState<ShootingDay[]>([]);
+  const [shootingDays, setShootingDays] = useState<ProcessedShootingDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingWeather, setIsFetchingWeather] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
@@ -59,8 +65,8 @@ function ProductionPageDetail() {
   // Dialog states
   const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
   const [isShootingDayDialogOpen, setIsShootingDayDialogOpen] = useState(false);
-  const [editingShootingDay, setEditingShootingDay] = useState<ShootingDay | null>(null);
-  const [dayToDelete, setDayToDelete] = useState<ShootingDay | null>(null);
+  const [editingShootingDay, setEditingShootingDay] = useState<ProcessedShootingDay | null>(null);
+  const [dayToDelete, setDayToDelete] = useState<ProcessedShootingDay | null>(null);
 
   const fetchAndUpdateWeather = useCallback(async (day: ShootingDay) => {
     if (!day.latitude || !day.longitude) return;
@@ -110,18 +116,39 @@ function ProductionPageDetail() {
       if (prodData) {
         setProduction(prodData);
         
-        daysData.forEach(day => {
+        const convertNotesToItems = (notes: string | ChecklistItem[] | undefined): ChecklistItem[] => {
+            if (Array.isArray(notes)) {
+                return notes.map(item => ({...item, id: item.id || crypto.randomUUID()}));
+            }
+            if (typeof notes === 'string' && notes.trim()) {
+                return notes.split('\n').filter(Boolean).map(line => ({
+                    id: crypto.randomUUID(),
+                    text: line.trim(),
+                    checked: false
+                }));
+            }
+            return [];
+        };
+
+        const processedDays = daysData.map(day => {
           const weather = day.weather;
-          
           const isStale = !weather || !weather.lastUpdated || !isSameDay(new Date(weather.lastUpdated), new Date());
           const locationMismatch = weather && weather.locationName !== day.location;
           
           if ((isStale || locationMismatch) && day.latitude && day.longitude) {
             fetchAndUpdateWeather(day);
           }
+
+          return {
+              ...day,
+              equipment: convertNotesToItems(day.equipment),
+              costumes: convertNotesToItems(day.costumes),
+              props: convertNotesToItems(day.props),
+              generalNotes: convertNotesToItems(day.generalNotes),
+          };
         });
-        
-        setShootingDays(daysData);
+
+        setShootingDays(processedDays);
       } else {
         toast({ variant: 'destructive', title: 'Erro', description: 'Produção não encontrada.' });
         router.push('/');
@@ -162,10 +189,10 @@ function ProductionPageDetail() {
   const handleShootingDaySubmit = async (data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => {
     const sanitizedData = {
       ...data,
-      equipment: data.equipment || "",
-      costumes: data.costumes || "",
-      props: data.props || "",
-      generalNotes: data.generalNotes || "",
+      equipment: data.equipment || [],
+      costumes: data.costumes || [],
+      props: data.props || [],
+      generalNotes: data.generalNotes || [],
       presentTeam: data.presentTeam || [],
       mealTime: data.mealTime || "",
       parkingInfo: data.parkingInfo || "",
@@ -218,7 +245,7 @@ function ProductionPageDetail() {
     }
   };
 
-  const createShootingDaySheet = (day: ShootingDay): XLSX.WorkSheet => {
+  const createShootingDaySheet = (day: ProcessedShootingDay): XLSX.WorkSheet => {
     const dayInfo = [
         ["Data", format(day.date, "PPP", { locale: ptBR })],
         ["Diária", `${day.dayNumber || 'N/A'} de ${day.totalDays || 'N/A'}`],
@@ -233,10 +260,10 @@ function ProductionPageDetail() {
     ];
     const notesInfo = [
         [], ["Notas dos Departamentos"],
-        ["Equipamentos", day.equipment || 'N/A'],
-        ["Figurino", day.costumes || 'N/A'],
-        ["Objetos de Cena e Direção de Arte", day.props || 'N/A'],
-        ["Observações Gerais", day.generalNotes || 'N/A'],
+        ["Equipamentos", (day.equipment || []).map(i => i.text).join('\n') || 'N/A'],
+        ["Figurino", (day.costumes || []).map(i => i.text).join('\n') || 'N/A'],
+        ["Objetos de Cena e Direção de Arte", (day.props || []).map(i => i.text).join('\n') || 'N/A'],
+        ["Observações Gerais", (day.generalNotes || []).map(i => i.text).join('\n') || 'N/A'],
     ];
     const presentTeamInfo = [[], ["Equipe Presente"], [(day.presentTeam || []).map(p => p.name).join(', ') || 'N/A']];
     
@@ -364,7 +391,7 @@ function ProductionPageDetail() {
     }
   };
   
-  const handleExportDayToExcel = (day: ShootingDay) => {
+  const handleExportDayToExcel = (day: ProcessedShootingDay) => {
     if (!production) return;
     setIsExporting(true);
 
@@ -386,7 +413,7 @@ function ProductionPageDetail() {
     }
   };
   
-  const handleExportDayToPdf = async (dayId: string, day: ShootingDay) => {
+  const handleExportDayToPdf = async (dayId: string, day: ProcessedShootingDay) => {
     const elementToCapture = document.getElementById(`shooting-day-card-${dayId}`);
     if (!elementToCapture) {
         toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
@@ -433,8 +460,28 @@ function ProductionPageDetail() {
     }
   };
 
+  const handleUpdateNotes = async (
+    dayId: string,
+    listName: 'equipment' | 'costumes' | 'props' | 'generalNotes',
+    updatedList: ChecklistItem[]
+  ) => {
+    // Optimistic update
+    setShootingDays(prevDays =>
+        prevDays.map(day =>
+            day.id === dayId ? { ...day, [listName]: updatedList } : day
+        )
+    );
+    // Firestore update
+    try {
+        await firestoreApi.updateShootingDay(dayId, { [listName]: updatedList });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Erro ao atualizar item' });
+        // Revert optimistic update on failure
+        fetchProductionData(); 
+    }
+  };
 
-  const openEditShootingDayDialog = (day: ShootingDay) => {
+  const openEditShootingDayDialog = (day: ProcessedShootingDay) => {
     setEditingShootingDay(day);
     setIsShootingDayDialogOpen(true);
   };
@@ -588,6 +635,7 @@ function ProductionPageDetail() {
                     onDelete={() => setDayToDelete(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
                     onExportPdf={() => handleExportDayToPdf(day.id, day)}
+                    onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting}
                   />
                 ))
