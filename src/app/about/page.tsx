@@ -1,6 +1,6 @@
-// src/app/about/page.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { AppFooter } from '@/components/app-footer';
@@ -8,9 +8,43 @@ import { Button } from '@/components/ui/button';
 import { UserNav } from '@/components/user-nav';
 import { useAuth } from '@/context/auth-context';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import * as firestoreApi from '@/lib/firebase/firestore';
+import type { PageContent } from '@/lib/types';
+import { CopyableError } from '@/components/copyable-error';
 
 export default function AboutPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [pageContent, setPageContent] = useState<PageContent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    firestoreApi.getPage('about')
+      .then(content => {
+        if (content) {
+          setPageContent(content);
+        } else {
+          // Fallback content if nothing is in the database yet
+          setPageContent({
+            id: 'about',
+            title: 'Quem Somos',
+            content: `<h2>Nossa Missão</h2><p>Simplificar a gestão de produções audiovisuais, da ideia à finalização.</p><p>ProductionFlow é um produto da <span class="font-semibold">Candeeiro Filmes</span>.</p>`,
+            updatedAt: new Date(),
+          });
+        }
+      })
+      .catch(error => {
+        const errorTyped = error as { code?: string; message: string };
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao carregar página',
+            description: <CopyableError userMessage="Não foi possível carregar o conteúdo da página." errorCode={errorTyped.code || errorTyped.message} />,
+        });
+      })
+      .finally(() => setIsLoading(false));
+  }, [toast]);
 
   return (
     <>
@@ -34,15 +68,20 @@ export default function AboutPage() {
         </div>
       </header>
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="prose prose-lg dark:prose-invert max-w-none text-foreground">
-          <h2>Nossa Missão</h2>
-          <p>
-              Simplificar a gestão de produções audiovisuais, da ideia à finalização.
-          </p>
-            <p>
-              ProductionFlow é um produto da <span className="font-semibold text-foreground">Candeeiro Filmes</span>.
-          </p>
-        </div>
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-5/6" />
+          </div>
+        ) : pageContent ? (
+          <div 
+            className="prose prose-lg dark:prose-invert max-w-none text-foreground"
+            dangerouslySetInnerHTML={{ __html: pageContent.content }}
+          />
+        ) : (
+          <p>Conteúdo não encontrado.</p>
+        )}
       </main>
       <AppFooter />
     </>

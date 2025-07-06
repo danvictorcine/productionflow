@@ -17,7 +17,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -454,7 +454,7 @@ export const deleteShootingDay = async (dayId: string) => {
   await deleteDoc(docRef);
 };
 
-// === Blog Post Functions ===
+// === Blog & Page Content Functions ===
 
 export const getPosts = async (limitCount?: number): Promise<Post[]> => {
   const postsCollection = collection(db, 'posts');
@@ -490,7 +490,7 @@ export const getPost = async (postId: string): Promise<Post | null> => {
     return null;
 }
 
-export const addPost = async (data: Omit<Post, 'id'|'createdAt'>) => {
+export const addPost = async (data: Omit<Post, 'id'|'createdAt'|'updatedAt'>) => {
   await addDoc(collection(db, 'posts'), {
     ...data,
     createdAt: Timestamp.now(),
@@ -521,4 +521,27 @@ export const uploadImageForPost = async (file: File): Promise<string> => {
   const downloadURL = await getDownloadURL(storageRef);
   
   return downloadURL;
+};
+
+export const getPage = async (pageId: 'about' | 'contact'): Promise<PageContent | null> => {
+  const pageRef = doc(db, 'pages', pageId);
+  const pageSnap = await getDoc(pageRef);
+
+  if (pageSnap.exists()) {
+    const data = pageSnap.data();
+    return {
+      id: pageSnap.id,
+      ...data,
+      updatedAt: (data.updatedAt as Timestamp).toDate(),
+    } as PageContent
+  }
+  return null;
+};
+
+export const updatePage = async (pageId: 'about' | 'contact', data: Omit<PageContent, 'id' | 'updatedAt'>) => {
+  const pageRef = doc(db, 'pages', pageId);
+  await setDoc(pageRef, {
+    ...data,
+    updatedAt: Timestamp.now(),
+  }, { merge: true });
 };

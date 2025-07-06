@@ -37,18 +37,20 @@ export default function AdminDashboard() {
                             </CardContent>
                         </Card>
                     </Link>
-                     <Card className="bg-muted cursor-not-allowed h-full flex flex-col justify-between">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                                <BookOpen className="h-5 w-5"/>
-                                Gerenciar Páginas
-                            </CardTitle>
-                            <CardDescription>Edite o conteúdo das páginas "Quem Somos", "Contato" e da página de login. (Em breve)</CardDescription>
-                        </CardHeader>
-                         <CardContent>
-                            <Button disabled>Acessar</Button>
-                        </CardContent>
-                    </Card>
+                     <Link href="/admin/pages" className="block">
+                        <Card className="hover:bg-muted/50 transition-colors h-full flex flex-col justify-between">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <BookOpen className="h-5 w-5 text-primary"/>
+                                    Gerenciar Páginas
+                                </CardTitle>
+                                <CardDescription>Edite o conteúdo das páginas "Quem Somos", "Contato" e da página de login.</CardDescription>
+                            </CardHeader>
+                             <CardContent>
+                                <Button>Acessar</Button>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 </div>
             </main>
             <AppFooter />

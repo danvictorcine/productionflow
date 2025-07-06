@@ -71,7 +71,15 @@ export type Post = {
   authorName: string;
   authorPhotoURL?: string;
   createdAt: Date;
+  updatedAt?: Date;
 };
+
+export type PageContent = {
+  id: string;
+  title: string;
+  content: string;
+  updatedAt: Date;
+}
 
 
 // New types for Production (Call Sheet) Module
