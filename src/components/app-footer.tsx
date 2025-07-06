@@ -12,6 +12,7 @@ export function AppFooter() {
             <Link href="/blog" className="hover:text-primary transition-colors">Blog</Link>
             <Link href="/contact" className="hover:text-primary transition-colors">Contate-nos</Link>
             <Link href="/about" className="hover:text-primary transition-colors">Quem Somos</Link>
+            <Link href="/terms" className="hover:text-primary transition-colors">Termos e Privacidade</Link>
           </div>
           <div className="flex flex-wrap justify-center sm:justify-end items-center gap-x-3 gap-y-1 text-center sm:text-right mt-2 sm:mt-0">
               <p>

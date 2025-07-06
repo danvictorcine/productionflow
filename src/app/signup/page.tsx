@@ -22,11 +22,15 @@ import { Loader2, DollarSign, Users, FileSpreadsheet, Camera, User as UserIcon, 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
+  terms: z.literal(true, {
+    errorMap: () => ({ message: "Você deve aceitar os Termos de Uso e Privacidade." }),
+  }),
 });
 
 export default function SignupPage() {
@@ -50,6 +54,7 @@ export default function SignupPage() {
       name: '',
       email: '',
       password: '',
+      terms: false,
     },
   });
 
@@ -183,11 +188,6 @@ export default function SignupPage() {
                 </div>
             </div>
         </div>
-        <div className="absolute bottom-8">
-            <p className="text-sm text-muted-foreground">
-                Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span>
-            </p>
-        </div>
       </div>
       <div className="flex items-center justify-center py-12 px-4">
         <div className="mx-auto grid w-full max-w-sm gap-6">
@@ -258,6 +258,30 @@ export default function SignupPage() {
                       <Input type="password" placeholder="********" {...field} />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="terms"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm font-normal">
+                        Eu li e aceito os{' '}
+                        <Link href="/terms" target="_blank" className="underline hover:text-primary">
+                          Termos de Uso e Política de Privacidade
+                        </Link>
+                        .
+                      </FormLabel>
+                      <FormMessage />
+                    </div>
                   </FormItem>
                 )}
               />
