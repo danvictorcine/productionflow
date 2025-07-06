@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -179,31 +180,35 @@ function CreativeProjectPageDetail() {
   const handleItemUpdate = useCallback(async (itemId: string, data: Partial<BoardItem>) => {
     try {
         await firestoreApi.updateBoardItem(itemId, data);
-        // Optional: you can show a toast here, but it might be too noisy for drag/drop
     } catch (error) {
         toast({ variant: 'destructive', title: 'Erro ao salvar alteração.' });
-        fetchProjectData(); // Re-fetch to correct UI
+        fetchProjectData();
     }
   }, [fetchProjectData, toast]);
 
 
-  const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number, height: number }) => {
+  const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string, height: number | string }): Promise<boolean> => {
     try {
-        const newItemData = {
-            type,
-            content,
-            size,
-            position: { x: 50, y: 50 },
-        };
-        const newId = await firestoreApi.addBoardItem(projectId, newItemData);
-        const addedItem = await firestoreApi.getDoc(firestoreApi.doc(firestoreApi.db, 'board_items', newId));
-        if (addedItem.exists()) {
-             setItems(prev => [...prev, { id: newId, ...addedItem.data() } as BoardItem]);
-        }
+        const newItemData = { type, content, size, position: { x: 50, y: 50 }, };
+        await firestoreApi.addBoardItem(projectId, newItemData);
+        await fetchProjectData();
+        return true;
     } catch (error) {
-        toast({ variant: 'destructive', title: `Erro ao adicionar ${type}.` });
+        const errorTyped = error as { code?: string; message: string };
+        toast({ 
+            variant: 'destructive', 
+            title: `Erro ao adicionar ${type}`,
+            description: <CopyableError userMessage="Não foi possível adicionar o item ao quadro." errorCode={errorTyped.code || errorTyped.message} />,
+        });
+        return false;
     }
   };
+  
+  const handleAddNote = async () => {
+    if (await handleAddItem('note', '', { width: 250, height: 200 })) {
+      toast({ title: "Nota adicionada!" });
+    }
+  }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files?.[0]) return;
@@ -212,10 +217,16 @@ function CreativeProjectPageDetail() {
       const file = event.target.files[0];
       const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
       const url = await firestoreApi.uploadImageForBoard(compressedFile);
-      await handleAddItem('image', url, { width: 400, height: 300 });
-      toast({ title: 'Imagem adicionada!' });
+      if (await handleAddItem('image', url, { width: 400, height: 300 })) {
+        toast({ title: 'Imagem adicionada!' });
+      }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro no upload da imagem.' });
+       const errorTyped = error as { code?: string; message: string };
+       toast({ 
+          variant: 'destructive', 
+          title: 'Erro no upload da imagem.',
+          description: <CopyableError userMessage="Não foi possível fazer o upload da imagem." errorCode={errorTyped.code || errorTyped.message} />
+       });
     } finally {
       setIsUploading(false);
       if (imageUploadRef.current) imageUploadRef.current.value = "";
@@ -232,23 +243,27 @@ function CreativeProjectPageDetail() {
     }
   };
 
-  const handleAddVideo = () => {
+  const handleAddVideo = async () => {
     if (!videoUrl) return;
     const embedUrl = getYoutubeEmbedUrl(videoUrl) || getVimeoEmbedUrl(videoUrl);
     if (!embedUrl) {
         toast({ variant: 'destructive', title: 'URL Inválida', description: 'Por favor, insira uma URL válida do YouTube ou Vimeo.' });
         return;
     }
-    handleAddItem('video', videoUrl, { width: 480, height: 270 });
-    setIsVideoDialogOpen(false);
-    setVideoUrl("");
+    if (await handleAddItem('video', videoUrl, { width: 480, height: 270 })) {
+        toast({ title: 'Vídeo adicionado!' });
+        setIsVideoDialogOpen(false);
+        setVideoUrl("");
+    }
   };
 
-  const handleAddLocation = () => {
+  const handleAddLocation = async () => {
     if (!selectedLocation) return;
-    handleAddItem('location', JSON.stringify(selectedLocation), { width: 300, height: 300 });
-    setIsLocationDialogOpen(false);
-    setSelectedLocation(null);
+    if (await handleAddItem('location', JSON.stringify(selectedLocation), { width: 300, height: 300 })) {
+        toast({ title: 'Localização adicionada!' });
+        setIsLocationDialogOpen(false);
+        setSelectedLocation(null);
+    }
   };
   
   if (isLoading) {
@@ -279,7 +294,7 @@ function CreativeProjectPageDetail() {
       <main className="flex-1 flex flex-col">
         <div className="flex-shrink-0 bg-background p-2 border-b z-30">
             <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => handleAddItem('note', '', { width: 250, height: 200 })}>
+                <Button variant="ghost" size="sm" onClick={handleAddNote}>
                     <StickyNote className="mr-2 h-4 w-4" />Adicionar Nota
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
