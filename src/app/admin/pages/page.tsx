@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { AppFooter } from '@/components/app-footer';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookUser, FileSignature, LogIn } from 'lucide-react';
+import { ArrowLeft, BookUser, FileSignature, LogIn, Shield } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export default function ManagePagesDashboard() {
@@ -59,6 +59,20 @@ export default function ManagePagesDashboard() {
                                     Página de Login
                                 </CardTitle>
                                 <CardDescription>Edite os cards de features da página de login.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Button>Editar</Button>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                    <Link href="/admin/pages/edit/terms" className="block">
+                        <Card className="hover:bg-muted/50 transition-colors h-full flex flex-col justify-between">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-foreground">
+                                    <Shield className="h-5 w-5 text-primary"/>
+                                    Termos e Privacidade
+                                </CardTitle>
+                                <CardDescription>Edite o conteúdo da página de Termos de Uso.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Button>Editar</Button>

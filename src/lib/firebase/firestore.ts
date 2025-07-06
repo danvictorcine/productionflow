@@ -158,7 +158,7 @@ export const updateUserProfile = async (uid: string, data: Partial<Omit<UserProf
       }
 
       if (Object.keys(authUpdateData).length > 0) {
-        await updateAuthProfile(auth.currentUser, authUpdateData);
+         await updateAuthProfile(auth.currentUser, authUpdateData);
       }
     }
 };
@@ -523,7 +523,7 @@ export const uploadImageForPost = async (file: File): Promise<string> => {
   return downloadURL;
 };
 
-export const getPage = async (pageId: 'about' | 'contact'): Promise<PageContent | null> => {
+export const getPage = async (pageId: 'about' | 'contact' | 'terms'): Promise<PageContent | null> => {
   const pageRef = doc(db, 'pages', pageId);
   const pageSnap = await getDoc(pageRef);
 
@@ -538,7 +538,7 @@ export const getPage = async (pageId: 'about' | 'contact'): Promise<PageContent 
   return null;
 };
 
-export const updatePage = async (pageId: 'about' | 'contact', data: Omit<PageContent, 'id' | 'updatedAt'>) => {
+export const updatePage = async (pageId: 'about' | 'contact' | 'terms', data: Omit<PageContent, 'id' | 'updatedAt'>) => {
   const pageRef = doc(db, 'pages', pageId);
   await setDoc(pageRef, {
     ...data,

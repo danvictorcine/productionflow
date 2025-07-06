@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { AppFooter } from '@/components/app-footer';
@@ -7,11 +8,19 @@ import { Button } from '@/components/ui/button';
 import { UserNav } from '@/components/user-nav';
 import { useAuth } from '@/context/auth-context';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import * as firestoreApi from '@/lib/firebase/firestore';
+import type { PageContent } from '@/lib/types';
+import { CopyableError } from '@/components/copyable-error';
 
 export default function TermsPage() {
   const { user } = useAuth();
-  
-  const legalText = `
+  const { toast } = useToast();
+  const [pageContent, setPageContent] = useState<PageContent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fallbackContent = `
     <h2>Termos de Uso e Política de Privacidade</h2>
     <p class="text-muted-foreground">Última atualização: ${new Date().toLocaleDateString('pt-BR')}</p>
     <p>Bem-vindo ao ProductionFlow. Ao utilizar nosso aplicativo, você concorda com estes Termos de Uso e nossa Política de Privacidade.</p>
@@ -47,6 +56,32 @@ export default function TermsPage() {
     <p>Se você tiver alguma dúvida sobre estes termos, entre em contato conosco através da nossa página de <a href="/contact" class="text-primary hover:underline">Contato</a>.</p>
   `;
 
+  useEffect(() => {
+    firestoreApi.getPage('terms')
+      .then(content => {
+        if (content) {
+          setPageContent(content);
+        } else {
+          // Fallback content if nothing is in the database yet
+          setPageContent({
+            id: 'terms',
+            title: 'Termos e Privacidade',
+            content: fallbackContent,
+            updatedAt: new Date(),
+          });
+        }
+      })
+      .catch(error => {
+        const errorTyped = error as { code?: string; message: string };
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao carregar página',
+            description: <CopyableError userMessage="Não foi possível carregar o conteúdo da página." errorCode={errorTyped.code || errorTyped.message} />,
+        });
+      })
+      .finally(() => setIsLoading(false));
+  }, [toast, fallbackContent]);
+
   return (
     <>
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
@@ -69,10 +104,23 @@ export default function TermsPage() {
         </div>
       </header>
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div 
-          className="prose prose-lg dark:prose-invert max-w-none text-foreground"
-          dangerouslySetInnerHTML={{ __html: legalText }}
-        />
+        {isLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-5/6" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-4/6" />
+            </div>
+          ) : pageContent ? (
+            <div
+              className="prose prose-lg dark:prose-invert max-w-none text-foreground"
+              dangerouslySetInnerHTML={{ __html: pageContent.content }}
+            />
+          ) : (
+            <p>Conteúdo não encontrado.</p>
+          )}
       </main>
       <AppFooter />
     </>
