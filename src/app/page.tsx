@@ -218,6 +218,8 @@ function HomePage() {
   };
 
   const renderCards = () => {
+    const displayItems = items.filter(item => user?.isAdmin || item.itemType !== 'creative');
+
     if (isLoading) {
       return (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -226,7 +228,7 @@ function HomePage() {
       );
     }
 
-    if (items.length === 0) {
+    if (displayItems.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
           <Film className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -242,7 +244,7 @@ function HomePage() {
 
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map((item) => {
+        {displayItems.map((item) => {
           let link, Icon, description;
           
           switch(item.itemType) {
@@ -340,6 +342,7 @@ function HomePage() {
         isOpen={isTypeDialogOpen}
         setIsOpen={setIsTypeDialogOpen}
         onSelect={handleSelectProjectType}
+        userIsAdmin={!!user?.isAdmin}
       />
       
       <CreateEditProjectDialog

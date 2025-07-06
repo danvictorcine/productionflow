@@ -15,9 +15,10 @@ interface ProjectTypeDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSelect: (type: 'financial' | 'production' | 'creative') => void;
+  userIsAdmin?: boolean;
 }
 
-export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect }: ProjectTypeDialogProps) {
+export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect, userIsAdmin }: ProjectTypeDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-4xl">
@@ -52,18 +53,20 @@ export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect }: ProjectTypeDi
               <CardDescription>Crie e gerencie as Ordens do Dia (Call Sheets).</CardDescription>
             </CardHeader>
           </Card>
-          <Card 
-            className="cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => onSelect('creative')}
-          >
-            <CardHeader className="items-center text-center">
-              <div className="p-3 rounded-full bg-primary/10 mb-2">
-                <Brush className="h-8 w-8 text-primary" />
-              </div>
-              <CardTitle>Projeto Criativo</CardTitle>
-              <CardDescription>Crie um moodboard, storyboard e organize suas ideias.</CardDescription>
-            </CardHeader>
-          </Card>
+          {userIsAdmin && (
+            <Card 
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => onSelect('creative')}
+            >
+              <CardHeader className="items-center text-center">
+                <div className="p-3 rounded-full bg-primary/10 mb-2">
+                  <Brush className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle>Projeto Criativo</CardTitle>
+                <CardDescription>Crie um moodboard, storyboard e organize suas ideias.</CardDescription>
+              </CardHeader>
+            </Card>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -14,6 +14,7 @@ import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
+import AdminGuard from '@/components/admin-guard';
 import { Button } from '@/components/ui/button';
 import { UserNav } from '@/components/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -197,12 +198,11 @@ function CreativeProjectPageDetail() {
   }, [fetchProjectData, toast]);
 
 
-  const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string, height: number | string }): Promise<boolean> => {
+  const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string, height: number | string }) => {
     try {
         const newItemData = { type, content, size, position: { x: 50, y: 50 }, };
         await firestoreApi.addBoardItem(projectId, newItemData);
         await fetchProjectData();
-        return true;
     } catch (error) {
         const errorTyped = error as { code?: string; message: string };
         toast({ 
@@ -210,14 +210,12 @@ function CreativeProjectPageDetail() {
             title: `Erro ao adicionar ${type}`,
             description: <CopyableError userMessage="Não foi possível adicionar o item ao quadro." errorCode={errorTyped.code || errorTyped.message} />,
         });
-        return false;
     }
   };
   
   const handleAddNote = async () => {
-    if (await handleAddItem('note', '', { width: 250, height: 200 })) {
-      toast({ title: "Nota adicionada!" });
-    }
+    await handleAddItem('note', '', { width: 250, height: 200 });
+    toast({ title: "Nota adicionada!" });
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,9 +225,8 @@ function CreativeProjectPageDetail() {
       const file = event.target.files[0];
       const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
       const url = await firestoreApi.uploadImageForBoard(compressedFile);
-      if (await handleAddItem('image', url, { width: 400, height: 300 })) {
-        toast({ title: 'Imagem adicionada!' });
-      }
+      await handleAddItem('image', url, { width: 400, height: 300 });
+      toast({ title: 'Imagem adicionada!' });
     } catch (error) {
        const errorTyped = error as { code?: string; message: string };
        toast({ 
@@ -260,20 +257,18 @@ function CreativeProjectPageDetail() {
         toast({ variant: 'destructive', title: 'URL Inválida', description: 'Por favor, insira uma URL válida do YouTube ou Vimeo.' });
         return;
     }
-    if (await handleAddItem('video', videoUrl, { width: 480, height: 270 })) {
-        toast({ title: 'Vídeo adicionado!' });
-        setIsVideoDialogOpen(false);
-        setVideoUrl("");
-    }
+    await handleAddItem('video', videoUrl, { width: 480, height: 270 });
+    toast({ title: 'Vídeo adicionado!' });
+    setIsVideoDialogOpen(false);
+    setVideoUrl("");
   };
 
   const handleAddLocation = async () => {
     if (!selectedLocation) return;
-    if (await handleAddItem('location', JSON.stringify(selectedLocation), { width: 300, height: 300 })) {
-        toast({ title: 'Localização adicionada!' });
-        setIsLocationDialogOpen(false);
-        setSelectedLocation(null);
-    }
+    await handleAddItem('location', JSON.stringify(selectedLocation), { width: 300, height: 300 });
+    toast({ title: 'Localização adicionada!' });
+    setIsLocationDialogOpen(false);
+    setSelectedLocation(null);
   };
   
   if (isLoading) {
@@ -378,7 +373,9 @@ function CreativeProjectPageDetail() {
 export default function CreativeProjectPage() {
   return (
     <AuthGuard>
-      <CreativeProjectPageDetail />
+      <AdminGuard>
+        <CreativeProjectPageDetail />
+      </AdminGuard>
     </AuthGuard>
   );
 }
