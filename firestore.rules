@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -5,8 +6,7 @@ service cloud.firestore {
 
     // Users: can only read/write their own profile. Admins can read any profile.
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+      allow read, update, create: if request.auth != null && request.auth.uid == userId;
     }
 
     // Posts: anyone can read, but only admins can write/delete.
@@ -29,22 +29,38 @@ service cloud.firestore {
 
     // Projects: only the owner can access their own projects.
     match /projects/{projectId} {
-      allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
     // Transactions: only the owner can access their own transactions.
     match /transactions/{transactionId} {
-        allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
     // Productions: only the owner can access their own productions.
     match /productions/{productionId} {
-        allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
     // Shooting Days: only the owner can access their own shooting days.
      match /shooting_days/{dayId} {
-      allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Creative Projects: only the owner can access their own creative projects.
+    match /creative_projects/{projectId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Board Items: only the owner can access items in their own projects.
+    match /board_items/{itemId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }
