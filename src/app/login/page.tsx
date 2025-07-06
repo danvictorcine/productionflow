@@ -126,6 +126,10 @@ export default function LoginPage() {
         return `Ocorreu um erro inesperado. Verifique a configuração do seu projeto Firebase.`;
     }
   }
+  
+  const stripHtml = (html: string) => {
+    return html.replace(/<[^>]+>/g, '');
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -191,21 +195,34 @@ export default function LoginPage() {
                         <h3 className="mb-4 text-center text-lg font-semibold tracking-tight text-foreground">Últimas do Blog</h3>
                         {isBlogLoading ? (
                             <div className="grid grid-cols-2 gap-4">
-                                <Skeleton className="h-32 w-full rounded-lg" />
-                                <Skeleton className="h-32 w-full rounded-lg" />
+                                <Skeleton className="h-36 w-full rounded-lg" />
+                                <Skeleton className="h-36 w-full rounded-lg" />
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 gap-4">
-                                {posts.map(post => (
+                                {posts.map(post => {
+                                    const plainTextContent = stripHtml(post.content);
+                                    const snippet = plainTextContent.substring(0, 60) + (plainTextContent.length > 60 ? '...' : '');
+
+                                    return (
                                     <Link key={post.id} href={`/blog#${post.id}`} className="block group">
                                         <Card className="h-full hover:bg-background/50 transition-colors flex flex-col justify-between p-4">
-                                            <CardTitle className="text-base font-semibold leading-tight line-clamp-3">{post.title}</CardTitle>
+                                            <div>
+                                                <CardTitle className="text-base font-semibold leading-tight line-clamp-2">{post.title}</CardTitle>
+                                                <CardDescription className="text-xs mt-1">
+                                                    {format(post.createdAt, "dd MMM, yyyy", { locale: ptBR })}
+                                                </CardDescription>
+                                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                                    {snippet}
+                                                </p>
+                                            </div>
                                             <div className="text-xs font-semibold text-primary group-hover:underline flex items-center gap-1 mt-2">
                                                 Leia mais <ArrowRight className="h-3 w-3" />
                                             </div>
                                         </Card>
                                     </Link>
-                                ))}
+                                    )
+                                })}
                             </div>
                         )}
                     </>
