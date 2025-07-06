@@ -3,20 +3,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users: can only read/write their own profile. Admins can read any profile.
+    // Users: can only read/write their own profile.
     match /users/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null;
     }
 
-    // Pages: anyone can read, but only admins can write.
-    match /pages/{pageId} {
-        allow read;
-        allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
     // Posts: anyone can read, but only admins can write/delete.
     match /posts/{postId} {
+      allow read;
+      allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Page content (about, contact): anyone can read, only admins can write.
+    match /pages/{pageId} {
       allow read;
       allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
