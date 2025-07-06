@@ -34,14 +34,14 @@ export default function AboutPage() {
         </div>
       </header>
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Nossa Missão</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-                Simplificar a gestão de produções audiovisuais, da ideia à finalização.
-            </p>
-             <p className="mt-8 text-base text-muted-foreground">
-                ProductionFlow é um produto da <span className="font-semibold text-foreground">Candeeiro Filmes</span>.
-            </p>
+        <div className="prose prose-lg dark:prose-invert max-w-none text-foreground">
+          <h2>Nossa Missão</h2>
+          <p>
+              Simplificar a gestão de produções audiovisuais, da ideia à finalização.
+          </p>
+            <p>
+              ProductionFlow é um produto da <span className="font-semibold text-foreground">Candeeiro Filmes</span>.
+          </p>
         </div>
       </main>
       <AppFooter />

@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, DollarSign, Users, FileSpreadsheet, Camera, User as UserIcon } from 'lucide-react';
+import { Loader2, DollarSign, Users, FileSpreadsheet, Camera, User as UserIcon, Clapperboard } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
@@ -157,6 +157,17 @@ export default function SignupPage() {
                     <h3 className="text-lg font-semibold">Gestão de Equipe Completa</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.
+                    </p>
+                </div>
+            </div>
+             <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                    <Clapperboard className="h-6 w-6" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-semibold">Ordem do Dia Detalhada</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.
                     </p>
                 </div>
             </div>

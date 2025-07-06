@@ -63,7 +63,6 @@ export default function LoginPage() {
             setPosts(latestPosts);
         } catch (error) {
             console.error("Failed to fetch blog posts:", error);
-            // Non-blocking error, so no toast
         } finally {
             setIsBlogLoading(false);
         }
@@ -295,6 +294,9 @@ export default function LoginPage() {
                     </div>
                 )}
             </div>
+        </div>
+        <div className="text-center text-sm text-muted-foreground lg:hidden pb-4">
+            <p>Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span></p>
         </div>
         <AppFooter />
       </div>

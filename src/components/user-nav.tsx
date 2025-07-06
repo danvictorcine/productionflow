@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
-import { LogOut, Settings, User as UserIcon, Sun, Moon, Laptop } from 'lucide-react';
+import { LogOut, Settings, User as UserIcon, Sun, Moon, Laptop, Shield } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 export function UserNav() {
@@ -48,6 +48,12 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          {user.isAdmin && (
+            <DropdownMenuItem onClick={() => router.push('/admin')}>
+              <Shield className="mr-2 h-4 w-4" />
+              <span>Admin</span>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={() => router.push('/settings')}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Configurações</span>

@@ -34,9 +34,9 @@ export default function ContactPage() {
         </div>
       </header>
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Entre em Contato</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
+        <div className="prose prose-lg dark:prose-invert max-w-none text-foreground">
+            <h2>Entre em Contato</h2>
+            <p>
                 Estamos aqui para ajudar. Envie um e-mail para <a href="mailto:contato@productionflow.com" className="text-primary hover:underline">contato@productionflow.com</a>.
             </p>
         </div>

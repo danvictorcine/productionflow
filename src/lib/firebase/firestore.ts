@@ -44,7 +44,6 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
 
 export const getProjects = async (): Promise<Project[]> => {
   const userId = getUserId();
-  // Removed orderBy to fetch all projects, including legacy ones without 'createdAt'
   const q = query(collection(db, 'projects'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
@@ -57,7 +56,6 @@ export const getProjects = async (): Promise<Project[]> => {
         ...inst,
         date: (inst.date as Timestamp).toDate()
       })),
-      // Safely handle projects without a createdAt field by providing a fallback date
       createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
     } as Project);
   });
@@ -125,7 +123,7 @@ export const createUserProfile = async (uid: string, name: string, email: string
     name,
     email,
     photoURL,
-    isAdmin: false, // Default to not admin
+    isAdmin: email === 'danvictor20@gmail.com', // Automatically make specific user admin
   });
 };
 
@@ -477,6 +475,21 @@ export const getPosts = async (limitCount?: number): Promise<Post[]> => {
   });
 };
 
+export const getPost = async (postId: string): Promise<Post | null> => {
+    const postRef = doc(db, 'posts', postId);
+    const postSnap = await getDoc(postRef);
+
+    if (postSnap.exists()) {
+        const data = postSnap.data();
+        return {
+            id: postSnap.id,
+            ...data,
+            createdAt: (data.createdAt as Timestamp).toDate(),
+        } as Post;
+    }
+    return null;
+}
+
 export const addPost = async (data: Omit<Post, 'id'|'createdAt'>) => {
   await addDoc(collection(db, 'posts'), {
     ...data,
@@ -484,12 +497,28 @@ export const addPost = async (data: Omit<Post, 'id'|'createdAt'>) => {
   });
 };
 
-export const updatePost = async (postId: string, data: Partial<Omit<Post, 'id'>>) => {
+export const updatePost = async (postId: string, data: Partial<Omit<Post, 'id'|'createdAt'>>) => {
   const docRef = doc(db, 'posts', postId);
-  await updateDoc(docRef, data);
+  await updateDoc(docRef, {
+      ...data,
+      updatedAt: Timestamp.now()
+  });
 };
 
 export const deletePost = async (postId: string) => {
   const docRef = doc(db, 'posts', postId);
   await deleteDoc(docRef);
+};
+
+export const uploadImageForPost = async (file: File): Promise<string> => {
+  const timestamp = new Date().getTime();
+  const randomString = Math.random().toString(36).substring(2, 8);
+  const fileName = `${timestamp}-${randomString}-${file.name}`;
+  const filePath = `posts/images/${fileName}`;
+  const storageRef = ref(storage, filePath);
+  
+  await uploadBytes(storageRef, file);
+  const downloadURL = await getDownloadURL(storageRef);
+  
+  return downloadURL;
 };
