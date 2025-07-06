@@ -1,66 +1,70 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users: can only read/write their own profile. Admins can read any profile.
+    // Helper function to check if the user is an admin
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Users: can only read/write their own profile.
     match /users/{userId} {
-      allow read, update, create: if request.auth != null && request.auth.uid == userId;
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
     }
 
     // Posts: anyone can read, but only admins can write/delete.
     match /posts/{postId} {
       allow read;
-      allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow create, update, delete: if request.auth != null && isAdmin();
     }
     
-    // Pages (About, Contact): anyone can read, but only admins can write.
+    // Pages (About, Contact, etc.): anyone can read, but only admins can write.
     match /pages/{pageId} {
       allow read;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow write: if request.auth != null && isAdmin();
     }
 
     // Login Features: anyone can read, but only admins can write.
     match /login_features/{featureId} {
       allow read;
-      allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow create, update, delete: if request.auth != null && isAdmin();
     }
-
-    // Projects: only the owner can access their own projects.
+    
+    // Project Data: Financial, Production, Creative, and their children
+    // Note: Separating create from other operations is crucial.
+    // 'resource.data' is for existing documents (read, update, delete).
+    // 'request.resource.data' is for new documents (create).
+    
     match /projects/{projectId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
     }
     
-    // Transactions: only the owner can access their own transactions.
     match /transactions/{transactionId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
     }
     
-    // Productions: only the owner can access their own productions.
     match /productions/{productionId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
     }
 
-    // Shooting Days: only the owner can access their own shooting days.
-     match /shooting_days/{dayId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    match /shooting_days/{dayId} {
+      allow read, update, delete: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
     }
 
-    // Creative Projects: only the owner can access their own creative projects.
     match /creative_projects/{projectId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
     }
 
-    // Board Items: only the owner can access items in their own projects.
     match /board_items/{itemId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
     }
   }
 }
