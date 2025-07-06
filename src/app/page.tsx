@@ -266,10 +266,7 @@ function HomePage() {
             <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
             <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
           </svg>
-          <div className="flex items-baseline gap-2">
-             <h1 className="text-2xl font-bold text-primary tracking-tighter">ProductionFlow</h1>
-             <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
-          </div>
+          <h1 className="text-2xl font-bold text-primary tracking-tighter">ProductionFlow</h1>
           {user?.name && <span className="text-lg font-normal text-muted-foreground">/ {user.name}</span>}
         </div>
         <div className="ml-auto flex items-center gap-4">
