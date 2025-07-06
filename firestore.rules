@@ -62,6 +62,11 @@ service cloud.firestore {
       allow create: if request.auth.uid == request.resource.data.userId;
     }
 
+    // For the board_items query to work, you need a composite index.
+    // In Firestore > Indexes > Add composite index:
+    // Collection ID: board_items
+    // Fields: projectId (Asc), userId (Asc), createdAt (Asc)
+    // Query Scope: Collection
     match /board_items/{itemId} {
       allow read, update, delete: if request.auth.uid == resource.data.userId;
       allow create: if request.auth.uid == request.resource.data.userId;
