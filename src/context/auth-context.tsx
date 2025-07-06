@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setLoading(true);
         const userProfile = await getUserProfile(firebaseUser.uid);
         if (userProfile) {
-            setUser({ ...firebaseUser, ...userProfile });
+            setUser({ ...firebaseUser, ...userProfile, isAdmin: userProfile.isAdmin || false });
         }
         setLoading(false);
     }
@@ -69,7 +69,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
         
-        setUser(userProfile ? { ...firebaseUser, ...userProfile } : (firebaseUser as AppUser));
+        const finalProfile = userProfile || {} as UserProfile;
+        setUser({ ...firebaseUser, ...finalProfile, isAdmin: finalProfile.isAdmin || false });
 
       } else {
         setUser(null);

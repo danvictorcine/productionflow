@@ -14,9 +14,10 @@ import {
   getDoc,
   setDoc,
   deleteField,
+  limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -123,7 +124,8 @@ export const createUserProfile = async (uid: string, name: string, email: string
   await setDoc(doc(db, 'users', uid), {
     name,
     email,
-    photoURL
+    photoURL,
+    isAdmin: false, // Default to not admin
   });
 };
 
@@ -138,6 +140,7 @@ export const getUserProfile = async (uid:string): Promise<UserProfile | null> =>
       name: data.name,
       email: data.email,
       photoURL: data.photoURL,
+      isAdmin: data.isAdmin || false,
     };
   }
   return null;
@@ -450,5 +453,43 @@ export const updateShootingDay = async (dayId: string, data: Partial<Omit<Shooti
 
 export const deleteShootingDay = async (dayId: string) => {
   const docRef = doc(db, 'shooting_days', dayId);
+  await deleteDoc(docRef);
+};
+
+// === Blog Post Functions ===
+
+export const getPosts = async (limitCount?: number): Promise<Post[]> => {
+  const postsCollection = collection(db, 'posts');
+  let q = query(postsCollection, orderBy('createdAt', 'desc'));
+  
+  if (limitCount) {
+    q = query(q, limit(limitCount));
+  }
+
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: (data.createdAt as Timestamp).toDate(),
+    } as Post;
+  });
+};
+
+export const addPost = async (data: Omit<Post, 'id'|'createdAt'>) => {
+  await addDoc(collection(db, 'posts'), {
+    ...data,
+    createdAt: Timestamp.now(),
+  });
+};
+
+export const updatePost = async (postId: string, data: Partial<Omit<Post, 'id'>>) => {
+  const docRef = doc(db, 'posts', postId);
+  await updateDoc(docRef, data);
+};
+
+export const deletePost = async (postId: string) => {
+  const docRef = doc(db, 'posts', postId);
   await deleteDoc(docRef);
 };

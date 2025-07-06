@@ -7,11 +7,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
 import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/context/auth-context';
 import { useTheme } from "next-themes";
+import * as firestoreApi from '@/lib/firebase/firestore';
+import type { Post } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,9 +27,13 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, DollarSign, Users, FileSpreadsheet, Clapperboard, Sun, Moon } from 'lucide-react';
+import { Loader2, DollarSign, Users, FileSpreadsheet, Clapperboard, Sun, Moon, ArrowRight } from 'lucide-react';
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { AppFooter } from '@/components/app-footer';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -35,13 +45,31 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { user, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isBlogLoading, setIsBlogLoading] = useState(true);
   const { setTheme } = useTheme();
+  const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     if (!loading && user) {
       router.push('/');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+        setIsBlogLoading(true);
+        try {
+            const latestPosts = await firestoreApi.getPosts(3);
+            setPosts(latestPosts);
+        } catch (error) {
+            console.error("Failed to fetch blog posts:", error);
+            // Non-blocking error, so no toast
+        } finally {
+            setIsBlogLoading(false);
+        }
+    };
+    fetchPosts();
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,7 +80,6 @@ export default function LoginPage() {
   });
 
   const getLoginErrorMessage = (errorCode: string) => {
-    // This provides a specific, helpful message if the environment variables are missing.
     if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
         return 'A configuração do Firebase está ausente. Por favor, verifique se o arquivo .env na raiz do seu projeto está preenchido com as chaves do seu projeto Firebase.'
     }
@@ -161,7 +188,7 @@ export default function LoginPage() {
             </p>
         </div>
       </div>
-      <div className="relative flex items-center justify-center py-12 px-4">
+      <div className="relative flex flex-col py-6 px-4">
         <div className="absolute top-4 right-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -184,54 +211,92 @@ export default function LoginPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className="mx-auto grid w-full max-w-sm gap-6">
-          <div className="grid gap-2 text-center">
-            <h1 className="text-3xl font-bold">Acesse sua Conta</h1>
-            <p className="text-balance text-muted-foreground">
-              Entre com seu email para continuar.
-            </p>
-          </div>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="seu@email.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+        <div className="flex-1 flex items-center justify-center py-6">
+            <div className="mx-auto grid w-full max-w-md gap-6">
+              <div className="grid gap-2 text-center">
+                <h1 className="text-3xl font-bold">Acesse sua Conta</h1>
+                <p className="text-balance text-muted-foreground">
+                  Entre com seu email para continuar.
+                </p>
+              </div>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="seu@email.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="********" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Entrar
+                  </Button>
+                </form>
+              </Form>
+              <div className="mt-4 text-center text-sm">
+                Não tem uma conta?{' '}
+                <Link href="/signup" className="underline">
+                  Cadastre-se
+                </Link>
+              </div>
+
+                {(isBlogLoading || posts.length > 0) && <Separator className="my-4"/>}
+
+                {isBlogLoading ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-6 w-1/2 mx-auto" />
+                        <div className="space-y-4">
+                            <Skeleton className="h-24 w-full" />
+                        </div>
+                    </div>
+                ) : posts.length > 0 && (
+                    <div className="space-y-4">
+                        <h3 className="text-center text-xl font-bold tracking-tight">Últimas do Blog</h3>
+                        <div className="space-y-4">
+                            {posts.map(post => (
+                                <Card key={post.id}>
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-base">{post.title}</CardTitle>
+                                        <CardDescription>
+                                            {format(post.createdAt, "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="text-sm text-muted-foreground pb-4">
+                                        <p>{post.content.substring(0, 100)}...</p>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Link href={`/blog#${post.id}`} className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
+                                            Leia mais <ArrowRight className="h-4 w-4" />
+                                        </Link>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
                 )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="********" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Entrar
-              </Button>
-            </form>
-          </Form>
-          <div className="mt-4 text-center text-sm">
-            Não tem uma conta?{' '}
-            <Link href="/signup" className="underline">
-              Cadastre-se
-            </Link>
-          </div>
+            </div>
         </div>
+        <AppFooter />
       </div>
     </div>
   );

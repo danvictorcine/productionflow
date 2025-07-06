@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -35,6 +36,7 @@ import { ProjectTypeDialog } from "@/components/project-type-dialog";
 import { CreateEditProductionDialog } from "@/components/create-edit-production-dialog";
 import { CopyableError } from "@/components/copyable-error";
 import { Badge } from "@/components/ui/badge";
+import { AppFooter } from "@/components/app-footer";
 
 type DisplayableItem = (Project & { itemType: 'financial' }) | (Production & { itemType: 'production' });
 
@@ -266,7 +268,10 @@ function HomePage() {
             <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
             <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
           </svg>
-          <h1 className="text-2xl font-bold text-primary tracking-tighter">ProductionFlow</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-primary tracking-tighter">ProductionFlow</h1>
+            <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
+          </div>
           {user?.name && <span className="text-lg font-normal text-muted-foreground">/ {user.name}</span>}
         </div>
         <div className="ml-auto flex items-center gap-4">
@@ -331,6 +336,7 @@ function HomePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AppFooter />
     </div>
   );
 }

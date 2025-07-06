@@ -60,6 +60,17 @@ export type UserProfile = {
   name: string;
   email: string;
   photoURL?: string;
+  isAdmin?: boolean;
+};
+
+export type Post = {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorPhotoURL?: string;
+  createdAt: Date;
 };
 
 
