@@ -53,14 +53,10 @@ const getVimeoEmbedUrl = (url: string) => {
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
-    const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
     const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newContent = e.target.value;
-        if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-        debounceTimeout.current = setTimeout(() => {
-            onUpdate(item.id, { content: newContent });
-        }, 500);
+        onUpdate(item.id, { content: newContent });
     };
 
     const renderContent = () => {
@@ -177,13 +173,27 @@ function CreativeProjectPageDetail() {
     }
   };
 
-  const handleItemUpdate = useCallback(async (itemId: string, data: Partial<BoardItem>) => {
-    try {
-        await firestoreApi.updateBoardItem(itemId, data);
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Erro ao salvar alteração.' });
-        fetchProjectData();
-    }
+  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
+
+  const handleItemUpdate = useCallback((itemId: string, data: Partial<BoardItem>) => {
+      // Optimistic UI update for immediate feedback
+      setItems(prevItems =>
+          prevItems.map(item => (item.id === itemId ? { ...item, ...data } : item))
+      );
+  
+      // Clear previous debounce timer for this item
+      if (debounceTimers.current[itemId]) {
+          clearTimeout(debounceTimers.current[itemId]);
+      }
+  
+      // Set new debounce timer to save to Firestore
+      debounceTimers.current[itemId] = setTimeout(() => {
+          firestoreApi.updateBoardItem(itemId, data)
+              .catch(error => {
+                  toast({ variant: 'destructive', title: 'Erro ao salvar alteração.' });
+                  fetchProjectData(); // Re-fetch on error to resync
+              });
+      }, 500); // 500ms delay
   }, [fetchProjectData, toast]);
 
 
