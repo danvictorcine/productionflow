@@ -18,7 +18,11 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '**.tile.openstreetmap.org',
-      }
+      },
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+      },
     ],
   },
   devIndicators: {

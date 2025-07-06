@@ -17,7 +17,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -68,7 +68,7 @@ export const getProject = async (projectId: string): Promise<Project | null> => 
     const projectSnap = await getDoc(projectRef);
 
     if (projectSnap.exists()) {
-        const projectData = projectSnap.data() as Omit<Project, 'id'>;
+        const projectData = projectSnap.data();
         if (projectData.userId === userId) {
             return {
               ...projectData,
@@ -78,7 +78,7 @@ export const getProject = async (projectId: string): Promise<Project | null> => 
                 date: (inst.date as Timestamp).toDate()
               })),
                createdAt: projectData.createdAt ? (projectData.createdAt as Timestamp).toDate() : new Date(0),
-            };
+            } as Project;
         }
     }
     return null;
@@ -516,6 +516,58 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
   await batch.commit();
 };
 
+export const getBoardItems = async (projectId: string): Promise<BoardItem[]> => {
+  const userId = getUserId();
+  const q = query(
+    collection(db, 'board_items'),
+    where('projectId', '==', projectId),
+    where('userId', '==', userId),
+    orderBy('createdAt', 'asc')
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: (data.createdAt as Timestamp).toDate(),
+    } as BoardItem;
+  });
+}
+
+export const addBoardItem = async (projectId: string, itemData: Omit<BoardItem, 'id' | 'userId' | 'projectId' | 'createdAt'>) => {
+  const userId = getUserId();
+  const docRef = await addDoc(collection(db, 'board_items'), {
+    ...itemData,
+    projectId,
+    userId,
+    createdAt: Timestamp.now(),
+  });
+  return docRef.id;
+}
+
+export const updateBoardItem = async (itemId: string, data: Partial<Omit<BoardItem, 'id' | 'userId' | 'projectId' | 'createdAt'>>) => {
+  const itemRef = doc(db, 'board_items', itemId);
+  await updateDoc(itemRef, data);
+}
+
+export const deleteBoardItem = async (itemId: string) => {
+  const itemRef = doc(db, 'board_items', itemId);
+  await deleteDoc(itemRef);
+}
+
+export const uploadImageForBoard = async (file: File): Promise<string> => {
+  const timestamp = new Date().getTime();
+  const randomString = Math.random().toString(36).substring(2, 8);
+  const fileName = `${timestamp}-${randomString}-${file.name}`;
+  const filePath = `board_images/${getUserId()}/${fileName}`;
+  const storageRef = ref(storage, filePath);
+  
+  await uploadBytes(storageRef, file);
+  const downloadURL = await getDownloadURL(storageRef);
+  
+  return downloadURL;
+};
 
 // === Blog & Page Content Functions ===
 
