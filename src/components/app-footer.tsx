@@ -15,11 +15,11 @@ export function AppFooter() {
           </div>
           <div className="flex flex-wrap justify-center sm:justify-end items-center gap-x-3 gap-y-1 text-center sm:text-right mt-2 sm:mt-0">
               <p>
-                  Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span>
+                  © {new Date().getFullYear()} ProductionFlow. Todos os direitos reservados.
               </p>
               <span className="hidden sm:inline">|</span>
               <p>
-                  © {new Date().getFullYear()} ProductionFlow. Todos os direitos reservados.
+                  Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span>
               </p>
           </div>
         </div>
