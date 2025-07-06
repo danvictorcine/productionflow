@@ -211,11 +211,6 @@ export default function LoginPage() {
                     </>
                 )}
             </div>
-            <div className="absolute bottom-8">
-                <p className="text-sm text-muted-foreground">
-                    Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span>
-                </p>
-            </div>
           </div>
           <div className="relative flex flex-col py-6 px-4">
             <div className="absolute top-4 right-4">
@@ -289,9 +284,6 @@ export default function LoginPage() {
                     </Link>
                   </div>
                 </div>
-            </div>
-            <div className="text-center text-sm text-muted-foreground lg:hidden pb-4">
-                <p>Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span></p>
             </div>
           </div>
         </div>

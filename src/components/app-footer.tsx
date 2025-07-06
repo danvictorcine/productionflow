@@ -13,9 +13,15 @@ export function AppFooter() {
             <Link href="/contact" className="hover:text-primary transition-colors">Contate-nos</Link>
             <Link href="/about" className="hover:text-primary transition-colors">Quem Somos</Link>
           </div>
-          <p className="text-center sm:text-right">
-              © {new Date().getFullYear()} ProductionFlow. Todos os direitos reservados.
-          </p>
+          <div className="flex flex-wrap justify-center sm:justify-end items-center gap-x-3 gap-y-1 text-center sm:text-right mt-2 sm:mt-0">
+              <p>
+                  Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span>
+              </p>
+              <span className="hidden sm:inline">|</span>
+              <p>
+                  © {new Date().getFullYear()} ProductionFlow. Todos os direitos reservados.
+              </p>
+          </div>
         </div>
       </div>
     </footer>
