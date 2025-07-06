@@ -6,7 +6,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, PlusCircle, Trash2, GripVertical, DollarSign, Users, Clapperboard, FileSpreadsheet, TrendingUp, BarChart } from 'lucide-react';
+import { ArrowLeft, Loader2, PlusCircle, Trash2 } from 'lucide-react';
 
 import { AppFooter } from '@/components/app-footer';
 import { UserNav } from '@/components/user-nav';
@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { featureIcons, type FeatureIconName } from '@/lib/icons';
 
 const featureSchema = z.object({
     id: z.string(),
@@ -32,17 +33,6 @@ const featureSchema = z.object({
 const formSchema = z.object({
   features: z.array(featureSchema),
 });
-
-const availableIcons = {
-    DollarSign: <DollarSign />,
-    Users: <Users />,
-    Clapperboard: <Clapperboard />,
-    FileSpreadsheet: <FileSpreadsheet />,
-    TrendingUp: <TrendingUp />,
-    BarChart: <BarChart />,
-};
-
-type IconName = keyof typeof availableIcons;
 
 export default function EditLoginPage() {
     const router = useRouter();
@@ -149,10 +139,10 @@ export default function EditLoginPage() {
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
-                                                            {Object.keys(availableIcons).map(iconName => (
+                                                            {Object.keys(featureIcons).map(iconName => (
                                                                 <SelectItem key={iconName} value={iconName}>
                                                                     <div className="flex items-center gap-2">
-                                                                        {React.cloneElement(availableIcons[iconName as IconName], {className: "h-4 w-4"})}
+                                                                        {React.cloneElement(featureIcons[iconName as FeatureIconName], {className: "h-4 w-4"})}
                                                                         {iconName}
                                                                     </div>
                                                                 </SelectItem>

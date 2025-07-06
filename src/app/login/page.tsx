@@ -16,6 +16,7 @@ import { useAuth } from '@/context/auth-context';
 import { useTheme } from "next-themes";
 import * as firestoreApi from '@/lib/firebase/firestore';
 import type { Post, LoginFeature } from '@/lib/types';
+import { featureIcons } from '@/lib/icons';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +29,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, DollarSign, Users, FileSpreadsheet, Clapperboard, Sun, Moon, ArrowRight, TrendingUp, BarChart } from 'lucide-react';
+import { Loader2, DollarSign, Sun, Moon, ArrowRight } from 'lucide-react';
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
@@ -39,15 +40,6 @@ const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
 });
-
-const iconMap: Record<string, React.ReactElement> = {
-  DollarSign: <DollarSign className="h-6 w-6" />,
-  Users: <Users className="h-6 w-6" />,
-  Clapperboard: <Clapperboard className="h-6 w-6" />,
-  FileSpreadsheet: <FileSpreadsheet className="h-6 w-6" />,
-  TrendingUp: <TrendingUp className="h-6 w-6" />,
-  BarChart: <BarChart className="h-6 w-6" />,
-};
 
 const FeatureCardSkeleton = () => (
     <div className="flex items-start gap-4">
@@ -128,6 +120,10 @@ export default function LoginPage() {
   }
   
   const stripHtml = (html: string) => {
+    if (typeof window !== 'undefined') {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        return doc.body.textContent || "";
+    }
     return html.replace(/<[^>]+>/g, '');
   };
 
@@ -177,7 +173,7 @@ export default function LoginPage() {
                     features.map(feature => (
                         <div key={feature.id} className="flex items-start gap-4">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                                {iconMap[feature.icon] || <DollarSign className="h-6 w-6" />}
+                                {featureIcons[feature.icon] ? React.cloneElement(featureIcons[feature.icon], { className: 'h-6 w-6' }) : <DollarSign className="h-6 w-6" />}
                             </div>
                             <div>
                                 <h3 className="text-lg font-semibold">{feature.title}</h3>
