@@ -118,188 +118,190 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
-      <div className="hidden bg-muted lg:flex lg:flex-col lg:items-center lg:justify-center p-8 relative">
-        <div className="mx-auto w-full max-w-md space-y-4 text-center">
-            <div className="flex items-center justify-center gap-3">
-              <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
-                  <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
-                  <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
-              </svg>
-              <div className="flex items-center gap-2">
-                <h1 className="text-4xl font-bold text-foreground tracking-tighter">ProductionFlow</h1>
-                <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
-              </div>
-            </div>
-            <p className="text-lg text-muted-foreground">
-                Sua plataforma completa para a gestão financeira de produções audiovisuais.
-            </p>
-        </div>
-        <div className="mt-12 grid gap-8 w-full max-w-md">
-            <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                    <DollarSign className="h-6 w-6" />
+    <div className="flex flex-col min-h-screen">
+        <div className="w-full lg:grid lg:grid-cols-2 flex-1">
+          <div className="hidden bg-muted lg:flex lg:flex-col lg:items-center lg:justify-center p-8 relative">
+            <div className="mx-auto w-full max-w-md space-y-4 text-center">
+                <div className="flex items-center justify-center gap-3">
+                  <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
+                      <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
+                      <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
+                  </svg>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-4xl font-bold text-foreground tracking-tighter">ProductionFlow</h1>
+                    <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
+                  </div>
                 </div>
-                <div>
-                    <h3 className="text-lg font-semibold">Orçamento Inteligente</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Controle seu orçamento, despesas e saldo em tempo real, com gráficos claros e detalhados.
-                    </p>
-                </div>
-            </div>
-            <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                    <Users className="h-6 w-6" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-semibold">Gestão de Equipe Completa</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.
-                    </p>
-                </div>
-            </div>
-            <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                    <Clapperboard className="h-6 w-6" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-semibold">Ordem do Dia Detalhada</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.
-                    </p>
-                </div>
-            </div>
-            <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                    <FileSpreadsheet className="h-6 w-6" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-semibold">Relatórios Simplificados</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Exporte relatórios financeiros e de produção para Excel e PDF com um clique.
-                    </p>
-                </div>
-            </div>
-        </div>
-        <div className="absolute bottom-8">
-            <p className="text-sm text-muted-foreground">
-                Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span>
-            </p>
-        </div>
-      </div>
-      <div className="relative flex flex-col py-6 px-4">
-        <div className="absolute top-4 right-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setTheme('light')}>
-                Claro
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme('dark')}>
-                Escuro
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme('system')}>
-                Sistema
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className="flex-1 flex items-center justify-center py-6">
-            <div className="mx-auto grid w-full max-w-md gap-6">
-              <div className="grid gap-2 text-center">
-                <h1 className="text-3xl font-bold">Acesse sua Conta</h1>
-                <p className="text-balance text-muted-foreground">
-                  Entre com seu email para continuar.
+                <p className="text-lg text-muted-foreground">
+                    Sua plataforma completa para a gestão financeira de produções audiovisuais.
                 </p>
-              </div>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="seu@email.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Senha</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="********" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Entrar
-                  </Button>
-                </form>
-              </Form>
-              <div className="mt-4 text-center text-sm">
-                Não tem uma conta?{' '}
-                <Link href="/signup" className="underline">
-                  Cadastre-se
-                </Link>
-              </div>
-
-                {(isBlogLoading || posts.length > 0) && <Separator className="my-4"/>}
-
-                {isBlogLoading ? (
-                    <div className="space-y-4">
-                        <Skeleton className="h-6 w-1/2 mx-auto" />
-                        <div className="space-y-4">
-                            <Skeleton className="h-24 w-full" />
-                        </div>
-                    </div>
-                ) : posts.length > 0 && (
-                    <div className="space-y-4">
-                        <h3 className="text-center text-xl font-bold tracking-tight">Últimas do Blog</h3>
-                        <div className="space-y-4">
-                            {posts.map(post => (
-                                <Card key={post.id}>
-                                    <CardHeader className="pb-4">
-                                        <CardTitle className="text-base">{post.title}</CardTitle>
-                                        <CardDescription>
-                                            {format(post.createdAt, "dd 'de' MMMM, yyyy", { locale: ptBR })}
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="text-sm text-muted-foreground pb-4">
-                                        <p>{post.content.substring(0, 100)}...</p>
-                                    </CardContent>
-                                    <CardFooter>
-                                        <Link href={`/blog#${post.id}`} className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
-                                            Leia mais <ArrowRight className="h-4 w-4" />
-                                        </Link>
-                                    </CardFooter>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
-        </div>
-        <div className="text-center text-sm text-muted-foreground lg:hidden pb-4">
-            <p>Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span></p>
+            <div className="mt-12 grid gap-8 w-full max-w-md">
+                <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                        <DollarSign className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold">Orçamento Inteligente</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Controle seu orçamento, despesas e saldo em tempo real, com gráficos claros e detalhados.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                        <Users className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold">Gestão de Equipe Completa</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                        <Clapperboard className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold">Ordem do Dia Detalhada</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                        <FileSpreadsheet className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold">Relatórios Simplificados</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Exporte relatórios financeiros e de produção para Excel e PDF com um clique.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div className="absolute bottom-8">
+                <p className="text-sm text-muted-foreground">
+                    Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span>
+                </p>
+            </div>
+          </div>
+          <div className="relative flex flex-col py-6 px-4">
+            <div className="absolute top-4 right-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <span className="sr-only">Toggle theme</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setTheme('light')}>
+                    Claro
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('dark')}>
+                    Escuro
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('system')}>
+                    Sistema
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="flex-1 flex items-center justify-center py-6">
+                <div className="mx-auto grid w-full max-w-md gap-6">
+                  <div className="grid gap-2 text-center">
+                    <h1 className="text-3xl font-bold">Acesse sua Conta</h1>
+                    <p className="text-balance text-muted-foreground">
+                      Entre com seu email para continuar.
+                    </p>
+                  </div>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input placeholder="seu@email.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Senha</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="********" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button type="submit" className="w-full" disabled={isLoading}>
+                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Entrar
+                      </Button>
+                    </form>
+                  </Form>
+                  <div className="mt-4 text-center text-sm">
+                    Não tem uma conta?{' '}
+                    <Link href="/signup" className="underline">
+                      Cadastre-se
+                    </Link>
+                  </div>
+
+                    {(isBlogLoading || posts.length > 0) && <Separator className="my-4"/>}
+
+                    {isBlogLoading ? (
+                        <div className="space-y-4">
+                            <Skeleton className="h-6 w-1/2 mx-auto" />
+                            <div className="space-y-4">
+                                <Skeleton className="h-24 w-full" />
+                            </div>
+                        </div>
+                    ) : posts.length > 0 && (
+                        <div className="space-y-4">
+                            <h3 className="text-center text-xl font-bold tracking-tight">Últimas do Blog</h3>
+                            <div className="space-y-4">
+                                {posts.map(post => (
+                                    <Card key={post.id}>
+                                        <CardHeader className="pb-4">
+                                            <CardTitle className="text-base">{post.title}</CardTitle>
+                                            <CardDescription>
+                                                {format(post.createdAt, "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="text-sm text-muted-foreground pb-4">
+                                            <p>{post.content.substring(0, 100)}...</p>
+                                        </CardContent>
+                                        <CardFooter>
+                                            <Link href={`/blog#${post.id}`} className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
+                                                Leia mais <ArrowRight className="h-4 w-4" />
+                                            </Link>
+                                        </CardFooter>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="text-center text-sm text-muted-foreground lg:hidden pb-4">
+                <p>Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span></p>
+            </div>
+          </div>
         </div>
         <AppFooter />
-      </div>
     </div>
   );
 }
