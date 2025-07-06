@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CopyableError } from '@/components/copyable-error';
+import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
@@ -269,6 +270,7 @@ function SettingsPageDetail() {
                   <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
               </svg>
               <p className="text-lg font-semibold text-primary tracking-tighter">ProductionFlow</p>
+              <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
           </div>
           <UserNav />
         </div>

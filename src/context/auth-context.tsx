@@ -7,6 +7,7 @@ import { auth, firebaseError } from '@/lib/firebase/config';
 import { getUserProfile, updateUserProfile } from '@/lib/firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 
 export type AppUser = User & UserProfile;
@@ -115,7 +116,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
                     <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
                 </svg>
-                <h1 className="text-3xl font-bold text-primary tracking-tighter">ProductionFlow</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-3xl font-bold text-primary tracking-tighter">ProductionFlow</h1>
+                  <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
+                </div>
              </div>
              <p className="text-muted-foreground">Carregando...</p>
           </div>

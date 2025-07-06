@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, DollarSign, Users, FileSpreadsheet, Clapperboard, Sun, Moon } from 'lucide-react';
 import { CopyableError } from '@/components/copyable-error';
+import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -99,7 +100,10 @@ export default function LoginPage() {
                   <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
                   <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
               </svg>
-              <h1 className="text-4xl font-bold text-foreground tracking-tighter">ProductionFlow</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-4xl font-bold text-foreground tracking-tighter">ProductionFlow</h1>
+                <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
+              </div>
             </div>
             <p className="text-lg text-muted-foreground">
                 Sua plataforma completa para a gestão financeira de produções audiovisuais.

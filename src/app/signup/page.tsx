@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, DollarSign, Users, FileSpreadsheet, Camera, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CopyableError } from '@/components/copyable-error';
+import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
@@ -127,7 +128,10 @@ export default function SignupPage() {
                   <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
                   <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
               </svg>
-              <h1 className="text-4xl font-bold text-primary tracking-tighter">ProductionFlow</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-4xl font-bold text-primary tracking-tighter">ProductionFlow</h1>
+                <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
+              </div>
             </div>
             <p className="text-lg text-muted-foreground">
                 Sua plataforma completa para a gestão financeira de produções audiovisuais.
@@ -150,9 +154,9 @@ export default function SignupPage() {
                     <Users className="h-6 w-6" />
                 </div>
                 <div>
-                    <h3 className="text-lg font-semibold">Gestão de Equipe Flexível</h3>
+                    <h3 className="text-lg font-semibold">Gestão de Equipe Completa</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Gerencie cachês fixos e pagamentos por diária, garantindo precisão e controle total sobre os custos.
+                        Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.
                     </p>
                 </div>
             </div>
@@ -163,7 +167,7 @@ export default function SignupPage() {
                 <div>
                     <h3 className="text-lg font-semibold">Relatórios Simplificados</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Exporte relatórios financeiros para Excel com um clique, simplificando a prestação de contas.
+                        Exporte relatórios financeiros e de produção para Excel e PDF com um clique.
                     </p>
                 </div>
             </div>
