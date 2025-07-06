@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -285,7 +286,7 @@ export default function LoginPage() {
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="text-sm text-muted-foreground pb-4">
-                                            <p>{post.content.substring(0, 100)}...</p>
+                                            <p>{post.content.replace(/<[^>]*>/g, '').substring(0, 100)}...</p>
                                         </CardContent>
                                         <CardFooter>
                                             <Link href={`/blog#${post.id}`} className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
