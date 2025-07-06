@@ -3,9 +3,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { PlusCircle, Film, MoreVertical, Edit, Trash2, Clapperboard, DollarSign } from "lucide-react";
+import { PlusCircle, Film, MoreVertical, Edit, Trash2, Clapperboard, DollarSign, Brush } from "lucide-react";
 
-import type { Project, Production } from "@/lib/types";
+import type { Project, Production, CreativeProject } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CreateEditProjectDialog } from "@/components/create-edit-project-dialog";
@@ -34,11 +34,15 @@ import { UserNav } from "@/components/user-nav";
 import { formatCurrency } from "@/lib/utils";
 import { ProjectTypeDialog } from "@/components/project-type-dialog";
 import { CreateEditProductionDialog } from "@/components/create-edit-production-dialog";
+import { CreateEditCreativeProjectDialog } from "@/components/create-edit-creative-project-dialog";
 import { CopyableError } from "@/components/copyable-error";
 import { Badge } from "@/components/ui/badge";
 import { AppFooter } from "@/components/app-footer";
 
-type DisplayableItem = (Project & { itemType: 'financial' }) | (Production & { itemType: 'production' });
+type DisplayableItem = 
+  | (Project & { itemType: 'financial' }) 
+  | (Production & { itemType: 'production' })
+  | (CreativeProject & { itemType: 'creative' });
 
 
 function HomePage() {
@@ -52,10 +56,12 @@ function HomePage() {
   const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false);
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
+  const [isCreativeProjectDialogOpen, setIsCreativeProjectDialogOpen] = useState(false);
   
   // Editing states
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editingProduction, setEditingProduction] = useState<Production | null>(null);
+  const [editingCreativeProject, setEditingCreativeProject] = useState<CreativeProject | null>(null);
   
   // Deleting state
   const [itemToDelete, setItemToDelete] = useState<DisplayableItem | null>(null);
@@ -64,14 +70,16 @@ function HomePage() {
     if (!user) return;
     setIsLoading(true);
     try {
-      const [projects, productions] = await Promise.all([
+      const [projects, productions, creativeProjects] = await Promise.all([
         firestoreApi.getProjects(),
         firestoreApi.getProductions(),
+        firestoreApi.getCreativeProjects(),
       ]);
 
       const displayableItems: DisplayableItem[] = [
         ...projects.map(p => ({ ...p, itemType: 'financial' as const })),
         ...productions.map(p => ({ ...p, itemType: 'production' as const })),
+        ...creativeProjects.map(p => ({ ...p, itemType: 'creative' as const })),
       ];
 
       displayableItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -93,14 +101,17 @@ function HomePage() {
     fetchItems();
   }, [user]);
 
-  const handleSelectProjectType = (type: 'financial' | 'production') => {
+  const handleSelectProjectType = (type: 'financial' | 'production' | 'creative') => {
     setIsTypeDialogOpen(false);
     if (type === 'financial') {
       setEditingProject(null);
       setIsProjectDialogOpen(true);
-    } else {
+    } else if (type === 'production') {
       setEditingProduction(null);
       setIsProductionDialogOpen(true);
+    } else {
+      setEditingCreativeProject(null);
+      setIsCreativeProjectDialogOpen(true);
     }
   };
 
@@ -147,14 +158,38 @@ function HomePage() {
     setIsProductionDialogOpen(false);
     setEditingProduction(null);
   };
+
+  const handleCreativeProjectSubmit = async (data: Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>) => {
+    try {
+      if (editingCreativeProject) {
+        await firestoreApi.updateCreativeProject(editingCreativeProject.id, data);
+        toast({ title: 'Projeto criativo atualizado!' });
+      } else {
+        await firestoreApi.addCreativeProject(data);
+        toast({ title: 'Projeto criativo criado!' });
+      }
+      await fetchItems();
+    } catch (error) {
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar projeto',
+        description: <CopyableError userMessage="Não foi possível salvar o projeto criativo." errorCode={errorTyped.code || errorTyped.message} />,
+      });
+    }
+    setIsCreativeProjectDialogOpen(false);
+    setEditingCreativeProject(null);
+  };
   
   const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
     try {
       if (itemToDelete.itemType === 'financial') {
         await firestoreApi.deleteProject(itemToDelete.id);
-      } else {
+      } else if (itemToDelete.itemType === 'production') {
         await firestoreApi.deleteProductionAndDays(itemToDelete.id);
+      } else if (itemToDelete.itemType === 'creative') {
+        await firestoreApi.deleteCreativeProjectAndItems(itemToDelete.id);
       }
       toast({ title: `"${itemToDelete.name}" excluído(a).` });
       await fetchItems();
@@ -173,9 +208,12 @@ function HomePage() {
     if (item.itemType === 'financial') {
       setEditingProject(item);
       setIsProjectDialogOpen(true);
-    } else {
+    } else if (item.itemType === 'production') {
       setEditingProduction(item);
       setIsProductionDialogOpen(true);
+    } else if (item.itemType === 'creative') {
+        setEditingCreativeProject(item);
+        setIsCreativeProjectDialogOpen(true);
     }
   };
 
@@ -193,7 +231,7 @@ function HomePage() {
         <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
           <Film className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-semibold">Nenhum projeto encontrado</h3>
-          <p className="mt-2 text-sm text-muted-foreground">Comece criando seu primeiro projeto financeiro ou de produção.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Comece criando seu primeiro projeto.</p>
           <Button className="mt-6" onClick={() => setIsTypeDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Criar Projeto
@@ -205,9 +243,25 @@ function HomePage() {
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => {
-          const isFinancial = item.itemType === 'financial';
-          const link = isFinancial ? `/project/${item.id}` : `/production/${item.id}`;
-          const Icon = isFinancial ? DollarSign : Clapperboard;
+          let link, Icon, description;
+          
+          switch(item.itemType) {
+            case 'financial':
+              link = `/project/${item.id}`;
+              Icon = DollarSign;
+              description = <CardDescription>{`Orçamento: ${formatCurrency((item as Project).budget)}`}</CardDescription>;
+              break;
+            case 'production':
+              link = `/production/${item.id}`;
+              Icon = Clapperboard;
+              description = <div className="text-sm text-muted-foreground"><p>{(item as Production).type}</p><p>Dir: {(item as Production).director}</p></div>;
+              break;
+            case 'creative':
+              link = `/creative/${item.id}`;
+              Icon = Brush;
+              description = <CardDescription className="line-clamp-2">{(item as CreativeProject).description || 'Acesse para adicionar ideias.'}</CardDescription>;
+              break;
+          }
 
           return (
             <Card key={item.id} className="hover:shadow-lg transition-shadow h-full flex flex-col relative">
@@ -237,16 +291,7 @@ function HomePage() {
                   </div>
                   <div>
                     <CardTitle>{item.name}</CardTitle>
-                    {isFinancial ? (
-                      <CardDescription>
-                        {`Orçamento: ${formatCurrency((item as Project).budget)}`}
-                      </CardDescription>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">
-                        <p>{(item as Production).type}</p>
-                        <p>Dir: {(item as Production).director}</p>
-                      </div>
-                    )}
+                    {description}
                   </div>
                 </CardHeader>
                 <CardContent className="mt-auto">
@@ -316,13 +361,23 @@ function HomePage() {
         onSubmit={handleProductionSubmit}
         production={editingProduction || undefined}
       />
+
+      <CreateEditCreativeProjectDialog
+        isOpen={isCreativeProjectDialogOpen}
+        setIsOpen={(open) => {
+          if (!open) setEditingCreativeProject(null);
+          setIsCreativeProjectDialogOpen(open);
+        }}
+        onSubmit={handleCreativeProjectSubmit}
+        project={editingCreativeProject || undefined}
+      />
       
       <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Isso excluirá permanentemente o projeto e todos os seus dados associados (financeiros ou de produção).
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o projeto e todos os seus dados associados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

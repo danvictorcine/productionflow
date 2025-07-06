@@ -17,7 +17,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -453,6 +453,69 @@ export const deleteShootingDay = async (dayId: string) => {
   const docRef = doc(db, 'shooting_days', dayId);
   await deleteDoc(docRef);
 };
+
+// === Creative Project Functions ===
+export const addCreativeProject = async (data: Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>) => {
+  const userId = getUserId();
+  await addDoc(collection(db, 'creative_projects'), {
+    ...data,
+    userId,
+    createdAt: Timestamp.now(),
+  });
+};
+
+export const getCreativeProjects = async (): Promise<CreativeProject[]> => {
+  const userId = getUserId();
+  const q = query(collection(db, 'creative_projects'), where('userId', '==', userId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+    } as CreativeProject;
+  });
+};
+
+export const getCreativeProject = async (projectId: string): Promise<CreativeProject | null> => {
+    const userId = getUserId();
+    const docRef = doc(db, 'creative_projects', projectId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists() && docSnap.data().userId === userId) {
+        const data = docSnap.data();
+        return {
+            id: docSnap.id,
+            ...data,
+            createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+        } as CreativeProject;
+    }
+    return null;
+}
+
+export const updateCreativeProject = async (projectId: string, data: Partial<Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>>) => {
+  const docRef = doc(db, 'creative_projects', projectId);
+  await updateDoc(docRef, data);
+};
+
+export const deleteCreativeProjectAndItems = async (projectId: string) => {
+  const userId = getUserId();
+  const batch = writeBatch(db);
+
+  const projectRef = doc(db, 'creative_projects', projectId);
+  batch.delete(projectRef);
+
+  const itemsQuery = query(
+    collection(db, 'board_items'),
+    where('projectId', '==', projectId),
+    where('userId', '==', userId)
+  );
+  const itemsSnapshot = await getDocs(itemsQuery);
+  itemsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+  await batch.commit();
+};
+
 
 // === Blog & Page Content Functions ===
 

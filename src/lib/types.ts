@@ -176,3 +176,23 @@ export type ShootingDay = {
   longitude?: number;
   weather?: WeatherInfo;
 };
+
+// === Creative Project (Moodboard) Types ===
+export type CreativeProject = {
+  id: string;
+  userId: string;
+  name: string;
+  description: string;
+  createdAt: Date;
+};
+
+export type BoardItem = {
+  id: string;
+  projectId: string;
+  userId: string;
+  type: 'note' | 'image' | 'video';
+  content: string; // Text for note, URL for image/video
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  createdAt: Date;
+};
