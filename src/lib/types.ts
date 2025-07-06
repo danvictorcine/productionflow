@@ -68,7 +68,7 @@ export type Post = {
   title: string;
   content: string;
   authorId: string;
-  authorName: string;
+  authorName:string;
   authorPhotoURL?: string;
   createdAt: Date;
   updatedAt?: Date;
@@ -80,6 +80,14 @@ export type PageContent = {
   content: string;
   updatedAt: Date;
 }
+
+export type LoginFeature = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string; // Name of a lucide-react icon
+  order: number;
+};
 
 
 // New types for Production (Call Sheet) Module

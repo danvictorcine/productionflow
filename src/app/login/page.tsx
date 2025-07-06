@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -14,7 +14,7 @@ import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/context/auth-context';
 import { useTheme } from "next-themes";
 import * as firestoreApi from '@/lib/firebase/firestore';
-import type { Post } from '@/lib/types';
+import type { Post, LoginFeature } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +27,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, DollarSign, Users, FileSpreadsheet, Clapperboard, Sun, Moon, ArrowRight } from 'lucide-react';
+import { Loader2, DollarSign, Users, FileSpreadsheet, Clapperboard, Sun, Moon, ArrowRight, TrendingUp, BarChart } from 'lucide-react';
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -40,14 +40,37 @@ const formSchema = z.object({
   password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
 });
 
+const iconMap: Record<string, React.ReactElement> = {
+  DollarSign: <DollarSign className="h-6 w-6" />,
+  Users: <Users className="h-6 w-6" />,
+  Clapperboard: <Clapperboard className="h-6 w-6" />,
+  FileSpreadsheet: <FileSpreadsheet className="h-6 w-6" />,
+  TrendingUp: <TrendingUp className="h-6 w-6" />,
+  BarChart: <BarChart className="h-6 w-6" />,
+};
+
+const FeatureCardSkeleton = () => (
+    <div className="flex items-start gap-4">
+        <Skeleton className="h-12 w-12 rounded-full flex-shrink-0" />
+        <div className="space-y-2 w-full">
+            <Skeleton className="h-5 w-1/3" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+        </div>
+    </div>
+);
+
+
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isBlogLoading, setIsBlogLoading] = useState(true);
+  const [isFeaturesLoading, setIsFeaturesLoading] = useState(true);
   const { setTheme } = useTheme();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [features, setFeatures] = useState<LoginFeature[]>([]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -56,19 +79,26 @@ export default function LoginPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    const fetchPosts = async () => {
+    const fetchContent = async () => {
         setIsBlogLoading(true);
+        setIsFeaturesLoading(true);
         try {
-            const latestPosts = await firestoreApi.getPosts(3);
+            const [latestPosts, loginFeatures] = await Promise.all([
+                firestoreApi.getPosts(3),
+                firestoreApi.getLoginFeatures()
+            ]);
             setPosts(latestPosts);
+            setFeatures(loginFeatures);
         } catch (error) {
-            console.error("Failed to fetch blog posts:", error);
+            console.error("Failed to fetch page content:", error);
+            toast({ variant: 'destructive', title: 'Erro ao carregar conteúdo da página.'});
         } finally {
             setIsBlogLoading(false);
+            setIsFeaturesLoading(false);
         }
     };
-    fetchPosts();
-  }, []);
+    fetchContent();
+  }, [toast]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -137,50 +167,23 @@ export default function LoginPage() {
                 </p>
             </div>
             <div className="mt-12 grid gap-8 w-full max-w-md">
-                <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                        <DollarSign className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-semibold">Orçamento Inteligente</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Controle seu orçamento, despesas e saldo em tempo real, com gráficos claros e detalhados.
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                        <Users className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-semibold">Gestão de Equipe Completa</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                        <Clapperboard className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-semibold">Ordem do Dia Detalhada</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                        <FileSpreadsheet className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-semibold">Relatórios Simplificados</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Exporte relatórios financeiros e de produção para Excel e PDF com um clique.
-                        </p>
-                    </div>
-                </div>
+                {isFeaturesLoading ? (
+                    [...Array(4)].map((_, i) => <FeatureCardSkeleton key={i} />)
+                ) : (
+                    features.map(feature => (
+                        <div key={feature.id} className="flex items-start gap-4">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                                {iconMap[feature.icon] || <DollarSign className="h-6 w-6" />}
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold">{feature.title}</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {feature.description}
+                                </p>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
             <div className="absolute bottom-8">
                 <p className="text-sm text-muted-foreground">

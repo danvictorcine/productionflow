@@ -17,7 +17,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -544,4 +544,51 @@ export const updatePage = async (pageId: 'about' | 'contact', data: Omit<PageCon
     ...data,
     updatedAt: Timestamp.now(),
   }, { merge: true });
+};
+
+// === Login Page Features ===
+
+export const getLoginFeatures = async (): Promise<LoginFeature[]> => {
+  const featuresCollection = collection(db, 'login_features');
+  const q = query(featuresCollection, orderBy('order', 'asc'));
+  const querySnapshot = await getDocs(q);
+  
+  const features = querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  } as LoginFeature));
+
+  // If no features exist, populate with default hardcoded values
+  if (features.length === 0) {
+    const defaultFeatures = [
+      { title: 'Orçamento Inteligente', description: 'Controle seu orçamento, despesas e saldo em tempo real, com gráficos claros e detalhados.', icon: 'DollarSign', order: 0 },
+      { title: 'Gestão de Equipe Completa', description: 'Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.', icon: 'Users', order: 1 },
+      { title: 'Ordem do Dia Detalhada', description: 'Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.', icon: 'Clapperboard', order: 2 },
+      { title: 'Relatórios Simplificados', description: 'Exporte relatórios financeiros e de produção para Excel e PDF com um clique.', icon: 'FileSpreadsheet', order: 3 },
+    ];
+    // This is a read operation, we don't write defaults here.
+    // The admin panel will be responsible for the first write.
+    return defaultFeatures.map((f, i) => ({...f, id: `default-${i}`}));
+  }
+
+  return features;
+};
+
+export const saveLoginFeatures = async (features: Omit<LoginFeature, 'id'>[]) => {
+  const batch = writeBatch(db);
+  const featuresCollection = collection(db, 'login_features');
+  
+  // First, delete all existing features to handle reordering and deletions
+  const existingDocs = await getDocs(query(featuresCollection));
+  existingDocs.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  
+  // Then, add the new set of features
+  features.forEach((feature, index) => {
+    const newDocRef = doc(featuresCollection);
+    batch.set(newDocRef, { ...feature, order: index });
+  });
+  
+  await batch.commit();
 };

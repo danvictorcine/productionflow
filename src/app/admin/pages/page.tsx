@@ -51,18 +51,20 @@ export default function ManagePagesDashboard() {
                             </CardContent>
                         </Card>
                     </Link>
-                    <Card className="bg-muted cursor-not-allowed h-full flex flex-col justify-between">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                                <LogIn className="h-5 w-5"/>
-                                Página de Login
-                            </CardTitle>
-                            <CardDescription>Edite os cards de features da página de login. (Em breve)</CardDescription>
-                        </CardHeader>
-                         <CardContent>
-                            <Button disabled>Editar</Button>
-                        </CardContent>
-                    </Card>
+                    <Link href="/admin/pages/edit/login" className="block">
+                        <Card className="hover:bg-muted/50 transition-colors h-full flex flex-col justify-between">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-foreground">
+                                    <LogIn className="h-5 w-5 text-primary"/>
+                                    Página de Login
+                                </CardTitle>
+                                <CardDescription>Edite os cards de features da página de login.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Button>Editar</Button>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 </div>
             </main>
             <AppFooter />
