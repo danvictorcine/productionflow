@@ -2,50 +2,43 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    function isSignedIn() {
-      return request.auth != null;
+
+    // Helper function to check if the requesting user is an admin.
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
-    
-    // User profile is readable by anyone signed in (e.g., to see names/avatars),
-    // but only writable by the owner.
+
+    // Users can read/update their own profile, but cannot make themselves an admin.
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId && !("isAdmin" in request.resource.data);
+      allow delete: never;
     }
 
-    // Projects (Financial)
+    // Projects and related data are private to the user who created them.
     match /projects/{projectId} {
-      // Allow single document reads, updates, and deletes only by the owner.
-      allow get, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-      
-      // Allow creating a project if the user is signed in and is the owner.
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      
-      // Allow listing/querying projects. This rule is secure because our client-side
-      // code *must* include the "where('userId', '==', currentUser.uid)" filter.
-      allow list: if isSignedIn();
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-
-    // Transactions
+    
     match /transactions/{transactionId} {
-      allow get, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow list: if isSignedIn();
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    // Productions (Call Sheets)
+    // Productions and related data are private to the user who created them.
     match /productions/{productionId} {
-       allow get, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-       allow list: if isSignedIn();
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    // Shooting Days (Call Sheets)
     match /shooting_days/{dayId} {
-        allow get, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow list: if isSignedIn();
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Blog posts are public to read, but only admins can create, update, or delete them.
+    match /posts/{postId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
     }
   }
 }

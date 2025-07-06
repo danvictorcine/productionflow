@@ -2,10 +2,20 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow users to read and write their own profile picture
+
+    // User can only write to their own profile picture path.
+    // Profile pictures are publicly readable.
     match /users/{userId}/profile.jpg {
-      allow read: if true; // Profile pictures are public
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Only authenticated admins can upload images for blog posts.
+    // Post images are publicly readable.
+    match /posts/images/{imageId} {
+      allow read: if true;
+      allow write: if request.auth != null && exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+                      get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
   }
 }
