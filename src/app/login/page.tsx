@@ -31,7 +31,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, DollarSign, Users, FileSpreadsheet, Clapperboard, Sun, Moon, ArrowRight, TrendingUp, BarChart } from 'lucide-react';
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { AppFooter } from '@/components/app-footer';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -85,7 +84,7 @@ export default function LoginPage() {
         setIsFeaturesLoading(true);
         try {
             const [latestPosts, loginFeatures] = await Promise.all([
-                firestoreApi.getPosts(3),
+                firestoreApi.getPosts(2),
                 firestoreApi.getLoginFeatures()
             ]);
             setPosts(latestPosts);
@@ -186,6 +185,32 @@ export default function LoginPage() {
                     ))
                 )}
             </div>
+             <div className="mt-8 w-full max-w-md">
+                {(isBlogLoading || posts.length > 0) && (
+                    <>
+                        <h3 className="mb-4 text-center text-lg font-semibold tracking-tight text-foreground">Últimas do Blog</h3>
+                        {isBlogLoading ? (
+                            <div className="grid grid-cols-2 gap-4">
+                                <Skeleton className="h-32 w-full rounded-lg" />
+                                <Skeleton className="h-32 w-full rounded-lg" />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-4">
+                                {posts.map(post => (
+                                    <Link key={post.id} href={`/blog#${post.id}`} className="block group">
+                                        <Card className="h-full hover:bg-background/50 transition-colors flex flex-col justify-between p-4">
+                                            <CardTitle className="text-base font-semibold leading-tight line-clamp-3">{post.title}</CardTitle>
+                                            <div className="text-xs font-semibold text-primary group-hover:underline flex items-center gap-1 mt-2">
+                                                Leia mais <ArrowRight className="h-3 w-3" />
+                                            </div>
+                                        </Card>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
             <div className="absolute bottom-8">
                 <p className="text-sm text-muted-foreground">
                     Um produto: <span className="font-semibold text-foreground">Candeeiro Filmes</span>
@@ -263,41 +288,6 @@ export default function LoginPage() {
                       Cadastre-se
                     </Link>
                   </div>
-
-                    {(isBlogLoading || posts.length > 0) && <Separator className="my-4"/>}
-
-                    {isBlogLoading ? (
-                        <div className="space-y-4">
-                            <Skeleton className="h-6 w-1/2 mx-auto" />
-                            <div className="space-y-4">
-                                <Skeleton className="h-24 w-full" />
-                            </div>
-                        </div>
-                    ) : posts.length > 0 && (
-                        <div className="space-y-4">
-                            <h3 className="text-center text-xl font-bold tracking-tight">Últimas do Blog</h3>
-                            <div className="space-y-4">
-                                {posts.map(post => (
-                                    <Card key={post.id}>
-                                        <CardHeader className="pb-4">
-                                            <CardTitle className="text-base">{post.title}</CardTitle>
-                                            <CardDescription>
-                                                {format(post.createdAt, "dd 'de' MMMM, yyyy", { locale: ptBR })}
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="text-sm text-muted-foreground pb-4">
-                                            <p>{post.content.replace(/<[^>]*>/g, '').substring(0, 100)}...</p>
-                                        </CardContent>
-                                        <CardFooter>
-                                            <Link href={`/blog#${post.id}`} className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
-                                                Leia mais <ArrowRight className="h-4 w-4" />
-                                            </Link>
-                                        </CardFooter>
-                                    </Card>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
             <div className="text-center text-sm text-muted-foreground lg:hidden pb-4">
