@@ -11,7 +11,7 @@ import type { Post } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { AppFooter } from '@/components/app-footer';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserNav } from '@/components/user-nav';
 import { useAuth } from '@/context/auth-context';
