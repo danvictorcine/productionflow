@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Brush, Edit, Trash2, StickyNote, Image as ImageIcon, Video, MapPin, Loader2 } from 'lucide-react';
+import { ArrowLeft, Brush, Edit, Trash2, StickyNote, Image as ImageIcon, Video, MapPin, Loader2, GripVertical } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
@@ -96,12 +96,17 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
     };
 
     return (
-        <div className="w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group">
-            {renderContent()}
+        <div className="w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col">
+            <div className="drag-handle bg-muted/50 hover:bg-muted cursor-move py-1 text-center text-muted-foreground flex items-center justify-center z-10">
+                <GripVertical className="h-4 w-4" />
+            </div>
+            <div className="flex-grow min-h-0">
+                {renderContent()}
+            </div>
             <Button
                 variant="destructive"
                 size="icon"
-                className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-0.5 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-20"
                 onClick={() => onDelete(item.id)}
             >
                 <Trash2 className="h-3 w-3" />
@@ -332,6 +337,7 @@ function CreativeProjectPageDetail() {
               minHeight={50}
               bounds="parent"
               className="z-20"
+              dragHandleClassName=".drag-handle"
             >
               <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} />
             </Rnd>
