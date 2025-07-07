@@ -27,7 +27,7 @@ import { CopyableError } from '@/components/copyable-error';
 
 if (typeof window !== 'undefined') {
   const Quill = (QuillNamespace as any).default ?? QuillNamespace;
-  Quill.register('modules/imageResize', ImageResize);
+  Quill.register('modules/imageResize', (ImageResize as any).default || ImageResize);
 }
 
 const postSchema = z.object({
