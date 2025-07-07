@@ -71,14 +71,7 @@ export default function EditPostPage() {
 
     const imageHandler = useCallback(() => {
         const editor = quillRef.current?.getEditor();
-        if (!editor) {
-            toast({
-                variant: 'destructive',
-                title: 'Editor não pronto',
-                description: 'O editor de texto ainda não está pronto. Por favor, clique no texto e tente novamente.',
-            });
-            return;
-        }
+        if (!editor) return;
 
         const range = editor.getSelection(true);
         const input = document.createElement('input');
@@ -134,11 +127,18 @@ export default function EditPostPage() {
                 ['link', 'image'],
                 ['clean']
             ],
-            handlers: {
-                image: imageHandler
-            }
+            // handlers are attached dynamically in useEffect
         },
-    }), [imageHandler]);
+    }), []);
+
+    useEffect(() => {
+        if (quillRef.current) {
+            const editor = quillRef.current.getEditor();
+            if (editor) {
+                editor.getModule('toolbar').addHandler('image', imageHandler);
+            }
+        }
+    }, [imageHandler]);
 
     async function onSubmit(values: z.infer<typeof postSchema>) {
         if (!user) return;
