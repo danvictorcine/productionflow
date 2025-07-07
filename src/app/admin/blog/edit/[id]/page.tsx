@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -69,32 +69,56 @@ export default function EditPostPage() {
         }
     }, [postId, isNewPost, router, toast, form]);
 
-    const imageHandler = async () => {
+    const imageHandler = useCallback(() => {
         const input = document.createElement('input');
         input.setAttribute('type', 'file');
         input.setAttribute('accept', 'image/*');
+        document.body.appendChild(input);
         input.click();
 
         input.onchange = async () => {
-            if (!input.files) return;
+            if (!input.files) {
+                 if (input.parentNode) {
+                    input.parentNode.removeChild(input);
+                }
+                return;
+            };
+            
             const file = input.files[0];
+            const editor = quillRef.current?.getEditor();
+            const range = editor?.getSelection(true);
+
+            if (!editor || !range) {
+                 if (input.parentNode) {
+                    input.parentNode.removeChild(input);
+                }
+                return;
+            }
+
             if (/^image\//.test(file.type)) {
-                const editor = quillRef.current?.getEditor();
-                const range = editor?.getSelection(true);
-                if (range) {
-                    try {
-                        const url = await firestoreApi.uploadImageForPost(file);
-                        editor.insertEmbed(range.index, 'image', url);
-                        editor.setSelection(range.index + 1);
-                    } catch (error) {
-                        toast({ variant: 'destructive', title: 'Erro no Upload', description: 'Não foi possível enviar a imagem.' });
-                    }
+                try {
+                    editor.insertEmbed(range.index, 'image', 'https://placehold.co/300x200.png?text=Carregando...');
+                    const url = await firestoreApi.uploadImageForPost(file);
+                    editor.deleteText(range.index, 1);
+                    editor.insertEmbed(range.index, 'image', url);
+                    editor.setSelection(range.index + 1);
+                } catch (error) {
+                    editor.deleteText(range.index, 1);
+                    const errorTyped = error as { code?: string; message: string };
+                    toast({
+                        variant: 'destructive',
+                        title: 'Erro no Upload',
+                        description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
+                    });
                 }
             } else {
                 toast({ variant: 'destructive', title: 'Arquivo Inválido', description: 'Por favor, selecione um arquivo de imagem.' });
             }
+             if (input.parentNode) {
+                input.parentNode.removeChild(input);
+            }
         };
-    };
+    }, [toast]);
 
     const modules = useMemo(() => ({
         toolbar: {
@@ -109,7 +133,7 @@ export default function EditPostPage() {
                 image: imageHandler
             }
         },
-    }), []);
+    }), [imageHandler]);
 
     async function onSubmit(values: z.infer<typeof postSchema>) {
         if (!user) return;
