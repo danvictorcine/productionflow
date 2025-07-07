@@ -190,10 +190,10 @@ export type BoardItem = {
   id: string;
   projectId: string;
   userId: string;
-  type: 'note' | 'image' | 'video' | 'location';
-  content: string; // Text for note, URL for image, URL for video, JSON string for location {lat, lng, name}
+  type: 'note' | 'image' | 'video' | 'location' | 'checklist' | 'palette';
+  content: string; // HTML for note, URL for image, URL for video, JSON for location, Title for checklist, JSON for palette
+  items?: ChecklistItem[]; // For checklist items
   position: { x: number; y: number };
   size: { width: number | string; height: number | string };
-  color?: string; // For notes
   createdAt: Date;
 };

@@ -1,15 +1,16 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Brush, Edit, Trash2, StickyNote, Image as ImageIcon, Video, MapPin, Loader2, GripVertical } from 'lucide-react';
+import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
 
-import type { CreativeProject, BoardItem } from '@/lib/types';
+import type { CreativeProject, BoardItem, ChecklistItem } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -24,7 +25,7 @@ import { CreateEditCreativeProjectDialog } from '@/components/create-edit-creati
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -34,6 +35,11 @@ const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => 
 const LocationPicker = dynamic(() => import('@/components/location-picker').then(mod => mod.LocationPicker), {
   ssr: false,
   loading: () => <Skeleton className="h-64 w-full" />,
+});
+
+const QuillEditor = dynamic(() => import('react-quill'), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-full w-full rounded-b-md" />
 });
 
 
@@ -53,25 +59,117 @@ const getVimeoEmbedUrl = (url: string) => {
 };
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
-    const textAreaRef = useRef<HTMLTextAreaElement>(null);
+    const colorInputRef = useRef<HTMLInputElement>(null);
 
-    const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const newContent = e.target.value;
-        onUpdate(item.id, { content: newContent });
+    const noteModules = useMemo(() => ({
+        toolbar: {
+            container: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered'}, {'list': 'bullet'}],
+                [{ 'align': [] }],
+                [{ 'color': [] }, { 'background': [] }],
+                ['clean']
+            ],
+        },
+    }), []);
+
+    const handleChecklistUpdate = (updatedItems: ChecklistItem[]) => {
+        onUpdate(item.id, { items: updatedItems });
+    };
+
+    const handlePaletteUpdate = (updatedColors: string[]) => {
+        onUpdate(item.id, { content: JSON.stringify(updatedColors) });
     };
 
     const renderContent = () => {
         switch (item.type) {
             case 'note':
                 return (
-                    <Textarea
-                        ref={textAreaRef}
-                        defaultValue={item.content}
-                        onChange={handleNoteChange}
-                        className="w-full h-full resize-none border-none focus:ring-0 bg-yellow-100 text-yellow-900 p-2"
-                        placeholder="Escreva sua nota..."
+                    <QuillEditor
+                        theme="snow"
+                        value={item.content}
+                        onChange={(content) => onUpdate(item.id, { content })}
+                        modules={noteModules}
+                        className="h-full w-full flex flex-col"
+                        style={{ display: 'flex', flexDirection: 'column' }}
                     />
                 );
+            case 'checklist': {
+                const title = item.content;
+                const items = item.items || [];
+                return (
+                    <div className="p-3 flex flex-col h-full bg-background">
+                       <Input 
+                         defaultValue={title}
+                         onBlur={(e) => onUpdate(item.id, { content: e.target.value })}
+                         placeholder="Título da Lista"
+                         className="font-bold border-none focus-visible:ring-0 text-base mb-2"
+                       />
+                       <div className="flex-1 overflow-y-auto pr-2 space-y-2">
+                           {items.map((checklistItem, index) => (
+                               <div key={checklistItem.id} className="flex items-center gap-2 group">
+                                   <Checkbox
+                                     checked={checklistItem.checked}
+                                     onCheckedChange={(checked) => {
+                                         const newItems = [...items];
+                                         newItems[index].checked = !!checked;
+                                         handleChecklistUpdate(newItems);
+                                     }}
+                                   />
+                                   <Input
+                                     defaultValue={checklistItem.text}
+                                     onBlur={(e) => {
+                                         const newItems = [...items];
+                                         newItems[index].text = e.target.value;
+                                         handleChecklistUpdate(newItems);
+                                     }}
+                                     className="flex-1 h-8 border-none focus-visible:ring-0 focus:bg-muted/50"
+                                     placeholder="Novo item..."
+                                   />
+                                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
+                                       const newItems = items.filter(i => i.id !== checklistItem.id);
+                                       handleChecklistUpdate(newItems);
+                                   }}>
+                                       <Trash2 className="h-3 w-3 text-destructive" />
+                                   </Button>
+                               </div>
+                           ))}
+                       </div>
+                       <Button variant="ghost" size="sm" className="mt-2 justify-start" onClick={() => {
+                           const newItems = [...items, { id: crypto.randomUUID(), text: '', checked: false }];
+                           handleChecklistUpdate(newItems);
+                       }}>
+                           <Plus className="mr-2 h-4 w-4" /> Adicionar item
+                       </Button>
+                    </div>
+                )
+            }
+            case 'palette': {
+                const colors: string[] = JSON.parse(item.content || '[]');
+                return (
+                    <div className="p-2 flex flex-col h-full bg-background">
+                       <div className="flex-1 grid grid-cols-4 gap-2">
+                           {colors.map((color, index) => (
+                               <div key={index} className="relative group rounded flex items-center justify-center" style={{ backgroundColor: color }}>
+                                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
+                                       const newColors = colors.filter((_, i) => i !== index);
+                                       handlePaletteUpdate(newColors);
+                                   }}>
+                                     <Trash2 className="h-3 w-3 mix-blend-difference" />
+                                   </Button>
+                               </div>
+                           ))}
+                           <button onClick={() => colorInputRef.current?.click()} className="rounded border-2 border-dashed flex items-center justify-center hover:bg-muted">
+                               <Plus className="h-6 w-6 text-muted-foreground"/>
+                               <input ref={colorInputRef} type="color" className="hidden" onChange={(e) => {
+                                   handlePaletteUpdate([...colors, e.target.value]);
+                               }}/>
+                           </button>
+                       </div>
+                    </div>
+                );
+            }
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'video':
@@ -182,30 +280,27 @@ function CreativeProjectPageDetail() {
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
   const handleItemUpdate = useCallback((itemId: string, data: Partial<BoardItem>) => {
-      // Optimistic UI update for immediate feedback
       setItems(prevItems =>
           prevItems.map(item => (item.id === itemId ? { ...item, ...data } : item))
       );
   
-      // Clear previous debounce timer for this item
       if (debounceTimers.current[itemId]) {
           clearTimeout(debounceTimers.current[itemId]);
       }
   
-      // Set new debounce timer to save to Firestore
       debounceTimers.current[itemId] = setTimeout(() => {
           firestoreApi.updateBoardItem(itemId, data)
               .catch(error => {
                   toast({ variant: 'destructive', title: 'Erro ao salvar alteração.' });
-                  fetchProjectData(); // Re-fetch on error to resync
+                  fetchProjectData();
               });
-      }, 500); // 500ms delay
+      }, 500);
   }, [fetchProjectData, toast]);
 
 
-  const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string, height: number | string }) => {
+  const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string, height: number | string }, items?: ChecklistItem[]) => {
     try {
-        const newItemData = { type, content, size, position: { x: 50, y: 50 }, };
+        const newItemData = { type, content, size, position: { x: 50, y: 50 }, items };
         await firestoreApi.addBoardItem(projectId, newItemData);
         await fetchProjectData();
     } catch (error) {
@@ -219,8 +314,18 @@ function CreativeProjectPageDetail() {
   };
   
   const handleAddNote = async () => {
-    await handleAddItem('note', '', { width: 250, height: 200 });
+    await handleAddItem('note', '<h2>Novo Título</h2><p>Comece a escrever aqui...</p>', { width: 350, height: 300 });
     toast({ title: "Nota adicionada!" });
+  }
+
+  const handleAddChecklist = async () => {
+    await handleAddItem('checklist', 'Nova Lista', { width: 300, height: 250 }, [{ id: crypto.randomUUID(), text: 'Primeiro item', checked: false }]);
+    toast({ title: "Checklist adicionado!" });
+  }
+
+  const handleAddPalette = async () => {
+    await handleAddItem('palette', JSON.stringify(['#f87171', '#60a5fa', '#34d399', '#a78bfa']), { width: 250, height: 80 });
+    toast({ title: "Paleta de cores adicionada!" });
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -229,18 +334,16 @@ function CreativeProjectPageDetail() {
     const file = event.target.files[0];
 
     try {
-      // Create an image object in memory to read dimensions
       const image = new window.Image();
       image.src = URL.createObjectURL(file);
       await new Promise(resolve => { image.onload = resolve; });
 
-      // Define a max width and calculate height based on aspect ratio
       const MAX_WIDTH = 400;
       const aspectRatio = image.naturalWidth / image.naturalHeight;
       const width = Math.min(image.naturalWidth, MAX_WIDTH);
       const height = width / aspectRatio;
 
-      URL.revokeObjectURL(image.src); // Clean up memory
+      URL.revokeObjectURL(image.src);
 
       const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
       const url = await firestoreApi.uploadImageForBoard(compressedFile);
@@ -317,9 +420,15 @@ function CreativeProjectPageDetail() {
       
       <main className="flex-1 flex flex-col">
         <div className="flex-shrink-0 bg-background p-2 border-b z-30">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
                 <Button variant="ghost" size="sm" onClick={handleAddNote}>
-                    <StickyNote className="mr-2 h-4 w-4" />Adicionar Nota
+                    <FileText className="mr-2 h-4 w-4" />Adicionar Nota
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleAddChecklist}>
+                    <ListTodo className="mr-2 h-4 w-4" />Adicionar Checklist
+                </Button>
+                 <Button variant="ghost" size="sm" onClick={handleAddPalette}>
+                    <Palette className="mr-2 h-4 w-4" />Adicionar Paleta
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
@@ -348,10 +457,10 @@ function CreativeProjectPageDetail() {
                 });
               }}
               minWidth={150}
-              minHeight={50}
+              minHeight={80}
               bounds="parent"
               className="z-20"
-              dragHandleClassName="drag-handle"
+              dragHandleClassName=".drag-handle"
             >
               <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} />
             </Rnd>
