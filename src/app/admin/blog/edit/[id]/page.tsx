@@ -70,54 +70,59 @@ export default function EditPostPage() {
     }, [postId, isNewPost, router, toast, form]);
 
     const imageHandler = useCallback(() => {
+        const editor = quillRef.current?.getEditor();
+        if (!editor) {
+            toast({
+                variant: 'destructive',
+                title: 'Editor não pronto',
+                description: 'O editor de texto ainda não está pronto. Por favor, clique no texto e tente novamente.',
+            });
+            return;
+        }
+
+        const range = editor.getSelection(true);
         const input = document.createElement('input');
         input.setAttribute('type', 'file');
         input.setAttribute('accept', 'image/*');
         document.body.appendChild(input);
-        input.click();
 
         input.onchange = async () => {
-            if (!input.files) {
-                 if (input.parentNode) {
-                    input.parentNode.removeChild(input);
-                }
-                return;
-            };
-            
-            const file = input.files[0];
-            const editor = quillRef.current?.getEditor();
-            const range = editor?.getSelection(true);
+            try {
+                if (!input.files || input.files.length === 0) return;
+                
+                const file = input.files[0];
+                const insertIndex = range ? range.index : 0;
 
-            if (!editor || !range) {
-                 if (input.parentNode) {
-                    input.parentNode.removeChild(input);
+                if (!/^image\//.test(file.type)) {
+                    toast({ variant: 'destructive', title: 'Arquivo Inválido', description: 'Por favor, selecione um arquivo de imagem.' });
+                    return;
                 }
-                return;
-            }
 
-            if (/^image\//.test(file.type)) {
+                editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Carregando...');
+                editor.setSelection(insertIndex + 1);
+
                 try {
-                    editor.insertEmbed(range.index, 'image', 'https://placehold.co/300x200.png?text=Carregando...');
                     const url = await firestoreApi.uploadImageForPost(file);
-                    editor.deleteText(range.index, 1);
-                    editor.insertEmbed(range.index, 'image', url);
-                    editor.setSelection(range.index + 1);
-                } catch (error) {
-                    editor.deleteText(range.index, 1);
-                    const errorTyped = error as { code?: string; message: string };
+                    editor.deleteText(insertIndex, 1);
+                    editor.insertEmbed(insertIndex, 'image', url);
+                    editor.setSelection(insertIndex + 1);
+                } catch (uploadError) {
+                    editor.deleteText(insertIndex, 1);
+                    const errorTyped = uploadError as { code?: string; message: string };
                     toast({
                         variant: 'destructive',
                         title: 'Erro no Upload',
                         description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
                     });
                 }
-            } else {
-                toast({ variant: 'destructive', title: 'Arquivo Inválido', description: 'Por favor, selecione um arquivo de imagem.' });
-            }
-             if (input.parentNode) {
-                input.parentNode.removeChild(input);
+            } finally {
+                if (input.parentNode) {
+                    input.parentNode.removeChild(input);
+                }
             }
         };
+
+        input.click();
     }, [toast]);
 
     const modules = useMemo(() => ({
