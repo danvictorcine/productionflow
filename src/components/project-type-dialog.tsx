@@ -10,6 +10,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface ProjectTypeDialogProps {
   isOpen: boolean;
@@ -28,7 +29,10 @@ export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect, userIsAdmin }: 
             Escolha o tipo de projeto que você deseja criar.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
+        <div className={cn(
+          "grid grid-cols-1 gap-4 py-4",
+          userIsAdmin ? "md:grid-cols-3" : "md:grid-cols-2"
+        )}>
           <Card 
             className="cursor-pointer hover:bg-muted/50 transition-colors"
             onClick={() => onSelect('financial')}
