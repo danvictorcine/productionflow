@@ -460,7 +460,7 @@ function CreativeProjectPageDetail() {
               minHeight={80}
               bounds="parent"
               className="z-20"
-              dragHandleClassName=".drag-handle"
+              dragHandleClassName="drag-handle"
             >
               <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} />
             </Rnd>
