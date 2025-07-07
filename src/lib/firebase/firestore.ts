@@ -725,3 +725,20 @@ export const saveLoginFeatures = async (features: Omit<LoginFeature, 'id'>[]) =>
   
   await batch.commit();
 };
+
+export const deleteImageFromUrl = async (url: string): Promise<void> => {
+  if (!url.includes('firebasestorage.googleapis.com')) {
+    return;
+  }
+
+  try {
+    const imageRef = ref(storage, url);
+    await deleteObject(imageRef);
+  } catch (error: any) {
+    if (error.code === 'storage/object-not-found') {
+      console.warn(`Image for deletion not found in storage: ${url}`);
+    } else {
+      console.error(`Error deleting image from storage: ${url}`, error);
+    }
+  }
+};

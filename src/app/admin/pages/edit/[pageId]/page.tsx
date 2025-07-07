@@ -9,6 +9,9 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
+import Quill from 'quill';
+import ImageResize from 'quill-image-resize-module-react';
+import imageCompression from 'browser-image-compression';
 
 import { AppFooter } from '@/components/app-footer';
 import { UserNav } from '@/components/user-nav';
@@ -20,6 +23,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 
+if (typeof window !== 'undefined') {
+  Quill.register('modules/imageResize', ImageResize);
+}
+
 const pageContentSchema = z.object({
     content: z.string().min(10, { message: 'O conteúdo deve ter pelo menos 10 caracteres.' }),
 });
@@ -28,6 +35,15 @@ const QuillEditor = dynamic(() => import('react-quill'), {
     ssr: false,
     loading: () => <Skeleton className="h-[400px] w-full rounded-b-md" />
 });
+
+const getImageUrlsFromDelta = (delta: any): string[] => {
+  return delta.ops.reduce((urls: string[], op: any) => {
+    if (op.insert && op.insert.image && op.insert.image.startsWith('https://firebasestorage.googleapis.com')) {
+      urls.push(op.insert.image);
+    }
+    return urls;
+  }, []);
+};
 
 const DEFAULT_CONTENT = {
     about: {
@@ -50,6 +66,7 @@ export default function EditPageContentPage() {
     const { user } = useAuth();
     const { toast } = useToast();
     const quillRef = useRef<any>(null);
+    const imageSetRef = useRef<Set<string>>(new Set());
 
     const pageId = params.pageId as 'about' | 'contact' | 'terms';
 
@@ -77,9 +94,12 @@ export default function EditPageContentPage() {
         }
     }, [pageId, toast, form]);
 
-    const imageHandler = useCallback(() => {
+    const imageHandler = useCallback(async () => {
         const editor = quillRef.current?.getEditor();
-        if (!editor) return;
+        if (!editor) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'O editor de texto não está pronto. Tente novamente.' });
+            return;
+        }
 
         const range = editor.getSelection(true);
         const input = document.createElement('input');
@@ -99,11 +119,22 @@ export default function EditPageContentPage() {
                     return;
                 }
 
-                editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Carregando...');
+                editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Comprimindo...');
                 editor.setSelection(insertIndex + 1);
 
                 try {
-                    const url = await firestoreApi.uploadImageForPost(file); // Reusing blog image uploader
+                    const options = {
+                        maxSizeMB: 1,
+                        maxWidthOrHeight: 1920,
+                        useWebWorker: true,
+                    };
+                    const compressedFile = await imageCompression(file, options);
+                    
+                    editor.deleteText(insertIndex, 1);
+                    editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
+                    editor.setSelection(insertIndex + 1);
+
+                    const url = await firestoreApi.uploadImageForPost(compressedFile); // Reusing blog image uploader
                     editor.deleteText(insertIndex, 1);
                     editor.insertEmbed(insertIndex, 'image', url);
                     editor.setSelection(insertIndex + 1);
@@ -135,7 +166,9 @@ export default function EditPageContentPage() {
                 ['link', 'image'],
                 ['clean']
             ],
-            // handlers are attached dynamically in useEffect
+        },
+        imageResize: {
+            modules: ['Resize', 'DisplaySize', 'Toolbar'],
         },
     }), []);
 
@@ -144,6 +177,30 @@ export default function EditPageContentPage() {
             const editor = quillRef.current.getEditor();
             if (editor) {
                 editor.getModule('toolbar').addHandler('image', imageHandler);
+
+                imageSetRef.current = new Set(getImageUrlsFromDelta(editor.getContents()));
+
+                const textChangeHandler = (delta: any, oldDelta: any, source: string) => {
+                    if (source === 'user') {
+                        const currentImages = new Set(getImageUrlsFromDelta(editor.getContents()));
+                        const previousImages = imageSetRef.current;
+                        
+                        const deletedUrls = [...previousImages].filter(url => !currentImages.has(url));
+
+                        if (deletedUrls.length > 0) {
+                            deletedUrls.forEach(url => {
+                                firestoreApi.deleteImageFromUrl(url);
+                            });
+                        }
+                        imageSetRef.current = currentImages;
+                    }
+                };
+                
+                editor.on('text-change', textChangeHandler);
+
+                return () => {
+                    editor.off('text-change', textChangeHandler);
+                };
             }
         }
     }, [imageHandler]);
