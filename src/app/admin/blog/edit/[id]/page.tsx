@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
-import Quill from 'quill';
+import * as QuillNamespace from 'quill';
 import ImageResize from 'quill-image-resize-module-react';
 import imageCompression from 'browser-image-compression';
 
@@ -26,7 +26,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 
 if (typeof window !== 'undefined') {
-  Quill.register('modules/imageResize', (ImageResize as any).default);
+  const Quill = (QuillNamespace as any).default ?? QuillNamespace;
+  Quill.register('modules/imageResize', ImageResize);
 }
 
 const postSchema = z.object({
@@ -40,6 +41,7 @@ const QuillEditor = dynamic(() => import('react-quill'), {
 });
 
 const getImageUrlsFromDelta = (delta: any): string[] => {
+  if (!delta || !Array.isArray(delta.ops)) return [];
   return delta.ops.reduce((urls: string[], op: any) => {
     if (op.insert && op.insert.image && op.insert.image.startsWith('https://firebasestorage.googleapis.com')) {
       urls.push(op.insert.image);
@@ -158,7 +160,9 @@ export default function EditPostPage() {
                 ['link', 'image'],
                 ['clean']
             ],
-            // handlers are attached dynamically in useEffect
+            handlers: {
+                // handlers are attached dynamically in useEffect
+            }
         },
         imageResize: {
             modules: ['Resize', 'DisplaySize', 'Toolbar'],
@@ -169,10 +173,13 @@ export default function EditPostPage() {
         if (quillRef.current) {
             const editor = quillRef.current.getEditor();
             if (editor) {
+                // Attach the image handler dynamically to the toolbar
                 editor.getModule('toolbar').addHandler('image', imageHandler);
 
+                // Set initial images
                 imageSetRef.current = new Set(getImageUrlsFromDelta(editor.getContents()));
 
+                // Add listener for text changes to handle image deletion
                 const textChangeHandler = (delta: any, oldDelta: any, source: string) => {
                     if (source === 'user') {
                         const currentImages = new Set(getImageUrlsFromDelta(editor.getContents()));

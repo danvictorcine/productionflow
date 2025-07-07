@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
-import Quill from 'quill';
+import * as QuillNamespace from 'quill';
 import ImageResize from 'quill-image-resize-module-react';
 import imageCompression from 'browser-image-compression';
 
@@ -24,7 +24,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 
 if (typeof window !== 'undefined') {
-  Quill.register('modules/imageResize', (ImageResize as any).default);
+  const Quill = (QuillNamespace as any).default ?? QuillNamespace;
+  Quill.register('modules/imageResize', ImageResize);
 }
 
 const pageContentSchema = z.object({
@@ -37,6 +38,7 @@ const QuillEditor = dynamic(() => import('react-quill'), {
 });
 
 const getImageUrlsFromDelta = (delta: any): string[] => {
+  if (!delta || !Array.isArray(delta.ops)) return [];
   return delta.ops.reduce((urls: string[], op: any) => {
     if (op.insert && op.insert.image && op.insert.image.startsWith('https://firebasestorage.googleapis.com')) {
       urls.push(op.insert.image);
@@ -166,6 +168,7 @@ export default function EditPageContentPage() {
                 ['link', 'image'],
                 ['clean']
             ],
+            handlers: {}
         },
         imageResize: {
             modules: ['Resize', 'DisplaySize', 'Toolbar'],
