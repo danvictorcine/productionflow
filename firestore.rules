@@ -8,10 +8,12 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Users: can only read/write their own profile.
+    // Users: Any authenticated user can read profiles (needed for admin checks), 
+    // but only the owner can update or create their own profile.
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
     }
 
     // Posts: anyone can read, but only admins can write/delete.
@@ -33,9 +35,6 @@ service cloud.firestore {
     }
     
     // Project Data: Financial, Production, Creative, and their children
-    // Note: Separating create from other operations is crucial.
-    // 'resource.data' is for existing documents (read, update, delete).
-    // 'request.resource.data' is for new documents (create).
     
     match /projects/{projectId} {
       allow read, update, delete: if request.auth.uid == resource.data.userId;
@@ -62,11 +61,6 @@ service cloud.firestore {
       allow create: if request.auth.uid == request.resource.data.userId;
     }
 
-    // For the board_items query to work, you need a composite index.
-    // In Firestore > Indexes > Add composite index:
-    // Collection ID: board_items
-    // Fields: projectId (Asc), userId (Asc), createdAt (Asc)
-    // Query Scope: Collection
     match /board_items/{itemId} {
       allow read, update, delete: if request.auth.uid == resource.data.userId;
       allow create: if request.auth.uid == request.resource.data.userId;
