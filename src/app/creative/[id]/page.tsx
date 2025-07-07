@@ -226,11 +226,25 @@ function CreativeProjectPageDetail() {
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files?.[0]) return;
     setIsUploading(true);
+    const file = event.target.files[0];
+
     try {
-      const file = event.target.files[0];
+      // Create an image object in memory to read dimensions
+      const image = new window.Image();
+      image.src = URL.createObjectURL(file);
+      await new Promise(resolve => { image.onload = resolve; });
+
+      // Define a max width and calculate height based on aspect ratio
+      const MAX_WIDTH = 400;
+      const aspectRatio = image.naturalWidth / image.naturalHeight;
+      const width = Math.min(image.naturalWidth, MAX_WIDTH);
+      const height = width / aspectRatio;
+
+      URL.revokeObjectURL(image.src); // Clean up memory
+
       const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
       const url = await firestoreApi.uploadImageForBoard(compressedFile);
-      await handleAddItem('image', url, { width: 400, height: 300 });
+      await handleAddItem('image', url, { width, height });
       toast({ title: 'Imagem adicionada!' });
     } catch (error) {
        const errorTyped = error as { code?: string; message: string };

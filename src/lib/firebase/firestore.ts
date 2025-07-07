@@ -18,7 +18,7 @@ import {
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
 import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem } from '@/lib/types';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID
 const getUserId = () => {
@@ -553,8 +553,26 @@ export const updateBoardItem = async (itemId: string, data: Partial<Omit<BoardIt
 
 export const deleteBoardItem = async (itemId: string) => {
   const itemRef = doc(db, 'board_items', itemId);
+  const itemSnap = await getDoc(itemRef);
+
+  if (itemSnap.exists()) {
+    const itemData = itemSnap.data();
+    // If it's an image with a Firebase Storage URL, delete it from storage first
+    if (itemData.type === 'image' && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
+      try {
+        const imageRef = ref(storage, itemData.content);
+        await deleteObject(imageRef);
+      } catch (error: any) {
+        // If file doesn't exist or other error, log it but don't block deletion of firestore doc
+        if (error.code !== 'storage/object-not-found') {
+          console.error("Could not delete image from storage:", error);
+        }
+      }
+    }
+  }
+
   await deleteDoc(itemRef);
-}
+};
 
 export const uploadImageForBoard = async (file: File): Promise<string> => {
   const timestamp = new Date().getTime();
