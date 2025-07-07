@@ -10,7 +10,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 import Quill from 'quill';
-import { default as ImageResize } from 'quill-image-resize-module-react';
+import ImageResize from 'quill-image-resize-module-react';
 import imageCompression from 'browser-image-compression';
 
 import { AppFooter } from '@/components/app-footer';
@@ -24,7 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 
 if (typeof window !== 'undefined') {
-  Quill.register('modules/imageResize', ImageResize);
+  Quill.register('modules/imageResize', (ImageResize as any).default);
 }
 
 const pageContentSchema = z.object({
