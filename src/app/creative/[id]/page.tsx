@@ -92,8 +92,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                         value={item.content}
                         onChange={(content) => onUpdate(item.id, { content })}
                         modules={noteModules}
-                        className="h-full w-full flex flex-col"
-                        style={{ display: 'flex', flexDirection: 'column' }}
+                        className="h-full w-full"
                     />
                 );
             case 'checklist': {
@@ -149,17 +148,13 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'palette': {
                 let colors: string[] = [];
                 try {
-                    // Only attempt to parse if content is a string that looks like a JSON array.
                     if (typeof item.content === 'string' && item.content.startsWith('[')) {
                         const parsed = JSON.parse(item.content);
                         if (Array.isArray(parsed)) {
-                            // Filter to ensure we only have strings, just in case.
                             colors = parsed.filter(c => typeof c === 'string');
                         }
                     }
                 } catch (e) {
-                    // If JSON parsing fails, `colors` will remain an empty array.
-                    // This is a safe fallback, allowing the component to render with just the add button.
                     console.error("Failed to parse palette content, rendering an empty palette.", e);
                 }
 
