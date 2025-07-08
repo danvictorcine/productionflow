@@ -146,7 +146,17 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 )
             }
             case 'palette': {
-                const colors: string[] = JSON.parse(item.content || '[]');
+                const safeContent = item.content && typeof item.content === 'string' ? item.content : '[]';
+                let colors: string[] = [];
+                try {
+                    const parsed = JSON.parse(safeContent);
+                    if (Array.isArray(parsed)) {
+                        colors = parsed;
+                    }
+                } catch (e) {
+                    colors = [];
+                }
+
                 return (
                     <div className="p-2 flex flex-col h-full bg-background">
                        <div className="flex-1 grid grid-cols-4 gap-2">
