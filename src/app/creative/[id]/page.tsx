@@ -439,13 +439,7 @@ function CreativeProjectPageDetail() {
             {project.description && (
               <div className="px-6 pt-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-muted-foreground" />
-                      Descrição do Projeto
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-6">
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                       {project.description}
                     </p>
