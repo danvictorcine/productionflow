@@ -26,6 +26,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -434,28 +435,47 @@ function CreativeProjectPageDetail() {
       </header>
       
       <main className="flex-1 flex flex-col">
-        <div className="flex-shrink-0 bg-background p-2 border-b z-30">
-            <div className="flex items-center gap-2 flex-wrap">
-                <Button variant="ghost" size="sm" onClick={handleAddNote}>
-                    <FileText className="mr-2 h-4 w-4" />Adicionar Nota
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleAddChecklist}>
-                    <ListTodo className="mr-2 h-4 w-4" />Adicionar Checklist
-                </Button>
-                 <Button variant="ghost" size="sm" onClick={handleAddPalette}>
-                    <Palette className="mr-2 h-4 w-4" />Adicionar Paleta
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
-                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
-                    Adicionar Imagem
-                </Button>
-                <input type="file" ref={imageUploadRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)}>
-                    <Video className="mr-2 h-4 w-4" />Adicionar Vídeo
-                </Button>
-                 <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)}>
-                    <MapPin className="mr-2 h-4 w-4" />Adicionar Local
-                </Button>
+        <div className="bg-background border-b z-30">
+            {project.description && (
+              <div className="px-6 pt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                      Descrição do Projeto
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {project.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            <div className="p-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="ghost" size="sm" onClick={handleAddNote}>
+                        <FileText className="mr-2 h-4 w-4" />Adicionar Nota
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleAddChecklist}>
+                        <ListTodo className="mr-2 h-4 w-4" />Adicionar Checklist
+                    </Button>
+                     <Button variant="ghost" size="sm" onClick={handleAddPalette}>
+                        <Palette className="mr-2 h-4 w-4" />Adicionar Paleta
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
+                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
+                        Adicionar Imagem
+                    </Button>
+                    <input type="file" ref={imageUploadRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                    <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)}>
+                        <Video className="mr-2 h-4 w-4" />Adicionar Vídeo
+                    </Button>
+                     <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)}>
+                        <MapPin className="mr-2 h-4 w-4" />Adicionar Local
+                    </Button>
+                </div>
             </div>
         </div>
         <div className="relative flex-1 w-full h-full bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]">
