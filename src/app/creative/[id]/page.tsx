@@ -146,15 +146,16 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 )
             }
             case 'palette': {
-                const safeContent = item.content && typeof item.content === 'string' ? item.content : '[]';
                 let colors: string[] = [];
-                try {
-                    const parsed = JSON.parse(safeContent);
-                    if (Array.isArray(parsed)) {
-                        colors = parsed;
+                if (typeof item.content === 'string' && item.content.trim().startsWith('[')) {
+                    try {
+                        const parsed = JSON.parse(item.content);
+                        if (Array.isArray(parsed) && parsed.every(c => typeof c === 'string')) {
+                            colors = parsed;
+                        }
+                    } catch (e) {
+                        // Silently fail, colors remains empty
                     }
-                } catch (e) {
-                    colors = [];
                 }
 
                 return (
