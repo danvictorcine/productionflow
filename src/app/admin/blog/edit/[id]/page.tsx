@@ -9,8 +9,6 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
-import Quill from 'quill';
-import ImageResize from 'quill-image-resize';
 import imageCompression from 'browser-image-compression';
 
 import { AppFooter } from '@/components/app-footer';
@@ -24,10 +22,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
-
-if (typeof window !== 'undefined') {
-  Quill.register('modules/imageResize', ImageResize);
-}
 
 const postSchema = z.object({
     title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres.' }),
@@ -162,9 +156,6 @@ export default function EditPostPage() {
             handlers: {
                 // handlers are attached dynamically in useEffect
             }
-        },
-        imageResize: {
-            modules: ['Resize', 'DisplaySize', 'Toolbar'],
         },
     }), []);
 

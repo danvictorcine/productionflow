@@ -9,8 +9,6 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
-import Quill from 'quill';
-import ImageResize from 'quill-image-resize';
 import imageCompression from 'browser-image-compression';
 
 import { AppFooter } from '@/components/app-footer';
@@ -22,10 +20,6 @@ import * as firestoreApi from '@/lib/firebase/firestore';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
-
-if (typeof window !== 'undefined') {
-  Quill.register('modules/imageResize', ImageResize);
-}
 
 const pageContentSchema = z.object({
     content: z.string().min(10, { message: 'O conteúdo deve ter pelo menos 10 caracteres.' }),
@@ -168,9 +162,6 @@ export default function EditPageContentPage() {
                 ['clean']
             ],
             handlers: {}
-        },
-        imageResize: {
-            modules: ['Resize', 'DisplaySize', 'Toolbar'],
         },
     }), []);
 
