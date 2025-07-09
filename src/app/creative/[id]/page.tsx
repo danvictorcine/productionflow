@@ -309,34 +309,61 @@ function CreativeProjectPageDetail() {
   }, [fetchProjectData, toast]);
 
 
-  const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string, height: number | string }, items?: ChecklistItem[]) => {
+  const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, items?: ChecklistItem[]) => {
     try {
-        const newItemData = { type, content, size, position: { x: 50, y: 50 }, items };
-        await firestoreApi.addBoardItem(projectId, newItemData);
-        await fetchProjectData();
+      const newItemData: any = {
+        type,
+        content,
+        size,
+        position: { x: 50, y: 50 },
+      };
+
+      if (type === 'checklist' && items) {
+        newItemData.items = items;
+      }
+      
+      await firestoreApi.addBoardItem(projectId, newItemData);
+      await fetchProjectData();
+
+      const typeDisplayNames = {
+          note: 'Nota',
+          checklist: 'Checklist',
+          palette: 'Paleta de cores',
+          image: 'Imagem',
+          video: 'Vídeo',
+          location: 'Localização',
+      };
+      toast({ title: `${typeDisplayNames[type]} adicionada!` });
+
+      if (type === 'video') {
+        setIsVideoDialogOpen(false);
+        setVideoUrl("");
+      }
+      if (type === 'location') {
+        setIsLocationDialogOpen(false);
+        setSelectedLocation(null);
+      }
+
     } catch (error) {
-        const errorTyped = error as { code?: string; message: string };
-        toast({ 
-            variant: 'destructive', 
-            title: `Erro ao adicionar ${type}`,
-            description: <CopyableError userMessage="Não foi possível adicionar o item ao quadro." errorCode={errorTyped.code || errorTyped.message} />,
-        });
+      const errorTyped = error as { code?: string; message: string };
+      toast({ 
+          variant: 'destructive', 
+          title: `Erro ao adicionar ${type}`,
+          description: <CopyableError userMessage="Não foi possível adicionar o item ao quadro." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     }
   };
   
-  const handleAddNote = async () => {
-    await handleAddItem('note', '<h2>Novo Título</h2><p>Comece a escrever aqui...</p>', { width: 350, height: 300 });
-    toast({ title: "Nota adicionada!" });
+  const handleAddNote = () => {
+    handleAddItem('note', '<h2>Novo Título</h2><p>Comece a escrever aqui...</p>', { width: 350, height: 300 });
   }
 
-  const handleAddChecklist = async () => {
-    await handleAddItem('checklist', 'Nova Lista', { width: 300, height: 250 }, [{ id: crypto.randomUUID(), text: 'Primeiro item', checked: false }]);
-    toast({ title: "Checklist adicionado!" });
+  const handleAddChecklist = () => {
+    handleAddItem('checklist', 'Nova Lista', { width: 300, height: 250 }, [{ id: crypto.randomUUID(), text: 'Primeiro item', checked: false }]);
   }
 
-  const handleAddPalette = async () => {
-    await handleAddItem('palette', JSON.stringify(['#f87171', '#60a5fa', '#34d399', '#a78bfa']), { width: 250, height: 80 });
-    toast({ title: "Paleta de cores adicionada!" });
+  const handleAddPalette = () => {
+    handleAddItem('palette', JSON.stringify(['#f87171', '#60a5fa', '#34d399', '#a78bfa']), { width: 250, height: 80 });
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -359,7 +386,6 @@ function CreativeProjectPageDetail() {
       const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
       const url = await firestoreApi.uploadImageForBoard(compressedFile);
       await handleAddItem('image', url, { width, height });
-      toast({ title: 'Imagem adicionada!' });
     } catch (error) {
        const errorTyped = error as { code?: string; message: string };
        toast({ 
@@ -383,25 +409,19 @@ function CreativeProjectPageDetail() {
     }
   };
 
-  const handleAddVideo = async () => {
+  const handleAddVideo = () => {
     if (!videoUrl) return;
     const embedUrl = getYoutubeEmbedUrl(videoUrl) || getVimeoEmbedUrl(videoUrl);
     if (!embedUrl) {
         toast({ variant: 'destructive', title: 'URL Inválida', description: 'Por favor, insira uma URL válida do YouTube ou Vimeo.' });
         return;
     }
-    await handleAddItem('video', videoUrl, { width: 480, height: 270 });
-    toast({ title: 'Vídeo adicionado!' });
-    setIsVideoDialogOpen(false);
-    setVideoUrl("");
+    handleAddItem('video', videoUrl, { width: 480, height: 270 });
   };
 
-  const handleAddLocation = async () => {
+  const handleAddLocation = () => {
     if (!selectedLocation) return;
-    await handleAddItem('location', JSON.stringify(selectedLocation), { width: 300, height: 300 });
-    toast({ title: 'Localização adicionada!' });
-    setIsLocationDialogOpen(false);
-    setSelectedLocation(null);
+    handleAddItem('location', JSON.stringify(selectedLocation), { width: 300, height: 300 });
   };
   
   if (isLoading) {
