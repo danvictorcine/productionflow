@@ -561,7 +561,7 @@ function ProductionPageDetail() {
         <div className="mb-6 p-4 border rounded-lg bg-card">
           <h2 className="text-2xl font-bold tracking-tight">{production.name}</h2>
           <p className="text-muted-foreground">{production.type}</p>
-          <div className="text-sm mt-2 space-y-1">
+          <div className="text-base mt-2 space-y-1">
             <p><span className="font-semibold">Diretor(a):</span> {production.director}</p>
             {production.responsibleProducer && <p><span className="font-semibold">Produtor(a) Responsável:</span> {production.responsibleProducer}</p>}
             {production.producer && <p><span className="font-semibold">Produtora:</span> {production.producer}</p>}
@@ -590,13 +590,13 @@ function ProductionPageDetail() {
                                 <div key={member.id} className="p-3 rounded-md border bg-muted/50">
                                     <div className="flex justify-between items-center">
                                         <div>
-                                            <p className="font-semibold">{member.name}</p>
-                                            <p className="text-sm text-muted-foreground">{member.role}</p>
+                                            <p className="font-semibold text-base">{member.name}</p>
+                                            <p className="text-base text-muted-foreground">{member.role}</p>
                                         </div>
                                     </div>
                                      {member.contact && (
-                                        <div className="mt-2 flex items-start gap-2 text-sm p-2 bg-background rounded">
-                                            <Phone className="h-4 w-4 mt-0.5 text-sky-600 flex-shrink-0" />
+                                        <div className="mt-2 flex items-start gap-2 text-base p-2 bg-background rounded">
+                                            <Phone className="h-4 w-4 mt-1 text-sky-600 flex-shrink-0" />
                                             <div>
                                                 <span className="font-semibold">Contato: </span>
                                                 <a href={`tel:${member.contact.replace(/\D/g, '')}`} className="text-muted-foreground hover:underline">{member.contact}</a>
@@ -604,8 +604,8 @@ function ProductionPageDetail() {
                                         </div>
                                     )}
                                     {member.hasDietaryRestriction && (
-                                        <div className="mt-2 flex items-start gap-2 text-sm p-2 bg-background rounded">
-                                            <Utensils className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0" />
+                                        <div className="mt-2 flex items-start gap-2 text-base p-2 bg-background rounded">
+                                            <Utensils className="h-4 w-4 mt-1 text-amber-600 flex-shrink-0" />
                                             <div>
                                                 <span className="font-semibold">Restrição Alimentar: </span>
                                                 <span className="text-muted-foreground">{member.dietaryRestriction || 'Não especificada'}</span>
@@ -613,8 +613,8 @@ function ProductionPageDetail() {
                                         </div>
                                     )}
                                     {member.extraNotes && (
-                                        <div className="mt-2 flex items-start gap-2 text-sm p-2 bg-background rounded">
-                                            <Info className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
+                                        <div className="mt-2 flex items-start gap-2 text-base p-2 bg-background rounded">
+                                            <Info className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
                                             <div>
                                                 <span className="font-semibold">Observação: </span>
                                                 <span className="text-muted-foreground">{member.extraNotes}</span>
@@ -624,7 +624,7 @@ function ProductionPageDetail() {
                                 </div>
                             ))
                         ) : (
-                             <p className="text-sm text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado.</p>
+                             <p className="text-base text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado.</p>
                         )}
                         </div>
                     </AccordionContent>
