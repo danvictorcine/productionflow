@@ -1,18 +1,16 @@
 // @/src/components/weather-card.tsx
 "use client";
 
-import { useState, useEffect } from "react";
 import type { WeatherInfo } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { format, isToday } from "date-fns";
+import { format } from "date-fns";
 import {
   Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, CloudSnow,
-  Wind, Sunrise, Sunset, Haze, CloudFog, Timer, CloudSun
+  Wind, Sunrise, Sunset, Haze, CloudFog, CloudSun
 } from "lucide-react";
 
 interface WeatherCardProps {
   weather: WeatherInfo;
-  shootingDate: Date;
 }
 
 const getWeatherIcon = (code: number) => {
@@ -50,41 +48,7 @@ const getWeatherDescription = (code: number): string => {
 };
 
 
-export function WeatherCard({ weather, shootingDate }: WeatherCardProps) {
-  const [remainingDaylight, setRemainingDaylight] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isToday(shootingDate)) {
-        setRemainingDaylight(null);
-        return;
-    }
-
-    const calculateRemaining = () => {
-        const now = new Date();
-        const sunrise = new Date(weather.sunrise);
-        const sunset = new Date(weather.sunset);
-
-        if (now.getTime() < sunrise.getTime()) {
-            const totalDaylightMs = sunset.getTime() - sunrise.getTime();
-            const hours = Math.floor(totalDaylightMs / 3600000);
-            const minutes = Math.floor((totalDaylightMs % 3600000) / 60000);
-            setRemainingDaylight(`${hours}h ${minutes}m (Total)`);
-        } else if (now.getTime() > sunset.getTime()) {
-            setRemainingDaylight("0h 0m");
-        } else {
-            const remainingMs = sunset.getTime() - now.getTime();
-            const hours = Math.floor(remainingMs / 3600000);
-            const minutes = Math.floor((remainingMs % 3600000) / 60000);
-            setRemainingDaylight(`${hours}h ${minutes}m`);
-        }
-    };
-
-    calculateRemaining();
-    const intervalId = setInterval(calculateRemaining, 60000); // Update every minute
-
-    return () => clearInterval(intervalId);
-  }, [weather, shootingDate]);
-  
+export function WeatherCard({ weather }: WeatherCardProps) {
   return (
     <Card className="relative bg-card/50 h-full">
       <CardContent className="flex flex-col justify-between p-4 h-full">
@@ -102,7 +66,7 @@ export function WeatherCard({ weather, shootingDate }: WeatherCardProps) {
             </div>
         </div>
         
-        <div className="mt-2 grid grid-cols-2 lg:grid-cols-3 gap-2 w-full text-xs text-muted-foreground">
+        <div className="mt-2 grid grid-cols-2 gap-2 w-full text-xs text-muted-foreground">
           <div className="flex flex-col items-center text-center">
             <Sunrise className="h-5 w-5 text-yellow-500 mb-1" />
             <span className="font-semibold">Nascer do Sol</span>
@@ -113,13 +77,6 @@ export function WeatherCard({ weather, shootingDate }: WeatherCardProps) {
              <span className="font-semibold">Pôr do Sol</span>
             <span>{format(new Date(weather.sunset), "HH:mm")}</span>
           </div>
-          {remainingDaylight && (
-             <div className="flex flex-col items-center text-center col-span-2 lg:col-span-1 mt-2 lg:mt-0">
-                <Timer className="h-5 w-5 text-primary mb-1" />
-                <span className="font-semibold">Luz do Dia Restante</span>
-                <span className="font-bold text-sm text-foreground">{remainingDaylight}</span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

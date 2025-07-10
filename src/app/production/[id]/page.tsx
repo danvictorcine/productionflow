@@ -74,20 +74,26 @@ function ProductionPageDetail() {
     setIsFetchingWeather(prev => ({ ...prev, [day.id]: true }));
   
     try {
-      const { latitude, longitude } = day;
+      const { latitude, longitude, date } = day;
+      const formattedDate = format(date, 'yyyy-MM-dd');
   
-      const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,wind_speed_10m&daily=sunrise,sunset&timezone=auto`);
+      const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weather_code,temperature_2m_max,sunrise,sunset,wind_speed_10m_max&timezone=auto&start_date=${formattedDate}&end_date=${formattedDate}`);
       if (!weatherResponse.ok) throw new Error('Weather API failed');
       const weatherData = await weatherResponse.json();
+
+      if (!weatherData.daily || !weatherData.daily.time || weatherData.daily.time.length === 0) {
+        throw new Error('No weather data returned for the selected date.');
+      }
   
       const newWeather: WeatherInfo = {
-        temperature: Math.round(weatherData.current.temperature_2m),
-        windSpeed: Math.round(weatherData.current.wind_speed_10m),
+        temperature: Math.round(weatherData.daily.temperature_2m_max[0]),
+        windSpeed: Math.round(weatherData.daily.wind_speed_10m_max[0]),
         sunrise: weatherData.daily.sunrise[0],
         sunset: weatherData.daily.sunset[0],
-        weatherCode: weatherData.current.weather_code,
+        weatherCode: weatherData.daily.weather_code[0],
         lastUpdated: new Date().toISOString(),
         locationName: day.location,
+        date: formattedDate,
       };
   
       await firestoreApi.updateShootingDay(day.id, { weather: newWeather });
@@ -132,10 +138,11 @@ function ProductionPageDetail() {
 
         const processedDays = daysData.map(day => {
           const weather = day.weather;
-          const isStale = !weather || !weather.lastUpdated || !isSameDay(new Date(weather.lastUpdated), new Date());
           const locationMismatch = weather && weather.locationName !== day.location;
-          
-          if ((isStale || locationMismatch) && day.latitude && day.longitude) {
+          const dateMismatch = weather && weather.date !== format(day.date, 'yyyy-MM-dd');
+          const shouldUpdateWeather = !weather || locationMismatch || dateMismatch;
+
+          if (shouldUpdateWeather && day.latitude && day.longitude) {
             fetchAndUpdateWeather(day);
           }
 
