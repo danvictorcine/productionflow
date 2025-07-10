@@ -244,7 +244,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                 {isFetchingWeather ? (
                   <Skeleton className="h-full w-full" />
                 ) : day.weather ? (
-                  <WeatherCard weather={day.weather} shootingDate={day.date} />
+                  <WeatherCard weather={day.weather} remainingDaylight={remainingTime} />
                 ) : (
                   <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                      <p className="text-sm font-semibold">Sem dados de clima</p>
@@ -277,15 +277,6 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                                 <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
                             </p>
                             {totalDuration && <Badge variant="secondary">{totalDuration} de duração</Badge>}
-                            {remainingTime && (
-                                <div className="pt-2">
-                                     <p className="text-sm font-semibold flex items-center justify-center gap-1.5">
-                                        <Hourglass className="h-4 w-4 text-primary" />
-                                        Tempo Restante
-                                     </p>
-                                     <p className="text-xl font-bold text-foreground">{remainingTime}</p>
-                                </div>
-                            )}
                         </div>
                     ) : (
                          <div className="text-center text-sm text-muted-foreground">

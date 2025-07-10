@@ -6,11 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import {
   Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, CloudSnow,
-  Wind, Sunrise, Sunset, Haze, CloudFog, CloudSun
+  Wind, Sunrise, Sunset, Haze, CloudFog, CloudSun, Hourglass
 } from "lucide-react";
 
 interface WeatherCardProps {
   weather: WeatherInfo;
+  remainingDaylight: string | null;
 }
 
 const getWeatherIcon = (code: number) => {
@@ -48,22 +49,33 @@ const getWeatherDescription = (code: number): string => {
 };
 
 
-export function WeatherCard({ weather }: WeatherCardProps) {
+export function WeatherCard({ weather, remainingDaylight }: WeatherCardProps) {
   return (
     <Card className="relative bg-card/50 h-full">
       <CardContent className="flex flex-col justify-between p-4 h-full">
-        <div className="flex items-start justify-around">
-            <div className="flex flex-col items-center gap-1">
+        <div className="flex items-start justify-between">
+            <div className="flex flex-col items-center gap-1 w-1/3 text-center">
                 {getWeatherIcon(weather.weatherCode)}
                 <p className="text-xs font-medium text-muted-foreground">{getWeatherDescription(weather.weatherCode)}</p>
             </div>
-            <div className="text-center">
+            <div className="text-center w-1/3">
                 <p className="text-4xl font-bold">{weather.temperature}°C</p>
                 <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
                     <Wind className="h-4 w-4" />
                     <p className="text-sm">{weather.windSpeed} km/h</p>
                 </div>
             </div>
+            {remainingDaylight ? (
+                 <div className="text-center w-1/3">
+                    <p className="text-sm font-semibold flex items-center justify-center gap-1.5 text-primary">
+                      <Hourglass className="h-4 w-4" />
+                      Restante
+                    </p>
+                    <p className="text-xl font-bold text-foreground">{remainingDaylight}</p>
+                </div>
+            ) : (
+                 <div className="w-1/3" />
+            )}
         </div>
         
         <div className="mt-2 grid grid-cols-2 gap-2 w-full text-xs text-muted-foreground">

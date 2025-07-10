@@ -136,26 +136,28 @@ function ProductionPageDetail() {
             return [];
         };
 
-        const processedDays = daysData.map(day => {
-          const weather = day.weather;
-          const locationMismatch = weather && weather.locationName !== day.location;
-          const dateMismatch = weather && weather.date !== format(day.date, 'yyyy-MM-dd');
-          const shouldUpdateWeather = !weather || locationMismatch || dateMismatch;
-
-          if (shouldUpdateWeather && day.latitude && day.longitude) {
-            fetchAndUpdateWeather(day);
-          }
-
-          return {
-              ...day,
-              equipment: convertNotesToItems(day.equipment),
-              costumes: convertNotesToItems(day.costumes),
-              props: convertNotesToItems(day.props),
-              generalNotes: convertNotesToItems(day.generalNotes),
-          };
-        });
+        const processedDays = daysData.map(day => ({
+          ...day,
+          equipment: convertNotesToItems(day.equipment),
+          costumes: convertNotesToItems(day.costumes),
+          props: convertNotesToItems(day.props),
+          generalNotes: convertNotesToItems(day.generalNotes),
+        }));
 
         setShootingDays(processedDays);
+
+        // Fetch weather for days that need it
+        processedDays.forEach(day => {
+            const weather = day.weather;
+            const locationMismatch = weather && weather.locationName !== day.location;
+            const dateMismatch = weather && weather.date !== format(day.date, 'yyyy-MM-dd');
+            const shouldUpdateWeather = !weather || locationMismatch || dateMismatch;
+
+            if (shouldUpdateWeather && day.latitude && day.longitude) {
+              fetchAndUpdateWeather(day);
+            }
+        });
+
       } else {
         toast({ variant: 'destructive', title: 'Erro', description: 'Produção não encontrada.' });
         router.push('/');
