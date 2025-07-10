@@ -1,3 +1,4 @@
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -52,11 +53,11 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
 
   return (
     <div className="py-2">
-        <h4 className="flex items-center text-md font-semibold">
-            <Icon className="h-4 w-4 mr-2 text-primary" />
+        <h4 className="flex items-center text-lg font-semibold">
+            <Icon className="h-5 w-5 mr-2 text-primary" />
             {title}
         </h4>
-        <div className="text-sm text-muted-foreground whitespace-pre-wrap pt-1 pl-6">{content}</div>
+        <div className="text-base text-muted-foreground whitespace-pre-wrap pt-1 pl-7">{content}</div>
     </div>
   );
 };
@@ -75,19 +76,19 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate }: { icon: Re
 
     return (
         <div className="py-2">
-            <h4 className="flex items-center text-md font-semibold">
-                <Icon className="h-4 w-4 mr-2 text-primary" />
+            <h4 className="flex items-center text-lg font-semibold">
+                <Icon className="h-5 w-5 mr-2 text-primary" />
                 {title}
             </h4>
-            <div className="space-y-2 pt-1 pl-6">
+            <div className="space-y-2 pt-1 pl-7">
                 {items.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-2">
+                    <div key={item.id} className="flex items-center space-x-3">
                         <Checkbox
                             id={`${item.id}-checkbox`}
                             checked={item.checked}
                             onCheckedChange={(checked) => handleCheckChange(item.id, !!checked)}
                         />
-                        <Label htmlFor={`${item.id}-checkbox`} className={`text-sm font-normal ${item.checked ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                        <Label htmlFor={`${item.id}-checkbox`} className={`text-base font-normal ${item.checked ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                             {item.text}
                         </Label>
                     </div>
@@ -101,22 +102,22 @@ const SceneCard = ({ scene }: { scene: Scene }) => (
     <div className="p-4 rounded-lg border bg-background/50 space-y-3">
         <div className="flex justify-between items-center">
             <div className="flex items-baseline gap-2">
-                <h5 className="font-bold text-lg text-foreground">{scene.sceneNumber}</h5>
-                <p className="font-semibold text-primary">{scene.title}</p>
+                <h5 className="font-bold text-xl text-foreground">{scene.sceneNumber}</h5>
+                <p className="font-semibold text-lg text-primary">{scene.title}</p>
             </div>
-            <Badge variant="outline">{scene.pages} pág.</Badge>
+            <Badge variant="outline" className="text-sm">{scene.pages} pág.</Badge>
         </div>
         <div className="pl-2 space-y-3">
             <div className="flex items-start gap-2">
-                <AlignLeft className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <p className="text-sm text-muted-foreground">{scene.description}</p>
+                <AlignLeft className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
+                <p className="text-base text-muted-foreground">{scene.description}</p>
             </div>
              {scene.presentInScene && scene.presentInScene.length > 0 && (
                 <div className="flex items-start gap-2">
-                    <Users className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <Users className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
                     <div className="flex flex-wrap gap-1">
                         {scene.presentInScene.map(member => (
-                            <Badge key={member.id} variant="secondary" className="font-normal">{member.name}</Badge>
+                            <Badge key={member.id} variant="secondary" className="font-normal text-sm">{member.name}</Badge>
                         ))}
                     </div>
                 </div>
@@ -197,12 +198,12 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                   <Calendar className="h-6 w-6" />
                 </div>
                 <div>
-                    <h3 className="text-lg font-semibold leading-none tracking-tight">
+                    <h3 className="text-xl font-semibold leading-none tracking-tight">
                         {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
                         {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
                     </h3>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1.5 pt-1">
-                      <MapPin className="h-3 w-3" /> {day.location}
+                    <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
+                      <MapPin className="h-4 w-4" /> {day.location}
                     </p>
                 </div>
             </div>
@@ -273,10 +274,10 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                     </CardHeader>
                     {day.startTime && day.endTime ? (
                         <div className="space-y-2">
-                            <p className="text-muted-foreground">
+                            <p className="text-muted-foreground text-lg">
                                 <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
                             </p>
-                            {totalDuration && <Badge variant="secondary">{totalDuration} de duração</Badge>}
+                            {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
                         </div>
                     ) : (
                          <div className="text-center text-sm text-muted-foreground">
@@ -293,13 +294,13 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
             <div className="space-y-4">
                 {/* Logistics Section */}
                 <div className="p-4 border rounded-lg space-y-2">
-                    <h4 className="font-semibold text-lg flex items-center"><Hash className="h-5 w-5 mr-2 text-primary"/>Logística e Segurança</h4>
+                    <h4 className="font-semibold text-xl flex items-center"><Hash className="h-6 w-6 mr-2 text-primary"/>Logística e Segurança</h4>
                     <StaticDetailSection icon={ParkingCircle} title="Estacionamento" content={day.parkingInfo} />
                     <StaticDetailSection icon={Utensils} title="Refeição" content={day.mealTime} />
                     <StaticDetailSection icon={Radio} title="Rádios" content={day.radioChannels} />
                     {day.nearestHospital && day.nearestHospital.name && (
                          <StaticDetailSection icon={Hospital} title="Hospital Mais Próximo" content={
-                            <div className="space-y-1">
+                            <div className="space-y-1 text-base">
                                 <p><span className="font-semibold text-foreground">Nome:</span> {day.nearestHospital.name}</p>
                                 <p><span className="font-semibold text-foreground">Endereço:</span> {day.nearestHospital.address}</p>
                                 <p><span className="font-semibold text-foreground">Telefone:</span> {day.nearestHospital.phone}</p>
@@ -310,44 +311,44 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
 
                 {/* Call Times */}
                 <div>
-                    <h4 className="flex items-center text-lg font-semibold mb-2">
-                        <Clock className="h-5 w-5 mr-2 text-primary" />
+                    <h4 className="flex items-center text-xl font-semibold mb-2">
+                        <Clock className="h-6 w-6 mr-2 text-primary" />
                         Horários de Chamada
                     </h4>
                      {Array.isArray(day.callTimes) && day.callTimes.length > 0 ? (
                         <Table>
                             <TableHeader>
-                                <TableRow><TableHead>Departamento/Pessoa</TableHead><TableHead className="text-right">Horário</TableHead></TableRow>
+                                <TableRow><TableHead className="text-base">Departamento/Pessoa</TableHead><TableHead className="text-right text-base">Horário</TableHead></TableRow>
                             </TableHeader>
                             <TableBody>
                                 {day.callTimes.map(ct => (
-                                    <TableRow key={ct.id}><TableCell>{ct.department}</TableCell><TableCell className="text-right">{ct.time}</TableCell></TableRow>
+                                    <TableRow key={ct.id}><TableCell className="text-base">{ct.department}</TableCell><TableCell className="text-right text-base">{ct.time}</TableCell></TableRow>
                                 ))}
                             </TableBody>
                         </Table>
                      ) : (
-                        <p className="text-sm text-muted-foreground pl-6">Nenhum horário de chamada definido.</p>
+                        <p className="text-base text-muted-foreground pl-6">Nenhum horário de chamada definido.</p>
                      )}
                 </div>
 
                  {/* Scenes */}
                 <div>
-                     <h4 className="flex items-center text-lg font-semibold mb-2">
-                        <Film className="h-5 w-5 mr-2 text-primary" />
+                     <h4 className="flex items-center text-xl font-semibold mb-2">
+                        <Film className="h-6 w-6 mr-2 text-primary" />
                         Cenas a Gravar
                     </h4>
                     <div className="space-y-3">
                         {Array.isArray(day.scenes) && day.scenes.length > 0 ? (
                             day.scenes.map(scene => <SceneCard key={scene.id} scene={scene} />)
                         ) : (
-                             <p className="text-sm text-muted-foreground pl-6">Nenhuma cena definida para hoje.</p>
+                             <p className="text-base text-muted-foreground pl-6">Nenhuma cena definida para hoje.</p>
                         )}
                     </div>
                 </div>
 
                 {/* Department Notes */}
                 <div className="p-4 border rounded-lg space-y-2">
-                     <h4 className="font-semibold text-lg flex items-center"><Users className="h-5 w-5 mr-2 text-primary"/>Notas dos Departamentos</h4>
+                     <h4 className="font-semibold text-xl flex items-center"><Users className="h-6 w-6 mr-2 text-primary"/>Notas dos Departamentos</h4>
                      <ChecklistSection icon={Truck} title="Equipamentos" items={day.equipment} onListUpdate={(list) => onUpdateNotes(day.id, 'equipment', list)} />
                      <ChecklistSection icon={Shirt} title="Figurino" items={day.costumes} onListUpdate={(list) => onUpdateNotes(day.id, 'costumes', list)} />
                      <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={day.props} onListUpdate={(list) => onUpdateNotes(day.id, 'props', list)} />
@@ -360,10 +361,10 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                         day.presentTeam && day.presentTeam.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
                                 {day.presentTeam.map(member => (
-                                    <Badge key={member.id} variant="secondary" className="font-normal">{member.name} <span className="text-muted-foreground ml-1.5">({member.role})</span></Badge>
+                                    <Badge key={member.id} variant="secondary" className="font-normal text-base">{member.name} <span className="text-muted-foreground ml-1.5">({member.role})</span></Badge>
                                 ))}
                             </div>
-                        ) : <p className="text-sm text-muted-foreground">Nenhuma equipe selecionada para este dia.</p>
+                        ) : <p className="text-base text-muted-foreground">Nenhuma equipe selecionada para este dia.</p>
                     }/>
                 </div>
             </div>
