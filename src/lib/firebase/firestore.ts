@@ -559,15 +559,7 @@ export const deleteBoardItem = async (itemId: string) => {
     const itemData = itemSnap.data();
     // If it's an image with a Firebase Storage URL, delete it from storage first
     if (itemData.type === 'image' && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
-      try {
-        const imageRef = ref(storage, itemData.content);
-        await deleteObject(imageRef);
-      } catch (error: any) {
-        // If file doesn't exist or other error, log it but don't block deletion of firestore doc
-        if (error.code !== 'storage/object-not-found') {
-          console.error("Could not delete image from storage:", error);
-        }
-      }
+      await deleteImageFromUrl(itemData.content);
     }
   }
 
@@ -687,7 +679,8 @@ export const updatePage = async (pageId: 'about' | 'contact' | 'terms', data: Pa
 };
 
 export const uploadAboutTeamMemberPhoto = async (file: File, memberId: string): Promise<string> => {
-  const filePath = `pages/about/team/${memberId}-${file.name}`;
+  const userId = getUserId();
+  const filePath = `users/${userId}/about_team/${memberId}-${file.name}`;
   const storageRef = ref(storage, filePath);
   await uploadBytes(storageRef, file);
   return await getDownloadURL(storageRef);
@@ -736,6 +729,7 @@ export const uploadLoginBackground = async (file: File): Promise<string> => {
 
 export const deleteImageFromUrl = async (url: string): Promise<void> => {
   if (!url.includes('firebasestorage.googleapis.com')) {
+    console.warn("Attempted to delete a non-Firebase Storage URL:", url);
     return;
   }
 
@@ -747,6 +741,7 @@ export const deleteImageFromUrl = async (url: string): Promise<void> => {
       console.warn(`Image for deletion not found in storage: ${url}`);
     } else {
       console.error(`Error deleting image from storage: ${url}`, error);
+      throw error;
     }
   }
 };

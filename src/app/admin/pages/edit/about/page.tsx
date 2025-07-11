@@ -104,10 +104,6 @@ export default function EditAboutPage() {
         const file = event.target.files[0];
 
         try {
-            const options = { maxSizeMB: 0.5, maxWidthOrHeight: 512, useWebWorker: true };
-            const compressedFile = await imageCompression(file, options);
-            const url = await firestoreApi.uploadAboutTeamMemberPhoto(compressedFile, memberId);
-
             const oldUrl = getValues(`team.${memberIndex}.photoUrl`);
             if (oldUrl) {
                 try {
@@ -116,11 +112,19 @@ export default function EditAboutPage() {
                     console.warn("Could not delete old member image, continuing...", deleteError);
                 }
             }
-            
+
+            const options = { maxSizeMB: 0.5, maxWidthOrHeight: 512, useWebWorker: true };
+            const compressedFile = await imageCompression(file, options);
+            const url = await firestoreApi.uploadAboutTeamMemberPhoto(compressedFile, memberId);
+
             setValue(`team.${memberIndex}.photoUrl`, url, { shouldDirty: true });
             toast({ title: 'Foto do membro atualizada!' });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro no Upload' });
+            toast({ 
+                variant: 'destructive', 
+                title: 'Erro no Upload',
+                description: 'Não foi possível enviar a foto. Verifique as permissões de armazenamento.',
+            });
         } finally {
             setUploadingImageId(null);
             if (event.target) event.target.value = "";
