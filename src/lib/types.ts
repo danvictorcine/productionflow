@@ -89,6 +89,12 @@ export type LoginFeature = {
   order: number;
 };
 
+export type LoginPageContent = {
+  features: LoginFeature[];
+  backgroundImageUrl?: string;
+  isBackgroundEnabled?: boolean;
+};
+
 
 // New types for Production (Call Sheet) Module
 export type TeamMember = {

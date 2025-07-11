@@ -17,7 +17,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -681,50 +681,43 @@ export const updatePage = async (pageId: 'about' | 'contact' | 'terms', data: Om
 
 // === Login Page Features ===
 
-export const getLoginFeatures = async (): Promise<LoginFeature[]> => {
-  const featuresCollection = collection(db, 'login_features');
-  const q = query(featuresCollection, orderBy('order', 'asc'));
-  const querySnapshot = await getDocs(q);
-  
-  const features = querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-  } as LoginFeature));
+export const getLoginPageContent = async (): Promise<LoginPageContent> => {
+  const docRef = doc(db, 'pages', 'login');
+  const docSnap = await getDoc(docRef);
 
-  // If no features exist, populate with default hardcoded values
-  if (features.length === 0) {
-    const defaultFeatures = [
-      { title: 'Orçamento Inteligente', description: 'Controle seu orçamento, despesas e saldo em tempo real, com gráficos claros e detalhados.', icon: 'DollarSign', order: 0 },
-      { title: 'Gestão de Equipe Completa', description: 'Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.', icon: 'Users', order: 1 },
-      { title: 'Ordem do Dia Detalhada', description: 'Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.', icon: 'Clapperboard', order: 2 },
-      { title: 'Relatórios Simplificados', description: 'Exporte relatórios financeiros e de produção para Excel e PDF com um clique.', icon: 'FileSpreadsheet', order: 3 },
-    ];
-    // This is a read operation, we don't write defaults here.
-    // The admin panel will be responsible for the first write.
-    return defaultFeatures.map((f, i) => ({...f, id: `default-${i}`}));
+  if (docSnap.exists()) {
+    return docSnap.data() as LoginPageContent;
   }
 
-  return features;
+  // Return default hardcoded values if nothing exists in Firestore
+  return {
+    features: [
+      { title: 'Orçamento Inteligente', description: 'Controle seu orçamento, despesas e saldo em tempo real, com gráficos claros e detalhados.', icon: 'DollarSign', order: 0, id: 'default-0' },
+      { title: 'Gestão de Equipe Completa', description: 'Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.', icon: 'Users', order: 1, id: 'default-1' },
+      { title: 'Ordem do Dia Detalhada', description: 'Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.', icon: 'Clapperboard', order: 2, id: 'default-2' },
+      { title: 'Relatórios Simplificados', description: 'Exporte relatórios financeiros e de produção para Excel e PDF com um clique.', icon: 'FileSpreadsheet', order: 3, id: 'default-3' },
+    ],
+    backgroundImageUrl: '',
+    isBackgroundEnabled: false,
+  };
 };
 
-export const saveLoginFeatures = async (features: Omit<LoginFeature, 'id'>[]) => {
-  const batch = writeBatch(db);
-  const featuresCollection = collection(db, 'login_features');
-  
-  // First, delete all existing features to handle reordering and deletions
-  const existingDocs = await getDocs(query(featuresCollection));
-  existingDocs.forEach(doc => {
-    batch.delete(doc.ref);
-  });
-  
-  // Then, add the new set of features
-  features.forEach((feature, index) => {
-    const newDocRef = doc(featuresCollection);
-    batch.set(newDocRef, { ...feature, order: index });
-  });
-  
-  await batch.commit();
+export const saveLoginPageContent = async (content: Omit<LoginPageContent, 'features'> & { features: Omit<LoginFeature, 'id'>[] }) => {
+  const docRef = doc(db, 'pages', 'login');
+  const dataToSave = {
+    ...content,
+    features: content.features.map((feature, index) => ({...feature, order: index}))
+  }
+  await setDoc(docRef, dataToSave, { merge: true });
 };
+
+export const uploadLoginBackground = async (file: File): Promise<string> => {
+  const filePath = `pages/login/background.jpg`; // Fixed name to auto-replace
+  const storageRef = ref(storage, filePath);
+  await uploadBytes(storageRef, file);
+  return await getDownloadURL(storageRef);
+}
+
 
 export const deleteImageFromUrl = async (url: string): Promise<void> => {
   if (!url.includes('firebasestorage.googleapis.com')) {

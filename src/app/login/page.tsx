@@ -15,7 +15,7 @@ import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/context/auth-context';
 import { useTheme } from "next-themes";
 import * as firestoreApi from '@/lib/firebase/firestore';
-import type { Post, LoginFeature } from '@/lib/types';
+import type { Post, LoginPageContent } from '@/lib/types';
 import { featureIcons } from '@/lib/icons';
 
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,8 @@ import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -58,11 +59,10 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { user, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [isBlogLoading, setIsBlogLoading] = useState(true);
-  const [isFeaturesLoading, setIsFeaturesLoading] = useState(true);
+  const [isContentLoading, setIsContentLoading] = useState(true);
   const { setTheme } = useTheme();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [features, setFeatures] = useState<LoginFeature[]>([]);
+  const [loginPageContent, setLoginPageContent] = useState<LoginPageContent | null>(null);
 
   useEffect(() => {
     if (!loading && user) {
@@ -72,21 +72,19 @@ export default function LoginPage() {
 
   useEffect(() => {
     const fetchContent = async () => {
-        setIsBlogLoading(true);
-        setIsFeaturesLoading(true);
+        setIsContentLoading(true);
         try {
-            const [latestPosts, loginFeatures] = await Promise.all([
+            const [latestPosts, content] = await Promise.all([
                 firestoreApi.getPosts(2),
-                firestoreApi.getLoginFeatures()
+                firestoreApi.getLoginPageContent()
             ]);
             setPosts(latestPosts);
-            setFeatures(loginFeatures);
+            setLoginPageContent(content);
         } catch (error) {
             console.error("Failed to fetch page content:", error);
             toast({ variant: 'destructive', title: 'Erro ao carregar conteúdo da página.'});
         } finally {
-            setIsBlogLoading(false);
-            setIsFeaturesLoading(false);
+            setIsContentLoading(false);
         }
     };
     fetchContent();
@@ -146,83 +144,103 @@ export default function LoginPage() {
   if (loading || user) {
       return null;
   }
+  
+  const showBackground = loginPageContent?.isBackgroundEnabled && loginPageContent?.backgroundImageUrl;
 
   return (
     <div className="flex flex-col min-h-screen">
         <div className="w-full lg:grid lg:grid-cols-2 flex-1">
-          <div className="hidden bg-muted lg:flex lg:flex-col lg:items-center lg:justify-center p-8 relative">
-            <div className="mx-auto w-full max-w-md space-y-4 text-center">
-                <div className="flex items-center justify-center gap-3">
-                  <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
-                      <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
-                      <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
-                  </svg>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-4xl font-bold text-foreground tracking-tighter">ProductionFlow</h1>
-                    <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
-                  </div>
-                </div>
-                <p className="text-lg text-muted-foreground">
-                    Sua plataforma completa para a gestão financeira de produções audiovisuais.
-                </p>
-            </div>
-            <div className="mt-12 grid gap-8 w-full max-w-md">
-                {isFeaturesLoading ? (
-                    [...Array(4)].map((_, i) => <FeatureCardSkeleton key={i} />)
-                ) : (
-                    features.map(feature => (
-                        <div key={feature.id} className="flex items-start gap-4">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                                {featureIcons[feature.icon] ? React.cloneElement(featureIcons[feature.icon], { className: 'h-6 w-6' }) : <DollarSign className="h-6 w-6" />}
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold">{feature.title}</h3>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    {feature.description}
-                                </p>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
-             <div className="mt-8 w-full max-w-md">
-                {(isBlogLoading || posts.length > 0) && (
-                    <>
-                        <h3 className="mb-4 text-center text-lg font-semibold tracking-tight text-foreground">Últimas do Blog</h3>
-                        {isBlogLoading ? (
-                            <div className="grid grid-cols-2 gap-4">
-                                <Skeleton className="h-36 w-full rounded-lg" />
-                                <Skeleton className="h-36 w-full rounded-lg" />
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-2 gap-4">
-                                {posts.map(post => {
-                                    const plainTextContent = stripHtml(post.content);
-                                    const snippet = plainTextContent.substring(0, 60) + (plainTextContent.length > 60 ? '...' : '');
+          <div className={cn(
+            "hidden bg-muted lg:flex lg:flex-col lg:items-center lg:justify-center p-8 relative",
+            showBackground && "bg-cover bg-center"
+          )}>
+            {showBackground && (
+                <>
+                    <Image
+                        src={loginPageContent.backgroundImageUrl!}
+                        alt="Background"
+                        layout="fill"
+                        objectFit="cover"
+                        className="z-0"
+                    />
+                    <div className="absolute inset-0 bg-black/50 z-10"></div>
+                </>
+            )}
 
-                                    return (
-                                    <Link key={post.id} href={`/blog#${post.id}`} className="block group">
-                                        <Card className="h-full hover:bg-background/50 transition-colors flex flex-col justify-between p-4">
-                                            <div>
-                                                <CardTitle className="text-base font-semibold leading-tight line-clamp-2">{post.title}</CardTitle>
-                                                <CardDescription className="text-xs mt-1">
-                                                    {format(post.createdAt, "dd MMM, yyyy", { locale: ptBR })}
-                                                </CardDescription>
-                                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                                                    {snippet}
-                                                </p>
-                                            </div>
-                                            <div className="text-xs font-semibold text-primary group-hover:underline flex items-center gap-1 mt-2">
-                                                Leia mais <ArrowRight className="h-3 w-3" />
-                                            </div>
-                                        </Card>
-                                    </Link>
-                                    )
-                                })}
+            <div className="z-20 w-full h-full flex flex-col items-center justify-center overflow-y-auto">
+                <div className="mx-auto w-full max-w-md space-y-4 text-center">
+                    <div className="flex items-center justify-center gap-3">
+                      <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
+                          <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
+                          <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
+                      </svg>
+                      <div className="flex items-center gap-2">
+                        <h1 className={cn("text-4xl font-bold tracking-tighter", showBackground ? "text-white" : "text-foreground")}>ProductionFlow</h1>
+                        <Badge variant="outline" className={cn(showBackground && "bg-black/20 text-white border-white/50")}>BETA</Badge>
+                      </div>
+                    </div>
+                    <p className={cn("text-lg", showBackground ? "text-slate-200" : "text-muted-foreground")}>
+                        Sua plataforma completa para a gestão financeira de produções audiovisuais.
+                    </p>
+                </div>
+                <div className="mt-12 grid gap-8 w-full max-w-md">
+                    {isContentLoading ? (
+                        [...Array(4)].map((_, i) => <FeatureCardSkeleton key={i} />)
+                    ) : (
+                        loginPageContent?.features.map(feature => (
+                            <div key={feature.id} className="flex items-start gap-4">
+                                <div className={cn("flex h-12 w-12 items-center justify-center rounded-full flex-shrink-0", showBackground ? "bg-white/10 text-white" : "bg-primary/10 text-primary")}>
+                                    {featureIcons[feature.icon] ? React.cloneElement(featureIcons[feature.icon], { className: 'h-6 w-6' }) : <DollarSign className="h-6 w-6" />}
+                                </div>
+                                <div className={cn(showBackground && "text-slate-200")}>
+                                    <h3 className={cn("text-lg font-semibold", showBackground && "text-white")}>{feature.title}</h3>
+                                    <p className="mt-1 text-sm">
+                                        {feature.description}
+                                    </p>
+                                </div>
                             </div>
-                        )}
-                    </>
-                )}
+                        ))
+                    )}
+                </div>
+                 <div className="mt-8 w-full max-w-md">
+                    {(isContentLoading || posts.length > 0) && (
+                        <>
+                            <h3 className={cn("mb-4 text-center text-lg font-semibold tracking-tight", showBackground ? "text-white" : "text-foreground")}>Últimas do Blog</h3>
+                            {isContentLoading ? (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Skeleton className="h-36 w-full rounded-lg bg-white/10" />
+                                    <Skeleton className="h-36 w-full rounded-lg bg-white/10" />
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-4">
+                                    {posts.map(post => {
+                                        const plainTextContent = stripHtml(post.content);
+                                        const snippet = plainTextContent.substring(0, 60) + (plainTextContent.length > 60 ? '...' : '');
+
+                                        return (
+                                        <Link key={post.id} href={`/blog#${post.id}`} className="block group">
+                                            <Card className={cn("h-full hover:bg-background/50 transition-colors flex flex-col justify-between p-4", showBackground && "bg-white/5 hover:bg-white/10 text-slate-200 border-white/20")}>
+                                                <div>
+                                                    <CardTitle className={cn("text-base font-semibold leading-tight line-clamp-2", showBackground && "text-white")}>{post.title}</CardTitle>
+                                                    <CardDescription className="text-xs mt-1">
+                                                        {format(post.createdAt, "dd MMM, yyyy", { locale: ptBR })}
+                                                    </CardDescription>
+                                                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                                        {snippet}
+                                                    </p>
+                                                </div>
+                                                <div className="text-xs font-semibold text-primary group-hover:underline flex items-center gap-1 mt-2">
+                                                    Leia mais <ArrowRight className="h-3 w-3" />
+                                                </div>
+                                            </Card>
+                                        </Link>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
           </div>
           <div className="relative flex flex-col py-6 px-4">

@@ -1,19 +1,21 @@
+
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, PlusCircle, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 
 import { AppFooter } from '@/components/app-footer';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import * as firestoreApi from '@/lib/firebase/firestore';
-import type { LoginFeature } from '@/lib/types';
+import type { LoginFeature, LoginPageContent } from '@/lib/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +24,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { featureIcons, type FeatureIconName } from '@/lib/icons';
+import { Switch } from '@/components/ui/switch';
+import Image from 'next/image';
 
 const featureSchema = z.object({
     id: z.string(),
@@ -32,43 +36,118 @@ const featureSchema = z.object({
 
 const formSchema = z.object({
   features: z.array(featureSchema),
+  backgroundImageUrl: z.string().optional(),
+  isBackgroundEnabled: z.boolean().optional(),
 });
 
 export default function EditLoginPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | undefined>('');
+
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
-        defaultValues: { features: [] },
+        defaultValues: { 
+            features: [],
+            backgroundImageUrl: '',
+            isBackgroundEnabled: false,
+        },
     });
 
-    const { control, handleSubmit } = form;
+    const { control, handleSubmit, setValue, watch } = form;
     const { fields, append, remove, move } = useFieldArray({
         control,
         name: "features",
     });
 
+    const backgroundImageUrl = watch('backgroundImageUrl');
+
     useEffect(() => {
-        firestoreApi.getLoginFeatures()
-            .then(features => {
-                form.reset({ features });
+        firestoreApi.getLoginPageContent()
+            .then(content => {
+                form.reset({ 
+                    features: content.features,
+                    backgroundImageUrl: content.backgroundImageUrl || '',
+                    isBackgroundEnabled: content.isBackgroundEnabled || false
+                });
+                setPreviewUrl(content.backgroundImageUrl);
             })
             .catch(() => {
-                toast({ variant: 'destructive', title: 'Erro ao carregar features.' });
+                toast({ variant: 'destructive', title: 'Erro ao carregar conteúdo da página de login.' });
             })
             .finally(() => setIsLoading(false));
     }, [form, toast]);
 
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files?.[0]) return;
+        
+        setIsUploading(true);
+        const file = event.target.files[0];
+
+        try {
+            const options = {
+                maxSizeMB: 2,
+                maxWidthOrHeight: 1920,
+                useWebWorker: true,
+            };
+            const compressedFile = await imageCompression(file, options);
+            const url = await firestoreApi.uploadLoginBackground(compressedFile);
+            
+            // Delete old image if it exists
+            if (backgroundImageUrl) {
+                try {
+                    await firestoreApi.deleteImageFromUrl(backgroundImageUrl);
+                } catch (deleteError) {
+                    console.warn("Could not delete old background image, continuing...", deleteError);
+                }
+            }
+
+            setValue('backgroundImageUrl', url, { shouldDirty: true });
+            setPreviewUrl(url);
+            toast({ title: 'Imagem de fundo enviada com sucesso!' });
+        } catch (error) {
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro no Upload',
+                description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
+            });
+        } finally {
+            setIsUploading(false);
+            if(fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
+    const handleRemoveImage = async () => {
+        if (!backgroundImageUrl) return;
+
+        try {
+            await firestoreApi.deleteImageFromUrl(backgroundImageUrl);
+            setValue('backgroundImageUrl', '', { shouldDirty: true });
+            setPreviewUrl('');
+            toast({ title: 'Imagem de fundo removida.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Erro ao remover imagem.' });
+        }
+    };
+
+
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSaving(true);
         try {
-            // Remove a 'id' temporária 'default-x' antes de salvar
             const featuresToSave = values.features.map(({ id, ...rest }) => rest);
-            await firestoreApi.saveLoginFeatures(featuresToSave);
+            const contentToSave: Omit<LoginPageContent, 'features'> & { features: Omit<LoginFeature, 'id'>[] } = {
+                features: featuresToSave,
+                backgroundImageUrl: values.backgroundImageUrl || '',
+                isBackgroundEnabled: values.isBackgroundEnabled || false,
+            };
+            await firestoreApi.saveLoginPageContent(contentToSave);
             toast({ title: 'Página de login atualizada com sucesso!' });
             router.push('/admin/pages');
         } catch (error) {
@@ -110,7 +189,52 @@ export default function EditLoginPage() {
             <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                  <Form {...form}>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                        
+                        <div className="space-y-4 p-4 border rounded-lg">
+                            <h3 className="text-lg font-medium">Imagem de Fundo</h3>
+                             <FormField
+                                control={control}
+                                name="isBackgroundEnabled"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <FormLabel>Habilitar Imagem de Fundo</FormLabel>
+                                            <p className="text-[0.8rem] text-muted-foreground">
+                                                Exibe a imagem carregada como fundo da seção de features.
+                                            </p>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="flex items-center gap-4">
+                                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                                    {backgroundImageUrl ? "Substituir Imagem" : "Enviar Imagem"}
+                                </Button>
+                                {backgroundImageUrl && (
+                                    <Button type="button" variant="destructive" onClick={handleRemoveImage}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Remover
+                                    </Button>
+                                )}
+                                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                            </div>
+                            {previewUrl && (
+                                <div className="mt-4 relative w-full h-48 rounded-md overflow-hidden border">
+                                    <Image src={previewUrl} alt="Prévia da imagem de fundo" layout="fill" objectFit="cover" />
+                                </div>
+                            )}
+                        </div>
+                        
+
                         <Alert>
+                          <ImageIcon className="h-4 w-4" />
                           <AlertTitle>Gerenciando Cards de Features</AlertTitle>
                           <AlertDescription>
                             Adicione, remova, edite e reordene os cards que aparecem na página de login para destacar as funcionalidades do seu app.
@@ -188,7 +312,7 @@ export default function EditLoginPage() {
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Adicionar Novo Card
                             </Button>
-                            <Button type="submit" disabled={isSaving}>
+                            <Button type="submit" disabled={isSaving || isUploading}>
                                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar Alterações
                             </Button>
