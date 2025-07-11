@@ -2,29 +2,35 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // --- User Profile Photos ---
-    // Anyone can read profile photos.
-    // An authenticated user can only write/update/delete their own profile photo.
+    
+    // Regras de Perfil de Usuário
     match /users/{userId}/profile.jpg {
       allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-
-    // --- Content Images (Blog Posts, Pages) ---
-    // Anyone can read these images.
-    // Only authenticated users who are admins can write/delete these images.
-    // This allows an admin to manage all site content.
-    match /{folder}/{allPaths=**}
-      where folder in ['posts', 'pages', 'users'] {
+    
+    // Regras para conteúdo gerenciado por administradores
+    // (Blog, Página "Quem Somos", Página de Login, etc.)
+    match /{path=**}/about_team/{allPaths=**} {
       allow read;
-      allow write: if request.auth != null &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
     }
 
-    // Default deny all other paths
-    match /{allPaths=**} {
-      allow read, write: if false;
+    match /posts/images/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+    
+    match /pages/login/background.jpg {
+      allow read;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+    
+    // Regras para conteúdo de projetos do usuário
+    // (Moodboard)
+    match /board_images/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
