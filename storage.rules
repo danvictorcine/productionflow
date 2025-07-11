@@ -2,21 +2,40 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // User profile photos: anyone can read, only the user can write.
+
+    // Helper function to check for admin role from Firestore
+    function isAdmin() {
+      return get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+  
+    // User profile photos: Only the user can upload/update their own photo. Anyone can read.
     match /users/{userId}/profile.jpg {
-      allow read;
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Blog post images: anyone can read, only admins can write.
-    match /posts/images/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    // Post images: Only admins can upload. Anyone can read.
+    match /posts/images/{imageId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
     
-    // Moodboard images: only the owner can read/write their own images.
-    match /board_images/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Login page background: Only admins can upload. Anyone can read.
+    match /pages/login/background.jpg {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
+
+    // "About Us" page team member photos: Only admins can upload. Anyone can read.
+    match /pages/about/team/{photoId} {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
+
+    // Board images for creative projects: Only the project owner can upload. Anyone with link can read.
+    match /board_images/{userId}/{imageId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

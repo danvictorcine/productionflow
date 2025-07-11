@@ -3,67 +3,49 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if the user is an admin
+    // Helper function to check for admin role
     function isAdmin() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Users: Any authenticated user can read profiles (needed for admin checks), 
-    // but only the owner can update or create their own profile.
+    // --- User Profiles ---
+    // Users can read/update their own profile. Admins can read any profile.
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read, update: if request.auth.uid == userId;
+      allow read: if isAdmin();
     }
 
-    // Posts: anyone can read, but only admins can write/delete.
-    match /posts/{postId} {
-      allow read;
-      allow create, update, delete: if request.auth != null && isAdmin();
-    }
-    
-    // Pages (About, Contact, etc.): anyone can read, but only admins can write.
-    match /pages/{pageId} {
-      allow read;
-      allow write: if request.auth != null && isAdmin();
-    }
-
-    // Login Features: anyone can read, but only admins can write.
-    match /login_features/{featureId} {
-      allow read;
-      allow create, update, delete: if request.auth != null && isAdmin();
-    }
-    
-    // Project Data: Financial, Production, Creative, and their children
-    
+    // --- Core Project Data ---
+    // All project types and their sub-collections are only accessible by their owner.
     match /projects/{projectId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
+      allow read, write, delete: if request.auth.uid == resource.data.userId;
     }
-    
     match /transactions/{transactionId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
+      allow read, write, delete: if request.auth.uid == resource.data.userId;
     }
-    
     match /productions/{productionId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
+      allow read, write, delete: if request.auth.uid == resource.data.userId;
     }
-
     match /shooting_days/{dayId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
+      allow read, write, delete: if request.auth.uid == resource.data.userId;
     }
-
-    match /creative_projects/{projectId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
+    match /creative_projects/{creativeProjectId} {
+       allow read, write, delete: if request.auth.uid == resource.data.userId;
     }
-
     match /board_items/{itemId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
+       allow read, write, delete: if request.auth.uid == resource.data.userId;
+    }
+
+    // --- Public Content (Blog & Pages) ---
+    // Anyone can read posts and public-facing pages.
+    // Only admins can create, update, or delete them.
+    match /posts/{postId} {
+      allow read: if true;
+      allow write, delete: if isAdmin();
+    }
+    match /pages/{pageId} {
+       allow read: if true;
+       allow write, delete: if isAdmin();
     }
   }
 }
