@@ -1,52 +1,59 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // User Profiles: Read-only for all, owner can update, admin can write.
+    // User Profiles
     match /users/{userId} {
-      allow read;
+      // Authenticated users can read any profile, needed for security rule checks
+      allow read: if request.auth != null;
+      // Users can only update their own profile
       allow update: if request.auth != null && request.auth.uid == userId;
-      allow create, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      // Admins can write to any profile
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Public content (Pages, Posts): Readable by all, writable only by admins.
+    // Site pages (About, Contact, etc.)
     match /pages/{pageId} {
-      allow read;
+      allow read: if true;
       allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    // Blog posts
     match /posts/{postId} {
-      allow read;
+      allow read: if true;
       allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Projects: User-specific data. Owner has full access.
+    // Projects (financial)
     match /projects/{projectId} {
-      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // User can only access their own projects
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
+    // Transactions, a sub-collection of projects
     match /transactions/{transactionId} {
-      // Allow read/write if the user ID on the transaction matches the authenticated user.
+      // User can only access transactions if the new/updated transaction belongs to them
       allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
-    // Production Data: User-specific. Owner has full access.
+    // Production (Call Sheet) data
     match /productions/{productionId} {
-       allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+       allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
     match /shooting_days/{dayId} {
-       allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow read, write: if request.auth != null && get(/databases/$(database)/documents/productions/$(resource.data.productionId)).data.userId == request.auth.uid;
     }
     
-    // Creative Projects: User-specific. Owner has full access.
+    // Creative Projects (Moodboard) data
     match /creative_projects/{creativeProjectId} {
-        allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
     match /board_items/{itemId} {
-       allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+       allow read, write: if request.auth != null && get(/databases/$(database)/documents/creative_projects/$(resource.data.projectId)).data.userId == request.auth.uid;
     }
   }
 }
