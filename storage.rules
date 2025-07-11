@@ -2,35 +2,21 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Regras de Perfil de Usuário
+
+    // Rule for User Profile Photos
+    // Allow anyone to read.
+    // Allow a user to write/delete only their own profile photo.
     match /users/{userId}/profile.jpg {
       allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Regras para conteúdo gerenciado por administradores
-    // (Blog, Página "Quem Somos", Página de Login, etc.)
-    match /{path=**}/about_team/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+      allow write, delete: if request.auth != null && request.auth.uid == userId;
     }
 
-    match /posts/images/{allPaths=**} {
+    // Rule for all Admin-managed content (blog images, team photos, login background, etc.)
+    // Allow anyone to read.
+    // Allow only authenticated administrators to write/delete.
+    match /content/{allPaths=**} {
       allow read;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true;
-    }
-    
-    match /pages/login/background.jpg {
-      allow read;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true;
-    }
-    
-    // Regras para conteúdo de projetos do usuário
-    // (Moodboard)
-    match /board_images/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write, delete: if request.auth != null && request.auth.token.isAdmin == true;
     }
   }
 }

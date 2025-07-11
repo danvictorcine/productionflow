@@ -570,7 +570,7 @@ export const uploadImageForBoard = async (file: File): Promise<string> => {
   const timestamp = new Date().getTime();
   const randomString = Math.random().toString(36).substring(2, 8);
   const fileName = `${timestamp}-${randomString}-${file.name}`;
-  const filePath = `board_images/${getUserId()}/${fileName}`;
+  const filePath = `content/board_images/${getUserId()}/${fileName}`;
   const storageRef = ref(storage, filePath);
   
   await uploadBytes(storageRef, file);
@@ -639,7 +639,7 @@ export const uploadImageForPost = async (file: File): Promise<string> => {
   const timestamp = new Date().getTime();
   const randomString = Math.random().toString(36).substring(2, 8);
   const fileName = `${timestamp}-${randomString}-${file.name}`;
-  const filePath = `posts/images/${fileName}`;
+  const filePath = `content/posts_images/${fileName}`;
   const storageRef = ref(storage, filePath);
   
   await uploadBytes(storageRef, file);
@@ -679,8 +679,7 @@ export const updatePage = async (pageId: 'about' | 'contact' | 'terms', data: Pa
 };
 
 export const uploadAboutTeamMemberPhoto = async (file: File, memberId: string): Promise<string> => {
-  const userId = getUserId();
-  const filePath = `users/${userId}/about_team/${memberId}-${file.name}`;
+  const filePath = `content/team_photos/${memberId}-${file.name}`;
   const storageRef = ref(storage, filePath);
   await uploadBytes(storageRef, file);
   return await getDownloadURL(storageRef);
@@ -720,7 +719,7 @@ export const saveLoginPageContent = async (content: Omit<LoginPageContent, 'feat
 };
 
 export const uploadLoginBackground = async (file: File): Promise<string> => {
-  const filePath = `pages/login/background.jpg`; // Fixed name to auto-replace
+  const filePath = `content/login_background/background.jpg`; // Fixed name to auto-replace
   const storageRef = ref(storage, filePath);
   await uploadBytes(storageRef, file);
   return await getDownloadURL(storageRef);
