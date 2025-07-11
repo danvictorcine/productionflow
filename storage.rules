@@ -1,23 +1,23 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // Rule for user profile pictures
-    // Anyone can read, but only the authenticated owner can write.
+    
+    // User profile photos: allow users to read anyone's photo, but only write to their own.
     match /users/{userId}/profile.jpg {
-      allow read;
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Rule for general content (blog images, page images, etc.)
-    // Anyone can read these public images.
-    // Only authenticated users who are administrators can write (upload/delete).
-    // The rule now checks the user's profile in Firestore to confirm admin status.
+    // Public content (post images, team photos, background images, etc.)
+    // Anyone can read. Only authenticated admins can write/delete.
+    // The exists() check is crucial to prevent the get() call from failing on a non-existent document, which would deny permission.
     match /content/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null &&
-                      get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow read: if true;
+      allow write: if request.auth != null && 
+                     exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+                     get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
   }
 }
