@@ -3,39 +3,28 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Regra geral para negar leitura/escrita por padrão
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
-
-    // Usuários podem ler fotos de perfil, mas só escrever na sua própria.
+    // --- User Profile Photos ---
+    // Anyone can read profile photos.
+    // An authenticated user can only write/update/delete their own profile photo.
     match /users/{userId}/profile.jpg {
-      allow read: if true;
+      allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Admins podem gerenciar fotos da equipe na página "Quem Somos"
-    match /users/{userId}/about_team/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true && request.auth.uid == userId;
+
+    // --- Content Images (Blog Posts, Pages) ---
+    // Anyone can read these images.
+    // Only authenticated users who are admins can write/delete these images.
+    // This allows an admin to manage all site content.
+    match /{folder}/{allPaths=**}
+      where folder in ['posts', 'pages', 'users'] {
+      allow read;
+      allow write: if request.auth != null &&
+                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Admins podem gerenciar imagens do blog e de páginas
-    match /posts/images/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true;
-    }
-    
-    // Admins podem gerenciar imagens do background da página de login
-    match /pages/login/background.jpg {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true;
-    }
-    
-    // Admins podem gerenciar imagens para os quadros criativos
-    match /board_images/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true && request.auth.uid == userId;
+    // Default deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
