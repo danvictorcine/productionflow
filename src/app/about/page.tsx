@@ -118,6 +118,9 @@ export default function AboutPage() {
                                     />
                                     <h3 className="text-xl font-semibold mt-4">{member.name}</h3>
                                     <p className="text-base text-primary">{member.role}</p>
+                                    {member.bio && (
+                                        <p className="text-sm text-muted-foreground mt-2">{member.bio}</p>
+                                    )}
                                 </CardContent>
                             </Card>
                         ))}

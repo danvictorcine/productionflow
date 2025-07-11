@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 
 const QuillEditor = dynamic(() => import('react-quill'), { 
     ssr: false,
@@ -35,6 +36,7 @@ const teamMemberSchema = z.object({
     name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres."),
     role: z.string().min(2, "O cargo deve ter pelo menos 2 caracteres."),
     photoUrl: z.string().optional(),
+    bio: z.string().optional(),
 });
 
 const pageContentSchema = z.object({
@@ -257,6 +259,13 @@ export default function EditAboutPage() {
                                         <FormField control={control} name={`team.${index}.role`} render={({ field }) => (
                                             <FormItem><FormLabel>Cargo/Função</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                         )}/>
+                                        <FormField control={control} name={`team.${index}.bio`} render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Bio <span className="text-xs text-muted-foreground">(Opcional)</span></FormLabel>
+                                                <FormControl><Textarea placeholder="Uma breve descrição sobre o membro da equipe." {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}/>
                                     </div>
                                     <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => remove(index)}>
                                         <Trash2 className="h-4 w-4" />
@@ -264,7 +273,7 @@ export default function EditAboutPage() {
                                 </div>
                             ))}
                         </div>
-                        <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), name: '', role: '', photoUrl: '' })}>
+                        <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), name: '', role: '', photoUrl: '', bio: '' })}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Adicionar Membro da Equipe
                         </Button>

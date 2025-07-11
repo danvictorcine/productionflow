@@ -79,6 +79,7 @@ export type AboutPageTeamMember = {
   name: string;
   role: string;
   photoUrl?: string;
+  bio?: string;
 };
 
 export type AboutPageContent = {
