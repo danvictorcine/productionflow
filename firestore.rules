@@ -2,54 +2,54 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check for admin role
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    
+    // User Profiles:
+    // - Anyone can read user profiles (for names, photos, etc.)
+    // - A user can update their own profile.
+    // - An admin can write to any user profile.
+    match /users/{userId} {
+      allow read: if true;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Users can read/update their own profile. Admins can access any.
-    match /users/{userId} {
-      allow read, update: if request.auth.uid == userId || isAdmin();
-      allow create: if request.auth.uid == userId;
-    }
-    
-    // Public pages can be read by anyone, but only written by admins.
+    // Pages (about, contact, etc.): Read by anyone, written by admins.
     match /pages/{pageId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
-    
-    // Blog posts can be read by anyone, but only written by admins.
+
+    // Posts: Read by anyone, written by admins.
     match /posts/{postId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
-    
-    // Users can only access their own project-related data.
+
+    // Financial Projects and their transactions: Only accessible by the owner.
     match /projects/{projectId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      
+      match /transactions/{transactionId} {
+        allow read, write: if request.auth != null && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid;
+      }
     }
     
-    match /transactions/{transactionId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-    
+    // Production (Call Sheet) data: Only accessible by the owner.
     match /productions/{productionId} {
-       allow read, write: if request.auth.uid == resource.data.userId;
+       allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
     match /shooting_days/{dayId} {
-       allow read, write: if request.auth.uid == resource.data.userId;
+        allow read, write: if request.auth != null && get(/databases/$(database)/documents/productions/$(resource.data.productionId)).data.userId == request.auth.uid;
     }
     
-    match /creative_projects/{projectId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
+    // Creative Projects (Moodboard) data: Only accessible by the owner.
+    match /creative_projects/{creativeProjectId} {
+        allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
     match /board_items/{itemId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
+       allow read, write: if request.auth != null && get(/databases/$(database)/documents/creative_projects/$(resource.data.projectId)).data.userId == request.auth.uid;
     }
-    
   }
 }
