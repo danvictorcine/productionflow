@@ -2,23 +2,54 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Pages (about, contact, terms) and Posts: Anyone can read, only admins can write.
-    match /(pages|posts)/{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+  
+    // Helper function to check for admin role
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // User Profiles: Users can manage their own profile. Admins can manage any.
+    // Users can read/update their own profile. Admins can access any.
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+      allow read, update: if request.auth.uid == userId || isAdmin();
+      allow create: if request.auth.uid == userId;
     }
-
-    // Projects, Transactions, Productions, Shooting Days, Creative Projects, Board Items:
-    // Users can only access documents they own.
-    match /(projects|transactions|productions|shooting_days|creative_projects|board_items)/{documentId} {
-      allow read, write, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    
+    // Public pages can be read by anyone, but only written by admins.
+    match /pages/{pageId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
+    
+    // Blog posts can be read by anyone, but only written by admins.
+    match /posts/{postId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Users can only access their own project-related data.
+    match /projects/{projectId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+    }
+    
+    match /transactions/{transactionId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+    }
+    
+    match /productions/{productionId} {
+       allow read, write: if request.auth.uid == resource.data.userId;
+    }
+    
+    match /shooting_days/{dayId} {
+       allow read, write: if request.auth.uid == resource.data.userId;
+    }
+    
+    match /creative_projects/{projectId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+    }
+    
+    match /board_items/{itemId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+    }
+    
   }
 }
