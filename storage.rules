@@ -1,37 +1,41 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-  
-    // Helper function to check for admin role
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+
+    // Regra geral para negar leitura/escrita por padrão
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
-    
-    // User Profile Photos: Anyone can read, only the user can write
+
+    // Usuários podem ler fotos de perfil, mas só escrever na sua própria.
     match /users/{userId}/profile.jpg {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Board Images: Only the owner of the project can upload/delete
-    match /board_images/{userId}/{fileName} {
-      allow read: if true; // Public read for anyone with the link
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Post Images: Public read, only admins can write
-    match /posts/images/{fileName} {
+    // Admins podem gerenciar fotos da equipe na página "Quem Somos"
+    match /users/{userId}/about_team/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if request.auth != null && request.auth.token.isAdmin == true && request.auth.uid == userId;
+    }
+
+    // Admins podem gerenciar imagens do blog e de páginas
+    match /posts/images/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
     }
     
-    // Page Images (About Us team photos, Login background): Public read, only admins can write
-    match /pages/{path=**} {
-        allow read: if true;
-        allow write: if isAdmin();
+    // Admins podem gerenciar imagens do background da página de login
+    match /pages/login/background.jpg {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+    
+    // Admins podem gerenciar imagens para os quadros criativos
+    match /board_images/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true && request.auth.uid == userId;
     }
   }
 }
