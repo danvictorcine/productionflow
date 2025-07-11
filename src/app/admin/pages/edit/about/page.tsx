@@ -102,23 +102,21 @@ export default function EditAboutPage() {
         
         setUploadingImageId(memberId);
         const file = event.target.files[0];
+        const oldUrl = getValues(`team.${memberIndex}.photoUrl`);
 
         try {
-            const oldUrl = getValues(`team.${memberIndex}.photoUrl`);
-            if (oldUrl) {
-                try {
-                    await firestoreApi.deleteImageFromUrl(oldUrl);
-                } catch (deleteError) {
-                    console.warn("Could not delete old member image, continuing...", deleteError);
-                }
-            }
-
             const options = { maxSizeMB: 0.5, maxWidthOrHeight: 512, useWebWorker: true };
             const compressedFile = await imageCompression(file, options);
             const url = await firestoreApi.uploadAboutTeamMemberPhoto(compressedFile, memberId);
 
             setValue(`team.${memberIndex}.photoUrl`, url, { shouldDirty: true });
             toast({ title: 'Foto do membro atualizada!' });
+            
+            // Delete old photo *after* successful upload
+            if (oldUrl) {
+                await firestoreApi.deleteImageFromUrl(oldUrl);
+            }
+
         } catch (error) {
             toast({ 
                 variant: 'destructive', 
