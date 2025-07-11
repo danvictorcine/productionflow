@@ -13,7 +13,7 @@ service firebase.storage {
     // Anyone can read. Only admins can write/delete.
     match /content/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && get(/databases/(default)/documents/users/ + request.auth.uid).data.isAdmin == true;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
   }
 }
