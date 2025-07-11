@@ -17,7 +17,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, AboutPageContent } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -656,28 +656,43 @@ export const uploadImageForPost = async (file: File): Promise<string> => {
   return downloadURL;
 };
 
-export const getPage = async (pageId: 'about' | 'contact' | 'terms'): Promise<PageContent | null> => {
+export const getPage = async (pageId: 'about' | 'contact' | 'terms'): Promise<any | null> => {
   const pageRef = doc(db, 'pages', pageId);
   const pageSnap = await getDoc(pageRef);
 
   if (pageSnap.exists()) {
     const data = pageSnap.data();
-    return {
+    const result: PageContent = {
       id: pageSnap.id,
       ...data,
       updatedAt: (data.updatedAt as Timestamp).toDate(),
     } as PageContent
+    
+    // For 'about' page, ensure team array exists
+    if (result.id === 'about' && !result.team) {
+      result.team = [];
+    }
+
+    return result;
   }
   return null;
 };
 
-export const updatePage = async (pageId: 'about' | 'contact' | 'terms', data: Omit<PageContent, 'id' | 'updatedAt'>) => {
+export const updatePage = async (pageId: 'about' | 'contact' | 'terms', data: Partial<PageContent>) => {
   const pageRef = doc(db, 'pages', pageId);
   await setDoc(pageRef, {
     ...data,
     updatedAt: Timestamp.now(),
   }, { merge: true });
 };
+
+export const uploadAboutTeamMemberPhoto = async (file: File, memberId: string): Promise<string> => {
+  const filePath = `pages/about/team/${memberId}-${file.name}`;
+  const storageRef = ref(storage, filePath);
+  await uploadBytes(storageRef, file);
+  return await getDownloadURL(storageRef);
+}
+
 
 // === Login Page Features ===
 

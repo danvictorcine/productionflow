@@ -20,6 +20,8 @@ import * as firestoreApi from '@/lib/firebase/firestore';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
+import type { PageContent } from '@/lib/types';
+
 
 const pageContentSchema = z.object({
     content: z.string().min(10, { message: 'O conteúdo deve ter pelo menos 10 caracteres.' }),
@@ -41,10 +43,6 @@ const getImageUrlsFromDelta = (delta: any): string[] => {
 };
 
 const DEFAULT_CONTENT = {
-    about: {
-        title: "Quem Somos",
-        content: `<h2>Nossa Missão</h2><p>Simplificar a gestão de produções audiovisuais, da ideia à finalização.</p><p>ProductionFlow é um produto da <span class="font-semibold text-foreground">Candeeiro Filmes</span>.</p>`
-    },
     contact: {
         title: "Contato",
         content: `<h2>Entre em Contato</h2><p>Estamos aqui para ajudar. Envie um e-mail para <a href="mailto:contato@productionflow.com" class="text-primary hover:underline">contato@productionflow.com</a>.</p>`
@@ -63,7 +61,13 @@ export default function EditPageContentPage() {
     const quillRef = useRef<any>(null);
     const imageSetRef = useRef<Set<string>>(new Set());
 
-    const pageId = params.pageId as 'about' | 'contact' | 'terms';
+    const pageId = params.pageId as 'contact' | 'terms';
+    
+    // Redirect 'about' to its new dedicated editor page
+    if (pageId === 'about') {
+        router.replace('/admin/pages/edit/about');
+        return null; // Render nothing while redirecting
+    }
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -202,7 +206,7 @@ export default function EditPageContentPage() {
         if (!user) return;
         setIsSaving(true);
         try {
-            const pageData = {
+            const pageData: Partial<PageContent> = {
                 ...values,
                 title: pageTitle,
             };
