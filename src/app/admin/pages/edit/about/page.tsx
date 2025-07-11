@@ -111,17 +111,22 @@ export default function EditAboutPage() {
 
         try {
             const options = { maxSizeMB: 0.5, maxWidthOrHeight: 512, useWebWorker: true };
-            const compressedFile = await imageCompression(file, options);
-            
+            const compressedBlob = await imageCompression(file, options);
+            const compressedFile = new File([compressedBlob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+            });
+
             const url = await firestoreApi.uploadAboutTeamMemberPhoto(compressedFile, memberId);
 
             setValue(`team.${memberIndex}.photoUrl`, url, { shouldDirty: true });
-            toast({ title: 'Foto do membro atualizada!' });
             
             // Delete old photo *after* successful upload
             if (oldUrl) {
                 await firestoreApi.deleteImageFromUrl(oldUrl);
             }
+            
+            toast({ title: 'Foto do membro atualizada!' });
 
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
@@ -261,7 +266,7 @@ export default function EditAboutPage() {
                                 <div key={field.id} className="flex items-start gap-4 p-4 border rounded-lg bg-card">
                                     <div className="flex flex-col gap-2 pt-1">
                                         <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={index === 0} onClick={() => move(index, index - 1)}>▲</Button>
-                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={index === fields.length - 1} onClick={() => move(index, index + 1)}>▼</Button>
+                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={index === fields.length - 1} onClick={()={() => move(index, index + 1)}>▼</Button>
                                     </div>
                                     <div className="flex-1 space-y-4">
                                         <div className="flex items-center gap-4">
@@ -315,3 +320,5 @@ export default function EditAboutPage() {
         </div>
     )
 }
+
+    
