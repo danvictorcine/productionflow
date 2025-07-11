@@ -3,11 +3,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // User Profiles
+    // User Profiles:
+    // Allow any authenticated user to read profiles (needed for Storage rules to check isAdmin).
+    // Only the user themselves or an admin can update their profile.
     match /users/{userId} {
       allow read: if request.auth != null;
       allow update: if request.auth != null && request.auth.uid == userId;
-      // Admins should be able to manage users
       allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
@@ -29,7 +30,8 @@ service cloud.firestore {
     }
     
     match /transactions/{transactionId} {
-      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.userId == request.auth.uid;
+      allow write: if request.auth != null && request.data.userId == request.auth.uid;
     }
     
     // Production (Call Sheet) data
@@ -38,7 +40,7 @@ service cloud.firestore {
     }
     
     match /shooting_days/{dayId} {
-        allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow read, write: if request.auth != null && get(/databases/$(database)/documents/productions/$(resource.data.productionId)).data.userId == request.auth.uid;
     }
     
     // Creative Projects (Moodboard) data
@@ -47,7 +49,7 @@ service cloud.firestore {
     }
     
     match /board_items/{itemId} {
-       allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+       allow read, write: if request.auth != null && get(/databases/$(database)/documents/creative_projects/$(resource.data.projectId)).data.userId == request.auth.uid;
     }
   }
 }
