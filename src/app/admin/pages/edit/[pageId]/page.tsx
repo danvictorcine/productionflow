@@ -86,8 +86,13 @@ export default function EditPageContentPage() {
                     setPageTitle(page?.title || defaultData.title);
                     form.reset({ content: page?.content || defaultData.content });
                 })
-                .catch(() => {
-                    toast({ variant: 'destructive', title: 'Erro ao carregar conteúdo da página.' });
+                .catch((error) => {
+                    const errorTyped = error as { code?: string; message: string };
+                    toast({
+                        variant: 'destructive',
+                        title: 'Erro ao carregar página',
+                        description: <CopyableError userMessage="Não foi possível carregar o conteúdo da página." errorCode={errorTyped.code || errorTyped.message} />,
+                    });
                 })
                 .finally(() => setIsLoading(false));
         }

@@ -91,8 +91,13 @@ export default function EditAboutPage() {
                     team: page?.team || defaultContent.team,
                 });
             })
-            .catch(() => {
-                toast({ variant: 'destructive', title: 'Erro ao carregar conteúdo da página.' });
+            .catch((error) => {
+                const errorTyped = error as { code?: string; message: string };
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro ao carregar página',
+                    description: <CopyableError userMessage="Não foi possível carregar o conteúdo da página." errorCode={errorTyped.code || errorTyped.message} />,
+                });
             })
             .finally(() => setIsLoading(false));
     }, [toast, form]);
@@ -107,6 +112,7 @@ export default function EditAboutPage() {
         try {
             const options = { maxSizeMB: 0.5, maxWidthOrHeight: 512, useWebWorker: true };
             const compressedFile = await imageCompression(file, options);
+            
             const url = await firestoreApi.uploadAboutTeamMemberPhoto(compressedFile, memberId);
 
             setValue(`team.${memberIndex}.photoUrl`, url, { shouldDirty: true });
@@ -118,10 +124,11 @@ export default function EditAboutPage() {
             }
 
         } catch (error) {
+            const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
                 title: 'Erro no Upload',
-                description: 'Não foi possível enviar a foto. Verifique as permissões de armazenamento.',
+                description: <CopyableError userMessage="Não foi possível enviar a foto." errorCode={errorTyped.code || errorTyped.message} />,
             });
         } finally {
             setUploadingImageId(null);
@@ -137,7 +144,12 @@ export default function EditAboutPage() {
             setValue(`team.${memberIndex}.photoUrl`, '', { shouldDirty: true });
             toast({ title: 'Foto do membro removida.' });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro ao remover foto.' });
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao remover foto',
+                description: <CopyableError userMessage="Não foi possível remover a foto." errorCode={errorTyped.code || errorTyped.message} />,
+            });
         }
     };
 
@@ -163,7 +175,12 @@ export default function EditAboutPage() {
                 editor.insertEmbed(insertIndex, 'image', url);
                 editor.setSelection(insertIndex + 1);
             } catch (error) {
-                toast({ variant: 'destructive', title: 'Erro no Upload' });
+                const errorTyped = error as { code?: string; message: string };
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro no Upload',
+                    description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
+                });
             } finally {
                 if (input.parentNode) input.parentNode.removeChild(input);
             }
@@ -203,7 +220,12 @@ export default function EditAboutPage() {
             toast({ title: 'Página atualizada com sucesso!' });
             router.push('/admin/pages');
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro ao salvar' });
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao salvar página',
+                description: <CopyableError userMessage="Não foi possível salvar as alterações." errorCode={errorTyped.code || errorTyped.message} />,
+            });
         } finally {
             setIsSaving(false);
         }

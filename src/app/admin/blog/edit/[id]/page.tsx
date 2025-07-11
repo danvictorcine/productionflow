@@ -73,8 +73,13 @@ export default function EditPostPage() {
                         router.push('/admin/blog');
                     }
                 })
-                .catch(() => {
-                    toast({ variant: 'destructive', title: 'Erro ao carregar post.' });
+                .catch((error) => {
+                    const errorTyped = error as { code?: string; message: string };
+                    toast({ 
+                        variant: 'destructive',
+                        title: 'Erro ao carregar post.',
+                        description: <CopyableError userMessage="Não foi possível carregar os dados do post." errorCode={errorTyped.code || errorTyped.message} />,
+                    });
                     router.push('/admin/blog');
                 })
                 .finally(() => setIsLoading(false));

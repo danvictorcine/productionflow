@@ -78,8 +78,13 @@ export default function EditLoginPage() {
                 });
                 setPreviewUrl(content.backgroundImageUrl);
             })
-            .catch(() => {
-                toast({ variant: 'destructive', title: 'Erro ao carregar conteúdo da página de login.' });
+            .catch((error) => {
+                const errorTyped = error as { code?: string; message: string };
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro ao carregar conteúdo',
+                    description: <CopyableError userMessage="Não foi possível carregar os dados da página." errorCode={errorTyped.code || errorTyped.message} />,
+                });
             })
             .finally(() => setIsLoading(false));
     }, [form, toast]);
@@ -133,7 +138,12 @@ export default function EditLoginPage() {
             setPreviewUrl('');
             toast({ title: 'Imagem de fundo removida.' });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro ao remover imagem.' });
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao remover imagem',
+                description: <CopyableError userMessage="Não foi possível remover a imagem de fundo." errorCode={errorTyped.code || errorTyped.message} />,
+            });
         }
     };
 
