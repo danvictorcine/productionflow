@@ -123,7 +123,7 @@ export default function EditPageContentPage() {
                     return;
                 }
 
-                editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Comprimindo...');
+                editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
                 editor.setSelection(insertIndex + 1);
 
                 try {
@@ -132,13 +132,10 @@ export default function EditPageContentPage() {
                         maxWidthOrHeight: 1920,
                         useWebWorker: true,
                     };
-                    const compressedFile = await imageCompression(file, options);
+                    const compressedBlob = await imageCompression(file, options);
+                    const compressedFile = new File([compressedBlob], file.name, { type: file.type, lastModified: Date.now() });
                     
-                    editor.deleteText(insertIndex, 1);
-                    editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
-                    editor.setSelection(insertIndex + 1);
-
-                    const url = await firestoreApi.uploadImageForPost(compressedFile); // Reusing blog image uploader
+                    const url = await firestoreApi.uploadImageForPageContent(compressedFile);
                     editor.deleteText(insertIndex, 1);
                     editor.insertEmbed(insertIndex, 'image', url);
                     editor.setSelection(insertIndex + 1);

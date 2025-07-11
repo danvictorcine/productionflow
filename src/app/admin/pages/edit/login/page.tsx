@@ -101,7 +101,9 @@ export default function EditLoginPage() {
                 maxWidthOrHeight: 1920,
                 useWebWorker: true,
             };
-            const compressedFile = await imageCompression(file, options);
+            const compressedBlob = await imageCompression(file, options);
+            const compressedFile = new File([compressedBlob], file.name, { type: file.type, lastModified: Date.now() });
+
             const url = await firestoreApi.uploadLoginBackground(compressedFile);
             
             // Delete old image if it exists

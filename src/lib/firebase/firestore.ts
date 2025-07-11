@@ -163,7 +163,7 @@ export const updateUserProfile = async (uid: string, data: Partial<Omit<UserProf
     }
 };
 
-export const uploadProfilePhoto = async (uid: string, file: Blob): Promise<string> => {
+export const uploadProfilePhoto = async (uid: string, file: File): Promise<string> => {
     const filePath = `users/${uid}/profile.jpg`;
     const storageRef = ref(storage, filePath);
     await uploadBytes(storageRef, file);
@@ -635,17 +635,15 @@ export const deletePost = async (postId: string) => {
   await deleteDoc(docRef);
 };
 
-export const uploadImageForPost = async (file: File): Promise<string> => {
+export const uploadImageForPageContent = async (file: File): Promise<string> => {
   const timestamp = new Date().getTime();
   const randomString = Math.random().toString(36).substring(2, 8);
   const fileName = `${timestamp}-${randomString}-${file.name}`;
-  const filePath = `content/posts_images/${fileName}`;
+  const filePath = `content/pages/${fileName}`;
   const storageRef = ref(storage, filePath);
   
   await uploadBytes(storageRef, file);
-  const downloadURL = await getDownloadURL(storageRef);
-  
-  return downloadURL;
+  return await getDownloadURL(storageRef);
 };
 
 export const getPage = async (pageId: 'about' | 'contact' | 'terms'): Promise<any | null> => {

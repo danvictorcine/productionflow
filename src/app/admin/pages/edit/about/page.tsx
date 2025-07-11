@@ -176,8 +176,11 @@ export default function EditAboutPage() {
                 const file = input.files[0];
                 const insertIndex = range ? range.index : 0;
                 editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
-                const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
-                const url = await firestoreApi.uploadImageForPost(compressedFile);
+                
+                const compressedBlob = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
+                const compressedFile = new File([compressedBlob], file.name, { type: file.type, lastModified: Date.now() });
+
+                const url = await firestoreApi.uploadImageForPageContent(compressedFile);
                 editor.deleteText(insertIndex, 1);
                 editor.insertEmbed(insertIndex, 'image', url);
                 editor.setSelection(insertIndex + 1);
