@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { AppFooter } from '@/components/app-footer';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Newspaper, Users } from 'lucide-react';
+import { ArrowLeft, BookOpen, Newspaper } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export default function AdminDashboard() {
@@ -42,25 +42,11 @@ export default function AdminDashboard() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <BookOpen className="h-5 w-5 text-primary"/>
-                                    Gerenciar Páginas
+                                    Gerenciar Páginas e Conteúdo
                                 </CardTitle>
-                                <CardDescription>Edite o conteúdo das páginas "Quem Somos", "Contato" e da página de login.</CardDescription>
+                                <CardDescription>Edite o conteúdo das páginas, equipe e página de login.</CardDescription>
                             </CardHeader>
                              <CardContent>
-                                <Button>Acessar</Button>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                    <Link href="/admin/team" className="block">
-                        <Card className="hover:bg-muted/50 transition-colors h-full">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Users className="h-5 w-5 text-primary"/>
-                                    Gerenciar Equipe
-                                </CardTitle>
-                                <CardDescription>Adicione e edite os membros da equipe exibidos na página "Quem Somos".</CardDescription>
-                            </CardHeader>
-                            <CardContent>
                                 <Button>Acessar</Button>
                             </CardContent>
                         </Card>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { AppFooter } from '@/components/app-footer';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookUser, FileSignature, LogIn, Shield } from 'lucide-react';
+import { ArrowLeft, BookUser, FileSignature, LogIn, Shield, Users } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export default function ManagePagesDashboard() {
@@ -16,7 +16,7 @@ export default function ManagePagesDashboard() {
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 </Link>
-                <h1 className="text-xl font-bold">Gerenciar Páginas</h1>
+                <h1 className="text-xl font-bold">Gerenciar Páginas e Conteúdo</h1>
                 <div className="ml-auto flex items-center gap-4">
                     <UserNav />
                 </div>
@@ -34,6 +34,20 @@ export default function ManagePagesDashboard() {
                             </CardHeader>
                             <CardContent>
                                 <Button>Editar</Button>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                     <Link href="/admin/team" className="block">
+                        <Card className="hover:bg-muted/50 transition-colors h-full">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Users className="h-5 w-5 text-primary"/>
+                                    Gerenciar Equipe
+                                </CardTitle>
+                                <CardDescription>Adicione e edite os membros da equipe.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Button>Acessar</Button>
                             </CardContent>
                         </Card>
                     </Link>
