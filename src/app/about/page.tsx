@@ -22,6 +22,13 @@ export default function AboutPage() {
   const [pageContent, setPageContent] = useState<PageContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fallbackContent: PageContent = {
+    id: 'about',
+    title: 'Quem Somos',
+    content: `<h2>Nossa Missão</h2><p>Simplificar a gestão de produções audiovisuais, da ideia à finalização.</p><p>ProductionFlow é um produto da <span class="font-semibold">Candeeiro Filmes</span>.</p>`,
+    updatedAt: new Date(),
+  };
+
   useEffect(() => {
     firestoreApi.getPage('about')
       .then(content => {
@@ -29,12 +36,7 @@ export default function AboutPage() {
           setPageContent(content);
         } else {
           // Fallback content if nothing is in the database yet
-          setPageContent({
-            id: 'about',
-            title: 'Quem Somos',
-            content: `<h2>Nossa Missão</h2><p>Simplificar a gestão de produções audiovisuais, da ideia à finalização.</p><p>ProductionFlow é um produto da <span class="font-semibold">Candeeiro Filmes</span>.</p>`,
-            updatedAt: new Date(),
-          });
+          setPageContent(fallbackContent);
         }
       })
       .catch(error => {
@@ -44,6 +46,7 @@ export default function AboutPage() {
             title: 'Erro em /about/page.tsx',
             description: <CopyableError userMessage="Não foi possível carregar o conteúdo da página." errorCode={errorTyped.code || errorTyped.message} />,
         });
+        setPageContent(fallbackContent);
       })
       .finally(() => setIsLoading(false));
   }, [toast]);
