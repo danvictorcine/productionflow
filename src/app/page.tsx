@@ -89,10 +89,14 @@ function HomePage() {
     if (!user) return;
     setIsLoading(true);
     try {
+      const projectsPromise = firestoreApi.getProjects();
+      const productionsPromise = firestoreApi.getProductions();
+      const creativeProjectsPromise = user.isAdmin ? firestoreApi.getCreativeProjects() : Promise.resolve([]);
+
       const [projects, productions, creativeProjects] = await Promise.all([
-        firestoreApi.getProjects(),
-        firestoreApi.getProductions(),
-        firestoreApi.getCreativeProjects(),
+        projectsPromise,
+        productionsPromise,
+        creativeProjectsPromise,
       ]);
 
       const displayableItems: DisplayableItem[] = [
@@ -281,10 +285,6 @@ function HomePage() {
   };
 
   const renderCards = () => {
-    const displayItems = items.filter(
-      (item) => user?.isAdmin || item.itemType !== 'creative'
-    );
-
     if (isLoading) {
       return (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -295,7 +295,7 @@ function HomePage() {
       );
     }
 
-    if (displayItems.length === 0) {
+    if (items.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
           <Film className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -315,7 +315,7 @@ function HomePage() {
 
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {displayItems.map((item) => {
+        {items.map((item) => {
           let link, Icon, description;
 
           switch (item.itemType) {
