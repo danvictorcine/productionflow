@@ -34,7 +34,9 @@ const QuillEditor = dynamic(() => import('react-quill'), {
 });
 
 const getUrlsFromHtml = (html: string): string[] => {
-  const urls = html.match(/https?:\/\/[^\s"]+/g) || [];
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const images = Array.from(doc.querySelectorAll('img'));
+  const urls = images.map(img => img.src);
   return urls.filter(url => url.includes('firebasestorage.googleapis.com'));
 };
 
@@ -63,7 +65,6 @@ export default function EditPostPage() {
                 .then(post => {
                     if (post) {
                         form.reset({ title: post.title, content: post.content });
-                        // Store the initial image URLs when the post loads
                         initialImageUrlsRef.current = new Set(getUrlsFromHtml(post.content));
                     } else {
                         toast({ variant: 'destructive', title: 'Post não encontrado.' });

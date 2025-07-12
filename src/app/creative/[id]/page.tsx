@@ -232,6 +232,7 @@ function CreativeProjectPageDetail() {
   const { user } = useAuth();
   const { toast } = useToast();
   const imageUploadRef = useRef<HTMLInputElement>(null);
+  const itemCountRef = useRef(0);
 
   const [project, setProject] = useState<CreativeProject | null>(null);
   const [items, setItems] = useState<BoardItem[]>([]);
@@ -256,6 +257,7 @@ function CreativeProjectPageDetail() {
       if (projData) {
         setProject(projData);
         setItems(itemsData);
+        itemCountRef.current = itemsData.length;
       } else {
         toast({ variant: 'destructive', title: 'Erro', description: 'Projeto não encontrado.' });
         router.push('/');
@@ -321,11 +323,14 @@ function CreativeProjectPageDetail() {
 
   const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, items?: ChecklistItem[]) => {
     try {
+      const offset = itemCountRef.current * 20;
+      const newPosition = { x: 50 + offset, y: 50 + offset };
+      
       const newItemData: any = {
         type,
         content,
         size,
-        position: { x: 50, y: 50 },
+        position: newPosition,
       };
 
       if (type === 'checklist' && items) {

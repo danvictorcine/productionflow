@@ -575,23 +575,23 @@ function ProductionPageDetail() {
         </div>
 
         <Accordion type="multiple" defaultValue={['team', ...(shootingDays.length > 0 ? [shootingDays[0].id] : [])]} className="w-full space-y-4">
-            <AccordionItem value="team" className="border-none">
-                <Card>
-                    <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
-                       <CardHeader className="flex-1">
-                           <CardTitle className="flex items-center text-left">
-                               <Users className="h-6 w-6 mr-3 text-primary" />
-                               Equipe e Elenco
-                           </CardTitle>
-                           <CardDescription className="text-left">
-                               Informações detalhadas sobre todos os envolvidos na produção.
-                           </CardDescription>
-                       </CardHeader>
-                    </AccordionTrigger>
-                    <AccordionContent className="p-6 pt-0">
-                        <div className="space-y-4">
-                        {production.team && production.team.length > 0 ? (
-                            production.team.map(member => (
+            {production.team && production.team.length > 0 && (
+                <AccordionItem value="team" className="border-none">
+                    <Card>
+                        <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
+                        <CardHeader className="flex-1">
+                            <CardTitle className="flex items-center text-left">
+                                <Users className="h-6 w-6 mr-3 text-primary" />
+                                Equipe e Elenco
+                            </CardTitle>
+                            <CardDescription className="text-left">
+                                Informações detalhadas sobre todos os envolvidos na produção.
+                            </CardDescription>
+                        </CardHeader>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-6 pt-0">
+                            <div className="space-y-4">
+                            {production.team.map(member => (
                                 <div key={member.id} className="p-3 rounded-md border bg-muted/50">
                                     <div className="flex justify-between items-center">
                                         <div>
@@ -599,7 +599,7 @@ function ProductionPageDetail() {
                                             <p className="text-base text-muted-foreground">{member.role}</p>
                                         </div>
                                     </div>
-                                     {member.contact && (
+                                    {member.contact && (
                                         <div className="mt-2 flex items-start gap-2 text-base p-2 bg-background rounded">
                                             <Phone className="h-4 w-4 mt-1 text-sky-600 flex-shrink-0" />
                                             <div>
@@ -627,14 +627,12 @@ function ProductionPageDetail() {
                                         </div>
                                     )}
                                 </div>
-                            ))
-                        ) : (
-                             <p className="text-base text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado.</p>
-                        )}
-                        </div>
-                    </AccordionContent>
-                </Card>
-            </AccordionItem>
+                            ))}
+                            </div>
+                        </AccordionContent>
+                    </Card>
+                </AccordionItem>
+            )}
 
             {shootingDays.length === 0 && !isLoading ? (
               <div className="text-center p-12 border-2 border-dashed rounded-lg mt-6">

@@ -224,6 +224,7 @@ export default function Dashboard({
   const handleDeleteTalent = async (talentId: string) => {
     const updatedTalents = project.talents.filter(t => t.id !== talentId);
     await onProjectUpdate({ talents: updatedTalents });
+    toast({ title: 'Talento removido com sucesso!'});
   };
   
   const handlePayFixedFeeTalent = async (talent: Talent, transaction: Transaction | undefined) => {
@@ -625,11 +626,12 @@ export default function Dashboard({
         onAddCategory={onAddCategory}
         onUpdateCategory={onUpdateCategory}
         onDeleteCategory={onDeleteCategory}
+        transactions={transactions}
       />
       {selectedTalent && (
         <PayDailyRateDialog
             isOpen={isDailyPaymentOpen}
-            setIsOpen={setDailyPaymentOpen}
+            setIsOpen={setIsOpen}
             talent={selectedTalent}
             transactions={transactions.filter(t => t.talentId === selectedTalent.id)}
             onPay={handlePayDailyRate}

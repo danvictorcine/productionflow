@@ -22,9 +22,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "./ui/alert";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface ManageCategoriesDialogProps {
   isOpen: boolean;
@@ -33,6 +33,7 @@ interface ManageCategoriesDialogProps {
   onAddCategory: (name: string) => Promise<void>;
   onUpdateCategory: (oldName: string, newName: string) => Promise<void>;
   onDeleteCategory: (name: string) => Promise<boolean>; // Returns success status
+  transactions: any[]; // Pass transactions to check if category is in use
 }
 
 export function ManageCategoriesDialog({
@@ -42,10 +43,18 @@ export function ManageCategoriesDialog({
   onAddCategory,
   onUpdateCategory,
   onDeleteCategory,
+  transactions
 }: ManageCategoriesDialogProps) {
   
   const [newCategoryName, setNewCategoryName] = useState("");
   const [editingCategory, setEditingCategory] = useState<{ oldName: string; newName: string } | null>(null);
+
+  const categoryUsage = transactions.reduce((acc, t) => {
+    if (t.category) {
+      acc[t.category] = (acc[t.category] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<string, number>);
 
   const handleAdd = async () => {
     if (!newCategoryName) return;
@@ -97,35 +106,51 @@ export function ManageCategoriesDialog({
         <ScrollArea className="h-[250px] border rounded-md p-2">
             {customCategories.length > 0 ? (
                 <div className="space-y-2">
-                    {customCategories.map(cat => (
-                        <div key={cat} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                            <span className="text-sm">{cat}</span>
-                            <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCategory({ oldName: cat, newName: cat })}>
-                                    <Edit className="h-4 w-4" />
-                                </Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Excluir Categoria?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Você tem certeza que deseja excluir a categoria "{cat}"? Esta ação não pode ser desfeita. Categorias em uso não podem ser excluídas.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDelete(cat)} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </div>
-                    ))}
+                    {customCategories.map(cat => {
+                        const isUsed = (categoryUsage[cat] || 0) > 0;
+                        return (
+                          <div key={cat} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                              <span className="text-sm">{cat}</span>
+                              <div className="flex gap-1">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCategory({ oldName: cat, newName: cat })}>
+                                      <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div tabIndex={isUsed ? 0 : -1}>
+                                          <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isUsed}>
+                                                <Trash2 className="h-4 w-4" />
+                                              </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>Excluir Categoria?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  Você tem certeza que deseja excluir a categoria "{cat}"? Esta ação não pode ser desfeita.
+                                                </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(cat)} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
+                                              </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                          </AlertDialog>
+                                        </div>
+                                      </TooltipTrigger>
+                                      {isUsed && (
+                                        <TooltipContent>
+                                          <p>Esta categoria não pode ser excluída pois está em uso.</p>
+                                        </TooltipContent>
+                                      )}
+                                    </Tooltip>
+                                  </TooltipProvider>
+                              </div>
+                          </div>
+                        )
+                    })}
                 </div>
             ) : (
                 <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
