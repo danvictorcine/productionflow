@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -115,7 +116,6 @@ function ManageThemePageDetail() {
         setIsLoading(true);
         try {
             const savedTheme = await firestoreApi.getThemeSettings();
-            // Merge saved theme with defaults to ensure all keys are present
             const currentTheme = { ...defaultColors, ...(savedTheme || {}) };
             reset(currentTheme);
         } catch (error) {
@@ -232,29 +232,12 @@ function ManageThemePageDetail() {
                             </Card>
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Cores dos Gráficos</CardTitle>
-                                    <CardDescription>Defina as cores para as barras e seções dos gráficos.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {chartColors.map((key) => (
-                                        <div key={key} className="flex items-center justify-between">
-                                            <label htmlFor={key} className="capitalize font-medium">{key.replace('chart', 'Chart ')}</label>
-                                            <div className="flex items-center gap-2">
-                                                <Controller name={key} control={control} render={({ field }) => (<ColorPicker value={field.value} onChange={field.onChange} />)}/>
-                                                <Controller name={key} control={control} render={({ field }) => (<input {...field} className="w-40 p-2 border rounded-md font-mono text-sm bg-muted" readOnly />)} />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader>
                                     <CardTitle>Cores da Marca</CardTitle>
                                     <CardDescription>Personalize a cor da logo "ProductionFlow".</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                      <div className="space-y-3">
-                                        <h4 className="text-sm font-medium">Páginas Internas</h4>
+                                        <h4 className="text-sm font-medium">App e Página de Login</h4>
                                          <div className="flex items-center justify-center p-4 rounded-lg bg-muted">
                                             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
                                                 <rect width="32" height="32" rx="6" style={{fill: `hsl(${watchedColors.brandIcon})`}}/>
@@ -278,7 +261,7 @@ function ManageThemePageDetail() {
                                         </div>
                                      </div>
                                      <div className="space-y-3">
-                                        <h4 className="text-sm font-medium">Login & Carregamento</h4>
+                                        <h4 className="text-sm font-medium">Tela de Carregamento</h4>
                                          <div className="flex items-center justify-center p-4 rounded-lg bg-muted">
                                             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
                                                 <rect width="32" height="32" rx="6" style={{fill: `hsl(${watchedColors.brandLogin})`}}/>
@@ -294,6 +277,23 @@ function ManageThemePageDetail() {
                                             </div>
                                         </div>
                                      </div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Cores dos Gráficos</CardTitle>
+                                    <CardDescription>Defina as cores para as barras e seções dos gráficos.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {chartColors.map((key) => (
+                                        <div key={key} className="flex items-center justify-between">
+                                            <label htmlFor={key} className="capitalize font-medium">{key.replace('chart', 'Chart ')}</label>
+                                            <div className="flex items-center gap-2">
+                                                <Controller name={key} control={control} render={({ field }) => (<ColorPicker value={field.value} onChange={field.onChange} />)}/>
+                                                <Controller name={key} control={control} render={({ field }) => (<input {...field} className="w-40 p-2 border rounded-md font-mono text-sm bg-muted" readOnly />)} />
+                                            </div>
+                                        </div>
+                                    ))}
                                 </CardContent>
                             </Card>
                         </div>
