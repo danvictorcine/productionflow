@@ -19,7 +19,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -185,6 +185,7 @@ export const sendPasswordReset = async (email: string) => {
 export const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
   const data = {
     ...transactionData,
+    userId: getUserId(),
     amount: transactionData.amount,
     date: Timestamp.fromDate(transactionData.date),
     status: transactionData.status || 'planned',
@@ -405,9 +406,11 @@ export const deleteProductionAndDays = async (productionId: string) => {
 
 // === Shooting Day Functions ===
 
-export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'productionId'>) => {
+export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'productionId' | 'userId'>) => {
+  const userId = getUserId();
   await addDoc(collection(db, 'shooting_days'), {
     ...data,
+    userId,
     productionId,
     date: Timestamp.fromDate(data.date),
   });
@@ -723,4 +726,65 @@ export const deleteImageFromUrl = async (url: string): Promise<void> => {
       throw error;
     }
   }
+};
+
+// === Team Members (About Page) Functions ===
+
+export const getTeamMembers = async (): Promise<TeamMemberAbout[]> => {
+  const q = query(collection(db, 'teamMembers'), orderBy('order', 'asc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: (data.createdAt as Timestamp).toDate(),
+    } as TeamMemberAbout;
+  });
+};
+
+export const getTeamMember = async (id: string): Promise<TeamMemberAbout | null> => {
+  const docRef = doc(db, 'teamMembers', id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      ...data,
+      createdAt: (data.createdAt as Timestamp).toDate(),
+    } as TeamMemberAbout;
+  }
+  return null;
+};
+
+export const addTeamMember = async (data: Omit<TeamMemberAbout, 'id' | 'createdAt'>) => {
+  await addDoc(collection(db, 'teamMembers'), {
+    ...data,
+    createdAt: Timestamp.now(),
+  });
+};
+
+export const updateTeamMember = async (id: string, data: Partial<Omit<TeamMemberAbout, 'id' | 'createdAt'>>) => {
+  const docRef = doc(db, 'teamMembers', id);
+  await updateDoc(docRef, data);
+};
+
+export const deleteTeamMember = async (id: string) => {
+  const member = await getTeamMember(id);
+  if (member?.photoURL) {
+    await deleteImageFromUrl(member.photoURL).catch(e => console.error("Could not delete team member photo", e));
+  }
+  const docRef = doc(db, 'teamMembers', id);
+  await deleteDoc(docRef);
+};
+
+export const uploadTeamMemberPhoto = async (file: File): Promise<string> => {
+  const timestamp = new Date().getTime();
+  const randomString = Math.random().toString(36).substring(2, 8);
+  const fileName = `${timestamp}-${randomString}-${file.name}`;
+  const filePath = `team_photos/${fileName}`;
+  const storageRef = ref(storage, filePath);
+  
+  await uploadBytes(storageRef, file);
+  return await getDownloadURL(storageRef);
 };

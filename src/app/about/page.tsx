@@ -13,13 +13,18 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import * as firestoreApi from '@/lib/firebase/firestore';
-import type { PageContent } from '@/lib/types';
+import type { PageContent, TeamMemberAbout } from '@/lib/types';
 import { CopyableError } from '@/components/copyable-error';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/lib/utils';
+
 
 export default function AboutPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [pageContent, setPageContent] = useState<PageContent | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMemberAbout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fallbackContent: PageContent = {
@@ -30,16 +35,18 @@ export default function AboutPage() {
   };
 
   useEffect(() => {
-    firestoreApi.getPage('about')
-      .then(content => {
-        if (content) {
-          setPageContent(content);
-        } else {
-          // Fallback content if nothing is in the database yet
-          setPageContent(fallbackContent);
-        }
-      })
-      .catch(error => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [content, members] = await Promise.all([
+          firestoreApi.getPage('about'),
+          firestoreApi.getTeamMembers()
+        ]);
+        
+        setPageContent(content || fallbackContent);
+        setTeamMembers(members);
+
+      } catch (error) {
         const errorTyped = error as { code?: string; message: string };
         toast({
             variant: 'destructive',
@@ -47,8 +54,11 @@ export default function AboutPage() {
             description: <CopyableError userMessage="Não foi possível carregar o conteúdo da página." errorCode={errorTyped.code || errorTyped.message} />,
         });
         setPageContent(fallbackContent);
-      })
-      .finally(() => setIsLoading(false));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, [toast]);
 
   return (
@@ -74,18 +84,47 @@ export default function AboutPage() {
       </header>
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {isLoading ? (
-          <div className="space-y-4">
+          <div className="space-y-12">
+            <div className="space-y-4">
               <Skeleton className="h-8 w-1/3" />
               <Skeleton className="h-5 w-full" />
               <Skeleton className="h-5 w-5/6" />
+            </div>
+            <div className="space-y-4">
+                <Skeleton className="h-8 w-1/4" />
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-56 rounded-lg" />)}
+                </div>
+            </div>
           </div>
-        ) : pageContent ? (
-          <div
-            className="prose prose-lg dark:prose-invert max-w-none text-foreground"
-            dangerouslySetInnerHTML={{ __html: pageContent.content }}
-          />
         ) : (
-          <p>Conteúdo não encontrado.</p>
+          <>
+            {pageContent && (
+              <div
+                className="prose prose-lg dark:prose-invert max-w-none text-foreground"
+                dangerouslySetInnerHTML={{ __html: pageContent.content }}
+              />
+            )}
+
+            {teamMembers.length > 0 && (
+              <section className="mt-16">
+                <h2 className="text-3xl font-bold tracking-tight text-center mb-10">Nossa Equipe</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                  {teamMembers.map(member => (
+                    <div key={member.id} className="text-center">
+                        <Avatar className="h-32 w-32 mx-auto mb-4">
+                            <AvatarImage src={member.photoURL} alt={member.name} className="object-cover" />
+                            <AvatarFallback className="text-4xl">{getInitials(member.name)}</AvatarFallback>
+                        </Avatar>
+                        <h3 className="text-xl font-semibold">{member.name}</h3>
+                        <p className="text-primary font-medium">{member.role}</p>
+                        <p className="mt-2 text-muted-foreground text-sm">{member.bio}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
       </main>
       <AppFooter />

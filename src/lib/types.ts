@@ -95,6 +95,17 @@ export type LoginPageContent = {
   isBackgroundEnabled?: boolean;
 };
 
+// New type for Team Members on the About Page
+export type TeamMemberAbout = {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  photoURL: string;
+  order: number;
+  createdAt: Date;
+};
+
 
 // New types for Production (Call Sheet) Module
 export type TeamMember = {
@@ -204,5 +215,3 @@ export type BoardItem = {
   size: { width: number | string; height: number | string };
   createdAt: Date;
 };
-
-    
