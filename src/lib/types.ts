@@ -233,4 +233,6 @@ export type ThemeSettings = {
   chart3: string;
   chart4: string;
   chart5: string;
+  brandIcon: string;
+  brandText: string;
 };

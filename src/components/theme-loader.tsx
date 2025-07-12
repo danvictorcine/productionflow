@@ -49,6 +49,8 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
       --chart-3: ${theme.chart3};
       --chart-4: ${theme.chart4};
       --chart-5: ${theme.chart5};
+      --brand-icon: ${theme.brandIcon};
+      --brand-text: ${theme.brandText};
     }
 
     .dark {
@@ -76,6 +78,8 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
       --chart-3: ${theme.chart3};
       --chart-4: ${theme.chart4};
       --chart-5: ${theme.chart5};
+      --brand-icon: ${theme.brandIcon};
+      --brand-text: ${generateInverseVariant(theme.brandText)};
     }
   `;
 

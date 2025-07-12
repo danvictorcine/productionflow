@@ -85,58 +85,104 @@ function HomePage() {
     null
   );
 
-  const fetchItems = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      const projectsPromise = firestoreApi.getProjects();
-      const productionsPromise = firestoreApi.getProductions();
-      // Only fetch creative projects if the user is an admin
-      const creativeProjectsPromise = user.isAdmin ? firestoreApi.getCreativeProjects() : Promise.resolve([]);
-
-      const [projects, productions, creativeProjects] = await Promise.all([
-        projectsPromise,
-        productionsPromise,
-        creativeProjectsPromise,
-      ]);
-
-      const displayableItems: DisplayableItem[] = [
-        ...projects.map((p) => ({ ...p, itemType: 'financial' as const })),
-        ...productions.map((p) => ({ ...p, itemType: 'production' as const })),
-        ...creativeProjects.map((p) => ({
-          ...p,
-          itemType: 'creative' as const,
-        })),
-      ];
-
-      // Client-side sorting as firestore query was simplified
-      displayableItems.sort(
-        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-      );
-
-      setItems(displayableItems);
-    } catch (error) {
-      const errorTyped = error as { code?: string; message: string };
-      toast({
-        variant: 'destructive',
-        title: 'Erro em /page.tsx (fetchItems)',
-        description: (
-          <CopyableError
-            userMessage="Não foi possível carregar seus projetos."
-            errorCode={errorTyped.code || errorTyped.message}
-          />
-        ),
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchItems = async () => {
+      if (!user) return;
+      setIsLoading(true);
+      try {
+        const projectsPromise = firestoreApi.getProjects();
+        const productionsPromise = firestoreApi.getProductions();
+        // Only fetch creative projects if the user is an admin
+        const creativeProjectsPromise = user.isAdmin ? firestoreApi.getCreativeProjects() : Promise.resolve([]);
+
+        const [projects, productions, creativeProjects] = await Promise.all([
+          projectsPromise,
+          productionsPromise,
+          creativeProjectsPromise,
+        ]);
+
+        const displayableItems: DisplayableItem[] = [
+          ...projects.map((p) => ({ ...p, itemType: 'financial' as const })),
+          ...productions.map((p) => ({ ...p, itemType: 'production' as const })),
+          ...creativeProjects.map((p) => ({
+            ...p,
+            itemType: 'creative' as const,
+          })),
+        ];
+
+        // Client-side sorting as firestore query was simplified
+        displayableItems.sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        );
+
+        setItems(displayableItems);
+      } catch (error) {
+        const errorTyped = error as { code?: string; message: string };
+        toast({
+          variant: 'destructive',
+          title: 'Erro em /page.tsx (fetchItems)',
+          description: (
+            <CopyableError
+              userMessage="Não foi possível carregar seus projetos."
+              errorCode={errorTyped.code || errorTyped.message}
+            />
+          ),
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
     if (user) {
       fetchItems();
     }
-  }, [user]);
+  }, [user, toast]);
+
+  const fetchItems = async () => {
+      if (!user) return;
+      setIsLoading(true);
+      try {
+        const projectsPromise = firestoreApi.getProjects();
+        const productionsPromise = firestoreApi.getProductions();
+        // Only fetch creative projects if the user is an admin
+        const creativeProjectsPromise = user.isAdmin ? firestoreApi.getCreativeProjects() : Promise.resolve([]);
+
+        const [projects, productions, creativeProjects] = await Promise.all([
+          projectsPromise,
+          productionsPromise,
+          creativeProjectsPromise,
+        ]);
+
+        const displayableItems: DisplayableItem[] = [
+          ...projects.map((p) => ({ ...p, itemType: 'financial' as const })),
+          ...productions.map((p) => ({ ...p, itemType: 'production' as const })),
+          ...creativeProjects.map((p) => ({
+            ...p,
+            itemType: 'creative' as const,
+          })),
+        ];
+
+        // Client-side sorting as firestore query was simplified
+        displayableItems.sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        );
+
+        setItems(displayableItems);
+      } catch (error) {
+        const errorTyped = error as { code?: string; message: string };
+        toast({
+          variant: 'destructive',
+          title: 'Erro em /page.tsx (fetchItems)',
+          description: (
+            <CopyableError
+              userMessage="Não foi possível carregar seus projetos."
+              errorCode={errorTyped.code || errorTyped.message}
+            />
+          ),
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   const handleSelectProjectType = (
     type: 'financial' | 'production' | 'creative'
@@ -411,14 +457,14 @@ function HomePage() {
             xmlns="http://www.w3.org/2000/svg"
             className="h-8 w-8"
           >
-            <rect width="32" height="32" rx="6" fill="hsl(var(--primary))" />
+            <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))" />
             <path
               d="M22 16L12 22V10L22 16Z"
               fill="hsl(var(--primary-foreground))"
             />
           </svg>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-foreground tracking-tighter">
+            <h1 className="text-2xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>
               ProductionFlow
             </h1>
             <Badge variant="outline" className="text-xs font-normal">
