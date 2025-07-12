@@ -661,7 +661,7 @@ export const getPage = async (pageId: 'about' | 'contact' | 'terms'): Promise<Pa
   return null;
 };
 
-export const updatePage = async (pageId: 'about' | 'contact' | 'terms' | 'about', data: Partial<PageContent | AboutPageContent>) => {
+export const updatePage = async (pageId: 'about' | 'contact' | 'terms', data: Partial<PageContent>) => {
   const pageRef = doc(db, 'pages', pageId);
   await setDoc(pageRef, {
     ...data,
@@ -669,21 +669,6 @@ export const updatePage = async (pageId: 'about' | 'contact' | 'terms' | 'about'
   }, { merge: true });
 };
 
-// Reverted: This function is no longer distinct from getPage
-export const getAboutPageContent = async (): Promise<AboutPageContent | null> => {
-  return getPage('about');
-};
-
-
-export const uploadAboutTeamMemberPhoto = async (file: File, memberId: string): Promise<string> => {
-  const filePath = `content/team_photos/${memberId}-${file.name}`;
-  const storageRef = ref(storage, filePath);
-  await uploadBytes(storageRef, file);
-  return await getDownloadURL(storageRef);
-}
-
-
-// === Login Page Features ===
 
 export const getLoginPageContent = async (): Promise<LoginPageContent> => {
   const docRef = doc(db, 'pages', 'login');
@@ -741,3 +726,5 @@ export const deleteImageFromUrl = async (url: string): Promise<void> => {
     }
   }
 };
+
+    

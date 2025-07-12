@@ -1,22 +1,26 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Deny all by default for security
+    // Nega tudo por padrão.
     match /{allPaths=**} {
       allow read, write: if false;
     }
 
-    // Allow profile photo read by anyone, but only the user can write.
+    // Permite que todos leiam fotos de perfil, mas apenas o dono pode atualizar.
     match /users/{userId}/profile.jpg {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Allow admins to write to the 'content' folder and its subfolders.
-    // Allow anyone to read from the 'content' folder.
+    // Permite que todos leiam o conteúdo (imagens de páginas, etc.).
+    // Apenas administradores podem escrever na pasta 'content'.
+    function isAdmin() {
+      return request.auth != null && get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
     match /content/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow write: if isAdmin();
     }
   }
 }
+    

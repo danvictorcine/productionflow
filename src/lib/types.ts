@@ -79,7 +79,6 @@ export type PageContent = {
   title: string;
   content: string;
   updatedAt: Date;
-  team?: any[]; // Reverted: team property is now optional and generic
 };
 
 export type LoginFeature = {
@@ -206,5 +205,4 @@ export type BoardItem = {
   createdAt: Date;
 };
 
-// Reverted type, can be removed in future cleanup
-export type AboutPageContent = PageContent;
+    
