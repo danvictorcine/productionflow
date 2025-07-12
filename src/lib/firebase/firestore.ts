@@ -44,7 +44,7 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
 
 export const getProjects = async (): Promise<Project[]> => {
   const userId = getUserId();
-  const q = query(collection(db, 'projects'), where('userId', '==', userId));
+  const q = query(collection(db, 'projects'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
   querySnapshot.forEach((doc) => {
@@ -353,7 +353,7 @@ export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'cr
 
 export const getProductions = async (): Promise<Production[]> => {
   const userId = getUserId();
-  const q = query(collection(db, 'productions'), where('userId', '==', userId));
+  const q = query(collection(db, 'productions'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
     const data = doc.data();
@@ -466,7 +466,7 @@ export const addCreativeProject = async (data: Omit<CreativeProject, 'id' | 'use
 
 export const getCreativeProjects = async (): Promise<CreativeProject[]> => {
   const userId = getUserId();
-  const q = query(collection(db, 'creative_projects'), where('userId', '==', userId));
+  const q = query(collection(db, 'creative_projects'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
     const data = doc.data();

@@ -82,6 +82,7 @@ function HomePage() {
         ...creativeProjects.map(p => ({ ...p, itemType: 'creative' as const })),
       ];
 
+      // Client-side sorting
       displayableItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
       setItems(displayableItems);
@@ -98,7 +99,9 @@ function HomePage() {
   };
 
   useEffect(() => {
-    fetchItems();
+    if (user) {
+      fetchItems();
+    }
   }, [user]);
 
   const handleSelectProjectType = (type: 'financial' | 'production' | 'creative') => {
