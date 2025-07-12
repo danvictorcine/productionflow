@@ -1,3 +1,4 @@
+
 // @/components/theme-loader.tsx
 'use client';
 
@@ -5,24 +6,22 @@ import { useEffect, useState } from 'react';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import type { ThemeSettings } from '@/lib/types';
 
-// Function to generate a dark variant for background/foreground colors.
-// It makes light colors dark, and dark colors light.
+// Inverte a luminosidade para o tema escuro, mantendo a saturação
 const generateInverseVariant = (hsl: string): string => {
     if (!hsl) return "";
     const [h, s, l] = hsl.replace(/%/g, '').split(' ').map(Number);
     if (isNaN(h) || isNaN(s) || isNaN(l)) return hsl;
 
-    // A simple inversion of lightness.
+    // Simple lightness inversion
     const newL = 100 - l;
-    // Slightly desaturate to avoid overly vibrant dark backgrounds.
-    const newS = Math.max(0, s - 10);
-
-    return `${h} ${newS}% ${newL}%`;
+    return `${h} ${s}% ${newL}%`;
 };
 
 const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
   if (!theme) return null;
 
+  // Use as cores de branding (primary, accent) para o tema escuro.
+  // Inverte as cores neutras (background, foreground, card, border).
   const styleString = `
     :root {
       --background: ${theme.background};
@@ -51,6 +50,7 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
       --chart-5: ${theme.chart5};
       --brand-icon: ${theme.brandIcon};
       --brand-text: ${theme.brandText};
+      --brand-login: ${theme.brandLogin};
     }
 
     .dark {
@@ -80,6 +80,7 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
       --chart-5: ${theme.chart5};
       --brand-icon: ${theme.brandIcon};
       --brand-text: ${generateInverseVariant(theme.brandText)};
+      --brand-login: ${theme.brandLogin};
     }
   `;
 

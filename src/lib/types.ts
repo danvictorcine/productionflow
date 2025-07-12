@@ -1,3 +1,4 @@
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -235,4 +236,5 @@ export type ThemeSettings = {
   chart5: string;
   brandIcon: string;
   brandText: string;
+  brandLogin?: string;
 };

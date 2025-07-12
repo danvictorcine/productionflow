@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
@@ -113,12 +114,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       <div className="flex items-center justify-center min-h-screen bg-background">
           <div className="flex flex-col items-center gap-4">
              <div className="flex items-center justify-center gap-3">
-                <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
-                    <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
-                    <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
+                <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" style={{color: "hsl(var(--brand-login, var(--primary)))"}}>
+                    <rect width="32" height="32" rx="6" fill="currentColor"/>
+                    <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))" style={{opacity: 0.8}}/>
                 </svg>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-3xl font-bold text-primary tracking-tighter">ProductionFlow</h1>
+                  <h1 className="text-3xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-login, var(--primary)))"}}>ProductionFlow</h1>
                   <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
                 </div>
              </div>

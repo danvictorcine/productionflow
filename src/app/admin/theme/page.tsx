@@ -35,6 +35,7 @@ const defaultColors: ThemeSettings = {
     chart5: '231 48% 88%',
     brandIcon: '231 48% 48%',
     brandText: '240 10% 3.9%',
+    brandLogin: '231 48% 48%',
 };
 
 function hslToHex(h: number, s: number, l: number): string {
@@ -176,7 +177,7 @@ function ManageThemePageDetail() {
 
     const coreColors = ['background', 'foreground', 'card', 'border', 'primary', 'secondary', 'accent', 'destructive'] as const;
     const chartColors = ['chart1', 'chart2', 'chart3', 'chart4', 'chart5'] as const;
-    const brandColors = ['brandIcon', 'brandText'] as const;
+    const brandColors = ['brandIcon', 'brandText', 'brandLogin'] as const;
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -252,28 +253,48 @@ function ManageThemePageDetail() {
                                     <CardTitle>Cores da Marca</CardTitle>
                                     <CardDescription>Personalize a cor da logo "ProductionFlow".</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-4">
-                                     <div className="flex items-center justify-center p-4 rounded-lg bg-muted">
-                                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
-                                            <rect width="32" height="32" rx="6" style={{fill: `hsl(${watchedColors.brandIcon})`}}/>
-                                            <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
-                                        </svg>
-                                        <p className="text-lg font-semibold tracking-tighter ml-2" style={{color: `hsl(${watchedColors.brandText})`}}>ProductionFlow</p>
-                                    </div>
-                                    <div key="brandIcon" className="flex items-center justify-between">
-                                        <label htmlFor="brandIcon" className="capitalize font-medium">Cor do Ícone</label>
-                                        <div className="flex items-center gap-2">
-                                            <Controller name="brandIcon" control={control} render={({ field }) => (<ColorPicker value={field.value} onChange={field.onChange} />)}/>
-                                            <Controller name="brandIcon" control={control} render={({ field }) => (<input {...field} className="w-40 p-2 border rounded-md font-mono text-sm bg-muted" readOnly />)} />
+                                <CardContent className="space-y-6">
+                                     <div className="space-y-3">
+                                        <h4 className="text-sm font-medium">Páginas Internas</h4>
+                                         <div className="flex items-center justify-center p-4 rounded-lg bg-muted">
+                                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
+                                                <rect width="32" height="32" rx="6" style={{fill: `hsl(${watchedColors.brandIcon})`}}/>
+                                                <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
+                                            </svg>
+                                            <p className="text-lg font-semibold tracking-tighter ml-2" style={{color: `hsl(${watchedColors.brandText})`}}>ProductionFlow</p>
                                         </div>
-                                    </div>
-                                    <div key="brandText" className="flex items-center justify-between">
-                                        <label htmlFor="brandText" className="capitalize font-medium">Cor do Texto</label>
-                                        <div className="flex items-center gap-2">
-                                            <Controller name="brandText" control={control} render={({ field }) => (<ColorPicker value={field.value} onChange={field.onChange} />)}/>
-                                            <Controller name="brandText" control={control} render={({ field }) => (<input {...field} className="w-40 p-2 border rounded-md font-mono text-sm bg-muted" readOnly />)} />
+                                        <div key="brandIcon" className="flex items-center justify-between">
+                                            <label htmlFor="brandIcon" className="capitalize font-medium">Cor do Ícone</label>
+                                            <div className="flex items-center gap-2">
+                                                <Controller name="brandIcon" control={control} render={({ field }) => (<ColorPicker value={field.value} onChange={field.onChange} />)}/>
+                                                <Controller name="brandIcon" control={control} render={({ field }) => (<input {...field} className="w-40 p-2 border rounded-md font-mono text-sm bg-muted" readOnly />)} />
+                                            </div>
                                         </div>
-                                    </div>
+                                        <div key="brandText" className="flex items-center justify-between">
+                                            <label htmlFor="brandText" className="capitalize font-medium">Cor do Texto</label>
+                                            <div className="flex items-center gap-2">
+                                                <Controller name="brandText" control={control} render={({ field }) => (<ColorPicker value={field.value} onChange={field.onChange} />)}/>
+                                                <Controller name="brandText" control={control} render={({ field }) => (<input {...field} className="w-40 p-2 border rounded-md font-mono text-sm bg-muted" readOnly />)} />
+                                            </div>
+                                        </div>
+                                     </div>
+                                     <div className="space-y-3">
+                                        <h4 className="text-sm font-medium">Login & Carregamento</h4>
+                                         <div className="flex items-center justify-center p-4 rounded-lg bg-muted">
+                                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
+                                                <rect width="32" height="32" rx="6" style={{fill: `hsl(${watchedColors.brandLogin})`}}/>
+                                                <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))" style={{opacity: 0.8}}/>
+                                            </svg>
+                                            <p className="text-lg font-semibold tracking-tighter ml-2" style={{color: `hsl(${watchedColors.brandLogin})`}}>ProductionFlow</p>
+                                        </div>
+                                        <div key="brandLogin" className="flex items-center justify-between">
+                                            <label htmlFor="brandLogin" className="capitalize font-medium">Cor Unificada</label>
+                                            <div className="flex items-center gap-2">
+                                                <Controller name="brandLogin" control={control} render={({ field }) => (<ColorPicker value={field.value} onChange={field.onChange} />)}/>
+                                                <Controller name="brandLogin" control={control} render={({ field }) => (<input {...field} className="w-40 p-2 border rounded-md font-mono text-sm bg-muted" readOnly />)} />
+                                            </div>
+                                        </div>
+                                     </div>
                                 </CardContent>
                             </Card>
                         </div>
