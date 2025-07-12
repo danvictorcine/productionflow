@@ -1,186 +1,269 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, PlusCircle, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, PlusCircle, Trash2, Camera, User, ArrowUp, ArrowDown } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 
-import type { TeamMemberAbout } from '@/lib/types';
-import * as firestoreApi from '@/lib/firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { UserNav } from '@/components/user-nav';
 import { AppFooter } from '@/components/app-footer';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { UserNav } from '@/components/user-nav';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import * as firestoreApi from '@/lib/firebase/firestore';
+import type { TeamMemberAbout } from '@/lib/types';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { CopyableError } from '@/components/copyable-error';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getInitials } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+const teamMemberSchema = z.object({
+    id: z.string(),
+    name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
+    role: z.string().min(2, { message: 'A função deve ter pelo menos 2 caracteres.' }),
+    bio: z.string().min(10, { message: 'A bio deve ter pelo menos 10 caracteres.' }).max(200, { message: 'A bio não pode ter mais de 200 caracteres.' }),
+    photoURL: z.string().url({ message: 'É necessário enviar uma foto.' }).or(z.literal('')),
+    order: z.number(),
+    file: z.instanceof(File).optional(),
+});
+
+const formSchema = z.object({
+  members: z.array(teamMemberSchema),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 export default function ManageTeamPage() {
+    const router = useRouter();
     const { toast } = useToast();
-    const [members, setMembers] = useState<TeamMemberAbout[]>([]);
+    
     const [isLoading, setIsLoading] = useState(true);
-    const [memberToDelete, setMemberToDelete] = useState<TeamMemberAbout | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
 
-    const fetchMembers = async () => {
-        setIsLoading(true);
-        try {
-            const fetchedMembers = await firestoreApi.getTeamMembers();
-            setMembers(fetchedMembers);
-        } catch (error) {
-            const errorTyped = error as { code?: string; message: string };
-            toast({
-                variant: 'destructive',
-                title: 'Erro em /admin/team/page.tsx (fetchMembers)',
-                description: <CopyableError userMessage="Não foi possível carregar os membros da equipe." errorCode={errorTyped.code || errorTyped.message} />,
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: { 
+            members: [],
+        },
+    });
+
+    const { control, handleSubmit, setValue, watch, trigger } = form;
+    const { fields, append, remove, move } = useFieldArray({
+        control,
+        name: "members",
+    });
+
+    const watchedMembers = watch('members');
 
     useEffect(() => {
-        fetchMembers();
-    }, []);
+        firestoreApi.getTeamMembers()
+            .then(members => {
+                form.reset({ members });
+            })
+            .catch((error) => {
+                const errorTyped = error as { code?: string; message: string };
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro em /admin/team/page.tsx (getTeamMembers)',
+                    description: <CopyableError userMessage="Não foi possível carregar os dados da equipe." errorCode={errorTyped.code || errorTyped.message} />,
+                });
+            })
+            .finally(() => setIsLoading(false));
+    }, [form, toast]);
 
-    const handleConfirmDelete = async () => {
-        if (!memberToDelete) return;
+    const handlePhotoUpload = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files?.[0]) return;
+        
+        const file = event.target.files[0];
+        setValue(`members.${index}.file`, file);
+
+        setIsUploading(prev => ({ ...prev, [index]: true }));
+
         try {
-            await firestoreApi.deleteTeamMember(memberToDelete.id);
-            toast({ title: 'Membro da equipe excluído!' });
-            await fetchMembers();
+            const options = {
+                maxSizeMB: 0.5,
+                maxWidthOrHeight: 512,
+                useWebWorker: true,
+            };
+            const compressedFile = await imageCompression(file, options);
+            const url = await firestoreApi.uploadTeamMemberPhoto(compressedFile);
+            
+            setValue(`members.${index}.photoURL`, url, { shouldDirty: true });
+            trigger(`members.${index}.photoURL`); // Manually trigger validation
+            toast({ title: 'Foto enviada com sucesso!' });
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro em /admin/team/page.tsx (handleConfirmDelete)',
-                description: <CopyableError userMessage="Não foi possível excluir o membro da equipe." errorCode={errorTyped.code || errorTyped.message} />,
+                title: 'Erro de Upload',
+                description: <CopyableError userMessage="Não foi possível enviar a foto." errorCode={errorTyped.code || errorTyped.message} />,
             });
+             setValue(`members.${index}.photoURL`, '', { shouldDirty: true });
+        } finally {
+            setIsUploading(prev => ({ ...prev, [index]: false }));
         }
-        setMemberToDelete(null);
     };
 
-    const renderContent = () => {
-        if (isLoading) {
-            return (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-48" />)}
-                </div>
-            )
+    async function onSubmit(values: FormValues) {
+        setIsSaving(true);
+        try {
+            await firestoreApi.saveTeamMembers(values.members);
+            toast({ title: 'Equipe atualizada com sucesso!' });
+            router.push('/admin/pages');
+        } catch (error) {
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao Salvar',
+                description: <CopyableError userMessage="Não foi possível salvar as alterações da equipe." errorCode={errorTyped.code || errorTyped.message} />,
+            });
+        } finally {
+            setIsSaving(false);
         }
-
-        if (members.length === 0) {
-            return (
-                <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[300px]">
-                    <h3 className="text-lg font-semibold">Nenhum membro da equipe encontrado</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro membro da sua equipe.</p>
-                    <Button asChild className="mt-6">
-                        <Link href="/admin/team/edit/new">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Adicionar Membro
-                        </Link>
-                    </Button>
-                </div>
-            );
-        }
-
-        return (
-             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {members.map(member => (
-                    <Card key={member.id} className="flex flex-col">
-                        <CardHeader className="flex-row items-center gap-4">
-                            <Avatar className="h-16 w-16">
-                                <AvatarImage src={member.photoURL} alt={member.name} />
-                                <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <CardTitle className="truncate">{member.name}</CardTitle>
-                                <CardDescription>{member.role}</CardDescription>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="flex-grow flex flex-col justify-end">
-                            <div className="flex justify-between items-center">
-                                <Button asChild variant="outline">
-                                    <Link href={`/admin/team/edit/${member.id}`}>
-                                        <Edit className="mr-2 h-4 w-4" /> Editar
-                                    </Link>
-                                </Button>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem onClick={() => setMemberToDelete(member)} className="text-destructive focus:text-destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-             </div>
-        );
     }
 
+    if (isLoading) {
+        return (
+             <div className="p-8 space-y-4">
+                <Skeleton className="h-10 w-1/4" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-10 w-24" />
+            </div>
+        );
+    }
+    
     return (
         <div className="flex flex-col min-h-screen">
             <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
-                <Link href="/admin" className="flex items-center gap-2" aria-label="Voltar para o Painel">
+                <Link href="/admin/pages" className="flex items-center gap-2" aria-label="Voltar">
                     <Button variant="outline" size="icon" className="h-8 w-8">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 </Link>
                 <h1 className="text-xl font-bold">Gerenciar Equipe</h1>
                 <div className="ml-auto flex items-center gap-4">
-                    <Button asChild>
-                         <Link href="/admin/team/edit/new">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Membro
-                        </Link>
-                    </Button>
                     <UserNav />
                 </div>
             </header>
-            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {renderContent()}
+            <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                 <Form {...form}>
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                        <Alert>
+                          <User className="h-4 w-4" />
+                          <AlertTitle>Gerenciando a Equipe</AlertTitle>
+                          <AlertDescription>
+                            Adicione, remova, edite e reordene os membros da equipe que aparecem na página "Quem Somos".
+                          </AlertDescription>
+                        </Alert>
+                        <div className="space-y-4">
+                            {fields.map((field, index) => {
+                                const photoURL = watchedMembers[index]?.photoURL;
+                                const file = watchedMembers[index]?.file;
+                                let previewUrl = photoURL;
+                                if (file && !photoURL.startsWith('https://firebasestorage')) {
+                                    previewUrl = URL.createObjectURL(file);
+                                }
+                                
+                                return (
+                                <div key={field.id} className="flex items-start gap-3 p-4 border rounded-lg bg-card">
+                                    <div className="flex flex-col gap-2 pt-1">
+                                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 cursor-pointer" disabled={index === 0} onClick={() => move(index, index - 1)} aria-label="Mover para cima"><ArrowUp className="h-4 w-4" /></Button>
+                                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 cursor-pointer" disabled={index === fields.length - 1} onClick={() => move(index, index + 1)} aria-label="Mover para baixo"><ArrowDown className="h-4 w-4" /></Button>
+                                    </div>
+
+                                    <div className="flex-1 space-y-4">
+                                        <div className="flex flex-col sm:flex-row items-center gap-6">
+                                            <div className="relative group">
+                                                <Avatar className="h-32 w-32">
+                                                    <AvatarImage src={previewUrl} alt="Foto do membro" className="object-cover" />
+                                                    <AvatarFallback className="text-4xl"><User /></AvatarFallback>
+                                                </Avatar>
+                                                <label 
+                                                    htmlFor={`photo-upload-${index}`}
+                                                    className="absolute inset-0 bg-black/40 flex items-center justify-center text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                >
+                                                    {isUploading[index] ? (
+                                                        <Loader2 className="h-6 w-6 animate-spin" />
+                                                    ) : (
+                                                        <Camera className="h-6 w-6" />
+                                                    )}
+                                                </label>
+                                                <input
+                                                    id={`photo-upload-${index}`}
+                                                    type="file"
+                                                    className="hidden"
+                                                    accept="image/png, image/jpeg"
+                                                    onChange={(e) => handlePhotoUpload(index, e)}
+                                                    disabled={isUploading[index]}
+                                                />
+                                                <FormField name={`members.${index}.photoURL`} control={control} render={() => <FormMessage className="mt-2 text-center" />} />
+                                            </div>
+                                            <div className="space-y-4 flex-1 w-full">
+                                                <FormField
+                                                    control={control}
+                                                    name={`members.${index}.name`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Nome</FormLabel>
+                                                            <FormControl><Input placeholder="Nome completo" {...field} /></FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={control}
+                                                    name={`members.${index}.role`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Função</FormLabel>
+                                                            <FormControl><Input placeholder="Ex: Diretor de Fotografia" {...field} /></FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <FormField
+                                            control={control}
+                                            name={`members.${index}.bio`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Bio</FormLabel>
+                                                    <FormControl><Textarea placeholder="Uma breve descrição sobre o membro da equipe..." {...field} rows={3} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => remove(index)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )})}
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), name: '', role: '', bio: '', photoURL: '', order: fields.length })}>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Adicionar Membro
+                            </Button>
+                            <Button type="submit" disabled={isSaving || Object.values(isUploading).some(v => v)}>
+                                {(isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar Alterações
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
             </main>
             <AppFooter />
-
-             <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
-                <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o membro da equipe "{memberToDelete?.name}".
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                    onClick={handleConfirmDelete}
-                    className="bg-destructive hover:bg-destructive/90"
-                    >
-                    Excluir
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     )
 }

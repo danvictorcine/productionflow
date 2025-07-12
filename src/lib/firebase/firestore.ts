@@ -743,40 +743,37 @@ export const getTeamMembers = async (): Promise<TeamMemberAbout[]> => {
   });
 };
 
-export const getTeamMember = async (id: string): Promise<TeamMemberAbout | null> => {
-  const docRef = doc(db, 'teamMembers', id);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    return {
-      id: docSnap.id,
-      ...data,
-      createdAt: (data.createdAt as Timestamp).toDate(),
-    } as TeamMemberAbout;
-  }
-  return null;
+export const saveTeamMembers = async (members: Omit<TeamMemberAbout, 'createdAt'>[]) => {
+    const batch = writeBatch(db);
+    const collectionRef = collection(db, 'teamMembers');
+
+    // Get current members to find which ones to delete
+    const currentMembersSnapshot = await getDocs(query(collectionRef));
+    const currentMemberIds = new Set(currentMembersSnapshot.docs.map(doc => doc.id));
+    const newMemberIds = new Set(members.map(member => member.id));
+
+    // Delete members that are no longer in the list
+    currentMemberIds.forEach(id => {
+        if (!newMemberIds.has(id)) {
+            batch.delete(doc(collectionRef, id));
+        }
+    });
+
+    // Set/Update members
+    members.forEach((member, index) => {
+        const { id, ...data } = member;
+        const docRef = doc(collectionRef, id);
+        const dataToSave = {
+            ...data,
+            order: index, // Update order based on array position
+            createdAt: data.createdAt ? Timestamp.fromDate(new Date(data.createdAt)) : Timestamp.now(),
+        };
+        batch.set(docRef, dataToSave, { merge: true });
+    });
+
+    await batch.commit();
 };
 
-export const addTeamMember = async (data: Omit<TeamMemberAbout, 'id' | 'createdAt'>) => {
-  await addDoc(collection(db, 'teamMembers'), {
-    ...data,
-    createdAt: Timestamp.now(),
-  });
-};
-
-export const updateTeamMember = async (id: string, data: Partial<Omit<TeamMemberAbout, 'id' | 'createdAt'>>) => {
-  const docRef = doc(db, 'teamMembers', id);
-  await updateDoc(docRef, data);
-};
-
-export const deleteTeamMember = async (id: string) => {
-  const member = await getTeamMember(id);
-  if (member?.photoURL) {
-    await deleteImageFromUrl(member.photoURL).catch(e => console.error("Could not delete team member photo", e));
-  }
-  const docRef = doc(db, 'teamMembers', id);
-  await deleteDoc(docRef);
-};
 
 export const uploadTeamMemberPhoto = async (file: File): Promise<string> => {
   const timestamp = new Date().getTime();
