@@ -20,8 +20,8 @@ const generateInverseVariant = (hsl: string): string => {
 const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
   if (!theme) return null;
 
-  // Use as cores de branding (primary, accent) para o tema escuro.
-  // Inverte as cores neutras (background, foreground, card, border).
+  // Manter cores de ação (primary, accent, destructive) e gráficos.
+  // Inverter cores neutras (background, foreground, card, border).
   const styleString = `
     :root {
       --background: ${theme.background};
@@ -79,7 +79,7 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
       --chart-4: ${theme.chart4};
       --chart-5: ${theme.chart5};
       --brand-icon: ${theme.brandIcon};
-      --brand-text: ${generateInverseVariant(theme.brandText)};
+      --brand-text: ${theme.brandText};
       --brand-login: ${theme.brandLogin};
     }
   `;

@@ -17,7 +17,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AdminGuard from '@/components/admin-guard';
-import { Badge } from '@/components/ui/badge';
 
 const defaultColors: ThemeSettings = {
     primary: '231 48% 48%',
