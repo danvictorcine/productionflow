@@ -1,52 +1,65 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // User Profiles
+  
+    // Deny all by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users can read any profile if authenticated, but only update their own.
+    // Admins can update any profile.
     match /users/{userId} {
       allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId 
+                    || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Projects can be read/written only by the owner user.
+    // This rule allows a user to list only their own projects and access them individually.
+    match /projects/{projectId} {
+       allow read, write, delete: if request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                    && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid;
+       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Transactions can be read/written only by the owner user.
+    match /transactions/{transactionId} {
+      allow read, write, delete: if request.auth != null && get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Posts are public, but only admins can write.
+    match /posts/{postId} {
+      allow read: if true;
       allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Site pages (About, Contact, etc.)
+    // Pages are public, but only admins can write.
     match /pages/{pageId} {
       allow read: if true;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    // Blog posts
-    match /posts/{postId} {
-      allow read: if true;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    // Projects and their sub-collections
-    match /projects/{projectId} {
-      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
     
-    match /transactions/{transactionId} {
-      // Corrected rule: Allow if the user owns the project associated with the transaction being written.
-      allow read, write: if request.auth != null && get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.userId == request.auth.uid;
-    }
-    
-    // Production (Call Sheet) data
+    // Productions and their subcollections are only accessible by their owner.
     match /productions/{productionId} {
-       allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read, write, delete: if request.auth != null && get(/databases/$(database)/documents/productions/$(productionId)).data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+
+      match /shooting_days/{dayId} {
+        allow read, write, delete: if request.auth != null && get(/databases/$(database)/documents/productions/$(productionId)).data.userId == request.auth.uid;
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      }
     }
     
-    match /shooting_days/{dayId} {
-        allow read, write: if request.auth != null && get(/databases/$(database)/documents/productions/$(request.resource.data.productionId)).data.userId == request.auth.uid;
-    }
-    
-    // Creative Projects (Moodboard) data
-    match /creative_projects/{creativeProjectId} {
-        allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+    // Creative projects and their items are only accessible by their owner (admin).
+    match /creative_projects/{projectId} {
+      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
     
     match /board_items/{itemId} {
-       allow read, write: if request.auth != null && get(/databases/$(database)/documents/creative_projects/$(request.resource.data.projectId)).data.userId == request.auth.uid;
+       allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
   }
 }
