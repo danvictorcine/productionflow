@@ -293,5 +293,4 @@ export default function ManageThemePage() {
             </div>
         </AdminLayout>
     );
-
-    
+}
