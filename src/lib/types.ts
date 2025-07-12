@@ -74,31 +74,13 @@ export type Post = {
   updatedAt?: Date;
 };
 
-export type AboutPageTeamMember = {
-  id: string;
-  name: string;
-  role: string;
-  photoUrl?: string;
-  bio?: string;
-};
-
-export type AboutPageContent = {
-  id: 'about';
+export type PageContent = {
+  id: 'about' | 'contact' | 'terms';
   title: string;
   content: string;
   updatedAt: Date;
-  team: AboutPageTeamMember[];
-}
-
-export type PageContent =
-  | AboutPageContent
-  | {
-      id: 'contact' | 'terms';
-      title: string;
-      content: string;
-      updatedAt: Date;
-    };
-
+  team?: any[]; // Reverted: team property is now optional and generic
+};
 
 export type LoginFeature = {
   id: string;

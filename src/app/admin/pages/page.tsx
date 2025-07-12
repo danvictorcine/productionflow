@@ -30,7 +30,7 @@ export default function ManagePagesDashboard() {
                                     <BookUser className="h-5 w-5 text-primary"/>
                                     Página "Quem Somos"
                                 </CardTitle>
-                                <CardDescription>Edite o conteúdo e a equipe da página.</CardDescription>
+                                <CardDescription>Edite o conteúdo da página "Quem Somos".</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Button>Editar</Button>

@@ -43,6 +43,10 @@ const getImageUrlsFromDelta = (delta: any): string[] => {
 };
 
 const DEFAULT_CONTENT = {
+    about: {
+        title: "Quem Somos",
+        content: `<h2>Nossa Missão</h2><p>Simplificar a gestão de produções audiovisuais, da ideia à finalização.</p><p>ProductionFlow é um produto da <span class="font-semibold">Candeeiro Filmes</span>.</p>`
+    },
     contact: {
         title: "Contato",
         content: `<h2>Entre em Contato</h2><p>Estamos aqui para ajudar. Envie um e-mail para <a href="mailto:contato@productionflow.com" class="text-primary hover:underline">contato@productionflow.com</a>.</p>`
@@ -61,13 +65,7 @@ export default function EditPageContentPage() {
     const quillRef = useRef<any>(null);
     const imageSetRef = useRef<Set<string>>(new Set());
 
-    const pageId = params.pageId as 'contact' | 'terms';
-    
-    // Redirect 'about' to its new dedicated editor page
-    if (pageId === 'about') {
-        router.replace('/admin/pages/edit/about');
-        return null; // Render nothing while redirecting
-    }
+    const pageId = params.pageId as 'about' | 'contact' | 'terms';
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);

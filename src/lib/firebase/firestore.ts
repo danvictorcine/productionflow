@@ -17,7 +17,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, AboutPageContent } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -646,24 +646,17 @@ export const uploadImageForPageContent = async (file: File): Promise<string> => 
   return await getDownloadURL(storageRef);
 };
 
-export const getPage = async (pageId: 'about' | 'contact' | 'terms'): Promise<any | null> => {
+export const getPage = async (pageId: 'about' | 'contact' | 'terms'): Promise<PageContent | null> => {
   const pageRef = doc(db, 'pages', pageId);
   const pageSnap = await getDoc(pageRef);
 
   if (pageSnap.exists()) {
     const data = pageSnap.data();
-    const result: PageContent = {
+    return {
       id: pageSnap.id,
       ...data,
       updatedAt: (data.updatedAt as Timestamp).toDate(),
-    } as PageContent
-    
-    // For 'about' page, ensure team array exists
-    if (result.id === 'about' && !result.team) {
-      result.team = [];
-    }
-
-    return result;
+    } as PageContent;
   }
   return null;
 };
@@ -742,5 +735,3 @@ export const deleteImageFromUrl = async (url: string): Promise<void> => {
     }
   }
 };
-
-    
