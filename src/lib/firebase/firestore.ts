@@ -1,3 +1,4 @@
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -44,7 +45,8 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
 
 export const getProjects = async (): Promise<Project[]> => {
   const userId = getUserId();
-  const q = query(collection(db, 'projects'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  // REMOVED orderBy to prevent firestore index error. Sorting is handled client-side.
+  const q = query(collection(db, 'projects'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
   querySnapshot.forEach((doc) => {
@@ -353,7 +355,8 @@ export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'cr
 
 export const getProductions = async (): Promise<Production[]> => {
   const userId = getUserId();
-  const q = query(collection(db, 'productions'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  // REMOVED orderBy to prevent firestore index error. Sorting is handled client-side.
+  const q = query(collection(db, 'productions'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
     const data = doc.data();

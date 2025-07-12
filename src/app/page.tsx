@@ -82,7 +82,7 @@ function HomePage() {
         ...creativeProjects.map(p => ({ ...p, itemType: 'creative' as const })),
       ];
 
-      // Client-side sorting
+      // Client-side sorting as firestore query was simplified
       displayableItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
       setItems(displayableItems);
