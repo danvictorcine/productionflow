@@ -33,14 +33,9 @@ const QuillEditor = dynamic(() => import('react-quill'), {
     loading: () => <Skeleton className="h-[200px] w-full rounded-b-md" />
 });
 
-const getImageUrlsFromDelta = (delta: any): string[] => {
-  if (!delta || !Array.isArray(delta.ops)) return [];
-  return delta.ops.reduce((urls: string[], op: any) => {
-    if (op.insert && op.insert.image && op.insert.image.startsWith('https://firebasestorage.googleapis.com')) {
-      urls.push(op.insert.image);
-    }
-    return urls;
-  }, []);
+const getUrlsFromHtml = (html: string): string[] => {
+  const urls = html.match(/https?:\/\/[^\s"]+/g) || [];
+  return urls.filter(url => url.includes('firebasestorage.googleapis.com'));
 };
 
 export default function EditPostPage() {
@@ -49,7 +44,7 @@ export default function EditPostPage() {
     const { user } = useAuth();
     const { toast } = useToast();
     const quillRef = useRef<any>(null);
-    const imageSetRef = useRef<Set<string>>(new Set());
+    const initialImageUrlsRef = useRef<Set<string>>(new Set());
 
     const postId = params.id as string;
     const isNewPost = postId === 'new';
@@ -68,6 +63,8 @@ export default function EditPostPage() {
                 .then(post => {
                     if (post) {
                         form.reset({ title: post.title, content: post.content });
+                        // Store the initial image URLs when the post loads
+                        initialImageUrlsRef.current = new Set(getUrlsFromHtml(post.content));
                     } else {
                         toast({ variant: 'destructive', title: 'Post não encontrado.' });
                         router.push('/admin/blog');
@@ -156,46 +153,11 @@ export default function EditPostPage() {
                 ['clean']
             ],
             handlers: {
-                // handlers are attached dynamically in useEffect
+                image: imageHandler
             }
         },
-    }), []);
+    }), [imageHandler]);
 
-    useEffect(() => {
-        if (quillRef.current) {
-            const editor = quillRef.current.getEditor();
-            if (editor) {
-                // Attach the image handler dynamically to the toolbar
-                editor.getModule('toolbar').addHandler('image', imageHandler);
-
-                // Set initial images
-                imageSetRef.current = new Set(getImageUrlsFromDelta(editor.getContents()));
-
-                // Add listener for text changes to handle image deletion
-                const textChangeHandler = (delta: any, oldDelta: any, source: string) => {
-                    if (source === 'user') {
-                        const currentImages = new Set(getImageUrlsFromDelta(editor.getContents()));
-                        const previousImages = imageSetRef.current;
-                        
-                        const deletedUrls = [...previousImages].filter(url => !currentImages.has(url));
-
-                        if (deletedUrls.length > 0) {
-                            deletedUrls.forEach(url => {
-                                firestoreApi.deleteImageFromUrl(url);
-                            });
-                        }
-                        imageSetRef.current = currentImages;
-                    }
-                };
-                
-                editor.on('text-change', textChangeHandler);
-
-                return () => {
-                    editor.off('text-change', textChangeHandler);
-                };
-            }
-        }
-    }, [imageHandler]);
 
     async function onSubmit(values: z.infer<typeof postSchema>) {
         if (!user) return;
@@ -207,6 +169,12 @@ export default function EditPostPage() {
                 authorName: user.name,
                 authorPhotoURL: user.photoURL || '',
             };
+
+            const finalImageUrls = new Set(getUrlsFromHtml(values.content));
+            const imageUrlsToDelete = [...initialImageUrlsRef.current].filter(
+              url => !finalImageUrls.has(url)
+            );
+
             if (isNewPost) {
                 await firestoreApi.addPost(postData);
                 toast({ title: 'Publicação criada com sucesso!' });
@@ -214,6 +182,14 @@ export default function EditPostPage() {
                 await firestoreApi.updatePost(postId, postData);
                 toast({ title: 'Publicação atualizada com sucesso!' });
             }
+
+            // Delete unused images only after a successful save
+            if (imageUrlsToDelete.length > 0) {
+              await Promise.all(
+                imageUrlsToDelete.map(url => firestoreApi.deleteImageFromUrl(url))
+              );
+            }
+
             router.push('/admin/blog');
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };

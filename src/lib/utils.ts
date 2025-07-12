@@ -17,3 +17,8 @@ export function formatCurrency(value: number) {
     currency: "BRL",
   }).format(value);
 }
+
+export const getInitials = (name: string) => {
+    if (!name) return '';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+};

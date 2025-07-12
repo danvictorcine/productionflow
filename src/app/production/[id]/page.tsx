@@ -166,7 +166,7 @@ function ProductionPageDetail() {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro ao carregar dados',
+        title: 'Erro em /production/[id]/page.tsx (fetchProductionData)',
         description: <CopyableError userMessage="Não foi possível carregar os dados da produção." errorCode={errorTyped.code || errorTyped.message} />,
       });
     } finally {
@@ -189,7 +189,7 @@ function ProductionPageDetail() {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro ao atualizar',
+        title: 'Erro em /production/[id]/page.tsx (handleProductionSubmit)',
         description: <CopyableError userMessage="Não foi possível atualizar a produção." errorCode={errorTyped.code || errorTyped.message} />,
       });
     }
@@ -232,7 +232,7 @@ function ProductionPageDetail() {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro ao salvar',
+        title: 'Erro em /production/[id]/page.tsx (handleShootingDaySubmit)',
         description: <CopyableError userMessage="Não foi possível salvar a Ordem do Dia." errorCode={errorTyped.code || errorTyped.message} />,
       });
     }
@@ -248,7 +248,7 @@ function ProductionPageDetail() {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro ao excluir',
+        title: 'Erro em /production/[id]/page.tsx (handleDeleteDay)',
         description: <CopyableError userMessage="Não foi possível excluir a Ordem do Dia." errorCode={errorTyped.code || errorTyped.message} />,
       });
     } finally {
@@ -346,7 +346,7 @@ function ProductionPageDetail() {
         toast({ title: "Exportação para Excel Concluída" });
     } catch (error) {
         console.error(error);
-        toast({ variant: 'destructive', title: 'Erro ao exportar para Excel' });
+        toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportToExcel)', description: 'Não foi possível exportar para Excel.' });
     } finally {
         setIsExporting(false);
     }
@@ -397,7 +397,7 @@ function ProductionPageDetail() {
       toast({ title: "Exportação para PDF Concluída!" });
     } catch (error) {
         console.error("Error generating PDF", error);
-        toast({ variant: 'destructive', title: 'Erro ao gerar PDF' });
+        toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportToPdf)', description: 'Não foi possível gerar o PDF.' });
     } finally {
         setIsExporting(false);
     }
@@ -419,7 +419,7 @@ function ProductionPageDetail() {
         toast({ title: "Exportação para Excel Concluída" });
     } catch (error) {
         console.error(error);
-        toast({ variant: 'destructive', title: 'Erro ao exportar para Excel' });
+        toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToExcel)', description: 'Não foi possível exportar a Ordem do Dia.' });
     } finally {
         setIsExporting(false);
     }
@@ -466,7 +466,7 @@ function ProductionPageDetail() {
 
     } catch (error) {
         console.error("Error generating PDF for single day", error);
-        toast({ variant: 'destructive', title: 'Erro ao gerar PDF' });
+        toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPdf)', description: 'Não foi possível gerar o PDF.' });
     } finally {
         setIsExporting(false);
     }
@@ -487,7 +487,12 @@ function ProductionPageDetail() {
     try {
         await firestoreApi.updateShootingDay(dayId, { [listName]: updatedList });
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Erro ao atualizar item' });
+        const errorTyped = error as { code?: string; message: string };
+        toast({ 
+            variant: 'destructive', 
+            title: 'Erro em /production/[id]/page.tsx (handleUpdateNotes)', 
+            description: <CopyableError userMessage="Não foi possível atualizar o item." errorCode={errorTyped.code || errorTyped.message} /> 
+        });
         // Revert optimistic update on failure
         fetchProductionData(); 
     }
@@ -526,12 +531,11 @@ function ProductionPageDetail() {
         <div className="flex items-center gap-3">
           <Clapperboard className="h-6 w-6 text-muted-foreground" />
           <h1 className="text-xl font-bold text-primary truncate">{production.name}</h1>
+           <Button onClick={() => setIsProductionDialogOpen(true)} variant="ghost" size="icon" className="h-8 w-8">
+            <Edit className="h-4 w-4" />
+          </Button>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => setIsProductionDialogOpen(true)} variant="outline">
-            <Edit className="mr-2 h-4 w-4" />
-            Editar Produção
-          </Button>
           <Button onClick={() => { setEditingShootingDay(null); setIsShootingDayDialogOpen(true); }}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Criar Ordem do Dia

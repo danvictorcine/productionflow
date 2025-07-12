@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { CopyableError } from '@/components/copyable-error';
+import { getInitials } from '@/lib/utils';
 
 export default function BlogPage() {
   const { user } = useAuth();
@@ -44,11 +45,6 @@ export default function BlogPage() {
     };
     fetchPosts();
   }, [toast]);
-
-  const getInitials = (name: string) => {
-    if (!name) return '';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  }
 
   const renderContent = () => {
     if (isLoading) {

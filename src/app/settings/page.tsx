@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
+import { getInitials } from '@/lib/utils';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
@@ -153,11 +154,6 @@ function SettingsPageDetail() {
       });
     }, 0);
   };
-  
-  const getInitials = (name: string) => {
-    if (!name) return '';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  }
 
   const handleExportData = async () => {
     setIsExporting(true);

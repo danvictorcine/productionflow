@@ -91,8 +91,11 @@ export default function EditLoginPage() {
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files?.[0]) return;
         
-        setIsUploading(true);
         const file = event.target.files[0];
+        const tempPreviewUrl = URL.createObjectURL(file);
+        setPreviewUrl(tempPreviewUrl);
+        setIsUploading(true);
+        
 
         try {
             const options = {
@@ -115,7 +118,7 @@ export default function EditLoginPage() {
             }
 
             setValue('backgroundImageUrl', url, { shouldDirty: true });
-            setPreviewUrl(url);
+            setPreviewUrl(url); // Set final URL after upload
             toast({ title: 'Imagem de fundo enviada com sucesso!' });
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
@@ -124,9 +127,11 @@ export default function EditLoginPage() {
                 title: 'Erro em /admin/pages/edit/login/page.tsx (handleImageUpload)',
                 description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
             });
+            setPreviewUrl(backgroundImageUrl); // Revert to old image on error
         } finally {
             setIsUploading(false);
             if(fileInputRef.current) fileInputRef.current.value = "";
+            URL.revokeObjectURL(tempPreviewUrl);
         }
     };
 
@@ -236,7 +241,15 @@ export default function EditLoginPage() {
                                 )}
                                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                             </div>
-                            {previewUrl && (
+                            {isUploading && (
+                                <div className="mt-4 relative w-full h-48 rounded-md overflow-hidden border">
+                                    <Image src={previewUrl || ''} alt="Prévia da imagem de fundo" layout="fill" objectFit="cover" />
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <Loader2 className="h-8 w-8 animate-spin text-white" />
+                                    </div>
+                                </div>
+                            )}
+                            {!isUploading && previewUrl && (
                                 <div className="mt-4 relative w-full h-48 rounded-md overflow-hidden border">
                                     <Image src={previewUrl} alt="Prévia da imagem de fundo" layout="fill" objectFit="cover" />
                                 </div>

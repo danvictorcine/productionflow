@@ -454,12 +454,11 @@ export default function Dashboard({
         <div className="flex items-center gap-3">
           <DollarSign className="h-6 w-6 text-muted-foreground" />
           <h1 className="text-xl font-bold text-primary truncate">{project.name}</h1>
+          <Button onClick={() => setEditDialogOpen(true)} variant="ghost" size="icon" className="h-8 w-8">
+            <Edit className="h-4 w-4" />
+          </Button>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => setEditDialogOpen(true)} variant="outline">
-            <Edit className="mr-2 h-4 w-4" />
-            Editar Projeto
-          </Button>
           <Button onClick={openAddSheet}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Despesa

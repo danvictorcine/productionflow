@@ -127,7 +127,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                                      className="flex-1 h-8 border-none focus-visible:ring-0 focus:bg-muted/50"
                                      placeholder="Novo item..."
                                    />
-                                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
+                                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 data-[empty=true]:opacity-0" data-empty={!checklistItem.text} onClick={() => {
                                        const newItems = items.filter(i => i.id !== checklistItem.id);
                                        handleChecklistUpdate(newItems);
                                    }}>
@@ -264,7 +264,7 @@ function CreativeProjectPageDetail() {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro ao carregar projeto',
+        title: 'Erro em /creative/[id]/page.tsx (fetchProjectData)',
         description: <CopyableError userMessage="Não foi possível carregar os dados do projeto." errorCode={errorTyped.code || errorTyped.message} />,
       });
     } finally {
@@ -284,7 +284,12 @@ function CreativeProjectPageDetail() {
       setIsEditDialogOpen(false);
       toast({ title: 'Projeto atualizado com sucesso!' });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao atualizar projeto.' });
+       const errorTyped = error as { code?: string; message: string };
+        toast({
+            variant: 'destructive',
+            title: 'Erro em /creative/[id]/page.tsx (handleProjectSubmit)',
+            description: <CopyableError userMessage="Não foi possível atualizar o projeto." errorCode={errorTyped.code || errorTyped.message} />,
+        });
     }
   };
 
@@ -302,7 +307,12 @@ function CreativeProjectPageDetail() {
       debounceTimers.current[itemId] = setTimeout(() => {
           firestoreApi.updateBoardItem(itemId, data)
               .catch(error => {
-                  toast({ variant: 'destructive', title: 'Erro ao salvar alteração.' });
+                  const errorTyped = error as { code?: string; message: string };
+                    toast({
+                        variant: 'destructive',
+                        title: 'Erro em /creative/[id]/page.tsx (handleItemUpdate)',
+                        description: <CopyableError userMessage="Não foi possível salvar a alteração." errorCode={errorTyped.code || errorTyped.message} />,
+                    });
                   fetchProjectData();
               });
       }, 500);
@@ -348,7 +358,7 @@ function CreativeProjectPageDetail() {
       const errorTyped = error as { code?: string; message: string };
       toast({ 
           variant: 'destructive', 
-          title: `Erro ao adicionar ${type}`,
+          title: `Erro em /creative/[id]/page.tsx (handleAddItem, tipo: ${type})`,
           description: <CopyableError userMessage="Não foi possível adicionar o item ao quadro." errorCode={errorTyped.code || errorTyped.message} />,
       });
     }
@@ -390,7 +400,7 @@ function CreativeProjectPageDetail() {
        const errorTyped = error as { code?: string; message: string };
        toast({ 
           variant: 'destructive', 
-          title: 'Erro no upload da imagem.',
+          title: 'Erro em /creative/[id]/page.tsx (handleImageUpload)',
           description: <CopyableError userMessage="Não foi possível fazer o upload da imagem." errorCode={errorTyped.code || errorTyped.message} />
        });
     } finally {
@@ -405,7 +415,12 @@ function CreativeProjectPageDetail() {
       setItems(prev => prev.filter(item => item.id !== itemId));
       toast({ title: 'Item removido.' });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao remover item.' });
+      const errorTyped = error as { code?: string; message: string };
+       toast({ 
+          variant: 'destructive', 
+          title: 'Erro em /creative/[id]/page.tsx (handleDeleteItem)',
+          description: <CopyableError userMessage="Não foi possível remover o item." errorCode={errorTyped.code || errorTyped.message} />
+       });
     }
   };
 
@@ -442,9 +457,12 @@ function CreativeProjectPageDetail() {
         <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
           <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
-        <div className="flex items-center gap-3"><Brush className="h-6 w-6 text-muted-foreground" /><h1 className="text-xl font-bold text-primary truncate">{project.name}</h1></div>
+        <div className="flex items-center gap-3">
+            <Brush className="h-6 w-6 text-muted-foreground" />
+            <h1 className="text-xl font-bold text-primary truncate">{project.name}</h1>
+        </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => setIsEditDialogOpen(true)} variant="outline"><Edit className="mr-2 h-4 w-4" />Editar Projeto</Button>
+          <Button onClick={() => setIsEditDialogOpen(true)} variant="outline"><Edit className="mr-2 h-4 w-4" />Editar Detalhes</Button>
           <UserNav />
         </div>
       </header>

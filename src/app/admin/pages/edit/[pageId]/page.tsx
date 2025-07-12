@@ -32,14 +32,9 @@ const QuillEditor = dynamic(() => import('react-quill'), {
     loading: () => <Skeleton className="h-[400px] w-full rounded-b-md" />
 });
 
-const getImageUrlsFromDelta = (delta: any): string[] => {
-  if (!delta || !Array.isArray(delta.ops)) return [];
-  return delta.ops.reduce((urls: string[], op: any) => {
-    if (op.insert && op.insert.image && op.insert.image.startsWith('https://firebasestorage.googleapis.com')) {
-      urls.push(op.insert.image);
-    }
-    return urls;
-  }, []);
+const getUrlsFromHtml = (html: string): string[] => {
+  const urls = html.match(/https?:\/\/[^\s"]+/g) || [];
+  return urls.filter(url => url.includes('firebasestorage.googleapis.com'));
 };
 
 const DEFAULT_CONTENT = {
@@ -63,7 +58,7 @@ export default function EditPageContentPage() {
     const { user } = useAuth();
     const { toast } = useToast();
     const quillRef = useRef<any>(null);
-    const imageSetRef = useRef<Set<string>>(new Set());
+    const initialImageUrlsRef = useRef<Set<string>>(new Set());
 
     const pageId = params.pageId as 'about' | 'contact' | 'terms';
 
@@ -81,8 +76,10 @@ export default function EditPageContentPage() {
             firestoreApi.getPage(pageId)
                 .then(page => {
                     const defaultData = DEFAULT_CONTENT[pageId] || { title: "Página Desconhecida", content: "" };
+                    const content = page?.content || defaultData.content;
                     setPageTitle(page?.title || defaultData.title);
-                    form.reset({ content: page?.content || defaultData.content });
+                    form.reset({ content });
+                    initialImageUrlsRef.current = new Set(getUrlsFromHtml(content));
                 })
                 .catch((error) => {
                     const errorTyped = error as { code?: string; message: string };
@@ -165,42 +162,11 @@ export default function EditPageContentPage() {
                 ['link', 'image'],
                 ['clean']
             ],
-            handlers: {}
-        },
-    }), []);
-
-    useEffect(() => {
-        if (quillRef.current) {
-            const editor = quillRef.current.getEditor();
-            if (editor) {
-                editor.getModule('toolbar').addHandler('image', imageHandler);
-
-                imageSetRef.current = new Set(getImageUrlsFromDelta(editor.getContents()));
-
-                const textChangeHandler = (delta: any, oldDelta: any, source: string) => {
-                    if (source === 'user') {
-                        const currentImages = new Set(getImageUrlsFromDelta(editor.getContents()));
-                        const previousImages = imageSetRef.current;
-                        
-                        const deletedUrls = [...previousImages].filter(url => !currentImages.has(url));
-
-                        if (deletedUrls.length > 0) {
-                            deletedUrls.forEach(url => {
-                                firestoreApi.deleteImageFromUrl(url);
-                            });
-                        }
-                        imageSetRef.current = currentImages;
-                    }
-                };
-                
-                editor.on('text-change', textChangeHandler);
-
-                return () => {
-                    editor.off('text-change', textChangeHandler);
-                };
+            handlers: {
+                image: imageHandler
             }
-        }
-    }, [imageHandler]);
+        },
+    }), [imageHandler]);
 
     async function onSubmit(values: z.infer<typeof pageContentSchema>) {
         if (!user) return;
@@ -210,7 +176,20 @@ export default function EditPageContentPage() {
                 ...values,
                 title: pageTitle,
             };
+            
+            const finalImageUrls = new Set(getUrlsFromHtml(values.content));
+            const imageUrlsToDelete = [...initialImageUrlsRef.current].filter(
+              url => !finalImageUrls.has(url)
+            );
+
             await firestoreApi.updatePage(pageId, pageData);
+            
+            if (imageUrlsToDelete.length > 0) {
+              await Promise.all(
+                imageUrlsToDelete.map(url => firestoreApi.deleteImageFromUrl(url))
+              );
+            }
+
             toast({ title: 'Página atualizada com sucesso!' });
             router.push('/admin/pages');
         } catch (error) {
