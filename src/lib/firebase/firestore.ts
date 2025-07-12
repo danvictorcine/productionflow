@@ -1,4 +1,3 @@
-
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -45,8 +44,7 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
 
 export const getProjects = async (): Promise<Project[]> => {
   const userId = getUserId();
-  // REMOVED ORDERBY TO PREVENT FAILED-PRECONDITION ERROR
-  const q = query(collection(db, 'projects'), where('userId', '==', userId));
+  const q = query(collection(db, 'projects'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
   querySnapshot.forEach((doc) => {
@@ -355,8 +353,7 @@ export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'cr
 
 export const getProductions = async (): Promise<Production[]> => {
   const userId = getUserId();
-  // REMOVED ORDERBY TO PREVENT FAILED-PRECONDITION ERROR
-  const q = query(collection(db, 'productions'), where('userId', '==', userId));
+  const q = query(collection(db, 'productions'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
     const data = doc.data();
@@ -672,18 +669,9 @@ export const updatePage = async (pageId: 'about' | 'contact' | 'terms' | 'about'
   }, { merge: true });
 };
 
+// Reverted: This function is no longer distinct from getPage
 export const getAboutPageContent = async (): Promise<AboutPageContent | null> => {
-  const pageRef = doc(db, "pages", "about");
-  const pageSnap = await getDoc(pageRef);
-  if (pageSnap.exists()) {
-      const data = pageSnap.data();
-      return {
-          id: pageSnap.id,
-          ...data,
-          updatedAt: (data.updatedAt as Timestamp).toDate(),
-      } as AboutPageContent;
-  }
-  return null;
+  return getPage('about');
 };
 
 

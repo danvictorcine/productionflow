@@ -205,3 +205,6 @@ export type BoardItem = {
   size: { width: number | string; height: number | string };
   createdAt: Date;
 };
+
+// Reverted type, can be removed in future cleanup
+export type AboutPageContent = PageContent;
