@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 93.3%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
@@ -118,48 +118,4 @@
   border-color: hsl(var(--border));
   border-bottom-left-radius: var(--radius);
   border-bottom-right-radius: var(--radius);
-}
-
-#custom-theme-styles:not(:empty) {
-    --background: var(--custom-background);
-    --foreground: var(--custom-foreground);
-    --card: var(--custom-card);
-    --card-foreground: var(--custom-card-foreground);
-    --popover: var(--custom-popover);
-    --popover-foreground: var(--custom-popover-foreground);
-    --primary: var(--custom-primary);
-    --primary-foreground: var(--custom-primary-foreground);
-    --secondary: var(--custom-secondary);
-    --secondary-foreground: var(--custom-secondary-foreground);
-    --muted: var(--custom-muted);
-    --muted-foreground: var(--custom-muted-foreground);
-    --accent: var(--custom-accent);
-    --accent-foreground: var(--custom-accent-foreground);
-    --destructive: var(--custom-destructive);
-    --destructive-foreground: var(--custom-destructive-foreground);
-    --border: var(--custom-border);
-    --input: var(--custom-input);
-    --ring: var(--custom-ring);
-}
-
-#custom-theme-styles:not(:empty) .dark {
-    --background: var(--custom-dark-background);
-    --foreground: var(--custom-dark-foreground);
-    --card: var(--custom-dark-card);
-    --card-foreground: var(--custom-dark-card-foreground);
-    --popover: var(--custom-dark-popover);
-    --popover-foreground: var(--custom-dark-popover-foreground);
-    --primary: var(--custom-dark-primary);
-    --primary-foreground: var(--custom-dark-primary-foreground);
-    --secondary: var(--custom-dark-secondary);
-    --secondary-foreground: var(--custom-dark-secondary-foreground);
-    --muted: var(--custom-dark-muted);
-    --muted-foreground: var(--custom-dark-muted-foreground);
-    --accent: var(--custom-dark-accent);
-    --accent-foreground: var(--custom-dark-accent-foreground);
-    --destructive: var(--custom-dark-destructive);
-    --destructive-foreground: var(--custom-dark-destructive-foreground);
-    --border: var(--custom-dark-border);
-    --input: var(--custom-dark-input);
-    --ring: var(--custom-dark-ring);
 }
