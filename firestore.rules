@@ -14,28 +14,27 @@ service cloud.firestore {
       allow update: if request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Coleções do Usuário: Um usuário pode ler e escrever documentos (como projetos e produções)
-    // se o 'userId' no documento for o seu. Esta regra simples e robusta funciona para get, list, create, update e delete,
-    // desde que as queries no app incluam where('userId', '==', auth.uid).
+    // Projetos, Produções e subcoleções: Um usuário pode ler e escrever documentos se o 'userId' no documento for o seu.
+    // Esta regra simples e robusta funciona para get, list, create, update e delete, desde que as queries no app incluam where('userId', '==', auth.uid).
     match /projects/{projectId} {
       allow read, write: if request.auth.uid == resource.data.userId;
     }
+    match /transactions/{transactionId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+    }
+
     match /productions/{productionId} {
       allow read, write: if request.auth.uid == resource.data.userId;
     }
-    match /transactions/{transactionId} {
-        allow read, write: if request.auth.uid == resource.data.userId;
-    }
     match /shooting_days/{dayId} {
-        allow read, write: if request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth.uid == resource.data.userId;
     }
     
-    // Função helper para verificar se o usuário é administrador.
+    // Conteúdo de Admin: Apenas administradores podem acessar.
     function isAdmin() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Conteúdo de Admin: Apenas administradores podem acessar.
     match /creative_projects/{projectId} {
       allow read, write: if isAdmin();
     }
