@@ -9,6 +9,7 @@ import { auth } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
 import { LogOut, Settings, User as UserIcon, Sun, Moon, Laptop, Shield } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { getInitials } from '@/lib/utils';
 
 export function UserNav() {
   const { user } = useAuth();
@@ -22,11 +23,6 @@ export function UserNav() {
 
   if (!user) {
     return null;
-  }
-
-  const getInitials = (name: string) => {
-    if (!name) return '';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   }
 
   return (
@@ -61,7 +57,7 @@ export function UserNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
+          <DropdownMenuSubTrigger className="focus:text-accent-foreground data-[state=open]:text-accent-foreground">
             <Sun className="h-4 w-4 mr-2 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 mr-2 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             <span>Tema</span>
