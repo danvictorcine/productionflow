@@ -176,7 +176,7 @@ export default function LoginPage() {
                 <div className="mx-auto w-full max-w-md space-y-4 text-center">
                     <div className="flex items-center justify-center gap-3">
                       <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
-                          <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))"/>
+                          <rect width="32" height="32" rx="6" style={{fill: `hsl(var(--brand-icon))`}}/>
                           <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))" style={{opacity: 0.8}}/>
                       </svg>
                       <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ export default function LoginPage() {
                 </div>
             </div>
           </div>
-          <div className="relative flex flex-col py-6 px-4">
+          <div className="relative flex flex-col bg-background py-6 px-4">
             <div className="absolute top-4 right-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
