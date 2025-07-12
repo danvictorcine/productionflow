@@ -46,7 +46,6 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
 
 export const getProjects = async (): Promise<Project[]> => {
   const userId = getUserId();
-  // REMOVED orderBy to prevent firestore index error. Sorting is handled client-side.
   const q = query(collection(db, 'projects'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
@@ -183,13 +182,11 @@ export const sendPasswordReset = async (email: string) => {
 
 
 // Transaction Functions
-export const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId'>) => {
-  const userId = getUserId();
+export const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
   const data = {
     ...transactionData,
     amount: transactionData.amount,
     date: Timestamp.fromDate(transactionData.date),
-    userId,
     status: transactionData.status || 'planned',
   };
   await addDoc(collection(db, 'transactions'), data);
@@ -356,7 +353,6 @@ export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'cr
 
 export const getProductions = async (): Promise<Production[]> => {
   const userId = getUserId();
-  // REMOVED orderBy to prevent firestore index error. Sorting is handled client-side.
   const q = query(collection(db, 'productions'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
@@ -409,12 +405,10 @@ export const deleteProductionAndDays = async (productionId: string) => {
 
 // === Shooting Day Functions ===
 
-export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => {
-  const userId = getUserId();
+export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'productionId'>) => {
   await addDoc(collection(db, 'shooting_days'), {
     ...data,
     productionId,
-    userId,
     date: Timestamp.fromDate(data.date),
   });
 };
@@ -470,7 +464,7 @@ export const addCreativeProject = async (data: Omit<CreativeProject, 'id' | 'use
 
 export const getCreativeProjects = async (): Promise<CreativeProject[]> => {
   const userId = getUserId();
-  const q = query(collection(db, 'creative_projects'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  const q = query(collection(db, 'creative_projects'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
     const data = doc.data();
