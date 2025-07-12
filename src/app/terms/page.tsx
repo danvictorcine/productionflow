@@ -97,7 +97,7 @@ export default function TermsPage() {
               <rect width="32" height="32" rx="6" fill="hsl(var(--primary))"/>
               <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
             </svg>
-            <p className="text-lg font-semibold text-primary tracking-tighter">ProductionFlow</p>
+            <p className="text-lg font-semibold text-foreground tracking-tighter">ProductionFlow</p>
             <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
           </div>
           {user && <UserNav />}

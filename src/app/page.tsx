@@ -91,6 +91,7 @@ function HomePage() {
     try {
       const projectsPromise = firestoreApi.getProjects();
       const productionsPromise = firestoreApi.getProductions();
+      // Only fetch creative projects if the user is an admin
       const creativeProjectsPromise = user.isAdmin ? firestoreApi.getCreativeProjects() : Promise.resolve([]);
 
       const [projects, productions, creativeProjects] = await Promise.all([
@@ -417,7 +418,7 @@ function HomePage() {
             />
           </svg>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-primary tracking-tighter">
+            <h1 className="text-2xl font-bold text-foreground tracking-tighter">
               ProductionFlow
             </h1>
             <Badge variant="outline" className="text-xs font-normal">
