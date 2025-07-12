@@ -4,7 +4,6 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
-import type { ThemeSettings } from '@/lib/types';
 import ThemeLoader from '@/components/theme-loader';
 
 

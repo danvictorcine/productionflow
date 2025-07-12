@@ -5,18 +5,19 @@ import { useEffect, useState } from 'react';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import type { ThemeSettings } from '@/lib/types';
 
-// Function to generate a reasonable dark theme from a light theme HSL string
-const generateDarkVariant = (hsl: string): string => {
+// Function to generate a dark variant for background/foreground colors.
+// It makes light colors dark, and dark colors light.
+const generateInverseVariant = (hsl: string): string => {
     if (!hsl) return "";
     const [h, s, l] = hsl.replace(/%/g, '').split(' ').map(Number);
     if (isNaN(h) || isNaN(s) || isNaN(l)) return hsl;
 
-    // Adjust lightness for dark mode. This is a heuristic.
-    // Make dark backgrounds darker, and light text lighter.
-    const newL = l > 50 ? 100 - l + 10 : l + 50;
-    const newS = s > 30 ? s - 10 : s;
+    // A simple inversion of lightness.
+    const newL = 100 - l;
+    // Slightly desaturate to avoid overly vibrant dark backgrounds.
+    const newS = Math.max(0, s - 10);
 
-    return `${h} ${Math.max(0, newS)}% ${Math.min(100, newL)}%`;
+    return `${h} ${newS}% ${newL}%`;
 };
 
 const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
@@ -24,51 +25,52 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
 
   const styleString = `
     :root {
-      --custom-background: hsl(${theme.background});
-      --custom-foreground: hsl(${theme.foreground});
-      --custom-card: hsl(${theme.card});
-      --custom-card-foreground: hsl(${theme.foreground});
-      --custom-popover: hsl(${theme.card});
-      --custom-popover-foreground: hsl(${theme.foreground});
-      --custom-primary: hsl(${theme.primary});
-      --custom-primary-foreground: hsl(0 0% 98%);
-      --custom-secondary: hsl(${theme.secondary});
-      --custom-secondary-foreground: hsl(${theme.foreground});
-      --custom-muted: hsl(${theme.secondary});
-      --custom-muted-foreground: hsl(${theme.foreground} / 0.6);
-      --custom-accent: hsl(${theme.accent});
-      --custom-accent-foreground: hsl(0 0% 98%);
-      --custom-destructive: hsl(${theme.destructive});
-      --custom-destructive-foreground: hsl(0 0% 98%);
-      --custom-border: hsl(${theme.background} / 0.1);
-      --custom-input: hsl(${theme.background} / 0.1);
-      --custom-ring: hsl(${theme.primary});
+      --background: ${theme.background};
+      --foreground: ${theme.foreground};
+      --card: ${theme.card};
+      --card-foreground: ${theme.foreground};
+      --popover: ${theme.card};
+      --popover-foreground: ${theme.foreground};
+      --primary: ${theme.primary};
+      --primary-foreground: 0 0% 98%; /* Keep white/light text for buttons */
+      --secondary: ${theme.secondary};
+      --secondary-foreground: ${theme.foreground};
+      --muted: ${theme.secondary};
+      --muted-foreground: ${theme.foreground} / 0.6;
+      --accent: ${theme.accent};
+      --accent-foreground: 0 0% 98%; /* Keep white/light text */
+      --destructive: ${theme.destructive};
+      --destructive-foreground: 0 0% 98%; /* Keep white/light text */
+      --border: ${theme.foreground} / 0.1;
+      --input: ${theme.foreground} / 0.1;
+      --ring: ${theme.primary};
     }
+
     .dark {
-      --custom-dark-background: hsl(${generateDarkVariant(theme.background)});
-      --custom-dark-foreground: hsl(${generateDarkVariant(theme.foreground)});
-      --custom-dark-card: hsl(${generateDarkVariant(theme.background)});
-      --custom-dark-card-foreground: hsl(${generateDarkVariant(theme.foreground)});
-      --custom-dark-popover: hsl(${generateDarkVariant(theme.background)});
-      --custom-dark-popover-foreground: hsl(${generateDarkVariant(theme.foreground)});
-      --custom-dark-primary: hsl(${generateDarkVariant(theme.primary)});
-      --custom-dark-primary-foreground: hsl(0 0% 98%);
-      --custom-dark-secondary: hsl(${generateDarkVariant(theme.secondary)});
-      --custom-dark-secondary-foreground: hsl(${generateDarkVariant(theme.foreground)});
-      --custom-dark-muted: hsl(${generateDarkVariant(theme.secondary)});
-      --custom-dark-muted-foreground: hsl(${generateDarkVariant(theme.foreground)} / 0.6);
-      --custom-dark-accent: hsl(${generateDarkVariant(theme.accent)});
-      --custom-dark-accent-foreground: hsl(0 0% 98%);
-      --custom-dark-destructive: hsl(${generateDarkVariant(theme.destructive)});
-      --custom-dark-destructive-foreground: hsl(0 0% 98%);
-      --custom-dark-border: hsl(${generateDarkVariant(theme.background)} / 0.9);
-      --custom-dark-input: hsl(${generateDarkVariant(theme.background)} / 0.9);
-      --custom-dark-ring: hsl(${generateDarkVariant(theme.primary)});
+      --background: ${generateInverseVariant(theme.background)};
+      --foreground: ${generateInverseVariant(theme.foreground)};
+      --card: ${generateInverseVariant(theme.card)};
+      --card-foreground: ${generateInverseVariant(theme.foreground)};
+      --popover: ${generateInverseVariant(theme.card)};
+      --popover-foreground: ${generateInverseVariant(theme.foreground)};
+      --primary: ${theme.primary}; /* Keep same primary color */
+      --primary-foreground: 0 0% 98%;
+      --secondary: ${generateInverseVariant(theme.secondary)};
+      --secondary-foreground: ${generateInverseVariant(theme.foreground)};
+      --muted: ${generateInverseVariant(theme.secondary)};
+      --muted-foreground: ${generateInverseVariant(theme.foreground)} / 0.6;
+      --accent: ${theme.accent}; /* Keep same accent color */
+      --accent-foreground: 0 0% 98%;
+      --destructive: ${theme.destructive}; /* Keep same destructive color */
+      --destructive-foreground: 0 0% 98%;
+      --border: ${generateInverseVariant(theme.foreground)} / 0.1;
+      --input: ${generateInverseVariant(theme.foreground)} / 0.1;
+      --ring: ${theme.primary};
     }
   `;
 
   return (
-    <style id="custom-theme-styles" dangerouslySetInnerHTML={{ __html: styleString }} />
+    <style id="custom-theme-styles" dangerouslySetInnerHTML={{ __html: styleString.replace(/hsl\((.+?)\)/g, '$1') }} />
   );
 };
 

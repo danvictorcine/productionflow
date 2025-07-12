@@ -16,13 +16,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import AdminLayout from '../layout';
+import AdminGuard from '@/components/admin-guard';
 
 const defaultColors: ThemeSettings = {
     primary: '231 48% 48%',
     secondary: '240 4.8% 95.9%',
     accent: '174 100% 29.4%',
-    background: '0 0% 93.3%',
+    background: '0 0% 100%',
     foreground: '240 10% 3.9%',
     card: '0 0% 100%',
     destructive: '0 84.2% 60.2%',
@@ -90,7 +90,7 @@ const ColorPicker = ({ value, onChange }: { value: string, onChange: (value: str
 };
 
 
-export default function ManageThemePage() {
+function ManageThemePageDetail() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -165,132 +165,138 @@ export default function ManageThemePage() {
     }
 
     return (
-        <AdminLayout>
-            <div className="flex flex-col min-h-screen">
-                <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
-                    <Link href="/admin" className="flex items-center gap-2" aria-label="Voltar para o Painel">
-                        <Button variant="outline" size="icon" className="h-8 w-8">
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                    </Link>
-                    <h1 className="text-xl font-bold">Gerenciar Tema do Aplicativo</h1>
-                    <div className="ml-auto flex items-center gap-4">
-                        <UserNav />
-                    </div>
-                </header>
+        <div className="flex flex-col min-h-screen">
+            <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
+                <Link href="/admin" className="flex items-center gap-2" aria-label="Voltar para o Painel">
+                    <Button variant="outline" size="icon" className="h-8 w-8">
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                </Link>
+                <h1 className="text-xl font-bold">Gerenciar Tema do Aplicativo</h1>
+                <div className="ml-auto flex items-center gap-4">
+                    <UserNav />
+                </div>
+            </header>
 
-                <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                   <form onSubmit={handleSubmit(onSubmit)}>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Color Pickers */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Cores Principais</CardTitle>
-                                    <CardDescription>Clique nas cores para alterá-las. Os valores HSL são atualizados automaticamente.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {(Object.keys(defaultColors) as Array<keyof ThemeSettings>).map((key) => (
-                                        <div key={key} className="flex items-center justify-between">
-                                            <label htmlFor={key} className="capitalize font-medium">{key}</label>
-                                            <div className="flex items-center gap-2">
-                                                <Controller
-                                                    name={key}
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <ColorPicker value={field.value} onChange={field.onChange} />
-                                                    )}
-                                                />
-                                                <Controller
-                                                    name={key}
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <input
-                                                            {...field}
-                                                            className="w-40 p-2 border rounded-md font-mono text-sm bg-muted"
-                                                            readOnly
-                                                        />
-                                                    )}
-                                                />
-                                            </div>
+            <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Color Pickers */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Cores Principais</CardTitle>
+                                <CardDescription>Clique nas cores para alterá-las. Os valores HSL são atualizados automaticamente.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {(Object.keys(defaultColors) as Array<keyof ThemeSettings>).map((key) => (
+                                    <div key={key} className="flex items-center justify-between">
+                                        <label htmlFor={key} className="capitalize font-medium">{key}</label>
+                                        <div className="flex items-center gap-2">
+                                            <Controller
+                                                name={key}
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <ColorPicker value={field.value} onChange={field.onChange} />
+                                                )}
+                                            />
+                                            <Controller
+                                                name={key}
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <input
+                                                        {...field}
+                                                        className="w-40 p-2 border rounded-md font-mono text-sm bg-muted"
+                                                        readOnly
+                                                    />
+                                                )}
+                                            />
                                         </div>
-                                    ))}
-                                </CardContent>
-                            </Card>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
 
-                            {/* Preview */}
-                            <div className="space-y-6">
-                                <CardHeader className="px-1">
-                                    <CardTitle>Pré-visualização em Tempo Real</CardTitle>
-                                    <CardDescription>Veja como os componentes do aplicativo se parecerão com as cores selecionadas.</CardDescription>
-                                </CardHeader>
-                                <div
-                                    className="p-8 rounded-lg border"
-                                    style={{
-                                        '--background-preview': `hsl(${watchedColors.background})`,
-                                        '--foreground-preview': `hsl(${watchedColors.foreground})`,
-                                        '--card-preview': `hsl(${watchedColors.card})`,
-                                        '--primary-preview': `hsl(${watchedColors.primary})`,
-                                        '--secondary-preview': `hsl(${watchedColors.secondary})`,
-                                        '--accent-preview': `hsl(${watchedColors.accent})`,
-                                        '--destructive-preview': `hsl(${watchedColors.destructive})`,
-                                        backgroundColor: 'var(--background-preview)',
-                                        color: 'var(--foreground-preview)'
-                                    } as React.CSSProperties}
-                                >
-                                    <div className="space-y-6">
-                                        <h3 className="text-xl font-bold" style={{ color: `var(--foreground-preview)`}}>Título de Exemplo</h3>
-                                        <p style={{ color: `var(--foreground-preview)`}}>
-                                            Este é um parágrafo de exemplo para mostrar a cor do texto. <a href="#" style={{color: `var(--primary-preview)`}}>Este é um link.</a>
-                                        </p>
-                                        <div className="flex flex-wrap gap-2">
-                                            <Button style={{ backgroundColor: `var(--primary-preview)`, color: 'hsl(var(--primary-foreground))'}}>Botão Primário</Button>
-                                            <Button variant="secondary" style={{ backgroundColor: `var(--secondary-preview)`, color: 'hsl(var(--secondary-foreground))'}}>Secundário</Button>
-                                            <Button variant="destructive" style={{ backgroundColor: `var(--destructive-preview)`, color: 'hsl(var(--destructive-foreground))'}}>Destrutivo</Button>
-                                        </div>
-                                        <Card style={{ backgroundColor: `var(--card-preview)`}}>
-                                            <CardContent className="p-4">
-                                                <p style={{ color: `var(--foreground-preview)`}}>Isto é um card de exemplo.</p>
-                                            </CardContent>
-                                        </Card>
-                                        <div className="p-4 rounded-md" style={{ backgroundColor: `var(--accent-preview)`}}>
-                                            <p style={{ color: 'hsl(var(--accent-foreground))'}}>Esta área usa a cor de destaque (accent).</p>
-                                        </div>
+                        {/* Preview */}
+                        <div className="space-y-6">
+                            <CardHeader className="px-1">
+                                <CardTitle>Pré-visualização em Tempo Real</CardTitle>
+                                <CardDescription>Veja como os componentes do aplicativo se parecerão com as cores selecionadas.</CardDescription>
+                            </CardHeader>
+                            <div
+                                className="p-8 rounded-lg border"
+                                style={{
+                                    '--background-preview': `hsl(${watchedColors.background})`,
+                                    '--foreground-preview': `hsl(${watchedColors.foreground})`,
+                                    '--card-preview': `hsl(${watchedColors.card})`,
+                                    '--primary-preview': `hsl(${watchedColors.primary})`,
+                                    '--secondary-preview': `hsl(${watchedColors.secondary})`,
+                                    '--accent-preview': `hsl(${watchedColors.accent})`,
+                                    '--destructive-preview': `hsl(${watchedColors.destructive})`,
+                                    backgroundColor: 'var(--background-preview)',
+                                    color: 'var(--foreground-preview)'
+                                } as React.CSSProperties}
+                            >
+                                <div className="space-y-6">
+                                    <h3 className="text-xl font-bold" style={{ color: `var(--foreground-preview)`}}>Título de Exemplo</h3>
+                                    <p style={{ color: `var(--foreground-preview)`}}>
+                                        Este é um parágrafo de exemplo para mostrar a cor do texto. <a href="#" style={{color: `var(--primary-preview)`}}>Este é um link.</a>
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button style={{ backgroundColor: `var(--primary-preview)`, color: 'hsl(var(--primary-foreground))'}}>Botão Primário</Button>
+                                        <Button variant="secondary" style={{ backgroundColor: `var(--secondary-preview)`, color: 'hsl(var(--secondary-foreground))'}}>Secundário</Button>
+                                        <Button variant="destructive" style={{ backgroundColor: `var(--destructive-preview)`, color: 'hsl(var(--destructive-foreground))'}}>Destrutivo</Button>
+                                    </div>
+                                    <Card style={{ backgroundColor: `var(--card-preview)`}}>
+                                        <CardContent className="p-4">
+                                            <p style={{ color: `var(--foreground-preview)`}}>Isto é um card de exemplo.</p>
+                                        </CardContent>
+                                    </Card>
+                                    <div className="p-4 rounded-md" style={{ backgroundColor: `var(--accent-preview)`}}>
+                                        <p style={{ color: 'hsl(var(--accent-foreground))'}}>Esta área usa a cor de destaque (accent).</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="mt-8 flex items-center gap-4">
-                            <Button type="submit" size="lg" disabled={isSaving || isRestoring}>
-                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Salvar Tema
-                            </Button>
-                            
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button type="button" variant="outline" size="lg" disabled={isSaving || isRestoring}>
-                                        {isRestoring ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
-                                        Restaurar Padrão
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Restaurar Tema Padrão?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Tem certeza de que deseja restaurar as cores originais? Todas as suas personalizações atuais serão perdidas.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleRestoreDefault}>Sim, Restaurar</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                   </form>
-                </main>
-                <AppFooter />
-            </div>
-        </AdminLayout>
+                    <div className="mt-8 flex items-center gap-4">
+                        <Button type="submit" size="lg" disabled={isSaving || isRestoring}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Salvar Tema
+                        </Button>
+                        
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button type="button" variant="outline" size="lg" disabled={isSaving || isRestoring}>
+                                    {isRestoring ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
+                                    Restaurar Padrão
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Restaurar Tema Padrão?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Tem certeza de que deseja restaurar as cores originais? Todas as suas personalizações atuais serão perdidas.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleRestoreDefault}>Sim, Restaurar</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </form>
+            </main>
+            <AppFooter />
+        </div>
+    );
+}
+
+export default function ManageThemePage() {
+    return (
+        <AdminGuard>
+            <ManageThemePageDetail />
+        </AdminGuard>
     );
 }
