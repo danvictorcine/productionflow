@@ -1,4 +1,3 @@
-// src/app/blog/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -36,7 +35,7 @@ export default function BlogPage() {
         const errorTyped = error as { code?: string; message: string };
         toast({
           variant: 'destructive',
-          title: 'Erro ao buscar posts',
+          title: 'Erro em /blog/page.tsx (fetchPosts)',
           description: <CopyableError userMessage="Não foi possível carregar as publicações do blog." errorCode={errorTyped.code || errorTyped.message} />,
         });
       } finally {

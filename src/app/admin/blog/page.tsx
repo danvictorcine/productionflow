@@ -51,7 +51,7 @@ export default function ManageBlogPage() {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro ao buscar posts',
+                title: 'Erro em /admin/blog/page.tsx (fetchPosts)',
                 description: <CopyableError userMessage="Não foi possível carregar as publicações." errorCode={errorTyped.code || errorTyped.message} />,
             });
         } finally {
@@ -73,7 +73,7 @@ export default function ManageBlogPage() {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro ao excluir',
+                title: 'Erro em /admin/blog/page.tsx (handleConfirmDelete)',
                 description: <CopyableError userMessage="Não foi possível excluir a publicação." errorCode={errorTyped.code || errorTyped.message} />,
             });
         }

@@ -88,7 +88,7 @@ export default function EditPageContentPage() {
                     const errorTyped = error as { code?: string; message: string };
                     toast({
                         variant: 'destructive',
-                        title: 'Erro ao carregar página',
+                        title: `Erro em /admin/pages/edit/${pageId}/page.tsx (getPage)`,
                         description: <CopyableError userMessage="Não foi possível carregar o conteúdo da página." errorCode={errorTyped.code || errorTyped.message} />,
                     });
                 })
@@ -142,7 +142,7 @@ export default function EditPageContentPage() {
                     const errorTyped = uploadError as { code?: string; message: string };
                     toast({
                         variant: 'destructive',
-                        title: 'Erro no Upload',
+                        title: `Erro em /admin/pages/edit/${pageId}/page.tsx (upload)`,
                         description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
                     });
                 }
@@ -154,7 +154,7 @@ export default function EditPageContentPage() {
         };
 
         input.click();
-    }, [toast]);
+    }, [toast, pageId]);
 
     const modules = useMemo(() => ({
         toolbar: {
@@ -217,7 +217,7 @@ export default function EditPageContentPage() {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro ao salvar',
+                title: `Erro em /admin/pages/edit/${pageId}/page.tsx (onSubmit)`,
                 description: <CopyableError userMessage="Não foi possível salvar as alterações." errorCode={errorTyped.code || errorTyped.message} />,
             });
         } finally {
@@ -282,5 +282,3 @@ export default function EditPageContentPage() {
         </div>
     )
 }
-
-    

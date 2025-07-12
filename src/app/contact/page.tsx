@@ -39,7 +39,7 @@ export default function ContactPage() {
         const errorTyped = error as { code?: string; message: string };
         toast({
             variant: 'destructive',
-            title: 'Erro ao carregar página',
+            title: 'Erro em /contact/page.tsx',
             description: <CopyableError userMessage="Não foi possível carregar o conteúdo da página." errorCode={errorTyped.code || errorTyped.message} />,
         });
       })

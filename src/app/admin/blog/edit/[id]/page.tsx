@@ -77,7 +77,7 @@ export default function EditPostPage() {
                     const errorTyped = error as { code?: string; message: string };
                     toast({ 
                         variant: 'destructive',
-                        title: 'Erro ao carregar post.',
+                        title: 'Erro em /admin/blog/edit/[id]/page.tsx (getPost)',
                         description: <CopyableError userMessage="Não foi possível carregar os dados do post." errorCode={errorTyped.code || errorTyped.message} />,
                     });
                     router.push('/admin/blog');
@@ -132,7 +132,7 @@ export default function EditPostPage() {
                     const errorTyped = uploadError as { code?: string; message: string };
                     toast({
                         variant: 'destructive',
-                        title: 'Erro no Upload',
+                        title: 'Erro em /admin/blog/edit/[id]/page.tsx (uploadImage)',
                         description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
                     });
                 }
@@ -219,7 +219,7 @@ export default function EditPostPage() {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro ao salvar',
+                title: 'Erro em /admin/blog/edit/[id]/page.tsx (onSubmit)',
                 description: <CopyableError userMessage="Não foi possível salvar a publicação." errorCode={errorTyped.code || errorTyped.message} />,
             });
         } finally {

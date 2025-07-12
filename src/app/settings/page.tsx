@@ -82,7 +82,7 @@ function SettingsPageDetail() {
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Erro ao atualizar nome',
+        title: 'Erro em /settings/page.tsx (handleUpdateName)',
         description: <CopyableError userMessage="Não foi possível salvar seu nome." errorCode={error.code || error.message} />,
       });
     } finally {
@@ -99,7 +99,7 @@ function SettingsPageDetail() {
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Erro ao enviar e-mail',
+        title: 'Erro em /settings/page.tsx (handlePasswordReset)',
         description: <CopyableError userMessage="Não foi possível enviar o e-mail de redefinição." errorCode={error.code || error.message} />,
       });
     } finally {
@@ -129,7 +129,7 @@ function SettingsPageDetail() {
         } catch (error: any) {
           toast({
             variant: 'destructive',
-            title: 'Erro no Upload',
+            title: 'Erro em /settings/page.tsx (handlePhotoUpload)',
             description: <CopyableError userMessage="Não foi possível salvar sua foto." errorCode={error.code || error.message} />,
           });
         } finally {
@@ -143,7 +143,7 @@ function SettingsPageDetail() {
       processImage().catch(error => {
         toast({
           variant: 'destructive',
-          title: 'Erro Inesperado',
+          title: 'Erro Inesperado em /settings/page.tsx',
           description: <CopyableError userMessage="Ocorreu um erro ao processar a imagem." errorCode={(error as Error).message} />,
         });
         setIsUploading(false);
@@ -187,7 +187,7 @@ function SettingsPageDetail() {
     } catch (error: any) {
         toast({
           variant: 'destructive',
-          title: 'Erro na Exportação',
+          title: 'Erro em /settings/page.tsx (handleExportData)',
           description: <CopyableError userMessage="Não foi possível exportar seus dados." errorCode={error.code || error.message} />,
         });
     } finally {
@@ -232,7 +232,7 @@ function SettingsPageDetail() {
         } catch (error: any) {
              toast({
               variant: 'destructive',
-              title: 'Erro na Importação',
+              title: 'Erro em /settings/page.tsx (handleConfirmImport)',
               description: <CopyableError userMessage={error.message || "Ocorreu um erro ao importar os dados."} errorCode={error.code} />,
             });
         } finally {

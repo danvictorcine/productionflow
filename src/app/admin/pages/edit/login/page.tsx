@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -82,7 +81,7 @@ export default function EditLoginPage() {
                 const errorTyped = error as { code?: string; message: string };
                 toast({
                     variant: 'destructive',
-                    title: 'Erro ao carregar conteúdo',
+                    title: 'Erro em /admin/pages/edit/login/page.tsx (getLoginPageContent)',
                     description: <CopyableError userMessage="Não foi possível carregar os dados da página." errorCode={errorTyped.code || errorTyped.message} />,
                 });
             })
@@ -122,7 +121,7 @@ export default function EditLoginPage() {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro no Upload',
+                title: 'Erro em /admin/pages/edit/login/page.tsx (handleImageUpload)',
                 description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
             });
         } finally {
@@ -143,7 +142,7 @@ export default function EditLoginPage() {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro ao remover imagem',
+                title: 'Erro em /admin/pages/edit/login/page.tsx (handleRemoveImage)',
                 description: <CopyableError userMessage="Não foi possível remover a imagem de fundo." errorCode={errorTyped.code || errorTyped.message} />,
             });
         }
@@ -166,7 +165,7 @@ export default function EditLoginPage() {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro ao salvar',
+                title: 'Erro em /admin/pages/edit/login/page.tsx (onSubmit)',
                 description: <CopyableError userMessage="Não foi possível salvar as alterações." errorCode={errorTyped.code || errorTyped.message} />,
             });
         } finally {

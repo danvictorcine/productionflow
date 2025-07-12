@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -81,8 +80,12 @@ export default function LoginPage() {
             setPosts(latestPosts);
             setLoginPageContent(content);
         } catch (error) {
-            console.error("Failed to fetch page content:", error);
-            toast({ variant: 'destructive', title: 'Erro ao carregar conteúdo da página.'});
+            const errorTyped = error as { code?: string; message: string };
+            toast({ 
+                variant: 'destructive', 
+                title: 'Erro em /login/page.tsx (fetchContent)',
+                description: <CopyableError userMessage="Não foi possível carregar o conteúdo da página." errorCode={errorTyped.code || errorTyped.message} />
+            });
         } finally {
             setIsContentLoading(false);
         }

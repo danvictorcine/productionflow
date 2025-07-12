@@ -112,7 +112,7 @@ export default function SignupPage() {
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Erro no Cadastro',
+        title: 'Erro em /signup/page.tsx (onSubmit)',
         description: <CopyableError userMessage={getSignupErrorMessage(error.code)} errorCode={error.code} />,
       });
     } finally {

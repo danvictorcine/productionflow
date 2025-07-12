@@ -66,7 +66,7 @@ function ProjectPageDetail() {
                 const errorTyped = error as { code?: string; message: string };
                 toast({ 
                     variant: "destructive", 
-                    title: "Erro ao carregar dados", 
+                    title: "Erro em /project/[id]/page.tsx (fetchData)", 
                     description: <CopyableError userMessage="Não foi possível carregar os dados do projeto." errorCode={errorTyped.code || errorTyped.message} />,
                 });
                 router.push('/');
@@ -102,7 +102,7 @@ function ProjectPageDetail() {
             const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
-                title: 'Erro ao atualizar projeto', 
+                title: 'Erro em /project/[id]/page.tsx (handleUpdateProject)', 
                 description: <CopyableError userMessage="Não foi possível atualizar o projeto." errorCode={errorTyped.code || errorTyped.message} /> 
             });
         }
@@ -122,7 +122,7 @@ function ProjectPageDetail() {
             const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
-                title: 'Erro ao adicionar despesa', 
+                title: 'Erro em /project/[id]/page.tsx (handleAddTransaction)', 
                 description: <CopyableError userMessage="Não foi possível adicionar a despesa." errorCode={errorTyped.code || errorTyped.message} /> 
             });
         }
@@ -141,7 +141,7 @@ function ProjectPageDetail() {
              const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
-                title: 'Erro ao importar transações', 
+                title: 'Erro em /project/[id]/page.tsx (handleAddTransactionsBatch)', 
                 description: <CopyableError userMessage="Não foi possível importar as transações." errorCode={errorTyped.code || errorTyped.message} /> 
             });
         }
@@ -162,7 +162,7 @@ function ProjectPageDetail() {
             const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
-                title: 'Erro ao atualizar despesa', 
+                title: 'Erro em /project/[id]/page.tsx (handleUpdateTransaction)', 
                 description: <CopyableError userMessage="Não foi possível atualizar a despesa." errorCode={errorTyped.code || errorTyped.message} /> 
             });
         }
@@ -177,7 +177,7 @@ function ProjectPageDetail() {
             const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
-                title: 'Erro ao excluir despesa', 
+                title: 'Erro em /project/[id]/page.tsx (handleDeleteTransaction)', 
                 description: <CopyableError userMessage="Não foi possível excluir a despesa." errorCode={errorTyped.code || errorTyped.message} /> 
             });
         }
