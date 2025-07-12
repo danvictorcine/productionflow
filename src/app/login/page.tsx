@@ -248,7 +248,7 @@ export default function LoginPage() {
                 </div>
             </div>
           </div>
-          <div className="relative flex flex-col bg-background py-6 px-4">
+          <div className="relative flex flex-col bg-card py-6 px-4">
             <div className="absolute top-4 right-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
