@@ -1,8 +1,12 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
+import type { ThemeSettings } from '@/lib/types';
+import ThemeLoader from '@/components/theme-loader';
+
 
 export const metadata: Metadata = {
   title: 'ProductionFlow',
@@ -12,11 +16,13 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
@@ -40,6 +46,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <ThemeLoader />
           <AuthProvider>
             {children}
             <Toaster />

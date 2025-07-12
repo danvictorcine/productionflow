@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { AppFooter } from '@/components/app-footer';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Newspaper } from 'lucide-react';
+import { ArrowLeft, BookOpen, Newspaper, Palette } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export default function AdminDashboard() {
@@ -47,6 +47,20 @@ export default function AdminDashboard() {
                                 <CardDescription>Edite o conteúdo das páginas, equipe e página de login.</CardDescription>
                             </CardHeader>
                              <CardContent>
+                                <Button>Acessar</Button>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                    <Link href="/admin/theme" className="block col-span-1 md:col-span-2">
+                        <Card className="hover:bg-muted/50 transition-colors h-full">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Palette className="h-5 w-5 text-primary"/>
+                                    Gerenciar Tema do Aplicativo
+                                </CardTitle>
+                                <CardDescription>Personalize as cores de todo o aplicativo, como botões, fundos e textos.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
                                 <Button>Acessar</Button>
                             </CardContent>
                         </Card>

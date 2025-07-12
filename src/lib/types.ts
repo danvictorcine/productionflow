@@ -103,7 +103,8 @@ export type TeamMemberAbout = {
   bio: string;
   photoURL: string;
   order: number;
-  createdAt: Date;
+  createdAt?: Date; // Optional for backward compatibility
+  file?: File; // For upload state management
 };
 
 
@@ -214,4 +215,16 @@ export type BoardItem = {
   position: { x: number; y: number };
   size: { width: number | string; height: number | string };
   createdAt: Date;
+};
+
+
+// === Theme Settings ===
+export type ThemeSettings = {
+  primary: string; // HSL string e.g., "231 48% 48%"
+  secondary: string;
+  accent: string;
+  background: string;
+  foreground: string;
+  card: string;
+  destructive: string;
 };

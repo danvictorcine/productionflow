@@ -19,7 +19,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -761,12 +761,11 @@ export const saveTeamMembers = async (members: Omit<TeamMemberAbout, 'createdAt'
 
     // Set/Update members
     members.forEach((member, index) => {
-        const { id, ...data } = member;
-        const docRef = doc(collectionRef, id);
+        const { file, ...data } = member;
+        const docRef = doc(collectionRef, member.id);
         const dataToSave = {
             ...data,
             order: index, // Update order based on array position
-            createdAt: data.createdAt ? Timestamp.fromDate(new Date(data.createdAt)) : Timestamp.now(),
         };
         batch.set(docRef, dataToSave, { merge: true });
     });
@@ -785,3 +784,26 @@ export const uploadTeamMemberPhoto = async (file: File): Promise<string> => {
   await uploadBytes(storageRef, file);
   return await getDownloadURL(storageRef);
 };
+
+
+// === Theme Settings Functions ===
+
+export const getThemeSettings = async (): Promise<ThemeSettings | null> => {
+    const docRef = doc(db, 'settings', 'theme');
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        return docSnap.data() as ThemeSettings;
+    }
+    return null;
+}
+
+export const saveThemeSettings = async (theme: ThemeSettings) => {
+    const docRef = doc(db, 'settings', 'theme');
+    await setDoc(docRef, theme);
+}
+
+export const deleteThemeSettings = async () => {
+    const docRef = doc(db, 'settings', 'theme');
+    await deleteDoc(docRef);
+}
