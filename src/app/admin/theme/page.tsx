@@ -40,6 +40,7 @@ function hslToHex(h: number, s: number, l: number): string {
 }
 
 function hslStringToHex(hslString: string): string {
+    if (!hslString) return '#000000';
     const [h, s, l] = hslString.replace(/%/g, '').split(' ').map(Number);
     if (!isNaN(h) && !isNaN(s) && !isNaN(l)) {
         return hslToHex(h, s, l);
@@ -94,8 +95,7 @@ export default function ManageThemePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isRestoring, setIsRestoring] = useState(false);
-    const [theme, setTheme] = useState<ThemeSettings>(defaultColors);
-
+    
     const { control, handleSubmit, watch, reset } = useForm<ThemeSettings>({
         defaultValues: defaultColors
     });
@@ -107,7 +107,6 @@ export default function ManageThemePage() {
         try {
             const savedTheme = await firestoreApi.getThemeSettings();
             const currentTheme = savedTheme || defaultColors;
-            setTheme(currentTheme);
             reset(currentTheme);
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
@@ -130,7 +129,6 @@ export default function ManageThemePage() {
         try {
             await firestoreApi.saveThemeSettings(data);
             toast({ title: 'Tema salvo com sucesso!', description: 'As alterações podem levar alguns segundos para serem aplicadas em todo o site.' });
-            // Força a recarga da página para que o novo tema seja injetado pelo layout
             window.location.reload();
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
@@ -295,4 +293,5 @@ export default function ManageThemePage() {
             </div>
         </AdminLayout>
     );
-}
+
+    
