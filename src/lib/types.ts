@@ -220,11 +220,17 @@ export type BoardItem = {
 
 // === Theme Settings ===
 export type ThemeSettings = {
-  primary: string; // HSL string e.g., "231 48% 48%"
+  primary: string;
   secondary: string;
   accent: string;
   background: string;
   foreground: string;
   card: string;
   destructive: string;
+  border: string;
+  chart1: string;
+  chart2: string;
+  chart3: string;
+  chart4: string;
+  chart5: string;
 };

@@ -26,6 +26,12 @@ const defaultColors: ThemeSettings = {
     foreground: '240 10% 3.9%',
     card: '0 0% 100%',
     destructive: '0 84.2% 60.2%',
+    border: '0 0% 89.8%',
+    chart1: '231 48% 48%',
+    chart2: '174 100% 29.4%',
+    chart3: '231 48% 68%',
+    chart4: '174 100% 49.4%',
+    chart5: '231 48% 88%',
 };
 
 function hslToHex(h: number, s: number, l: number): string {
@@ -106,7 +112,8 @@ function ManageThemePageDetail() {
         setIsLoading(true);
         try {
             const savedTheme = await firestoreApi.getThemeSettings();
-            const currentTheme = savedTheme || defaultColors;
+            // Merge saved theme with defaults to ensure all keys are present
+            const currentTheme = { ...defaultColors, ...(savedTheme || {}) };
             reset(currentTheme);
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
@@ -164,6 +171,9 @@ function ManageThemePageDetail() {
         return <div className="p-8"><Skeleton className="h-96 w-full" /></div>;
     }
 
+    const coreColors = ['background', 'foreground', 'card', 'border', 'primary', 'secondary', 'accent', 'destructive'] as const;
+    const chartColors = ['chart1', 'chart2', 'chart3', 'chart4', 'chart5'] as const;
+
     return (
         <div className="flex flex-col min-h-screen">
             <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
@@ -182,39 +192,58 @@ function ManageThemePageDetail() {
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         {/* Color Pickers */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Cores Principais</CardTitle>
-                                <CardDescription>Clique nas cores para alterá-las. Os valores HSL são atualizados automaticamente.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {(Object.keys(defaultColors) as Array<keyof ThemeSettings>).map((key) => (
-                                    <div key={key} className="flex items-center justify-between">
-                                        <label htmlFor={key} className="capitalize font-medium">{key}</label>
-                                        <div className="flex items-center gap-2">
-                                            <Controller
-                                                name={key}
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <ColorPicker value={field.value} onChange={field.onChange} />
-                                                )}
-                                            />
-                                            <Controller
-                                                name={key}
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <input
-                                                        {...field}
-                                                        className="w-40 p-2 border rounded-md font-mono text-sm bg-muted"
-                                                        readOnly
-                                                    />
-                                                )}
-                                            />
+                        <div className="space-y-6">
+                           <Card>
+                                <CardHeader>
+                                    <CardTitle>Cores Principais</CardTitle>
+                                    <CardDescription>Clique nas cores para alterá-las. Os valores HSL são atualizados automaticamente.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {coreColors.map((key) => (
+                                        <div key={key} className="flex items-center justify-between">
+                                            <label htmlFor={key} className="capitalize font-medium">{key}</label>
+                                            <div className="flex items-center gap-2">
+                                                <Controller
+                                                    name={key}
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <ColorPicker value={field.value} onChange={field.onChange} />
+                                                    )}
+                                                />
+                                                <Controller
+                                                    name={key}
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <input
+                                                            {...field}
+                                                            className="w-40 p-2 border rounded-md font-mono text-sm bg-muted"
+                                                            readOnly
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Cores dos Gráficos</CardTitle>
+                                    <CardDescription>Defina as cores para as barras e seções dos gráficos.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {chartColors.map((key) => (
+                                        <div key={key} className="flex items-center justify-between">
+                                            <label htmlFor={key} className="capitalize font-medium">{key.replace('chart', 'Chart ')}</label>
+                                            <div className="flex items-center gap-2">
+                                                <Controller name={key} control={control} render={({ field }) => (<ColorPicker value={field.value} onChange={field.onChange} />)}/>
+                                                <Controller name={key} control={control} render={({ field }) => (<input {...field} className="w-40 p-2 border rounded-md font-mono text-sm bg-muted" readOnly />)} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        </div>
 
                         {/* Preview */}
                         <div className="space-y-6">
@@ -232,8 +261,10 @@ function ManageThemePageDetail() {
                                     '--secondary-preview': `hsl(${watchedColors.secondary})`,
                                     '--accent-preview': `hsl(${watchedColors.accent})`,
                                     '--destructive-preview': `hsl(${watchedColors.destructive})`,
+                                    '--border-preview': `hsl(${watchedColors.border})`,
                                     backgroundColor: 'var(--background-preview)',
-                                    color: 'var(--foreground-preview)'
+                                    color: 'var(--foreground-preview)',
+                                    borderColor: 'var(--border-preview)',
                                 } as React.CSSProperties}
                             >
                                 <div className="space-y-6">
@@ -246,13 +277,21 @@ function ManageThemePageDetail() {
                                         <Button variant="secondary" style={{ backgroundColor: `var(--secondary-preview)`, color: 'hsl(var(--secondary-foreground))'}}>Secundário</Button>
                                         <Button variant="destructive" style={{ backgroundColor: `var(--destructive-preview)`, color: 'hsl(var(--destructive-foreground))'}}>Destrutivo</Button>
                                     </div>
-                                    <Card style={{ backgroundColor: `var(--card-preview)`}}>
+                                    <Card style={{ backgroundColor: `var(--card-preview)`, borderColor: 'var(--border-preview)'}}>
                                         <CardContent className="p-4">
                                             <p style={{ color: `var(--foreground-preview)`}}>Isto é um card de exemplo.</p>
                                         </CardContent>
                                     </Card>
                                     <div className="p-4 rounded-md" style={{ backgroundColor: `var(--accent-preview)`}}>
                                         <p style={{ color: 'hsl(var(--accent-foreground))'}}>Esta área usa a cor de destaque (accent).</p>
+                                    </div>
+                                    {/* Mini Chart Preview */}
+                                    <div className="flex pt-4 h-24 gap-1 items-end">
+                                        <div className="w-1/5 h-[50%] rounded-t-sm" style={{backgroundColor: `hsl(${watchedColors.chart1})`}}></div>
+                                        <div className="w-1/5 h-[80%] rounded-t-sm" style={{backgroundColor: `hsl(${watchedColors.chart2})`}}></div>
+                                        <div className="w-1/5 h-[60%] rounded-t-sm" style={{backgroundColor: `hsl(${watchedColors.chart3})`}}></div>
+                                        <div className="w-1/5 h-[90%] rounded-t-sm" style={{backgroundColor: `hsl(${watchedColors.chart4})`}}></div>
+                                        <div className="w-1/5 h-[70%] rounded-t-sm" style={{backgroundColor: `hsl(${watchedColors.chart5})`}}></div>
                                     </div>
                                 </div>
                             </div>

@@ -32,18 +32,23 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
       --popover: ${theme.card};
       --popover-foreground: ${theme.foreground};
       --primary: ${theme.primary};
-      --primary-foreground: 0 0% 98%; /* Keep white/light text for buttons */
+      --primary-foreground: 0 0% 98%;
       --secondary: ${theme.secondary};
       --secondary-foreground: ${theme.foreground};
       --muted: ${theme.secondary};
       --muted-foreground: ${theme.foreground} / 0.6;
       --accent: ${theme.accent};
-      --accent-foreground: 0 0% 98%; /* Keep white/light text */
+      --accent-foreground: 0 0% 98%;
       --destructive: ${theme.destructive};
-      --destructive-foreground: 0 0% 98%; /* Keep white/light text */
-      --border: ${theme.foreground} / 0.1;
-      --input: ${theme.foreground} / 0.1;
+      --destructive-foreground: 0 0% 98%;
+      --border: ${theme.border};
+      --input: ${theme.border};
       --ring: ${theme.primary};
+      --chart-1: ${theme.chart1};
+      --chart-2: ${theme.chart2};
+      --chart-3: ${theme.chart3};
+      --chart-4: ${theme.chart4};
+      --chart-5: ${theme.chart5};
     }
 
     .dark {
@@ -53,19 +58,24 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
       --card-foreground: ${generateInverseVariant(theme.foreground)};
       --popover: ${generateInverseVariant(theme.card)};
       --popover-foreground: ${generateInverseVariant(theme.foreground)};
-      --primary: ${theme.primary}; /* Keep same primary color */
+      --primary: ${theme.primary};
       --primary-foreground: 0 0% 98%;
       --secondary: ${generateInverseVariant(theme.secondary)};
       --secondary-foreground: ${generateInverseVariant(theme.foreground)};
       --muted: ${generateInverseVariant(theme.secondary)};
       --muted-foreground: ${generateInverseVariant(theme.foreground)} / 0.6;
-      --accent: ${theme.accent}; /* Keep same accent color */
+      --accent: ${theme.accent};
       --accent-foreground: 0 0% 98%;
-      --destructive: ${theme.destructive}; /* Keep same destructive color */
+      --destructive: ${theme.destructive};
       --destructive-foreground: 0 0% 98%;
-      --border: ${generateInverseVariant(theme.foreground)} / 0.1;
-      --input: ${generateInverseVariant(theme.foreground)} / 0.1;
+      --border: ${generateInverseVariant(theme.border)};
+      --input: ${generateInverseVariant(theme.border)};
       --ring: ${theme.primary};
+      --chart-1: ${theme.chart1};
+      --chart-2: ${theme.chart2};
+      --chart-3: ${theme.chart3};
+      --chart-4: ${theme.chart4};
+      --chart-5: ${theme.chart5};
     }
   `;
 
