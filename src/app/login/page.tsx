@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -54,12 +54,19 @@ const FeatureCardSkeleton = () => (
     </div>
 );
 
+const GoogleIcon = () => (
+    <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+      <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.5 173.5 64.2L337.7 139.6C312.8 118.4 283.5 104 248 104c-80.3 0-145.3 65.8-145.3 146.9s65 146.9 145.3 146.9c95.2 0 130.6-76.3 134-114.3H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+    </svg>
+  );
+
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
   const { setTheme } = useTheme();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -115,6 +122,8 @@ export default function LoginPage() {
         return 'E-mail ou senha incorretos. Por favor, tente novamente.';
       case 'auth/invalid-email':
         return 'O formato do e-mail é inválido.';
+      case 'auth/popup-closed-by-user':
+        return 'O pop-up de login foi fechado antes da conclusão. Tente novamente.';
       case 'auth/too-many-requests':
         return 'Acesso bloqueado temporariamente devido a muitas tentativas. Tente novamente mais tarde.';
       default:
@@ -145,6 +154,34 @@ export default function LoginPage() {
         setIsLoading(false);
     }
   }
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const additionalInfo = getAdditionalUserInfo(result);
+
+      if (additionalInfo?.isNewUser && user.email) {
+        await firestoreApi.createUserProfile(
+          user.uid,
+          user.displayName || "Novo Usuário",
+          user.email,
+          user.photoURL
+        );
+      }
+      router.push('/');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Login com Google',
+        description: <CopyableError userMessage={getLoginErrorMessage(error.code)} errorCode={error.code} />,
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   if (loading || user) {
       return null;
@@ -307,12 +344,29 @@ export default function LoginPage() {
                           </FormItem>
                         )}
                       />
-                      <Button type="submit" className="w-full" disabled={isLoading}>
+                      <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
                          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Entrar
                       </Button>
                     </form>
                   </Form>
+
+                   <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-card px-2 text-muted-foreground">
+                                OU
+                            </span>
+                        </div>
+                    </div>
+
+                    <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+                        {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                        Continuar com o Google
+                    </Button>
+
                   <div className="mt-4 text-center text-sm">
                     Não tem uma conta?{' '}
                     <Link href="/signup" className="underline">
