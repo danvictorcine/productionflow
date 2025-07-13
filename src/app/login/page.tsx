@@ -218,8 +218,8 @@ export default function LoginPage() {
                         <Badge variant="outline" className={cn(showBackground && "bg-black/20 text-white border-white/50")}>BETA</Badge>
                       </div>
                     </div>
-                    <p className={cn("text-lg", showBackground ? "text-slate-200" : "text-muted-foreground")}>
-                        Sua plataforma completa para a gestão financeira de produções audiovisuais.
+                    <p className="text-lg text-muted-foreground">
+                        Sua plataforma completa para a gestão de produções audiovisuais.
                     </p>
                 </div>
                 <div className="mt-12 grid gap-8 w-full max-w-md">
