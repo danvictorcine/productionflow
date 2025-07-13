@@ -192,7 +192,7 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen">
         <div className="w-full lg:grid lg:grid-cols-2 flex-1">
-          <div className="hidden bg-muted lg:flex flex-col items-center justify-center p-8 relative">
+          <div className="flex flex-col items-center justify-center p-8 relative bg-muted lg:bg-muted">
             {showBackground && (
                 <>
                     <Image
