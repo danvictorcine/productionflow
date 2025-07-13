@@ -8,6 +8,8 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Camera, User as UserIcon, Upload, Download } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
+import { linkWithPopup, GoogleAuthProvider } from 'firebase/auth';
+
 
 import AuthGuard from '@/components/auth-guard';
 import { useAuth } from '@/context/auth-context';
@@ -18,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import * as firestoreApi from '@/lib/firebase/firestore';
+import { auth } from '@/lib/firebase/config';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserNav } from '@/components/user-nav';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -40,6 +43,12 @@ const formSchema = z.object({
   email: z.string().email(),
 });
 
+const GoogleIcon = () => (
+    <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+      <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.5 173.5 64.2L337.7 139.6C312.8 118.4 283.5 104 248 104c-80.3 0-145.3 65.8-145.3 146.9s65 146.9 145.3 146.9c95.2 0 130.6-76.3 134-114.3H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+    </svg>
+  );
+
 
 function SettingsPageDetail() {
   const router = useRouter();
@@ -48,6 +57,7 @@ function SettingsPageDetail() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLinking, setIsLinking] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,6 +65,7 @@ function SettingsPageDetail() {
   const [isImporting, setIsImporting] = useState(false);
   const [fileToImport, setFileToImport] = useState<File | null>(null);
   
+  const isGoogleLinked = user?.providerData.some(p => p.providerId === 'google.com');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -105,6 +116,29 @@ function SettingsPageDetail() {
       });
     } finally {
       setIsSendingEmail(false);
+    }
+  };
+
+  const handleLinkGoogleAccount = async () => {
+    if (!auth.currentUser || isGoogleLinked) return;
+    setIsLinking(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await linkWithPopup(auth.currentUser, provider);
+      await refreshUser(); // Refresh user data to show the linked status
+      toast({ title: "Sucesso!", description: "Sua conta Google foi vinculada." });
+    } catch (error: any) {
+      let userMessage = "Não foi possível vincular sua conta Google.";
+      if (error.code === 'auth/credential-already-in-use') {
+        userMessage = "Esta conta Google já está associada a outro usuário do ProductionFlow.";
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Vincular Conta',
+        description: <CopyableError userMessage={userMessage} errorCode={error.code} />,
+      });
+    } finally {
+      setIsLinking(false);
     }
   };
 
@@ -328,9 +362,18 @@ function SettingsPageDetail() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input readOnly disabled {...field} />
-                            </FormControl>
+                            {isGoogleLinked ? (
+                              <div className="flex items-center gap-2">
+                                <Input readOnly disabled {...field} className="flex-1"/>
+                                <Badge variant="outline" className="whitespace-nowrap border-green-300 bg-green-50 text-green-700">
+                                  <GoogleIcon /> Conectado
+                                </Badge>
+                              </div>
+                            ) : (
+                              <FormControl>
+                                <Input readOnly disabled {...field} />
+                              </FormControl>
+                            )}
                             <FormMessage />
                           </FormItem>
                         )}
@@ -345,14 +388,22 @@ function SettingsPageDetail() {
                  <Separator />
 
                  <div className="space-y-4">
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel>Senha e Conexões</FormLabel>
                      <p className="text-sm text-muted-foreground">
-                        Para alterar sua senha, enviaremos um link de redefinição para seu e-mail.
+                        Para alterar sua senha, enviaremos um link de redefinição para seu e-mail. Você também pode conectar sua conta Google para um login mais rápido.
                     </p>
-                    <Button type="button" variant="outline" onClick={handlePasswordReset} disabled={isSendingEmail}>
-                        {isSendingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Enviar e-mail para alterar senha
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      {!isGoogleLinked && (
+                        <Button type="button" variant="outline" onClick={handleLinkGoogleAccount} disabled={isLinking}>
+                          {isLinking ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />}
+                          Conectar com Google
+                        </Button>
+                      )}
+                      <Button type="button" variant="outline" onClick={handlePasswordReset} disabled={isSendingEmail}>
+                          {isSendingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Enviar e-mail para alterar senha
+                      </Button>
+                    </div>
                  </div>
 
                  <Separator />
@@ -425,3 +476,5 @@ export default function SettingsPage() {
         </AuthGuard>
     )
 }
+
+    
