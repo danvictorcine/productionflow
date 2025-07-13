@@ -210,11 +210,11 @@ export default function LoginPage() {
                 <div className="mx-auto w-full max-w-md space-y-4 text-center">
                     <div className="flex items-center justify-center gap-3">
                       <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
-                          <rect width="32" height="32" rx="6" style={{fill: `hsl(var(--brandIcon))`}}/>
+                          <rect width="32" height="32" rx="6" style={{fill: `hsl(var(--brand-icon))`}}/>
                           <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))" style={{opacity: 0.8}}/>
                       </svg>
                       <div className="flex items-center gap-2">
-                        <h1 className={cn("text-4xl font-bold tracking-tighter", showBackground ? "text-white" : "text-foreground")} style={{color: showBackground ? 'white' : 'hsl(var(--brandText))'}}>ProductionFlow</h1>
+                        <h1 className={cn("text-4xl font-bold tracking-tighter", showBackground ? "text-white" : "text-foreground")} style={{color: showBackground ? 'white' : 'hsl(var(--brand-text))'}}>ProductionFlow</h1>
                         <Badge variant="outline" className={cn(showBackground && "bg-black/20 text-white border-white/50")}>BETA</Badge>
                       </div>
                     </div>
