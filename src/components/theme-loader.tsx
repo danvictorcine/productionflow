@@ -1,4 +1,3 @@
-
 // @/components/theme-loader.tsx
 'use client';
 
@@ -79,7 +78,7 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
       --chart-4: ${theme.chart4};
       --chart-5: ${theme.chart5};
       --brand-icon: ${theme.brandIcon};
-      --brand-text: ${theme.brandText};
+      --brand-text: ${generateInverseVariant(theme.brandText)};
       --brand-login: ${theme.brandLogin};
     }
   `;
