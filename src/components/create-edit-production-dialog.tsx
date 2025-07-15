@@ -111,7 +111,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
   const handleSubmit = (values: ProductionFormValues) => {
     const sanitizedTeam = values.team.map((member) => ({
       ...member,
-      id: member.id || crypto.randomUUID(),
+      id: member.id.startsWith('new-') ? '' : member.id, // Clear temporary ID for new members
       contact: member.contact || "",
       dietaryRestriction: member.dietaryRestriction || "",
       extraNotes: member.extraNotes || "",
@@ -124,7 +124,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
       responsibleProducer: values.responsibleProducer || "",
       client: values.client || "",
       producer: values.producer || "",
-      team: sanitizedTeam,
+      team: sanitizedTeam.map(({ id, ...rest }) => ({...rest, id: id || crypto.randomUUID() })),
     };
     
     onSubmit(dataToSubmit);
@@ -308,7 +308,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                           </div>
                         )
                       })}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ id: crypto.randomUUID(), name: "", role: "", contact: "", hasDietaryRestriction: false, dietaryRestriction: "", extraNotes: "" })}>
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ id: `new-${Date.now()}`, name: "", role: "", contact: "", hasDietaryRestriction: false, dietaryRestriction: "", extraNotes: "" })}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adicionar Membro
                       </Button>

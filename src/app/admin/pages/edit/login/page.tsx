@@ -332,7 +332,7 @@ export default function EditLoginPage() {
                             ))}
                         </div>
                         <div className="flex items-center gap-4">
-                            <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), icon: 'DollarSign', title: '', description: '' })}>
+                            <Button type="button" variant="outline" onClick={() => append({ id: `new-${Date.now()}`, icon: 'DollarSign', title: '', description: '' })}>
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Adicionar Novo Card
                             </Button>
