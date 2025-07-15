@@ -1,65 +1,80 @@
 
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions for clarity and reuse
-    function isSignedIn() {
-      return request.auth != null;
-    }
+
+    // Helper function to check ownership
     function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    function isAdmin() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // Default deny
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // User profiles can be read by any authenticated user.
-    // Users can only create/update their own profile. Admins can update any.
+    // Users can read and update their own profile.
+    // Creation is handled by a backend function (or Cloud Function), so we don't need a public create rule.
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      allow read, update: if isOwner(userId);
     }
-
-    // Projects and Productions: A user can read/write their own documents.
-    // This simple rule works for get, list, create, update, and delete,
-    // because the app's queries are secured with a `where('userId', '==', auth.uid)` clause.
+    
+    // Projects (Financial)
     match /projects/{projectId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
+    
+    // Transactions for Financial Projects
+    match /transactions/{transactionId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    // Productions (Call Sheet)
     match /productions/{productionId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    // Shooting Days for Productions
+    match /shooting_days/{dayId} {
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    // Creative Projects (Moodboards)
+    match /creative_projects/{creativeProjectId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
     }
 
-    // Sub-collections: Permissions are derived from the parent document.
-    match /projects/{projectId}/transactions/{transactionId} {
-      allow read, write: if get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid;
-    }
-    match /productions/{productionId}/shooting_days/{dayId} {
-      allow read, write: if get(/databases/$(database)/documents/productions/$(productionId)).data.userId == request.auth.uid;
+    // Board Items for Creative Projects
+    match /board_items/{itemId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
     }
 
-    // Admin-only content
-    match /creative_projects/{path=**} {
-      allow read, write: if isAdmin();
-    }
-    match /board_items/{path=**} {
-      allow read, write: if isAdmin();
-    }
-
-    // Public content, admin-only writes
+    // --- Public Content Collections ---
+    
+    // Blog Posts - anyone can read
     match /posts/{postId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if request.auth != null; // Write requires auth
     }
+    
+    // Page Content (About, Contact, etc.) - anyone can read
     match /pages/{pageId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if request.auth != null; // Write requires auth
+    }
+    
+    // Team Members (for About page) - anyone can read
+    match /teamMembers/{memberId} {
+      allow get, list: if true;
+      allow create, update, delete: if request.auth != null; // Write requires auth
+    }
+    
+    // Theme Settings - anyone can read
+    match /settings/theme {
+      allow get: if true; // Only single doc, so get is sufficient for public read
+      allow create, update, delete: if request.auth != null; // Write requires auth
     }
   }
 }
