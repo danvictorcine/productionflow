@@ -463,7 +463,9 @@ function CreativeProjectPageDetail() {
           <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
         <div className="flex items-center gap-3">
-            <Brush className="h-6 w-6 text-muted-foreground" />
+            <div className="p-3 rounded-full bg-primary/10">
+                <Brush className="h-5 w-5 text-primary" />
+            </div>
             <h1 className="text-xl font-bold text-primary truncate">{project.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">

@@ -1,3 +1,4 @@
+
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -529,7 +530,9 @@ function ProductionPageDetail() {
           </Button>
         </Link>
         <div className="flex items-center gap-3">
-          <Clapperboard className="h-6 w-6 text-muted-foreground" />
+          <div className="p-3 rounded-full bg-primary/10">
+            <Clapperboard className="h-5 w-5 text-primary" />
+          </div>
           <h1 className="text-xl font-bold text-primary truncate">{production.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
