@@ -716,7 +716,14 @@ export const deleteImageFromUrl = async (url: string): Promise<void> => {
   }
 
   try {
-    const imageRef = ref(storage, url);
+    const filePathRegex = /o\/(.*?)\?/;
+    const matches = url.match(filePathRegex);
+    if (!matches || matches.length < 2) {
+      throw new Error("Could not extract file path from URL.");
+    }
+    
+    const filePath = decodeURIComponent(matches[1]);
+    const imageRef = ref(storage, filePath);
     await deleteObject(imageRef);
   } catch (error: any) {
     if (error.code === 'storage/object-not-found') {
