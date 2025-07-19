@@ -1,26 +1,37 @@
+
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
-    // Nega tudo por padrão.
-    match /{allPaths=**} {
-      allow read, write: if false;
+
+    // Helper function to check ownership by user ID in the path
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // Permite que todos leiam fotos de perfil, mas apenas o dono pode atualizar.
+    // Users can read/write their own profile picture.
     match /users/{userId}/profile.jpg {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read;
+      allow write: if isOwner(userId);
+    }
+    
+    // Users can read/write their own creative project board images.
+    match /content/board_images/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if isOwner(userId);
     }
 
-    // Permite que todos leiam o conteúdo (imagens de páginas, etc.).
-    // Apenas administradores podem escrever na pasta 'content'.
-    function isAdmin() {
-      return request.auth != null && get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    match /content/{allPaths=**} {
+    // Public content images are readable by anyone.
+    // Writes are restricted to authenticated users (admins in the app context).
+    match /content/{folder}/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if request.auth != null;
+    }
+    
+    // Team member photos are public.
+    match /team_photos/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
-    
