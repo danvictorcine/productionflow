@@ -1,6 +1,7 @@
 
 
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -652,11 +653,11 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
 
 
 export const getStoryboardPanels = async (storyboardId: string): Promise<StoryboardPanel[]> => {
-  const userId = getUserId();
+  // Query simplified to avoid needing a composite index.
+  // Security is handled by Firestore Rules, which check the parent storyboard's userId.
   const q = query(
     collection(db, 'storyboard_panels'),
     where('storyboardId', '==', storyboardId),
-    where('userId', '==', userId),
     orderBy('order', 'asc')
   );
   const querySnapshot = await getDocs(q);
@@ -822,10 +823,10 @@ export const getLoginPageContent = async (): Promise<LoginPageContent> => {
   // Return default hardcoded values if nothing exists in Firestore
   return {
     features: [
-      { title: 'Orçamento Inteligente', description: 'Controle seu orçamento, despesas e saldo em tempo real, com gráficos claros e detalhados.', icon: 'DollarSign', order: 0, id: 'default-0' },
-      { title: 'Gestão de Equipe Completa', description: 'Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.', icon: 'Users', order: 1, id: 'default-1' },
-      { title: 'Ordem do Dia Detalhada', description: 'Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.', icon: 'Clapperboard', order: 2, id: 'default-2' },
-      { title: 'Relatórios Simplificados', description: 'Exporte relatórios financeiros e de produção para Excel e PDF com um clique.', icon: 'FileSpreadsheet', order: 3, id: 'default-3' },
+      { id: 'default-0', title: 'Orçamento Inteligente', description: 'Controle seu orçamento, despesas e saldo em tempo real, com gráficos claros e detalhados.', icon: 'DollarSign', order: 0 },
+      { id: 'default-1', title: 'Gestão de Equipe Completa', description: 'Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.', icon: 'Users', order: 1 },
+      { id: 'default-2', title: 'Ordem do Dia Detalhada', description: 'Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.', icon: 'Clapperboard', order: 2 },
+      { id: 'default-3', title: 'Relatórios Simplificados', description: 'Exporte relatórios financeiros e de produção para Excel e PDF com um clique.', icon: 'FileSpreadsheet', order: 3 },
     ],
     backgroundImageUrl: '',
     isBackgroundEnabled: false,
@@ -856,7 +857,9 @@ export const deleteImageFromUrl = async (url: string): Promise<void> => {
     }
 
     try {
-        const imageRef = ref(storage, url);
+        const decodedUrl = decodeURIComponent(url);
+        const path = decodedUrl.substring(decodedUrl.indexOf('/o/') + 3, decodedUrl.indexOf('?'));
+        const imageRef = ref(storage, path);
         await deleteObject(imageRef);
     } catch (error: any) {
         if (error.code === 'storage/object-not-found') {
