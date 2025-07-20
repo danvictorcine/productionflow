@@ -88,61 +88,6 @@ function HomePage() {
     null
   );
 
-  useEffect(() => {
-    const fetchItems = async () => {
-      if (!user) return;
-      setIsLoading(true);
-      try {
-        const projectsPromise = firestoreApi.getProjects();
-        const productionsPromise = firestoreApi.getProductions();
-        const storyboardsPromise = firestoreApi.getStoryboards();
-        // Only fetch creative projects if the user is an admin
-        const creativeProjectsPromise = user.isAdmin ? firestoreApi.getCreativeProjects() : Promise.resolve([]);
-
-        const [projects, productions, creativeProjects, storyboards] = await Promise.all([
-          projectsPromise,
-          productionsPromise,
-          creativeProjectsPromise,
-          storyboardsPromise,
-        ]);
-
-        const displayableItems: DisplayableItem[] = [
-          ...projects.map((p) => ({ ...p, itemType: 'financial' as const })),
-          ...productions.map((p) => ({ ...p, itemType: 'production' as const })),
-          ...storyboards.map((p) => ({ ...p, itemType: 'storyboard' as const })),
-          ...creativeProjects.map((p) => ({
-            ...p,
-            itemType: 'creative' as const,
-          })),
-        ];
-
-        // Client-side sorting as firestore query was simplified
-        displayableItems.sort(
-          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-        );
-
-        setItems(displayableItems);
-      } catch (error) {
-        const errorTyped = error as { code?: string; message: string };
-        toast({
-          variant: 'destructive',
-          title: 'Erro em /page.tsx (fetchItems)',
-          description: (
-            <CopyableError
-              userMessage="Não foi possível carregar seus projetos."
-              errorCode={errorTyped.code || errorTyped.message}
-            />
-          ),
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    if (user) {
-      fetchItems();
-    }
-  }, [user, toast]);
-
   const fetchItems = async () => {
       if (!user) return;
       setIsLoading(true);
@@ -192,6 +137,12 @@ function HomePage() {
         setIsLoading(false);
       }
     };
+    
+  useEffect(() => {
+    if (user) {
+      fetchItems();
+    }
+  }, [user, toast]);
 
   const handleSelectProjectType = (
     type: 'financial' | 'production' | 'creative' | 'storyboard'
@@ -391,7 +342,7 @@ function HomePage() {
     if (items.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
-          <Clapperboard className="mx-auto h-12 w-12 text-primary" />
+          <Clapperboard className="mx-auto h-10 w-10 text-primary" />
           <h3 className="mt-4 text-lg font-semibold">
             Nenhum projeto encontrado
           </h3>

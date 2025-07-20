@@ -1,3 +1,4 @@
+
 // @/src/components/create-edit-storyboard-dialog.tsx
 "use client";
 
@@ -26,10 +27,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "./ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 const formSchema = z.object({
   name: z.string().min(2, "O nome do storyboard deve ter pelo menos 2 caracteres."),
   description: z.string().optional(),
+  aspectRatio: z.enum(['16:9', '4:3']),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -49,6 +52,7 @@ export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyb
     defaultValues: {
       name: "",
       description: "",
+      aspectRatio: '16:9',
     },
   });
 
@@ -58,10 +62,12 @@ export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyb
         ? {
             name: storyboard.name,
             description: storyboard.description || "",
+            aspectRatio: storyboard.aspectRatio || '16:9',
           }
         : {
             name: "",
             description: "",
+            aspectRatio: '16:9' as const,
           };
       form.reset(defaultValues);
     }
@@ -70,7 +76,8 @@ export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyb
   const handleSubmit = (values: FormValues) => {
     onSubmit({
         name: values.name,
-        description: values.description || ""
+        description: values.description || "",
+        aspectRatio: values.aspectRatio,
     });
   };
 
@@ -94,6 +101,27 @@ export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyb
                   <FormControl>
                     <Input placeholder="ex: Storyboard do curta 'Amanhecer'" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="aspectRatio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Proporção dos Quadros</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione a proporção" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="16:9">Widescreen (16:9)</SelectItem>
+                            <SelectItem value="4:3">Clássico (4:3)</SelectItem>
+                        </SelectContent>
+                    </Select>
                   <FormMessage />
                 </FormItem>
               )}

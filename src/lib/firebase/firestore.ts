@@ -1,3 +1,4 @@
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -584,6 +585,7 @@ export const addStoryboard = async (data: Omit<Storyboard, 'id' | 'userId' | 'cr
   const userId = getUserId();
   await addDoc(collection(db, 'storyboards'), {
     ...data,
+    aspectRatio: data.aspectRatio || '16:9',
     userId,
     createdAt: Timestamp.now(),
   });
@@ -665,7 +667,6 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
     } as StoryboardPanel;
   });
   
-  // Sort on the client-side to avoid needing a composite index
   panels.sort((a, b) => a.order - b.order);
   
   return panels;
@@ -693,6 +694,16 @@ export const updateStoryboardPanel = async (panelId: string, data: Partial<Omit<
   const panelRef = doc(db, 'storyboard_panels', panelId);
   await updateDoc(panelRef, data);
 }
+
+export const updatePanelOrder = async (panels: {id: string; order: number}[]) => {
+  const batch = writeBatch(db);
+  panels.forEach(panel => {
+    const docRef = doc(db, 'storyboard_panels', panel.id);
+    batch.update(docRef, { order: panel.order });
+  });
+  await batch.commit();
+}
+
 
 export const deleteStoryboardPanel = async (panelId: string) => {
   const panelRef = doc(db, 'storyboard_panels', panelId);

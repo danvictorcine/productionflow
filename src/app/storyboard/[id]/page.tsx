@@ -1,11 +1,17 @@
+
 // @/src/app/storyboard/[id]/page.tsx
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText, GripVertical } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { TouchBackend } from 'react-dnd-touch-backend';
+import update from 'immutability-helper';
+import Image from 'next/image';
 
 import type { Storyboard, StoryboardPanel } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -19,31 +25,86 @@ import { CopyableError } from '@/components/copyable-error';
 import { AppFooter } from '@/components/app-footer';
 import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import Image from 'next/image';
+import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
 
-const PanelCard = React.memo(({ panel, onDelete, onUpdateNotes }: { panel: StoryboardPanel; onDelete: (panelId: string) => void; onUpdateNotes: (panelId: string, notes: string) => void; }) => {
+const ItemType = 'PANEL';
+
+interface PanelCardProps {
+  panel: StoryboardPanel;
+  aspectRatio: '16:9' | '4:3';
+  index: number;
+  onDelete: (panelId: string) => void;
+  onUpdateNotes: (panelId: string, notes: string) => void;
+  movePanel: (dragIndex: number, hoverIndex: number) => void;
+}
+
+const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNotes, movePanel }: PanelCardProps) => {
     const [notes, setNotes] = useState(panel.notes);
     const debounceTimer = useRef<NodeJS.Timeout>();
+
+    const ref = useRef<HTMLDivElement>(null);
+
+    const [{ handlerId }, drop] = useDrop({
+        accept: ItemType,
+        collect(monitor) {
+            return { handlerId: monitor.getHandlerId() };
+        },
+        hover(item: { index: number }, monitor) {
+            if (!ref.current) return;
+            const dragIndex = item.index;
+            const hoverIndex = index;
+            if (dragIndex === hoverIndex) return;
+
+            const hoverBoundingRect = ref.current?.getBoundingClientRect();
+            const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+            const clientOffset = monitor.getClientOffset();
+            const hoverClientY = clientOffset!.y - hoverBoundingRect.top;
+
+            if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return;
+            if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return;
+            
+            movePanel(dragIndex, hoverIndex);
+            item.index = hoverIndex;
+        },
+    });
+
+    const [{ isDragging }, drag, preview] = useDrag({
+        type: ItemType,
+        item: () => ({ id: panel.id, index }),
+        collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+    });
+
+    drag(drop(ref));
 
     const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newNotes = e.target.value;
         setNotes(newNotes);
-
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
-
         debounceTimer.current = setTimeout(() => {
             onUpdateNotes(panel.id, newNotes);
-        }, 500); // 500ms debounce
+        }, 500);
     };
     
-    useEffect(() => {
-        setNotes(panel.notes);
-    }, [panel.notes]);
+    useEffect(() => { setNotes(panel.notes) }, [panel.notes]);
 
     return (
-        <div className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm break-inside-avoid">
-            <div className="relative aspect-video w-full rounded-md overflow-hidden bg-muted">
-                <Image src={panel.imageUrl} alt={`Storyboard panel ${panel.order + 1}`} layout="fill" objectFit="contain" />
+        <div
+            ref={ref}
+            data-handler-id={handlerId}
+            style={{ opacity: isDragging ? 0.3 : 1 }}
+            className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm break-inside-avoid"
+        >
+            <div
+                className={cn(
+                    "relative w-full rounded-md overflow-hidden bg-muted",
+                    aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]"
+                )}
+            >
+                <Image src={panel.imageUrl} alt={`Storyboard panel ${index + 1}`} layout="fill" objectFit="cover" />
+                <div className="absolute top-1 left-1 bg-black/50 text-white text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none">
+                    {index + 1}
+                </div>
                 <div className="absolute top-1 right-1 flex gap-1">
                     <Button variant="destructive" size="icon" className="h-7 w-7 opacity-80 hover:opacity-100" onClick={() => onDelete(panel.id)}>
                         <Trash2 className="h-4 w-4" />
@@ -76,6 +137,8 @@ function StoryboardPageDetail() {
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    
+    const dndBackend = /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
 
     const fetchStoryboardData = useCallback(async () => {
         if (!storyboardId || !user) return;
@@ -104,9 +167,7 @@ function StoryboardPageDetail() {
         }
     }, [storyboardId, user, toast, router]);
 
-    useEffect(() => {
-        fetchStoryboardData();
-    }, [fetchStoryboardData]);
+    useEffect(() => { fetchStoryboardData() }, [fetchStoryboardData]);
     
     const handleStoryboardSubmit = async (data: Omit<Storyboard, 'id' | 'userId' | 'createdAt'>) => {
         if (!storyboard) return;
@@ -163,7 +224,7 @@ function StoryboardPageDetail() {
     const handleDeletePanel = async (panelId: string) => {
         try {
             await firestoreApi.deleteStoryboardPanel(panelId);
-            setPanels(prev => prev.filter(p => p.id !== panelId));
+            await fetchStoryboardData(); // Re-fetch to re-evaluate order
             toast({ title: 'Painel removido.' });
         } catch (error) {
              const errorTyped = error as { code?: string; message: string };
@@ -178,7 +239,6 @@ function StoryboardPageDetail() {
     const handleUpdatePanelNotes = useCallback(async (panelId: string, notes: string) => {
         try {
             await firestoreApi.updateStoryboardPanel(panelId, { notes });
-            // Optimistic update is handled locally, no need to show toast unless there's an error
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({
@@ -186,9 +246,26 @@ function StoryboardPageDetail() {
                 title: 'Erro ao Salvar',
                 description: <CopyableError userMessage="Não foi possível salvar a anotação." errorCode={errorTyped.code || errorTyped.message} />,
             });
-            fetchStoryboardData(); // Re-fetch to correct state on error
+            fetchStoryboardData();
         }
     }, [fetchStoryboardData, toast]);
+
+     const movePanel = useCallback((dragIndex: number, hoverIndex: number) => {
+        setPanels((prevPanels) =>
+            update(prevPanels, {
+                $splice: [
+                    [dragIndex, 1],
+                    [hoverIndex, 0, prevPanels[dragIndex]],
+                ],
+            }),
+        );
+    }, []);
+
+    const handleDrop = async () => {
+        const updatedPanels = panels.map((panel, index) => ({ id: panel.id, order: index }));
+        await firestoreApi.updatePanelOrder(updatedPanels);
+        toast({ title: 'Ordem do storyboard salva!' });
+    };
 
     if (isLoading) {
         return (
@@ -204,67 +281,85 @@ function StoryboardPageDetail() {
     if (!storyboard) return null;
 
     return (
-        <div className="flex flex-col min-h-screen w-full bg-muted/40">
-            <header className="sticky top-0 z-40 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
-                <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
-                    <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
-                </Link>
-                <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-full bg-primary/10">
-                        <ImageIcon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
+        <DndProvider backend={dndBackend}>
+            <div className="flex flex-col min-h-screen w-full bg-muted/40">
+                <header className="sticky top-0 z-40 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
+                    <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
+                        <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
+                    </Link>
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-full bg-primary/10">
+                            <ImageIcon className="h-5 w-5 text-primary" />
+                        </div>
                         <h1 className="text-xl font-bold text-primary truncate">{storyboard.name}</h1>
-                        {storyboard.description && <p className="text-sm text-muted-foreground">{storyboard.description}</p>}
                     </div>
-                </div>
-                <div className="ml-auto flex items-center gap-2">
-                    <Button onClick={() => setIsEditDialogOpen(true)} variant="outline"><Edit className="mr-2 h-4 w-4" />Editar Detalhes</Button>
-                    <Button onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
-                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                        Adicionar Painel
-                    </Button>
-                     <input
-                        ref={imageUploadRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={handleImageUpload}
-                        disabled={isUploading}
-                    />
-                    <UserNav />
-                </div>
-            </header>
-            <main className="flex-1 p-4 sm:p-6 md:p-8">
-                {panels.length > 0 ? (
-                    <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
-                        {panels.map((panel, index) => (
-                           <PanelCard key={panel.id} panel={{...panel, order: index}} onDelete={handleDeletePanel} onUpdateNotes={handleUpdatePanelNotes} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
-                        <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-semibold">Storyboard Vazio</h3>
-                        <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro painel ao seu storyboard.</p>
-                        <Button className="mt-6" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
+                    <div className="ml-auto flex items-center gap-2">
+                        <Button onClick={() => setIsEditDialogOpen(true)} variant="outline"><Edit className="mr-2 h-4 w-4" />Editar Detalhes</Button>
+                        <Button onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
                             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                             Adicionar Painel
                         </Button>
+                        <input
+                            ref={imageUploadRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={handleImageUpload}
+                            disabled={isUploading}
+                        />
+                        <UserNav />
                     </div>
-                )}
-            </main>
+                </header>
+                <main className="flex-1 p-4 sm:p-6 md:p-8">
+                     {storyboard.description && (
+                        <div className="mb-6">
+                            <Card>
+                                <CardContent className="p-6">
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                    {storyboard.description}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+                    {panels.length > 0 ? (
+                        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4" onMouseUp={handleDrop} onTouchEnd={handleDrop}>
+                            {panels.map((panel, index) => (
+                            <PanelCard 
+                                key={panel.id} 
+                                panel={panel} 
+                                aspectRatio={storyboard.aspectRatio}
+                                index={index} 
+                                onDelete={handleDeletePanel} 
+                                onUpdateNotes={handleUpdatePanelNotes} 
+                                movePanel={movePanel}
+                            />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
+                            <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <h3 className="mt-4 text-lg font-semibold">Storyboard Vazio</h3>
+                            <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro painel ao seu storyboard.</p>
+                            <Button className="mt-6" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
+                                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                Adicionar Painel
+                            </Button>
+                        </div>
+                    )}
+                </main>
 
-            <AppFooter />
+                <AppFooter />
 
-            <CreateEditStoryboardDialog 
-                isOpen={isEditDialogOpen} 
-                setIsOpen={setIsEditDialogOpen} 
-                onSubmit={handleStoryboardSubmit} 
-                storyboard={storyboard}
-            />
-        </div>
+                <CreateEditStoryboardDialog 
+                    isOpen={isEditDialogOpen} 
+                    setIsOpen={setIsEditDialogOpen} 
+                    onSubmit={handleStoryboardSubmit} 
+                    storyboard={storyboard}
+                />
+            </div>
+        </DndProvider>
     );
 }
 

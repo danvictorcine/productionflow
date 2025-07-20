@@ -1,3 +1,4 @@
+
 {
   "name": "nextn",
   "version": "0.1.0",
@@ -42,6 +43,7 @@
     "firebase": "^11.9.1",
     "genkit": "^1.1.2",
     "html2canvas": "^1.4.1",
+    "immutability-helper": "^3.1.1",
     "jspdf": "^2.5.1",
     "leaflet": "^1.9.4",
     "leaflet-defaulticon-compatibility": "^0.1.2",
@@ -51,6 +53,9 @@
     "patch-package": "^8.0.0",
     "quill": "^2.0.2",
     "react": "^18.3.1",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dnd-touch-backend": "^16.0.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",
