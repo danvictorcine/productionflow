@@ -1,8 +1,3 @@
-
-
-
-
-
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -654,9 +649,11 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
 
 
 export const getStoryboardPanels = async (storyboardId: string): Promise<StoryboardPanel[]> => {
+  const userId = getUserId();
   const q = query(
     collection(db, 'storyboard_panels'),
-    where('storyboardId', '==', storyboardId)
+    where('storyboardId', '==', storyboardId),
+    where('userId', '==', userId)
   );
   const querySnapshot = await getDocs(q);
   const panels = querySnapshot.docs.map(doc => {
