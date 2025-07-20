@@ -2,6 +2,7 @@
 
 
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -653,15 +654,12 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
 
 
 export const getStoryboardPanels = async (storyboardId: string): Promise<StoryboardPanel[]> => {
-  // Query simplified to avoid needing a composite index.
-  // Security is handled by Firestore Rules, which check the parent storyboard's userId.
   const q = query(
     collection(db, 'storyboard_panels'),
-    where('storyboardId', '==', storyboardId),
-    orderBy('order', 'asc')
+    where('storyboardId', '==', storyboardId)
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => {
+  const panels = querySnapshot.docs.map(doc => {
     const data = doc.data();
     return {
       id: doc.id,
@@ -669,6 +667,11 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
       createdAt: (data.createdAt as Timestamp).toDate(),
     } as StoryboardPanel;
   });
+  
+  // Sort on the client-side to avoid needing a composite index
+  panels.sort((a, b) => a.order - b.order);
+  
+  return panels;
 }
 
 export const addStoryboardPanelsBatch = async (panelsData: Omit<StoryboardPanel, 'id' | 'userId' | 'createdAt'>[]) => {
@@ -858,7 +861,7 @@ export const deleteImageFromUrl = async (url: string): Promise<void> => {
 
     try {
         const decodedUrl = decodeURIComponent(url);
-        const path = decodedUrl.substring(decodedUrl.indexOf('/o/') + 3, decodedUrl.indexOf('?'));
+        const path = decodedUrl.substring(decodedUrl.indexOf('/o/') + 3, decodedUrl.indexOf('?alt=media'));
         const imageRef = ref(storage, path);
         await deleteObject(imageRef);
     } catch (error: any) {
