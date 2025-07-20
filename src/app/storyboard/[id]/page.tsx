@@ -319,8 +319,19 @@ function StoryboardPageDetail() {
                 const canvasHeight = canvas.height;
                 const ratio = canvasWidth / canvasHeight;
                 const imgHeight = pdfWidth / ratio;
-                
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdf.internal.pageSize.getHeight();
+
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                    heightLeft -= pdf.internal.pageSize.getHeight();
+                }
+
                 pdf.save(`Storyboard_${storyboard.name.replace(/ /g, "_")}.pdf`);
             }
             toast({ title: "Exportação Concluída!" });
@@ -392,46 +403,48 @@ function StoryboardPageDetail() {
                         <UserNav />
                     </div>
                 </header>
-                <main ref={exportRef} className="flex-1 p-4 sm:p-6 md:p-8">
-                     <div className="mb-6">
-                        <Card>
-                             <CardContent className="p-4 space-y-1">
-                                <CardTitle>{storyboard.name}</CardTitle>
-                                {storyboard.description && (
-                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                                    {storyboard.description}
-                                    </p>
-                                )}
-                            </CardContent>
-                        </Card>
+                <main className="flex-1 p-4 sm:p-6 md:p-8">
+                     <div ref={exportRef}>
+                        <div className="mb-6">
+                            <Card>
+                                <CardContent className="p-4 space-y-1">
+                                    <CardTitle>{storyboard.name}</CardTitle>
+                                    {storyboard.description && (
+                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                        {storyboard.description}
+                                        </p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                        {panels.length > 0 ? (
+                            <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
+                                {panels.map((panel, index) => (
+                                <PanelCard 
+                                    key={panel.id} 
+                                    panel={panel} 
+                                    aspectRatio={storyboard.aspectRatio}
+                                    index={index} 
+                                    onDelete={handleDeletePanel} 
+                                    onUpdateNotes={handleUpdatePanelNotes} 
+                                    movePanel={movePanel}
+                                    onDropPanel={handleDropPanel}
+                                    isExporting={isExporting}
+                                />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
+                                <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <h3 className="mt-4 text-lg font-semibold">Storyboard Vazio</h3>
+                                <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro quadro ao seu storyboard.</p>
+                                <Button className="mt-6" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
+                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                    Adicionar Quadro
+                                </Button>
+                            </div>
+                        )}
                     </div>
-                    {panels.length > 0 ? (
-                        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
-                            {panels.map((panel, index) => (
-                            <PanelCard 
-                                key={panel.id} 
-                                panel={panel} 
-                                aspectRatio={storyboard.aspectRatio}
-                                index={index} 
-                                onDelete={handleDeletePanel} 
-                                onUpdateNotes={handleUpdatePanelNotes} 
-                                movePanel={movePanel}
-                                onDropPanel={handleDropPanel}
-                                isExporting={isExporting}
-                            />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
-                            <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                            <h3 className="mt-4 text-lg font-semibold">Storyboard Vazio</h3>
-                            <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro quadro ao seu storyboard.</p>
-                            <Button className="mt-6" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
-                                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                Adicionar Quadro
-                            </Button>
-                        </div>
-                    )}
                 </main>
 
                 <AppFooter />
