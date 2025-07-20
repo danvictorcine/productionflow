@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText, GripVertical } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -26,7 +26,7 @@ import { AppFooter } from '@/components/app-footer';
 import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const ItemType = 'PANEL';
 
@@ -318,17 +318,20 @@ function StoryboardPageDetail() {
                     </div>
                 </header>
                 <main className="flex-1 p-4 sm:p-6 md:p-8">
-                     {storyboard.description && (
-                        <div className="mb-6">
-                            <Card>
-                                <CardContent className="p-6">
+                     <div className="mb-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{storyboard.name}</CardTitle>
+                            </CardHeader>
+                            {storyboard.description && (
+                                <CardContent className="pt-0">
                                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                                     {storyboard.description}
                                     </p>
                                 </CardContent>
-                            </Card>
-                        </div>
-                    )}
+                            )}
+                        </Card>
+                    </div>
                     {panels.length > 0 ? (
                         <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
                             {panels.map((panel, index) => (
