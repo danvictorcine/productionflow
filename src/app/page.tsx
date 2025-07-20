@@ -391,7 +391,7 @@ function HomePage() {
     if (items.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
-          <Film className="mx-auto h-10 w-10 text-muted-foreground" strokeWidth={1.5} />
+          <Clapperboard className="mx-auto h-12 w-12 text-muted-foreground" strokeWidth={1.5} />
           <h3 className="mt-4 text-lg font-semibold">
             Nenhum projeto encontrado
           </h3>
