@@ -5,13 +5,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText, FileDown } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import update from 'immutability-helper';
 import Image from 'next/image';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 import type { Storyboard, StoryboardPanel } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -27,6 +29,12 @@ import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const ItemType = 'PANEL';
 
@@ -38,9 +46,10 @@ interface PanelCardProps {
   onUpdateNotes: (panelId: string, notes: string) => void;
   movePanel: (dragIndex: number, hoverIndex: number) => void;
   onDropPanel: () => void;
+  isExporting: boolean;
 }
 
-const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNotes, movePanel, onDropPanel }: PanelCardProps) => {
+const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNotes, movePanel, onDropPanel, isExporting }: PanelCardProps) => {
     const [notes, setNotes] = useState(panel.notes);
     const debounceTimer = useRef<NodeJS.Timeout>();
 
@@ -111,11 +120,13 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                 <div className="absolute top-1 left-1 bg-black/50 text-white text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none">
                     {index + 1}
                 </div>
-                <div className="absolute top-1 right-1 flex gap-1">
-                    <Button variant="destructive" size="icon" className="h-7 w-7 opacity-80 hover:opacity-100" onClick={() => onDelete(panel.id)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
+                {!isExporting && (
+                  <div className="absolute top-1 right-1 flex gap-1">
+                      <Button variant="destructive" size="icon" className="h-7 w-7 opacity-80 hover:opacity-100" onClick={() => onDelete(panel.id)}>
+                          <Trash2 className="h-4 w-4" />
+                      </Button>
+                  </div>
+                )}
             </div>
             <Textarea 
                 placeholder="Adicione suas anotações aqui..."
@@ -137,11 +148,13 @@ function StoryboardPageDetail() {
     const { user } = useAuth();
     const { toast } = useToast();
     const imageUploadRef = useRef<HTMLInputElement>(null);
+    const exportRef = useRef<HTMLDivElement>(null);
 
     const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
     const [panels, setPanels] = useState<StoryboardPanel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     
     const dndBackend = typeof navigator !== 'undefined' && /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
@@ -272,6 +285,53 @@ function StoryboardPageDetail() {
         await firestoreApi.updatePanelOrder(updatedPanels);
         toast({ title: 'Ordem do storyboard salva!' });
     };
+    
+    const handleExport = async (format: 'pdf' | 'png') => {
+        if (!exportRef.current || !storyboard) return;
+
+        setIsExporting(true);
+        toast({ title: "Gerando arquivo...", description: "Isso pode levar alguns segundos." });
+
+        try {
+            const canvas = await html2canvas(exportRef.current, {
+                useCORS: true,
+                scale: 2,
+                logging: false,
+                backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+            });
+
+            if (format === 'png') {
+                const imgData = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = imgData;
+                link.download = `Storyboard_${storyboard.name.replace(/ /g, "_")}.png`;
+                link.click();
+            } else { // PDF
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'p',
+                    unit: 'mm',
+                    format: 'a4',
+                });
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const ratio = canvasWidth / canvasHeight;
+                const imgHeight = pdfWidth / ratio;
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+                pdf.save(`Storyboard_${storyboard.name.replace(/ /g, "_")}.pdf`);
+            }
+            toast({ title: "Exportação Concluída!" });
+        } catch (error) {
+            console.error("Error generating export", error);
+            toast({ variant: 'destructive', title: 'Erro ao exportar', description: 'Não foi possível gerar o arquivo.' });
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
 
     if (isLoading) {
         return (
@@ -314,10 +374,25 @@ function StoryboardPageDetail() {
                             onChange={handleImageUpload}
                             disabled={isUploading}
                         />
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon" disabled={isExporting} aria-label="Exportar Storyboard">
+                                    {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleExport('pdf')} disabled={isExporting}>
+                                    Exportar como PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleExport('png')} disabled={isExporting}>
+                                    Exportar como PNG
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         <UserNav />
                     </div>
                 </header>
-                <main className="flex-1 p-4 sm:p-6 md:p-8">
+                <main ref={exportRef} className="flex-1 p-4 sm:p-6 md:p-8">
                      <div className="mb-6">
                         <Card>
                              <CardContent className="p-4 space-y-1">
@@ -342,6 +417,7 @@ function StoryboardPageDetail() {
                                 onUpdateNotes={handleUpdatePanelNotes} 
                                 movePanel={movePanel}
                                 onDropPanel={handleDropPanel}
+                                isExporting={isExporting}
                             />
                             ))}
                         </div>
