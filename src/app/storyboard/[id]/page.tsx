@@ -289,58 +289,62 @@ function StoryboardPageDetail() {
     const handleExport = async (format: 'pdf' | 'png') => {
         if (!exportRef.current || !storyboard) return;
 
-        setIsExporting(true);
         toast({ title: "Gerando arquivo...", description: "Isso pode levar alguns segundos." });
+        setIsExporting(true);
+        window.scrollTo(0, 0); // Scroll to top to ensure full capture
 
-        try {
-            const canvas = await html2canvas(exportRef.current, {
-                useCORS: true,
-                scale: 2,
-                logging: false,
-                backgroundColor: window.getComputedStyle(document.body).backgroundColor,
-            });
-
-            if (format === 'png') {
-                const imgData = canvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.href = imgData;
-                link.download = `Storyboard_${storyboard.name.replace(/ /g, "_")}.png`;
-                link.click();
-            } else { // PDF
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF({
-                    orientation: 'p',
-                    unit: 'mm',
-                    format: 'a4',
+        // A small delay to allow React to re-render and hide the buttons
+        setTimeout(async () => {
+            try {
+                const canvas = await html2canvas(exportRef.current!, {
+                    useCORS: true,
+                    scale: 2,
+                    logging: false,
+                    backgroundColor: window.getComputedStyle(document.body).backgroundColor,
                 });
 
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const canvasWidth = canvas.width;
-                const canvasHeight = canvas.height;
-                const ratio = canvasWidth / canvasHeight;
-                const imgHeight = pdfWidth / ratio;
-                let heightLeft = imgHeight;
-                let position = 0;
+                if (format === 'png') {
+                    const imgData = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = imgData;
+                    link.download = `Storyboard_${storyboard.name.replace(/ /g, "_")}.png`;
+                    link.click();
+                } else { // PDF
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'p',
+                        unit: 'mm',
+                        format: 'a4',
+                    });
 
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdf.internal.pageSize.getHeight();
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const canvasWidth = canvas.width;
+                    const canvasHeight = canvas.height;
+                    const ratio = canvasWidth / canvasHeight;
+                    const imgHeight = pdfWidth / ratio;
+                    let heightLeft = imgHeight;
+                    let position = 0;
 
-                while (heightLeft > 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
                     pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
                     heightLeft -= pdf.internal.pageSize.getHeight();
-                }
 
-                pdf.save(`Storyboard_${storyboard.name.replace(/ /g, "_")}.pdf`);
+                    while (heightLeft > 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                        heightLeft -= pdf.internal.pageSize.getHeight();
+                    }
+
+                    pdf.save(`Storyboard_${storyboard.name.replace(/ /g, "_")}.pdf`);
+                }
+                toast({ title: "Exportação Concluída!" });
+            } catch (error) {
+                console.error("Error generating export", error);
+                toast({ variant: 'destructive', title: 'Erro ao exportar', description: 'Não foi possível gerar o arquivo.' });
+            } finally {
+                setIsExporting(false);
             }
-            toast({ title: "Exportação Concluída!" });
-        } catch (error) {
-            console.error("Error generating export", error);
-            toast({ variant: 'destructive', title: 'Erro ao exportar', description: 'Não foi possível gerar o arquivo.' });
-        } finally {
-            setIsExporting(false);
-        }
+        }, 200);
     };
 
 
