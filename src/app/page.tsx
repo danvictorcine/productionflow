@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -12,9 +13,10 @@ import {
   Clapperboard,
   DollarSign,
   Brush,
+  Image as ImageIcon,
 } from 'lucide-react';
 
-import type { Project, Production, CreativeProject } from '@/lib/types';
+import type { Project, Production, CreativeProject, Storyboard } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -53,11 +55,13 @@ import { CreateEditCreativeProjectDialog } from '@/components/create-edit-creati
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
+import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
 
 type DisplayableItem =
   | (Project & { itemType: 'financial' })
   | (Production & { itemType: 'production' })
-  | (CreativeProject & { itemType: 'creative' });
+  | (CreativeProject & { itemType: 'creative' })
+  | (Storyboard & { itemType: 'storyboard'});
 
 function HomePage() {
   const { user } = useAuth();
@@ -70,15 +74,14 @@ function HomePage() {
   const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false);
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
-  const [isCreativeProjectDialogOpen, setIsCreativeProjectDialogOpen] =
-    useState(false);
+  const [isCreativeProjectDialogOpen, setIsCreativeProjectDialogOpen] = useState(false);
+  const [isStoryboardDialogOpen, setIsStoryboardDialogOpen] = useState(false);
 
   // Editing states
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [editingProduction, setEditingProduction] =
-    useState<Production | null>(null);
-  const [editingCreativeProject, setEditingCreativeProject] =
-    useState<CreativeProject | null>(null);
+  const [editingProduction, setEditingProduction] = useState<Production | null>(null);
+  const [editingCreativeProject, setEditingCreativeProject] = useState<CreativeProject | null>(null);
+  const [editingStoryboard, setEditingStoryboard] = useState<Storyboard | null>(null);
 
   // Deleting state
   const [itemToDelete, setItemToDelete] = useState<DisplayableItem | null>(
@@ -92,18 +95,21 @@ function HomePage() {
       try {
         const projectsPromise = firestoreApi.getProjects();
         const productionsPromise = firestoreApi.getProductions();
+        const storyboardsPromise = firestoreApi.getStoryboards();
         // Only fetch creative projects if the user is an admin
         const creativeProjectsPromise = user.isAdmin ? firestoreApi.getCreativeProjects() : Promise.resolve([]);
 
-        const [projects, productions, creativeProjects] = await Promise.all([
+        const [projects, productions, creativeProjects, storyboards] = await Promise.all([
           projectsPromise,
           productionsPromise,
           creativeProjectsPromise,
+          storyboardsPromise,
         ]);
 
         const displayableItems: DisplayableItem[] = [
           ...projects.map((p) => ({ ...p, itemType: 'financial' as const })),
           ...productions.map((p) => ({ ...p, itemType: 'production' as const })),
+          ...storyboards.map((p) => ({ ...p, itemType: 'storyboard' as const })),
           ...creativeProjects.map((p) => ({
             ...p,
             itemType: 'creative' as const,
@@ -143,18 +149,21 @@ function HomePage() {
       try {
         const projectsPromise = firestoreApi.getProjects();
         const productionsPromise = firestoreApi.getProductions();
+        const storyboardsPromise = firestoreApi.getStoryboards();
         // Only fetch creative projects if the user is an admin
         const creativeProjectsPromise = user.isAdmin ? firestoreApi.getCreativeProjects() : Promise.resolve([]);
 
-        const [projects, productions, creativeProjects] = await Promise.all([
+        const [projects, productions, creativeProjects, storyboards] = await Promise.all([
           projectsPromise,
           productionsPromise,
           creativeProjectsPromise,
+          storyboardsPromise,
         ]);
 
         const displayableItems: DisplayableItem[] = [
           ...projects.map((p) => ({ ...p, itemType: 'financial' as const })),
           ...productions.map((p) => ({ ...p, itemType: 'production' as const })),
+          ...storyboards.map((p) => ({ ...p, itemType: 'storyboard' as const })),
           ...creativeProjects.map((p) => ({
             ...p,
             itemType: 'creative' as const,
@@ -185,7 +194,7 @@ function HomePage() {
     };
 
   const handleSelectProjectType = (
-    type: 'financial' | 'production' | 'creative'
+    type: 'financial' | 'production' | 'creative' | 'storyboard'
   ) => {
     setIsTypeDialogOpen(false);
     if (type === 'financial') {
@@ -194,6 +203,9 @@ function HomePage() {
     } else if (type === 'production') {
       setEditingProduction(null);
       setIsProductionDialogOpen(true);
+    } else if (type === 'storyboard') {
+      setEditingStoryboard(null);
+      setIsStoryboardDialogOpen(true);
     } else {
       setEditingCreativeProject(null);
       setIsCreativeProjectDialogOpen(true);
@@ -290,6 +302,35 @@ function HomePage() {
     setEditingCreativeProject(null);
   };
 
+  const handleStoryboardSubmit = async (
+    data: Omit<Storyboard, 'id' | 'userId' | 'createdAt'>
+  ) => {
+    try {
+      if (editingStoryboard) {
+        await firestoreApi.updateStoryboard(editingStoryboard.id, data);
+        toast({ title: 'Storyboard atualizado!' });
+      } else {
+        await firestoreApi.addStoryboard(data);
+        toast({ title: 'Storyboard criado!' });
+      }
+      await fetchItems();
+    } catch (error) {
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro em /page.tsx (handleStoryboardSubmit)',
+        description: (
+          <CopyableError
+            userMessage="Não foi possível salvar o storyboard."
+            errorCode={errorTyped.code || errorTyped.message}
+          />
+        ),
+      });
+    }
+    setIsStoryboardDialogOpen(false);
+    setEditingStoryboard(null);
+  };
+
   const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
     try {
@@ -299,6 +340,8 @@ function HomePage() {
         await firestoreApi.deleteProductionAndDays(itemToDelete.id);
       } else if (itemToDelete.itemType === 'creative') {
         await firestoreApi.deleteCreativeProjectAndItems(itemToDelete.id);
+      } else if (itemToDelete.itemType === 'storyboard') {
+        await firestoreApi.deleteStoryboardAndPanels(itemToDelete.id);
       }
       toast({ title: `"${itemToDelete.name}" excluído(a).` });
       await fetchItems();
@@ -328,6 +371,9 @@ function HomePage() {
     } else if (item.itemType === 'creative') {
       setEditingCreativeProject(item);
       setIsCreativeProjectDialogOpen(true);
+    } else if (item.itemType === 'storyboard') {
+      setEditingStoryboard(item);
+      setIsStoryboardDialogOpen(true);
     }
   };
 
@@ -395,11 +441,21 @@ function HomePage() {
                 </CardDescription>
               );
               break;
+            case 'storyboard':
+              link = `/storyboard/${item.id}`;
+              Icon = ImageIcon;
+              description = (
+                <CardDescription className="line-clamp-2">
+                  {(item as Storyboard).description ||
+                    'Visualize sua história, cena a cena.'}
+                </CardDescription>
+              );
+              break;
           }
 
           return (
             <Card
-              key={item.id}
+              key={`${item.itemType}-${item.id}`}
               className="hover:shadow-lg transition-shadow h-full flex flex-col relative"
             >
               <div className="absolute top-2 right-2 z-10">
@@ -532,6 +588,17 @@ function HomePage() {
         onSubmit={handleCreativeProjectSubmit}
         project={editingCreativeProject || undefined}
       />
+
+      <CreateEditStoryboardDialog
+        isOpen={isStoryboardDialogOpen}
+        setIsOpen={(open) => {
+            if (!open) setEditingStoryboard(null);
+            setIsStoryboardDialogOpen(open);
+        }}
+        onSubmit={handleStoryboardSubmit}
+        storyboard={editingStoryboard || undefined}
+      />
+
 
       <AlertDialog
         open={!!itemToDelete}

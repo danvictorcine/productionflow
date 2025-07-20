@@ -1,5 +1,6 @@
 
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -19,7 +20,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID
@@ -580,6 +581,145 @@ export const uploadImageForBoard = async (file: File): Promise<string> => {
   return downloadURL;
 };
 
+// === Storyboard Functions ===
+
+export const addStoryboard = async (data: Omit<Storyboard, 'id' | 'userId' | 'createdAt'>) => {
+  const userId = getUserId();
+  await addDoc(collection(db, 'storyboards'), {
+    ...data,
+    userId,
+    createdAt: Timestamp.now(),
+  });
+};
+
+export const getStoryboards = async (): Promise<Storyboard[]> => {
+  const userId = getUserId();
+  const q = query(collection(db, 'storyboards'), where('userId', '==', userId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+    } as Storyboard;
+  });
+};
+
+export const getStoryboard = async (storyboardId: string): Promise<Storyboard | null> => {
+    const userId = getUserId();
+    const docRef = doc(db, 'storyboards', storyboardId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists() && docSnap.data().userId === userId) {
+        const data = docSnap.data();
+        return {
+            id: docSnap.id,
+            ...data,
+            createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+        } as Storyboard;
+    }
+    return null;
+}
+
+export const updateStoryboard = async (storyboardId: string, data: Partial<Omit<Storyboard, 'id' | 'userId' | 'createdAt'>>) => {
+  const docRef = doc(db, 'storyboards', storyboardId);
+  await updateDoc(docRef, data);
+};
+
+export const deleteStoryboardAndPanels = async (storyboardId: string) => {
+  const userId = getUserId();
+  const batch = writeBatch(db);
+
+  const projectRef = doc(db, 'storyboards', storyboardId);
+  batch.delete(projectRef);
+
+  const panelsQuery = query(
+    collection(db, 'storyboard_panels'),
+    where('storyboardId', '==', storyboardId),
+    where('userId', '==', userId)
+  );
+  const panelsSnapshot = await getDocs(panelsQuery);
+  for (const doc of panelsSnapshot.docs) {
+      const panelData = doc.data();
+      if (panelData.imageUrl && panelData.imageUrl.includes('firebasestorage.googleapis.com')) {
+          await deleteImageFromUrl(panelData.imageUrl);
+      }
+      batch.delete(doc.ref);
+  }
+
+  await batch.commit();
+};
+
+
+export const getStoryboardPanels = async (storyboardId: string): Promise<StoryboardPanel[]> => {
+  const userId = getUserId();
+  const q = query(
+    collection(db, 'storyboard_panels'),
+    where('storyboardId', '==', storyboardId),
+    where('userId', '==', userId),
+    orderBy('order', 'asc')
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: (data.createdAt as Timestamp).toDate(),
+    } as StoryboardPanel;
+  });
+}
+
+export const addStoryboardPanelsBatch = async (panelsData: Omit<StoryboardPanel, 'id' | 'userId' | 'createdAt'>[]) => {
+  const userId = getUserId();
+  const batch = writeBatch(db);
+
+  panelsData.forEach(panel => {
+    const panelCollection = collection(db, 'storyboard_panels');
+    const docRef = doc(panelCollection);
+    const data = {
+      ...panel,
+      userId,
+      createdAt: Timestamp.now(),
+    };
+    batch.set(docRef, data);
+  });
+
+  await batch.commit();
+};
+
+export const updateStoryboardPanel = async (panelId: string, data: Partial<Omit<StoryboardPanel, 'id' | 'userId' | 'storyboardId' | 'createdAt'>>) => {
+  const panelRef = doc(db, 'storyboard_panels', panelId);
+  await updateDoc(panelRef, data);
+}
+
+export const deleteStoryboardPanel = async (panelId: string) => {
+  const panelRef = doc(db, 'storyboard_panels', panelId);
+  const panelSnap = await getDoc(panelRef);
+
+  if (panelSnap.exists()) {
+    const panelData = panelSnap.data();
+    if (panelData.imageUrl && panelData.imageUrl.includes('firebasestorage.googleapis.com')) {
+      await deleteImageFromUrl(panelData.imageUrl);
+    }
+  }
+
+  await deleteDoc(panelRef);
+};
+
+export const uploadImageForStoryboard = async (file: File): Promise<string> => {
+  const timestamp = new Date().getTime();
+  const randomString = Math.random().toString(36).substring(2, 8);
+  const fileName = `${timestamp}-${randomString}-${file.name}`;
+  const filePath = `content/storyboard_images/${getUserId()}/${fileName}`;
+  const storageRef = ref(storage, filePath);
+  
+  await uploadBytes(storageRef, file);
+  const downloadURL = await getDownloadURL(storageRef);
+  
+  return downloadURL;
+};
+
 // === Blog & Page Content Functions ===
 
 export const getPosts = async (limitCount?: number): Promise<Post[]> => {
@@ -710,29 +850,23 @@ export const uploadLoginBackground = async (file: File): Promise<string> => {
 
 
 export const deleteImageFromUrl = async (url: string): Promise<void> => {
-  if (!url.includes('firebasestorage.googleapis.com')) {
-    console.warn("Attempted to delete a non-Firebase Storage URL:", url);
-    return;
-  }
+    if (!url.includes('firebasestorage.googleapis.com')) {
+        console.warn("Attempted to delete a non-Firebase Storage URL:", url);
+        return;
+    }
 
-  try {
-    const filePathRegex = /o\/(.*?)\?/;
-    const matches = url.match(filePathRegex);
-    if (!matches || matches.length < 2) {
-      throw new Error("Could not extract file path from URL.");
+    try {
+        const imageRef = ref(storage, url);
+        await deleteObject(imageRef);
+    } catch (error: any) {
+        if (error.code === 'storage/object-not-found') {
+            console.warn(`Image for deletion not found in storage: ${url}`);
+        } else {
+            console.error(`Error deleting image from storage: ${url}`, error);
+            // Re-throw if it's not a 'not found' error, as it might be a permissions issue.
+            throw error;
+        }
     }
-    
-    const filePath = decodeURIComponent(matches[1]);
-    const imageRef = ref(storage, filePath);
-    await deleteObject(imageRef);
-  } catch (error: any) {
-    if (error.code === 'storage/object-not-found') {
-      console.warn(`Image for deletion not found in storage: ${url}`);
-    } else {
-      console.error(`Error deleting image from storage: ${url}`, error);
-      throw error;
-    }
-  }
 };
 
 // === Team Members (About Page) Functions ===

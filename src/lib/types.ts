@@ -1,4 +1,5 @@
 
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -215,6 +216,25 @@ export type BoardItem = {
   items?: ChecklistItem[]; // For checklist items
   position: { x: number; y: number };
   size: { width: number | string; height: number | string };
+  createdAt: Date;
+};
+
+// === Storyboard Project Types ===
+export type Storyboard = {
+  id: string;
+  userId: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+};
+
+export type StoryboardPanel = {
+  id: string;
+  storyboardId: string;
+  userId: string;
+  imageUrl: string;
+  notes: string;
+  order: number;
   createdAt: Date;
 };
 
