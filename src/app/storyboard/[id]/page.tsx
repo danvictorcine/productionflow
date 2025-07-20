@@ -26,7 +26,7 @@ import { AppFooter } from '@/components/app-footer';
 import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 
 const ItemType = 'PANEL';
 
@@ -320,16 +320,14 @@ function StoryboardPageDetail() {
                 <main className="flex-1 p-4 sm:p-6 md:p-8">
                      <div className="mb-6">
                         <Card>
-                            <CardHeader>
+                             <CardContent className="p-4 space-y-1">
                                 <CardTitle>{storyboard.name}</CardTitle>
-                            </CardHeader>
-                            {storyboard.description && (
-                                <CardContent className="pt-0">
+                                {storyboard.description && (
                                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                                     {storyboard.description}
                                     </p>
-                                </CardContent>
-                            )}
+                                )}
+                            </CardContent>
                         </Card>
                     </div>
                     {panels.length > 0 ? (
