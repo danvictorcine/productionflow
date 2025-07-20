@@ -144,7 +144,7 @@ function StoryboardPageDetail() {
     const [isUploading, setIsUploading] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     
-    const dndBackend = /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
+    const dndBackend = typeof navigator !== 'undefined' && /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
 
     const fetchStoryboardData = useCallback(async () => {
         if (!storyboardId || !user) return;
@@ -212,7 +212,7 @@ function StoryboardPageDetail() {
 
             await firestoreApi.addStoryboardPanelsBatch(newPanelsData);
             await fetchStoryboardData();
-            toast({ title: `${files.length} painel(s) adicionado(s) com sucesso!`});
+            toast({ title: `${files.length} quadro(s) adicionado(s) com sucesso!`});
 
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
@@ -303,7 +303,7 @@ function StoryboardPageDetail() {
                         <Button onClick={() => setIsEditDialogOpen(true)} variant="outline"><Edit className="mr-2 h-4 w-4" />Editar Detalhes</Button>
                         <Button onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
                             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                            Adicionar Painel
+                            Adicionar Quadro
                         </Button>
                         <input
                             ref={imageUploadRef}
@@ -349,10 +349,10 @@ function StoryboardPageDetail() {
                         <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
                             <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
                             <h3 className="mt-4 text-lg font-semibold">Storyboard Vazio</h3>
-                            <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro painel ao seu storyboard.</p>
+                            <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro quadro ao seu storyboard.</p>
                             <Button className="mt-6" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
                                 {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                Adicionar Painel
+                                Adicionar Quadro
                             </Button>
                         </div>
                     )}
