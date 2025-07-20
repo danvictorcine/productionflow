@@ -37,9 +37,10 @@ interface PanelCardProps {
   onDelete: (panelId: string) => void;
   onUpdateNotes: (panelId: string, notes: string) => void;
   movePanel: (dragIndex: number, hoverIndex: number) => void;
+  onDropPanel: () => void;
 }
 
-const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNotes, movePanel }: PanelCardProps) => {
+const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNotes, movePanel, onDropPanel }: PanelCardProps) => {
     const [notes, setNotes] = useState(panel.notes);
     const debounceTimer = useRef<NodeJS.Timeout>();
 
@@ -69,9 +70,14 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
         },
     });
 
-    const [{ isDragging }, drag, preview] = useDrag({
+    const [{ isDragging }, drag] = useDrag({
         type: ItemType,
         item: () => ({ id: panel.id, index }),
+        end: (item, monitor) => {
+            if (monitor.didDrop()) {
+                onDropPanel();
+            }
+        },
         collect: (monitor) => ({ isDragging: monitor.isDragging() }),
     });
 
@@ -261,7 +267,7 @@ function StoryboardPageDetail() {
         );
     }, []);
 
-    const handleDrop = async () => {
+    const handleDropPanel = async () => {
         const updatedPanels = panels.map((panel, index) => ({ id: panel.id, order: index }));
         await firestoreApi.updatePanelOrder(updatedPanels);
         toast({ title: 'Ordem do storyboard salva!' });
@@ -324,7 +330,7 @@ function StoryboardPageDetail() {
                         </div>
                     )}
                     {panels.length > 0 ? (
-                        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4" onMouseUp={handleDrop} onTouchEnd={handleDrop}>
+                        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
                             {panels.map((panel, index) => (
                             <PanelCard 
                                 key={panel.id} 
@@ -334,6 +340,7 @@ function StoryboardPageDetail() {
                                 onDelete={handleDeletePanel} 
                                 onUpdateNotes={handleUpdatePanelNotes} 
                                 movePanel={movePanel}
+                                onDropPanel={handleDropPanel}
                             />
                             ))}
                         </div>
