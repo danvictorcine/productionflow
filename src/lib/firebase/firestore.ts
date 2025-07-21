@@ -408,35 +408,36 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
     
     const daysQuery = query(
       collection(db, 'shooting_days'),
-      where('productionId', '==', productionId),
-      where('userId', '==', userId)
+      where('productionId', '==', productionId)
     );
     const daysSnapshot = await getDocs(daysQuery);
 
     daysSnapshot.forEach(dayDoc => {
       const dayData = dayDoc.data() as ShootingDay;
+      if (dayData.userId !== userId) return; // Security check
+      
       let dayNeedsUpdate = false;
 
       // Sync presentTeam
-      const newPresentTeam = dayData.presentTeam.map(member => {
+      const newPresentTeam = dayData.presentTeam?.map(member => {
         if (updatedTeamMap.has(member.id)) {
           dayNeedsUpdate = true;
           return updatedTeamMap.get(member.id)!;
         }
         return member;
-      });
+      }) || [];
 
       // Sync scenes.presentInScene
-      const newScenes = dayData.scenes.map(scene => {
-        const newPresentInScene = scene.presentInScene.map(member => {
+      const newScenes = dayData.scenes?.map(scene => {
+        const newPresentInScene = scene.presentInScene?.map(member => {
           if (updatedTeamMap.has(member.id)) {
             dayNeedsUpdate = true;
             return updatedTeamMap.get(member.id)!;
           }
           return member;
-        });
+        }) || [];
         return { ...scene, presentInScene: newPresentInScene };
-      });
+      }) || [];
       
       if (dayNeedsUpdate) {
         batch.update(dayDoc.ref, { presentTeam: newPresentTeam, scenes: newScenes });
@@ -485,18 +486,19 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
   if (!userId) return [];
   const q = query(
     collection(db, 'shooting_days'),
-    where('productionId', '==', productionId),
-    where('userId', '==', userId)
+    where('productionId', '==', productionId)
   );
   const querySnapshot = await getDocs(q);
-  const days = querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      date: (data.date as Timestamp).toDate(),
-    } as ShootingDay;
-  });
+  const days = querySnapshot.docs
+    .filter(doc => doc.data().userId === userId) // Client-side filter for ownership
+    .map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            date: (data.date as Timestamp).toDate(),
+        } as ShootingDay;
+    });
   days.sort((a, b) => a.date.getTime() - b.date.getTime());
   return days;
 };
@@ -716,11 +718,12 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
 
   const panelsQuery = query(
     collection(db, 'storyboard_panels'),
-    where('storyboardId', '==', storyboardId),
-    where('userId', '==', userId)
+    where('storyboardId', '==', storyboardId)
   );
   const panelsSnapshot = await getDocs(panelsQuery);
   for (const doc of panelsSnapshot.docs) {
+      if (doc.data().userId !== userId) continue;
+      
       const panelData = doc.data();
       if (panelData.imageUrl && panelData.imageUrl.includes('firebasestorage.googleapis.com')) {
           await deleteImageFromUrl(panelData.imageUrl);
@@ -733,15 +736,7 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
 
 
 export const getStoryboardPanels = async (storyboardId: string): Promise<StoryboardPanel[]> => {
-  const userId = getUserId();
-  // Public users don't have a userId, so we just query by storyboardId
-  const q = userId
-    ? query(
-        collection(db, 'storyboard_panels'),
-        where('storyboardId', '==', storyboardId),
-        where('userId', '==', userId)
-      )
-    : query(
+  const q = query(
         collection(db, 'storyboard_panels'),
         where('storyboardId', '==', storyboardId)
       );
@@ -1058,13 +1053,21 @@ export const deleteThemeSettings = async () => {
 // === Public Sharing Functions ===
 
 export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
-  const q = query(collection(db, 'shooting_days'), where('publicId', '==', publicId), where('isPublic', '==', true), limit(1));
+  const q = query(collection(db, 'shooting_days'), where('publicId', '==', publicId), limit(1));
   const querySnapshot = await getDocs(q);
+  
   if (querySnapshot.empty) {
     return null;
   }
+  
   const docSnap = querySnapshot.docs[0];
   const data = docSnap.data();
+
+  // Final check on the client-side, even though rules should prevent this.
+  if (!data.isPublic) {
+    return null;
+  }
+
   return {
     id: docSnap.id,
     ...data,
@@ -1073,7 +1076,7 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
 };
 
 export const getPublicStoryboard = async (publicId: string): Promise<Storyboard | null> => {
-  const q = query(collection(db, 'storyboards'), where('publicId', '==', publicId), where('isPublic', '==', true), limit(1));
+  const q = query(collection(db, 'storyboards'), where('publicId', '==', publicId), limit(1));
   const querySnapshot = await getDocs(q);
 
   if (querySnapshot.empty) {
@@ -1082,6 +1085,11 @@ export const getPublicStoryboard = async (publicId: string): Promise<Storyboard 
 
   const docSnap = querySnapshot.docs[0];
   const data = docSnap.data();
+  
+  if (!data.isPublic) {
+      return null;
+  }
+  
   return {
     id: docSnap.id,
     ...data,
