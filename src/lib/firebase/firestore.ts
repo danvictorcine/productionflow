@@ -1095,6 +1095,7 @@ export const getPublicStoryboard = async (publicId: string): Promise<Storyboard 
 
     const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
     const storyboardSnap = await getDoc(storyboardRef);
+    
     if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
 
     const data = storyboardSnap.data();
@@ -1105,7 +1106,6 @@ export const getPublicStoryboard = async (publicId: string): Promise<Storyboard 
     } as Storyboard;
 };
 
-
 export const setShareState = async (itemType: 'day' | 'storyboard', originalId: string, publicId: string, isPublic: boolean) => {
     const userId = getUserId();
     if (!userId) throw new Error("Usuário não autenticado.");
@@ -1115,7 +1115,6 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
     const originalDocRef = doc(db, collectionName, originalId);
     const publicShareRef = doc(db, 'public_shares', publicId);
     
-    // Create or delete the public share document
     if (isPublic) {
         const shareData: PublicShare = {
             id: publicId,
@@ -1124,11 +1123,9 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             type: itemType,
         };
         batch.set(publicShareRef, shareData);
-        // Also update the main document with sharing info
         batch.update(originalDocRef, { isPublic: true, publicId: publicId });
     } else {
         batch.delete(publicShareRef);
-        // Also update the main document to remove sharing info
         batch.update(originalDocRef, { isPublic: false, publicId: deleteField() });
     }
     
