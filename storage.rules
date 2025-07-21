@@ -3,34 +3,19 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // By default, deny all reads and writes
+    // match /{allPaths=**} {
+    //   allow read, write: if false;
+    // }
 
-    // Helper function to check ownership by user ID in the path
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // Users can read/write their own profile picture.
-    match /users/{userId}/profile.jpg {
-      allow read;
-      allow write: if isOwner(userId);
-    }
-    
-    // Users can read/write their own creative project board images.
-    match /content/board_images/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if isOwner(userId);
-    }
-
-    // Public content images are readable by anyone.
-    // Writes are restricted to authenticated users (admins in the app context).
-    match /content/{folder}/{allPaths=**} {
+    // Allow anyone to read any file. This is necessary for public pages 
+    // (storyboards, call sheets, blog posts) to display images to unauthenticated users.
+    match /{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null;
     }
-    
-    // Team member photos are public.
-    match /team_photos/{allPaths=**} {
-      allow read: if true;
+
+    // Restrict write access to authenticated users only. This prevents unauthorized uploads.
+    match /{allPaths=**} {
       allow write: if request.auth != null;
     }
   }
