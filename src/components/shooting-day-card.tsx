@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import type { ShootingDay, Scene, ChecklistItem } from "@/lib/types";
-import { format, isToday } from "date-fns";
+import { format, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clapperboard, Clock, Hourglass,
@@ -174,7 +174,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onSh
     return () => clearInterval(intervalId);
   }, [day.date, day.startTime, day.endTime]);
 
-  const totalDuration = remainingTime;
+  const totalDuration = remainingDaylight;
 
   return (
     <AccordionItem value={day.id} className="border-none">
