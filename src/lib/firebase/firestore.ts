@@ -486,19 +486,18 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
   if (!userId) return [];
   const q = query(
     collection(db, 'shooting_days'),
-    where('productionId', '==', productionId)
+    where('productionId', '==', productionId),
+    where('userId', '==', userId)
   );
   const querySnapshot = await getDocs(q);
-  const days = querySnapshot.docs
-    .filter(doc => doc.data().userId === userId) // Client-side filter for ownership
-    .map(doc => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-            date: (data.date as Timestamp).toDate(),
-        } as ShootingDay;
-    });
+  const days = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+          id: doc.id,
+          ...data,
+          date: (data.date as Timestamp).toDate(),
+      } as ShootingDay;
+  });
   days.sort((a, b) => a.date.getTime() - b.date.getTime());
   return days;
 };
@@ -1063,7 +1062,6 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
   const docSnap = querySnapshot.docs[0];
   const data = docSnap.data();
 
-  // Final check on the client-side, even though rules should prevent this.
   if (!data.isPublic) {
     return null;
   }
@@ -1100,3 +1098,4 @@ export const getPublicStoryboard = async (publicId: string): Promise<Storyboard 
 
 // Note: Public panels are fetched using `getStoryboardPanels` with a null userId.
 // The security rules will enforce that this is only allowed for public storyboards.
+
