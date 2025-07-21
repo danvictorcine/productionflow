@@ -21,7 +21,7 @@ interface ShareDialogProps {
     setIsOpen: (isOpen: boolean) => void;
     item: { id: string; name: string; isPublic?: boolean; publicId?: string };
     itemType: 'day' | 'storyboard';
-    onStateChange: (isPublic: boolean, publicId?: string) => void;
+    onStateChange: (isPublic: boolean, publicId: string) => void;
 }
 
 export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }: ShareDialogProps) {
@@ -29,6 +29,10 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
     const [hasCopied, setHasCopied] = useState(false);
 
     const itemTypeName = itemType === 'day' ? 'Ordem do Dia' : 'Storyboard';
+    
+    // Use the item's publicId if it exists, otherwise generate a placeholder.
+    // The real ID generation happens in handleSwitchChange.
+    const publicId = item.publicId || (isPublic ? `...generating` : '');
     const publicUrl = isPublic && item.publicId
         ? `${window.location.origin}/public/${itemType}/${item.publicId}`
         : '';
@@ -39,7 +43,16 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
 
     const handleSwitchChange = (checked: boolean) => {
         setIsPublic(checked);
-        onStateChange(checked, item.publicId);
+        let currentPublicId = item.publicId;
+
+        // If turning on public access and there's no ID yet, generate one.
+        if (checked && !currentPublicId) {
+            currentPublicId = crypto.randomUUID();
+        }
+        
+        // Pass the publicId only if sharing is enabled.
+        // If disabled, we still pass the existing ID to be kept in the DB.
+        onStateChange(checked, currentPublicId || '');
     };
     
     const handleCopyToClipboard = () => {
@@ -72,8 +85,8 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
                     <div className="space-y-2">
                         <Label htmlFor="public-link">Link Público</Label>
                         <div className="flex items-center space-x-2">
-                            <Input id="public-link" value={publicUrl} readOnly />
-                            <Button type="button" size="icon" onClick={handleCopyToClipboard}>
+                            <Input id="public-link" value={publicUrl} readOnly placeholder="Gerando link..."/>
+                            <Button type="button" size="icon" onClick={handleCopyToClipboard} disabled={!publicUrl}>
                                 {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                             </Button>
                         </div>

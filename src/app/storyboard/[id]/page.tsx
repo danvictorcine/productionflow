@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText, FileDown } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText, FileDown, Share2 } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -35,6 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ShareDialog } from '@/components/share-dialog';
 
 const ItemType = 'PANEL';
 
@@ -156,6 +157,7 @@ function StoryboardPageDetail() {
     const [isUploading, setIsUploading] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isShareOpen, setIsShareOpen] = useState(false);
     
     const dndBackend = typeof navigator !== 'undefined' && /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
 
@@ -389,6 +391,10 @@ function StoryboardPageDetail() {
                             onChange={handleImageUpload}
                             disabled={isUploading}
                         />
+                         <Button variant="outline" onClick={() => setIsShareOpen(true)}>
+                            <Share2 className="mr-2 h-4 w-4" />
+                            Compartilhar
+                        </Button>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="icon" disabled={isExporting} aria-label="Exportar Storyboard">
@@ -459,6 +465,19 @@ function StoryboardPageDetail() {
                     onSubmit={handleStoryboardSubmit} 
                     storyboard={storyboard}
                 />
+                
+                {storyboard && (
+                  <ShareDialog 
+                    isOpen={isShareOpen}
+                    setIsOpen={setIsShareOpen}
+                    item={storyboard}
+                    itemType="storyboard"
+                    onStateChange={async (isPublic, publicId) => {
+                      await firestoreApi.updateStoryboard(storyboard.id, { isPublic, publicId });
+                      fetchStoryboardData(); // Refresh data to get the new publicId
+                    }}
+                  />
+                )}
             </div>
         </DndProvider>
     );
