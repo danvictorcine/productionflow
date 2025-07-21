@@ -1,137 +1,97 @@
-
-
 // @/src/app/public/day/[publicId]/page.tsx
-'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import type { ShootingDay, ChecklistItem } from '@/lib/types';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { format, isToday, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import Link from 'next/link';
+
 import * as firestoreApi from '@/lib/firebase/firestore';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ShootingDayCard } from '@/components/shooting-day-card';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Clapperboard } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import type { ShootingDay, ChecklistItem } from '@/lib/types';
 import { AppFooter } from '@/components/app-footer';
+import { Button } from '@/components/ui/button';
+import { Accordion } from '@/components/ui/accordion';
+import { ShootingDayCard } from '@/components/shooting-day-card';
+import { Clapperboard } from 'lucide-react';
 
-
-type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
-    equipment: ChecklistItem[];
-    costumes: ChecklistItem[];
-    props: ChecklistItem[];
-    generalNotes: ChecklistItem[];
+type Props = {
+  params: { publicId: string };
 };
 
-export default function PublicShootingDayPage() {
-    const params = useParams();
-    const publicId = params.publicId as string;
+// This function generates metadata for the page
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const day = await firestoreApi.getPublicShootingDay(params.publicId);
+  const title = day ? `Ordem do Dia: ${format(day.date, "dd/MM/yyyy", { locale: ptBR })}` : 'Ordem do Dia não encontrada';
+  const description = day ? `Ordem do Dia para a filmagem em ${day.location}.` : 'Visualize esta Ordem do Dia pública.';
 
-    const [day, setDay] = useState<ProcessedShootingDay | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  return {
+    title: `${title} | ProductionFlow`,
+    description,
+  };
+}
 
-    useEffect(() => {
-        if (!publicId) return;
+export default async function PublicShootingDayPage({ params }: Props) {
+  const day = await firestoreApi.getPublicShootingDay(params.publicId);
+  
+  if (!day) {
+    notFound();
+  }
+  
+  const convertNotesToItems = (notes: string | ChecklistItem[] | undefined): ChecklistItem[] => {
+    if (Array.isArray(notes)) {
+        return notes.map(item => ({...item, id: item.id || crypto.randomUUID()}));
+    }
+    if (typeof notes === 'string' && notes.trim()) {
+        return notes.split('\n').filter(Boolean).map(line => ({
+            id: crypto.randomUUID(),
+            text: line.trim(),
+            checked: false
+        }));
+    }
+    return [];
+  };
 
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                const fetchedDay = await firestoreApi.getPublicShootingDay(publicId);
-                if (!fetchedDay) {
-                    setError("Esta Ordem do Dia não foi encontrada ou o acesso não é mais público.");
-                    return;
-                }
-                
-                const convertNotesToItems = (notes: string | ChecklistItem[] | undefined): ChecklistItem[] => {
-                    if (Array.isArray(notes)) {
-                        return notes.map(item => ({...item, id: item.id || crypto.randomUUID()}));
-                    }
-                    if (typeof notes === 'string' && notes.trim()) {
-                        return notes.split('\n').filter(Boolean).map(line => ({
-                            id: crypto.randomUUID(),
-                            text: line.trim(),
-                            checked: false
-                        }));
-                    }
-                    return [];
-                };
-
-                const processedDay: ProcessedShootingDay = {
-                    ...fetchedDay,
-                    equipment: convertNotesToItems(fetchedDay.equipment),
-                    costumes: convertNotesToItems(fetchedDay.costumes),
-                    props: convertNotesToItems(fetchedDay.props),
-                    generalNotes: convertNotesToItems(fetchedDay.generalNotes),
-                };
-
-                setDay(processedDay);
-            } catch (err: any) {
-                console.error(err);
-                setError("Ocorreu um erro ao carregar os dados. Verifique o link e tente novamente.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [publicId]);
-
-    const renderContent = () => {
-        if (isLoading) {
-            return (
-                <div className="p-8 space-y-6">
-                    <Skeleton className="h-[60px] w-full" />
-                    <Skeleton className="h-[400px] w-full" />
-                </div>
-            );
-        }
-
-        if (error) {
-            return (
-                <Alert variant="destructive" className="max-w-xl mx-auto">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Erro de Acesso</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
-            );
-        }
-
-        if (day) {
-            return (
-                 <ShootingDayCard 
-                    key={day.id} 
-                    day={day} 
-                    isFetchingWeather={false}
-                    onEdit={() => {}}
-                    onDelete={() => {}}
-                    onShare={() => {}}
-                    onExportExcel={() => {}}
-                    onExportPdf={() => {}}
-                    onUpdateNotes={() => {}}
-                    isExporting={false}
-                    isPublicView={true}
-                  />
-            );
-        }
-
-        return null;
-    };
-
-    return (
-        <div className="flex flex-col min-h-screen bg-muted/40">
-             <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
-                <div className="flex items-center gap-2">
-                    <Clapperboard className="h-8 w-8 text-primary" />
-                    <h1 className="text-xl font-bold">Ordem do Dia</h1>
-                </div>
-                <div className="ml-auto flex items-center gap-2">
-                    <Badge variant="secondary">Visualização Pública</Badge>
-                </div>
-            </header>
-            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {renderContent()}
-            </main>
-            <AppFooter />
-        </div>
-    );
+  const processedDay = {
+    ...day,
+    equipment: convertNotesToItems(day.equipment),
+    costumes: convertNotesToItems(day.costumes),
+    props: convertNotesToItems(day.props),
+    generalNotes: convertNotesToItems(day.generalNotes),
+  };
+  
+  return (
+    <div className="flex flex-col min-h-screen w-full bg-background">
+      <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
+          <div className="flex items-center gap-3">
+              <div className="p-3 rounded-full bg-primary/10">
+                  <Clapperboard className="h-5 w-5 text-primary" />
+              </div>
+              <h1 className="text-xl font-bold text-primary truncate">Ordem do Dia</h1>
+          </div>
+           <div className="ml-auto">
+                 <Button asChild>
+                    <Link href="/login">Criado com ProductionFlow</Link>
+                </Button>
+            </div>
+      </header>
+       <main className="flex-1 p-4 sm:p-6 md:p-8">
+         <Accordion type="single" collapsible defaultValue={day.id} className="w-full">
+            <ShootingDayCard 
+                key={day.id} 
+                day={processedDay} 
+                isFetchingWeather={false}
+                onEdit={() => {}}
+                onDelete={() => {}}
+                onShare={() => {}}
+                onExportExcel={() => {}}
+                onExportPdf={() => {}}
+                onUpdateNotes={() => {}}
+                isExporting={false}
+                isPublicView={true}
+            />
+         </Accordion>
+       </main>
+       <AppFooter />
+    </div>
+  );
 }
