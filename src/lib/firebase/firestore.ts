@@ -19,7 +19,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, TeamMember, Scene } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID, returns null if not authenticated for public views
@@ -393,9 +393,60 @@ export const getProduction = async (productionId: string): Promise<Production | 
 };
 
 export const updateProduction = async (productionId: string, data: Partial<Omit<Production, 'id' | 'userId' | 'createdAt'>>) => {
-  const docRef = doc(db, 'productions', productionId);
-  await updateDoc(docRef, data);
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+
+  const batch = writeBatch(db);
+  const productionRef = doc(db, 'productions', productionId);
+
+  // Update the main production document
+  batch.update(productionRef, data);
+
+  // If the team data was updated, sync it with all associated shooting days
+  if (data.team) {
+    const updatedTeamMap = new Map(data.team.map(member => [member.id, member]));
+    
+    const daysQuery = query(
+      collection(db, 'shooting_days'),
+      where('productionId', '==', productionId),
+      where('userId', '==', userId)
+    );
+    const daysSnapshot = await getDocs(daysQuery);
+
+    daysSnapshot.forEach(dayDoc => {
+      const dayData = dayDoc.data() as ShootingDay;
+      let dayNeedsUpdate = false;
+
+      // Sync presentTeam
+      const newPresentTeam = dayData.presentTeam.map(member => {
+        if (updatedTeamMap.has(member.id)) {
+          dayNeedsUpdate = true;
+          return updatedTeamMap.get(member.id)!;
+        }
+        return member;
+      });
+
+      // Sync scenes.presentInScene
+      const newScenes = dayData.scenes.map(scene => {
+        const newPresentInScene = scene.presentInScene.map(member => {
+          if (updatedTeamMap.has(member.id)) {
+            dayNeedsUpdate = true;
+            return updatedTeamMap.get(member.id)!;
+          }
+          return member;
+        });
+        return { ...scene, presentInScene: newPresentInScene };
+      });
+      
+      if (dayNeedsUpdate) {
+        batch.update(dayDoc.ref, { presentTeam: newPresentTeam, scenes: newScenes });
+      }
+    });
+  }
+  
+  await batch.commit();
 };
+
 
 export const deleteProductionAndDays = async (productionId: string) => {
   const userId = getUserId();
@@ -632,17 +683,21 @@ export const getStoryboards = async (): Promise<Storyboard[]> => {
 
 export const getStoryboard = async (storyboardId: string): Promise<Storyboard | null> => {
     const userId = getUserId();
-    if (!userId) return null;
     const docRef = doc(db, 'storyboards', storyboardId);
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists() && docSnap.data().userId === userId) {
-        const data = docSnap.data();
+
+    if (!docSnap.exists()) return null;
+
+    const data = docSnap.data();
+    // Allow access if the user is the owner OR if the storyboard is public
+    if ((userId && data.userId === userId) || data.isPublic) {
         return {
             id: docSnap.id,
             ...data,
             createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
         } as Storyboard;
     }
+    
     return null;
 }
 
