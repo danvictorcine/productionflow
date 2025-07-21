@@ -1,4 +1,5 @@
 
+
 // @/src/app/storyboard/[id]/page.tsx
 'use client';
 
@@ -157,7 +158,7 @@ function StoryboardPageDetail() {
     const [isUploading, setIsUploading] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [isShareOpen, setIsShareOpen] = useState(false);
+    const [sharingItem, setSharingItem] = useState<Storyboard | null>(null);
     
     const dndBackend = typeof navigator !== 'undefined' && /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
 
@@ -292,10 +293,9 @@ function StoryboardPageDetail() {
         if (!exportRef.current || !storyboard) return;
 
         toast({ title: "Gerando arquivo...", description: "Isso pode levar alguns segundos." });
+        window.scrollTo(0, 0);
         setIsExporting(true);
-        window.scrollTo(0, 0); // Scroll to top to ensure full capture
-
-        // A small delay to allow React to re-render and hide the buttons
+        
         setTimeout(async () => {
             try {
                 const canvas = await html2canvas(exportRef.current!, {
@@ -349,6 +349,12 @@ function StoryboardPageDetail() {
         }, 200);
     };
 
+    const handleShareStateChange = async (isPublic: boolean, publicId: string) => {
+        if (!sharingItem) return;
+        await firestoreApi.setShareState('storyboard', sharingItem.id, publicId, isPublic);
+        await fetchStoryboardData();
+    };
+
 
     if (isLoading) {
         return (
@@ -391,7 +397,7 @@ function StoryboardPageDetail() {
                             onChange={handleImageUpload}
                             disabled={isUploading}
                         />
-                         <Button variant="outline" onClick={() => setIsShareOpen(true)}>
+                         <Button variant="outline" onClick={() => setSharingItem(storyboard)}>
                             <Share2 className="mr-2 h-4 w-4" />
                             Compartilhar
                         </Button>
@@ -466,16 +472,15 @@ function StoryboardPageDetail() {
                     storyboard={storyboard}
                 />
                 
-                {storyboard && (
+                {sharingItem && (
                   <ShareDialog 
-                    isOpen={isShareOpen}
-                    setIsOpen={setIsShareOpen}
-                    item={storyboard}
-                    itemType="storyboard"
-                    onStateChange={async (isPublic, publicId) => {
-                      await firestoreApi.updateStoryboard(storyboard.id, { isPublic, publicId });
-                      fetchStoryboardData(); // Refresh data to get the new publicId
+                    isOpen={!!sharingItem}
+                    setIsOpen={(open) => {
+                        if (!open) setSharingItem(null);
                     }}
+                    item={sharingItem}
+                    itemType="storyboard"
+                    onStateChange={handleShareStateChange}
                   />
                 )}
             </div>
@@ -491,3 +496,4 @@ export default function StoryboardPage() {
         </AuthGuard>
     );
 }
+

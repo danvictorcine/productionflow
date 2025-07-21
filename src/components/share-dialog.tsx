@@ -1,4 +1,5 @@
 
+
 // src/components/share-dialog.tsx
 "use client";
 
@@ -15,42 +16,50 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Loader2 } from 'lucide-react';
 
 interface ShareDialogProps {
     isOpen: boolean;
     setIsOpen: (isOpen: boolean) => void;
     item: { id: string; name: string; isPublic?: boolean; publicId?: string };
     itemType: 'day' | 'storyboard';
-    onStateChange: (isPublic: boolean, publicId: string) => void;
+    onStateChange: (isPublic: boolean, publicId: string) => Promise<void>;
 }
 
 export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }: ShareDialogProps) {
     const [isPublic, setIsPublic] = useState(item.isPublic || false);
+    const [publicId, setPublicId] = useState(item.publicId || '');
+    const [isSaving, setIsSaving] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
 
     const itemTypeName = itemType === 'day' ? 'Ordem do Dia' : 'Storyboard';
     
-    const publicUrl = isPublic && item.publicId
-        ? `${window.location.origin}/public/${itemType}/${item.publicId}`
+    const publicUrl = isPublic && publicId
+        ? `${window.location.origin}/public/${itemType}/${publicId}`
         : '';
     
     useEffect(() => {
         setIsPublic(item.isPublic || false);
-    }, [item.isPublic]);
+        setPublicId(item.publicId || '');
+    }, [item.isPublic, item.publicId]);
 
-    const handleSwitchChange = (checked: boolean) => {
-        setIsPublic(checked);
-        let currentPublicId = item.publicId;
+    const handleSwitchChange = async (checked: boolean) => {
+        setIsSaving(true);
+        let newPublicId = publicId;
 
-        // If turning on public access and there's no ID yet, generate one.
-        if (checked && !currentPublicId) {
-            currentPublicId = crypto.randomUUID();
+        if (checked && !newPublicId) {
+            newPublicId = crypto.randomUUID();
         }
-        
-        // Pass the publicId only if sharing is enabled.
-        // If disabled, we still pass the existing ID to be kept in the DB.
-        onStateChange(checked, currentPublicId || '');
+
+        try {
+          await onStateChange(checked, newPublicId);
+          setIsPublic(checked);
+          setPublicId(newPublicId);
+        } catch (error) {
+            console.error("Failed to update sharing state:", error);
+        } finally {
+            setIsSaving(false);
+        }
     };
     
     const handleCopyToClipboard = () => {
@@ -75,8 +84,11 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
                         id="public-switch"
                         checked={isPublic}
                         onCheckedChange={handleSwitchChange}
+                        disabled={isSaving}
                     />
-                    <Label htmlFor="public-switch">Tornar público</Label>
+                    <Label htmlFor="public-switch" className="flex items-center">
+                      Tornar público {isSaving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                    </Label>
                 </div>
 
                 {isPublic && (

@@ -1,5 +1,6 @@
 
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -19,7 +20,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, TeamMember, Scene } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, TeamMember, Scene, PublicShare } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID, returns null if not authenticated for public views
@@ -1051,51 +1052,74 @@ export const deleteThemeSettings = async () => {
 
 // === Public Sharing Functions ===
 
+const getPublicData = async (publicId: string): Promise<{ type: 'day' | 'storyboard', originalId: string } | null> => {
+    const shareRef = doc(db, 'public_shares', publicId);
+    const shareSnap = await getDoc(shareRef);
+    if (!shareSnap.exists()) {
+        return null;
+    }
+    const shareData = shareSnap.data() as PublicShare;
+    return { type: shareData.type, originalId: shareData.originalId };
+};
+
 export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
-  const q = query(collection(db, 'shooting_days'), where('publicId', '==', publicId), limit(1));
-  const querySnapshot = await getDocs(q);
-  
-  if (querySnapshot.empty) {
-    return null;
-  }
-  
-  const docSnap = querySnapshot.docs[0];
-  const data = docSnap.data();
+    const shareInfo = await getPublicData(publicId);
+    if (!shareInfo || shareInfo.type !== 'day') return null;
 
-  if (!data.isPublic) {
-    return null;
-  }
+    const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
+    const daySnap = await getDoc(dayRef);
+    if (!daySnap.exists()) return null;
 
-  return {
-    id: docSnap.id,
-    ...data,
-    date: (data.date as Timestamp).toDate(),
-  } as ShootingDay;
+    const data = daySnap.data();
+    return {
+        id: daySnap.id,
+        ...data,
+        date: (data.date as Timestamp).toDate(),
+    } as ShootingDay;
 };
 
 export const getPublicStoryboard = async (publicId: string): Promise<Storyboard | null> => {
-  const q = query(collection(db, 'storyboards'), where('publicId', '==', publicId), limit(1));
-  const querySnapshot = await getDocs(q);
+    const shareInfo = await getPublicData(publicId);
+    if (!shareInfo || shareInfo.type !== 'storyboard') return null;
 
-  if (querySnapshot.empty) {
-    return null;
-  }
+    const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
+    const storyboardSnap = await getDoc(storyboardRef);
+    if (!storyboardSnap.exists()) return null;
 
-  const docSnap = querySnapshot.docs[0];
-  const data = docSnap.data();
-  
-  if (!data.isPublic) {
-      return null;
-  }
-  
-  return {
-    id: docSnap.id,
-    ...data,
-    createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-  } as Storyboard;
+    const data = storyboardSnap.data();
+    return {
+        id: storyboardSnap.id,
+        ...data,
+        createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+    } as Storyboard;
 };
 
 
-// Note: Public panels are fetched using `getStoryboardPanels` with a null userId.
-// The security rules will enforce that this is only allowed for public storyboards.
+export const setShareState = async (itemType: 'day' | 'storyboard', originalId: string, publicId: string, isPublic: boolean) => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
+
+    const batch = writeBatch(db);
+    const collectionName = itemType === 'day' ? 'shooting_days' : 'storyboards';
+    const originalDocRef = doc(db, collectionName, originalId);
+    const publicShareRef = doc(db, 'public_shares', publicId);
+    
+    // Update the main document
+    batch.update(originalDocRef, { isPublic, publicId });
+    
+    // Create or delete the public share document
+    if (isPublic) {
+        const shareData: PublicShare = {
+            id: publicId,
+            userId,
+            originalId,
+            type: itemType,
+        };
+        batch.set(publicShareRef, shareData);
+    } else {
+        batch.delete(publicShareRef);
+    }
+    
+    await batch.commit();
+};
 

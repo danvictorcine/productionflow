@@ -1,4 +1,5 @@
 
+
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -505,6 +506,12 @@ function ProductionPageDetail() {
     setEditingShootingDay(day);
     setIsShootingDayDialogOpen(true);
   };
+
+  const handleShareStateChange = async (isPublic: boolean, publicId: string) => {
+      if (!sharingDay) return;
+      await firestoreApi.setShareState('day', sharingDay.id, publicId, isPublic);
+      await fetchProductionData();
+  };
   
   if (isLoading) {
     return (
@@ -580,23 +587,23 @@ function ProductionPageDetail() {
         </div>
 
         <Accordion type="multiple" className="w-full space-y-4">
-            {production.team && production.team.length > 0 && (
-                <AccordionItem value="team" className="border-none">
-                    <Card>
-                        <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
-                        <CardHeader className="flex-1">
-                            <CardTitle className="flex items-center text-left">
-                                <Users className="h-6 w-6 mr-3 text-primary" />
-                                Equipe e Elenco
-                            </CardTitle>
-                            <CardDescription className="text-left">
-                                Informações detalhadas sobre todos os envolvidos na produção.
-                            </CardDescription>
-                        </CardHeader>
-                        </AccordionTrigger>
-                        <AccordionContent className="p-6 pt-0">
-                            <div className="space-y-4">
-                            {production.team.map(member => (
+            <AccordionItem value="team" className="border-none">
+                <Card>
+                    <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
+                    <CardHeader className="flex-1">
+                        <CardTitle className="flex items-center text-left">
+                            <Users className="h-6 w-6 mr-3 text-primary" />
+                            Equipe e Elenco
+                        </CardTitle>
+                        <CardDescription className="text-left">
+                            Informações detalhadas sobre todos os envolvidos na produção.
+                        </CardDescription>
+                    </CardHeader>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-6 pt-0">
+                        <div className="space-y-4">
+                        {(production.team && production.team.length > 0) ? (
+                            production.team.map(member => (
                                 <div key={member.id} className="p-3 rounded-md border bg-muted/50">
                                     <div className="flex justify-between items-center">
                                         <div>
@@ -632,12 +639,14 @@ function ProductionPageDetail() {
                                         </div>
                                     )}
                                 </div>
-                            ))}
-                            </div>
-                        </AccordionContent>
-                    </Card>
-                </AccordionItem>
-            )}
+                            ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado.</p>
+                        )}
+                        </div>
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
 
             {shootingDays.length === 0 && !isLoading ? (
               <div className="text-center p-12 border-2 border-dashed rounded-lg mt-6">
@@ -706,10 +715,7 @@ function ProductionPageDetail() {
             }}
             item={sharingDay}
             itemType="day"
-            onStateChange={async (isPublic, publicId) => {
-                await firestoreApi.updateShootingDay(sharingDay.id, { isPublic, publicId });
-                fetchProductionData(); // Refresh data to get the new publicId
-            }}
+            onStateChange={handleShareStateChange}
         />
       )}
     </div>
@@ -723,3 +729,4 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
+
