@@ -1,4 +1,5 @@
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -21,16 +22,15 @@ import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "fire
 import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
-// Helper to get current user ID
+// Helper to get current user ID, returns null if not authenticated for public views
 const getUserId = () => {
-  const user = auth.currentUser;
-  if (!user) throw new Error('Usuário não autenticado.');
-  return user.uid;
+  return auth?.currentUser?.uid || null;
 };
 
 // Project Functions (Financial)
 export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'createdAt'>) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const docRef = await addDoc(collection(db, 'projects'), {
     ...projectData,
     userId,
@@ -45,6 +45,7 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
 
 export const getProjects = async (): Promise<Project[]> => {
   const userId = getUserId();
+  if (!userId) return [];
   const q = query(collection(db, 'projects'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   const projects: Project[] = [];
@@ -65,6 +66,7 @@ export const getProjects = async (): Promise<Project[]> => {
 
 export const getProject = async (projectId: string): Promise<Project | null> => {
     const userId = getUserId();
+    if (!userId) return null;
     const projectRef = doc(db, 'projects', projectId);
     const projectSnap = await getDoc(projectRef);
 
@@ -99,6 +101,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
 
 export const deleteProject = async (projectId: string) => {
     const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
     const batch = writeBatch(db);
 
     const projectRef = doc(db, 'projects', projectId);
@@ -182,9 +185,11 @@ export const sendPasswordReset = async (email: string) => {
 
 // Transaction Functions
 export const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const data = {
     ...transactionData,
-    userId: getUserId(),
+    userId,
     amount: transactionData.amount,
     date: Timestamp.fromDate(transactionData.date),
     status: transactionData.status || 'planned',
@@ -194,6 +199,7 @@ export const addTransaction = async (transactionData: Omit<Transaction, 'id'>) =
 
 export const addTransactionsBatch = async (transactionsData: Omit<Transaction, 'id' | 'userId'>[]) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const batch = writeBatch(db);
 
   transactionsData.forEach(transaction => {
@@ -214,6 +220,7 @@ export const addTransactionsBatch = async (transactionsData: Omit<Transaction, '
 
 export const getTransactions = async (projectId: string): Promise<Transaction[]> => {
     const userId = getUserId();
+    if (!userId) return [];
     const q = query(
         collection(db, 'transactions'),
         where('projectId', '==', projectId),
@@ -253,6 +260,7 @@ export const deleteTransaction = async (transactionId: string) => {
 // Category Management
 export const renameTransactionCategory = async (projectId: string, oldCategory: string, newCategory: string) => {
     const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
     const batch = writeBatch(db);
 
     const transQuery = query(
@@ -282,6 +290,7 @@ export const renameTransactionCategory = async (projectId: string, oldCategory: 
 // Data Import/Export
 export const importData = async (data: { projects: Project[], transactions: Transaction[] }) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const batch = writeBatch(db);
   const projectIdMap = new Map<string, string>();
 
@@ -344,6 +353,7 @@ export const importData = async (data: { projects: Project[], transactions: Tran
 
 export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   await addDoc(collection(db, 'productions'), {
     ...data,
     userId,
@@ -353,6 +363,7 @@ export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'cr
 
 export const getProductions = async (): Promise<Production[]> => {
   const userId = getUserId();
+  if (!userId) return [];
   const q = query(collection(db, 'productions'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
@@ -367,6 +378,7 @@ export const getProductions = async (): Promise<Production[]> => {
 
 export const getProduction = async (productionId: string): Promise<Production | null> => {
   const userId = getUserId();
+  if (!userId) return null;
   const docRef = doc(db, 'productions', productionId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists() && docSnap.data().userId === userId) {
@@ -387,6 +399,7 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
 
 export const deleteProductionAndDays = async (productionId: string) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const batch = writeBatch(db);
 
   const productionRef = doc(db, 'productions', productionId);
@@ -407,6 +420,7 @@ export const deleteProductionAndDays = async (productionId: string) => {
 
 export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'productionId' | 'userId'>) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   await addDoc(collection(db, 'shooting_days'), {
     ...data,
     userId,
@@ -417,6 +431,7 @@ export const addShootingDay = async (productionId: string, data: Omit<ShootingDa
 
 export const getShootingDays = async (productionId: string): Promise<ShootingDay[]> => {
   const userId = getUserId();
+  if (!userId) return [];
   const q = query(
     collection(db, 'shooting_days'),
     where('productionId', '==', productionId),
@@ -457,6 +472,7 @@ export const deleteShootingDay = async (dayId: string) => {
 // === Creative Project Functions ===
 export const addCreativeProject = async (data: Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   await addDoc(collection(db, 'creative_projects'), {
     ...data,
     userId,
@@ -466,6 +482,7 @@ export const addCreativeProject = async (data: Omit<CreativeProject, 'id' | 'use
 
 export const getCreativeProjects = async (): Promise<CreativeProject[]> => {
   const userId = getUserId();
+  if (!userId) return [];
   const q = query(collection(db, 'creative_projects'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
@@ -480,6 +497,7 @@ export const getCreativeProjects = async (): Promise<CreativeProject[]> => {
 
 export const getCreativeProject = async (projectId: string): Promise<CreativeProject | null> => {
     const userId = getUserId();
+    if (!userId) return null;
     const docRef = doc(db, 'creative_projects', projectId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists() && docSnap.data().userId === userId) {
@@ -500,6 +518,7 @@ export const updateCreativeProject = async (projectId: string, data: Partial<Omi
 
 export const deleteCreativeProjectAndItems = async (projectId: string) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const batch = writeBatch(db);
 
   const projectRef = doc(db, 'creative_projects', projectId);
@@ -518,6 +537,7 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
 
 export const getBoardItems = async (projectId: string): Promise<BoardItem[]> => {
   const userId = getUserId();
+  if (!userId) return [];
   const q = query(
     collection(db, 'board_items'),
     where('projectId', '==', projectId),
@@ -537,6 +557,7 @@ export const getBoardItems = async (projectId: string): Promise<BoardItem[]> => 
 
 export const addBoardItem = async (projectId: string, itemData: Omit<BoardItem, 'id' | 'userId' | 'projectId' | 'createdAt'>) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const docRef = await addDoc(collection(db, 'board_items'), {
     ...itemData,
     projectId,
@@ -567,10 +588,12 @@ export const deleteBoardItem = async (itemId: string) => {
 };
 
 export const uploadImageForBoard = async (file: File): Promise<string> => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const timestamp = new Date().getTime();
   const randomString = Math.random().toString(36).substring(2, 8);
   const fileName = `${timestamp}-${randomString}-${file.name}`;
-  const filePath = `content/board_images/${getUserId()}/${fileName}`;
+  const filePath = `content/board_images/${userId}/${fileName}`;
   const storageRef = ref(storage, filePath);
   
   await uploadBytes(storageRef, file);
@@ -583,6 +606,7 @@ export const uploadImageForBoard = async (file: File): Promise<string> => {
 
 export const addStoryboard = async (data: Omit<Storyboard, 'id' | 'userId' | 'createdAt'>) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   await addDoc(collection(db, 'storyboards'), {
     ...data,
     aspectRatio: data.aspectRatio || '16:9',
@@ -593,6 +617,7 @@ export const addStoryboard = async (data: Omit<Storyboard, 'id' | 'userId' | 'cr
 
 export const getStoryboards = async (): Promise<Storyboard[]> => {
   const userId = getUserId();
+  if (!userId) return [];
   const q = query(collection(db, 'storyboards'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
@@ -607,6 +632,7 @@ export const getStoryboards = async (): Promise<Storyboard[]> => {
 
 export const getStoryboard = async (storyboardId: string): Promise<Storyboard | null> => {
     const userId = getUserId();
+    if (!userId) return null;
     const docRef = doc(db, 'storyboards', storyboardId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists() && docSnap.data().userId === userId) {
@@ -627,6 +653,7 @@ export const updateStoryboard = async (storyboardId: string, data: Partial<Omit<
 
 export const deleteStoryboardAndPanels = async (storyboardId: string) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const batch = writeBatch(db);
 
   const projectRef = doc(db, 'storyboards', storyboardId);
@@ -652,11 +679,18 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
 
 export const getStoryboardPanels = async (storyboardId: string): Promise<StoryboardPanel[]> => {
   const userId = getUserId();
-  const q = query(
-    collection(db, 'storyboard_panels'),
-    where('storyboardId', '==', storyboardId),
-    where('userId', '==', userId)
-  );
+  // Public users don't have a userId, so we just query by storyboardId
+  const q = userId
+    ? query(
+        collection(db, 'storyboard_panels'),
+        where('storyboardId', '==', storyboardId),
+        where('userId', '==', userId)
+      )
+    : query(
+        collection(db, 'storyboard_panels'),
+        where('storyboardId', '==', storyboardId)
+      );
+
   const querySnapshot = await getDocs(q);
   const panels = querySnapshot.docs.map(doc => {
     const data = doc.data();
@@ -674,6 +708,7 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
 
 export const addStoryboardPanelsBatch = async (panelsData: Omit<StoryboardPanel, 'id' | 'userId' | 'createdAt'>[]) => {
   const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const batch = writeBatch(db);
 
   panelsData.forEach(panel => {
@@ -720,10 +755,12 @@ export const deleteStoryboardPanel = async (panelId: string) => {
 };
 
 export const uploadImageForStoryboard = async (file: File): Promise<string> => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const timestamp = new Date().getTime();
   const randomString = Math.random().toString(36).substring(2, 8);
   const fileName = `${timestamp}-${randomString}-${file.name}`;
-  const filePath = `content/storyboard_images/${getUserId()}/${fileName}`;
+  const filePath = `content/storyboard_images/${userId}/${fileName}`;
   const storageRef = ref(storage, filePath);
   
   await uploadBytes(storageRef, file);
@@ -962,3 +999,38 @@ export const deleteThemeSettings = async () => {
     const docRef = doc(db, 'settings', 'theme');
     await deleteDoc(docRef);
 }
+
+// === Public Sharing Functions ===
+
+export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
+  const q = query(collection(db, 'shooting_days'), where('publicId', '==', publicId), where('isPublic', '==', true), limit(1));
+  const querySnapshot = await getDocs(q);
+  if (querySnapshot.empty) {
+    return null;
+  }
+  const docSnap = querySnapshot.docs[0];
+  const data = docSnap.data();
+  return {
+    id: docSnap.id,
+    ...data,
+    date: (data.date as Timestamp).toDate(),
+  } as ShootingDay;
+};
+
+export const getPublicStoryboard = async (publicId: string): Promise<Storyboard | null> => {
+  const q = query(collection(db, 'storyboards'), where('publicId', '==', publicId), where('isPublic', '==', true), limit(1));
+  const querySnapshot = await getDocs(q);
+  if (querySnapshot.empty) {
+    return null;
+  }
+  const docSnap = querySnapshot.docs[0];
+  const data = docSnap.data();
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+  } as Storyboard;
+};
+
+// Note: Public panels are fetched using `getStoryboardPanels` with a null userId.
+// The security rules will enforce that this is only allowed for public storyboards.

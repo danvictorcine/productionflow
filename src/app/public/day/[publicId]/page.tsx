@@ -1,131 +1,148 @@
-
 // @/src/app/public/day/[publicId]/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import type { ShootingDay, ChecklistItem } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
-import type { Production, ShootingDay } from '@/lib/types';
-import { AppFooter } from '@/components/app-footer';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ShootingDayCard } from '@/components/shooting-day-card';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ShootingDayCard } from '@/components/shooting-day-card';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle } from 'lucide-react';
 import { CopyableError } from '@/components/copyable-error';
-import { AlertCircle, Clapperboard } from 'lucide-react';
-import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+
+type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
+    equipment: ChecklistItem[];
+    costumes: ChecklistItem[];
+    props: ChecklistItem[];
+    generalNotes: ChecklistItem[];
+};
+
 
 export default function PublicDayPage() {
     const params = useParams();
     const publicId = params.publicId as string;
+    const { toast } = useToast();
 
-    const [day, setDay] = useState<ShootingDay | null>(null);
-    const [production, setProduction] = useState<Production | null>(null);
+    const [day, setDay] = useState<ProcessedShootingDay | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isClient, setIsClient] = useState(false);
+    const [remainingTime, setRemainingTime] = useState('');
 
     useEffect(() => {
-        setIsClient(true);
-        if (!publicId) {
-            setError("ID da Ordem do Dia não fornecido.");
-            setIsLoading(false);
-            return;
-        }
+        if (!publicId) return;
 
-        const fetchData = async () => {
+        const fetchDay = async () => {
             try {
-                const dayData = await firestoreApi.getPublicShootingDay(publicId);
-                if (dayData) {
-                    setDay(dayData);
-                    const productionData = await firestoreApi.getProductionForPublicPage(dayData.productionId);
-                    if (productionData) {
-                        setProduction(productionData);
-                    } else {
-                        setError("Produção associada não encontrada.");
-                    }
+                const fetchedDay = await firestoreApi.getPublicShootingDay(publicId);
+                if (fetchedDay) {
+                    const convertNotesToItems = (notes: string | ChecklistItem[] | undefined): ChecklistItem[] => {
+                        if (Array.isArray(notes)) {
+                            return notes.map(item => ({...item, id: item.id || crypto.randomUUID()}));
+                        }
+                        if (typeof notes === 'string' && notes.trim()) {
+                            return notes.split('\n').filter(Boolean).map(line => ({
+                                id: crypto.randomUUID(),
+                                text: line.trim(),
+                                checked: false
+                            }));
+                        }
+                        return [];
+                    };
+                    
+                    const processedDay: ProcessedShootingDay = {
+                        ...fetchedDay,
+                        equipment: convertNotesToItems(fetchedDay.equipment),
+                        costumes: convertNotesToItems(fetchedDay.costumes),
+                        props: convertNotesToItems(fetchedDay.props),
+                        generalNotes: convertNotesToItems(fetchedDay.generalNotes),
+                    };
+
+                    setDay(processedDay);
                 } else {
                     setError("Ordem do Dia não encontrada ou não é pública.");
                 }
-            } catch (err) {
-                const errorTyped = err as { code?: string; message: string };
-                console.error("Error fetching public day:", err);
-                setError(errorTyped.message || "Ocorreu um erro ao buscar os dados.");
+            } catch (err: any) {
+                console.error("Failed to fetch public day:", err);
+                setError("Ocorreu um erro ao carregar os dados.");
+                toast({
+                  variant: 'destructive',
+                  title: 'Erro ao carregar dados públicos',
+                  description: <CopyableError userMessage="Não foi possível buscar a Ordem do Dia." errorCode={err.code || err.message} />,
+                });
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchData();
-    }, [publicId]);
+        fetchDay();
+    }, [publicId, toast]);
+
+    const handleUpdateNotes = async (
+        dayId: string,
+        listName: 'equipment' | 'costumes' | 'props' | 'generalNotes',
+        updatedList: ChecklistItem[]
+    ) => {
+        if (!day) return;
+        setDay(prev => prev ? { ...prev, [listName]: updatedList } : null);
+        try {
+            await firestoreApi.updateShootingDay(dayId, { [listName]: updatedList });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Você não tem permissão para editar esta lista.' });
+            // Revert state if needed, or simply don't allow it in the first place for public view
+        }
+    };
     
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-background">
-                <div className="p-8 space-y-6 w-full max-w-4xl">
-                    <Skeleton className="h-[60px] w-full" />
-                    <Skeleton className="h-[150px] w-full" />
-                    <Skeleton className="h-[400px] w-full" />
-                </div>
-            </div>
-        );
-    }
-    
-    if (error) {
-         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center p-4">
-                <Card className="max-w-lg">
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2">
-                           <AlertCircle className="h-6 w-6 text-destructive" />
-                            Acesso Inválido
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">{error}</p>
-                        <Button asChild className="mt-6">
-                            <Link href="/">Voltar à Página Inicial</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
+            <div className="p-8 space-y-6 container mx-auto max-w-5xl">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
             </div>
         );
     }
 
-    if (!day || !production) return null;
+    if (error) {
+       return (
+         <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
+            <div className="w-full max-w-md p-6 mx-4 text-center bg-card border border-destructive rounded-lg shadow-lg">
+              <div className="flex flex-col items-center">
+                <AlertCircle className="w-12 h-12 text-destructive" />
+                <h1 className="mt-4 text-2xl font-bold text-destructive">Acesso Inválido</h1>
+              </div>
+              <p className="mt-2 text-foreground">{error}</p>
+            </div>
+          </div>
+       );
+    }
+
+    if (!day) {
+        return null; // Should be covered by error state
+    }
 
     return (
-        <div className="bg-muted/40 min-h-screen">
-            <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
-                <Clapperboard className="h-6 w-6 text-primary" />
-                <h1 className="text-xl font-bold truncate">{production.name}</h1>
-                 <div className="ml-auto flex items-center gap-2">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
-                        <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))"/>
-                        <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
-                    </svg>
-                    <p className="text-lg font-semibold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</p>
-                    <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
-                </div>
-            </header>
-            <main className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto">
-                {isClient && (
-                    <ShootingDayCard 
-                        day={day as any} 
-                        isFetchingWeather={false}
-                        onEdit={() => {}}
-                        onDelete={() => {}}
-                        onShare={() => {}}
-                        onExportExcel={() => {}}
-                        onExportPdf={() => {}}
-                        onUpdateNotes={() => {}}
-                        isExporting={false}
-                        isPublicView={true}
-                    />
-                )}
+        <div className="bg-muted min-h-screen">
+            <main className="container mx-auto max-w-5xl py-8">
+                <ShootingDayCard
+                    day={day}
+                    isFetchingWeather={false}
+                    onEdit={() => {}}
+                    onDelete={() => {}}
+                    onShare={() => {}}
+                    onExportExcel={() => {}}
+                    onExportPdf={() => {}}
+                    onUpdateNotes={handleUpdateNotes}
+                    isExporting={false}
+                    isPublicView={true}
+                />
             </main>
-            <AppFooter />
+             <footer className="w-full py-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                    Gerado por <span className="font-semibold text-foreground">ProductionFlow</span>
+                </p>
+            </footer>
         </div>
     );
 }

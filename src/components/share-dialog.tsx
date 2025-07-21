@@ -30,9 +30,6 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
 
     const itemTypeName = itemType === 'day' ? 'Ordem do Dia' : 'Storyboard';
     
-    // Use the item's publicId if it exists, otherwise generate a placeholder.
-    // The real ID generation happens in handleSwitchChange.
-    const publicId = item.publicId || (isPublic ? `...generating` : '');
     const publicUrl = isPublic && item.publicId
         ? `${window.location.origin}/public/${itemType}/${item.publicId}`
         : '';
