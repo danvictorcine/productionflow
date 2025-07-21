@@ -579,7 +579,7 @@ function ProductionPageDetail() {
           </div>
         </div>
 
-        <Accordion type="multiple" defaultValue={['team', ...(shootingDays.length > 0 ? [shootingDays[0].id] : [])]} className="w-full space-y-4">
+        <Accordion type="multiple" defaultValue={['team']} className="w-full space-y-4">
             {production.team && production.team.length > 0 && (
                 <AccordionItem value="team" className="border-none">
                     <Card>

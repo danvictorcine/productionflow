@@ -1,9 +1,10 @@
+
 // @/src/components/weather-card.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import type { WeatherInfo } from "@/lib/types";
-import { format, isToday } from "date-fns";
+import { format, isToday, parseISO } from "date-fns";
 import {
   Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, CloudSnow,
   Wind, Sunrise, Sunset, Haze, CloudFog, CloudSun, Hourglass
@@ -54,7 +55,7 @@ export function WeatherCard({ weather }: WeatherCardProps) {
   const [remainingDaylight, setRemainingDaylight] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!weather.sunset || !isToday(new Date(weather.date))) {
+    if (!weather.sunset || !isToday(parseISO(weather.date))) {
       setRemainingDaylight(null);
       return;
     }

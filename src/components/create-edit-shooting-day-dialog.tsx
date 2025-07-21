@@ -1,3 +1,4 @@
+
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -289,7 +290,14 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                             </FormControl>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={ptBR} />
+                                            <Calendar
+                                                mode="single"
+                                                selected={field.value}
+                                                onSelect={field.onChange}
+                                                initialFocus
+                                                locale={ptBR}
+                                                fromDate={new Date()}
+                                            />
                                         </PopoverContent>
                                         </Popover>
                                         <FormMessage />

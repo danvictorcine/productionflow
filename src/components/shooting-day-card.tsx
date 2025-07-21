@@ -151,7 +151,27 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 
 
 export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) {
-  const totalDuration = calculateDuration(day.startTime, day.endTime);
+  const [remainingTime, setRemainingTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    // This effect runs only on the client-side
+    const calculateTimes = () => {
+      if (!isToday(day.date)) {
+        setRemainingTime(null);
+        return;
+      }
+
+      if (day.startTime && day.endTime) {
+        setRemainingTime(calculateDuration(day.startTime, day.endTime));
+      }
+    };
+    
+    calculateTimes();
+    const intervalId = setInterval(calculateTimes, 60000); // Update every minute
+    return () => clearInterval(intervalId);
+  }, [day.date, day.startTime, day.endTime]);
+
+  const totalDuration = remainingTime;
 
   return (
     <AccordionItem value={day.id} className="border-none">
