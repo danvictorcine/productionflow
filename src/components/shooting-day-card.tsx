@@ -39,14 +39,15 @@ const DisplayMap = dynamic(() => import('./display-map').then(mod => mod.Display
 interface ShootingDayCardProps {
   day: Omit<ShootingDay, 'equipment'|'costumes'|'props'|'generalNotes'> & { equipment: ChecklistItem[], costumes: ChecklistItem[], props: ChecklistItem[], generalNotes: ChecklistItem[]};
   isFetchingWeather: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-  onShare: () => void;
-  onExportExcel: () => void;
-  onExportPdf: () => void;
-  onUpdateNotes: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
   isExporting: boolean;
   isPublicView?: boolean;
+  // Event handlers are now optional
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onShare?: () => void;
+  onExportExcel?: () => void;
+  onExportPdf?: () => void;
+  onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
 }
 
 const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType, title: string, content?: React.ReactNode }) => {
@@ -64,12 +65,13 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
   );
 };
 
-const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView }: { icon: React.ElementType; title: string; items: ChecklistItem[]; onListUpdate: (updatedList: ChecklistItem[]) => void; isPublicView?: boolean; }) => {
+const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView }: { icon: React.ElementType; title: string; items: ChecklistItem[]; onListUpdate?: (updatedList: ChecklistItem[]) => void; isPublicView?: boolean; }) => {
     if (!items || items.length === 0) {
         return null;
     }
 
     const handleCheckChange = (itemId: string, newCheckedState: boolean) => {
+        if (!onListUpdate) return;
         const updatedList = items.map(item =>
             item.id === itemId ? { ...item, checked: newCheckedState } : item
         );
@@ -89,7 +91,7 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
                             id={`${item.id}-checkbox`}
                             checked={item.checked}
                             onCheckedChange={(checked) => handleCheckChange(item.id, !!checked)}
-                            disabled={isPublicView}
+                            disabled={isPublicView || !onListUpdate}
                         />
                         <Label htmlFor={`${item.id}-checkbox`} className={`text-base font-normal ${item.checked ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                             {item.text}
@@ -151,18 +153,19 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 
 
 export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) {
-  const [remainingTime, setRemainingTime] = useState<string | null>(null);
+  const [remainingDaylight, setRemainingDaylight] = useState<string | null>(null);
 
   useEffect(() => {
     // This effect runs only on the client-side
+    if (!day.date) return;
     const calculateTimes = () => {
-      if (!isToday(day.date)) {
-        setRemainingTime(null);
+      if (!isToday(new Date(day.date))) {
+        setRemainingDaylight(null);
         return;
       }
 
       if (day.startTime && day.endTime) {
-        setRemainingTime(calculateDuration(day.startTime, day.endTime));
+        setRemainingDaylight(calculateDuration(day.startTime, day.endTime));
       }
     };
     
@@ -340,14 +343,14 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onSh
                 {/* Department Notes */}
                 <div className="p-4 border rounded-lg space-y-2">
                      <h4 className="font-semibold text-xl flex items-center"><Users className="h-6 w-6 mr-2 text-primary"/>Notas dos Departamentos</h4>
-                     <ChecklistSection icon={Truck} title="Equipamentos" items={day.equipment} onListUpdate={(list) => onUpdateNotes(day.id, 'equipment', list)} isPublicView={isPublicView} />
-                     <ChecklistSection icon={Shirt} title="Figurino" items={day.costumes} onListUpdate={(list) => onUpdateNotes(day.id, 'costumes', list)} isPublicView={isPublicView} />
-                     <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={day.props} onListUpdate={(list) => onUpdateNotes(day.id, 'props', list)} isPublicView={isPublicView} />
+                     <ChecklistSection icon={Truck} title="Equipamentos" items={day.equipment} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'equipment', list) : undefined} isPublicView={isPublicView} />
+                     <ChecklistSection icon={Shirt} title="Figurino" items={day.costumes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'costumes', list) : undefined} isPublicView={isPublicView} />
+                     <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={day.props} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'props', list) : undefined} isPublicView={isPublicView} />
                 </div>
                 
                  {/* Present Team & General Notes */}
                  <div className="p-4 border rounded-lg space-y-2">
-                    <ChecklistSection icon={FileText} title="Observações Gerais" items={day.generalNotes} onListUpdate={(list) => onUpdateNotes(day.id, 'generalNotes', list)} isPublicView={isPublicView} />
+                    <ChecklistSection icon={FileText} title="Observações Gerais" items={day.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
                     <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
                         day.presentTeam && day.presentTeam.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
