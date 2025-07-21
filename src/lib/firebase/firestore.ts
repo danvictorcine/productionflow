@@ -1,6 +1,3 @@
-
-
-
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -418,27 +415,42 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
       if (dayData.userId !== userId) return; // Security check
       
       let dayNeedsUpdate = false;
-
-      // Sync presentTeam
-      const newPresentTeam = dayData.presentTeam?.map(member => {
-        if (updatedTeamMap.has(member.id)) {
-          dayNeedsUpdate = true;
-          return updatedTeamMap.get(member.id)!;
-        }
-        return member;
-      }) || [];
+      let newPresentTeam = dayData.presentTeam || [];
+      if (Array.isArray(newPresentTeam)) {
+          newPresentTeam = newPresentTeam.map(member => {
+            if (updatedTeamMap.has(member.id)) {
+                const updatedMember = updatedTeamMap.get(member.id)!;
+                if (JSON.stringify(member) !== JSON.stringify(updatedMember)) {
+                    dayNeedsUpdate = true;
+                    return updatedMember;
+                }
+            }
+            return member;
+          });
+      }
 
       // Sync scenes.presentInScene
-      const newScenes = dayData.scenes?.map(scene => {
-        const newPresentInScene = scene.presentInScene?.map(member => {
-          if (updatedTeamMap.has(member.id)) {
-            dayNeedsUpdate = true;
-            return updatedTeamMap.get(member.id)!;
-          }
-          return member;
-        }) || [];
-        return { ...scene, presentInScene: newPresentInScene };
-      }) || [];
+      let newScenes = dayData.scenes || [];
+      if(Array.isArray(newScenes)) {
+        newScenes = newScenes.map(scene => {
+            let sceneNeedsUpdate = false;
+            const newPresentInScene = (scene.presentInScene || []).map(member => {
+            if (updatedTeamMap.has(member.id)) {
+                const updatedMember = updatedTeamMap.get(member.id)!;
+                if (JSON.stringify(member) !== JSON.stringify(updatedMember)) {
+                    sceneNeedsUpdate = true;
+                    return updatedMember;
+                }
+            }
+            return member;
+            });
+            if(sceneNeedsUpdate) {
+                dayNeedsUpdate = true;
+                return { ...scene, presentInScene: newPresentInScene };
+            }
+            return scene;
+        });
+      }
       
       if (dayNeedsUpdate) {
         batch.update(dayDoc.ref, { presentTeam: newPresentTeam, scenes: newScenes });
@@ -1052,23 +1064,22 @@ export const deleteThemeSettings = async () => {
 
 // === Public Sharing Functions ===
 
-const getPublicData = async (publicId: string): Promise<{ type: 'day' | 'storyboard', originalId: string } | null> => {
+const getPublicShareData = async (publicId: string): Promise<PublicShare | null> => {
     const shareRef = doc(db, 'public_shares', publicId);
     const shareSnap = await getDoc(shareRef);
     if (!shareSnap.exists()) {
         return null;
     }
-    const shareData = shareSnap.data() as PublicShare;
-    return { type: shareData.type, originalId: shareData.originalId };
+    return shareSnap.data() as PublicShare;
 };
 
 export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
-    const shareInfo = await getPublicData(publicId);
+    const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'day') return null;
 
     const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
     const daySnap = await getDoc(dayRef);
-    if (!daySnap.exists()) return null;
+    if (!daySnap.exists() || !daySnap.data().isPublic) return null;
 
     const data = daySnap.data();
     return {
@@ -1079,12 +1090,12 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
 };
 
 export const getPublicStoryboard = async (publicId: string): Promise<Storyboard | null> => {
-    const shareInfo = await getPublicData(publicId);
+    const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'storyboard') return null;
 
     const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
     const storyboardSnap = await getDoc(storyboardRef);
-    if (!storyboardSnap.exists()) return null;
+    if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
 
     const data = storyboardSnap.data();
     return {
@@ -1104,9 +1115,6 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
     const originalDocRef = doc(db, collectionName, originalId);
     const publicShareRef = doc(db, 'public_shares', publicId);
     
-    // Update the main document
-    batch.update(originalDocRef, { isPublic, publicId });
-    
     // Create or delete the public share document
     if (isPublic) {
         const shareData: PublicShare = {
@@ -1116,10 +1124,13 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             type: itemType,
         };
         batch.set(publicShareRef, shareData);
+        // Also update the main document with sharing info
+        batch.update(originalDocRef, { isPublic: true, publicId: publicId });
     } else {
         batch.delete(publicShareRef);
+        // Also update the main document to remove sharing info
+        batch.update(originalDocRef, { isPublic: false, publicId: deleteField() });
     }
     
     await batch.commit();
 };
-
