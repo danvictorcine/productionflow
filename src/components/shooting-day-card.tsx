@@ -152,28 +152,13 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 
 
 export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) {
-  const [remainingDaylight, setRemainingDaylight] = useState<string | null>(null);
-
+  const [isClient, setIsClient] = useState(false);
+  
   useEffect(() => {
-    // This effect runs only on the client-side
-    if (!day.date) return;
-    const calculateTimes = () => {
-      if (!isToday(new Date(day.date))) {
-        setRemainingDaylight(null);
-        return;
-      }
+    setIsClient(true);
+  }, []);
 
-      if (day.startTime && day.endTime) {
-        setRemainingDaylight(calculateDuration(day.startTime, day.endTime));
-      }
-    };
-    
-    calculateTimes();
-    const intervalId = setInterval(calculateTimes, 60000); // Update every minute
-    return () => clearInterval(intervalId);
-  }, [day.date, day.startTime, day.endTime]);
-
-  const totalDuration = remainingDaylight;
+  const totalDuration = calculateDuration(day.startTime, day.endTime);
 
   return (
     <AccordionItem value={day.id} className="border-none">
@@ -265,7 +250,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onSh
                             Horários da Diária
                         </CardTitle>
                     </CardHeader>
-                    {day.startTime && day.endTime ? (
+                    {isClient && day.startTime && day.endTime ? (
                         <div className="space-y-2">
                             <p className="text-muted-foreground text-lg">
                                 <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
