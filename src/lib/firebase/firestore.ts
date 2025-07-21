@@ -1020,9 +1020,11 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
 export const getPublicStoryboard = async (publicId: string): Promise<Storyboard | null> => {
   const q = query(collection(db, 'storyboards'), where('publicId', '==', publicId), where('isPublic', '==', true), limit(1));
   const querySnapshot = await getDocs(q);
+
   if (querySnapshot.empty) {
     return null;
   }
+
   const docSnap = querySnapshot.docs[0];
   const data = docSnap.data();
   return {
@@ -1031,6 +1033,7 @@ export const getPublicStoryboard = async (publicId: string): Promise<Storyboard 
     createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
   } as Storyboard;
 };
+
 
 // Note: Public panels are fetched using `getStoryboardPanels` with a null userId.
 // The security rules will enforce that this is only allowed for public storyboards.
