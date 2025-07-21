@@ -41,7 +41,6 @@ interface ShootingDayCardProps {
   isFetchingWeather: boolean;
   isExporting: boolean;
   isPublicView?: boolean;
-  // Event handlers are now optional
   onEdit?: () => void;
   onDelete?: () => void;
   onShare?: () => void;
@@ -180,7 +179,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onSh
     <AccordionItem value={day.id} className="border-none">
       <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
         <div className="relative">
-          <AccordionTrigger className="flex w-full items-center p-6 text-left hover:no-underline" disabled={isPublicView}>
+          <AccordionTrigger className="flex w-full items-center p-6 text-left hover:no-underline [&>svg]:data-[public=true]:hidden" data-public={isPublicView}>
             <div className="flex items-center gap-4">
                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                   <Calendar className="h-6 w-6" />
