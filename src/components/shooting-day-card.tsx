@@ -46,6 +46,7 @@ interface ShootingDayCardProps {
   onExportPdf: () => void;
   onUpdateNotes: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
   isExporting: boolean;
+  isPublicView?: boolean;
 }
 
 const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType, title: string, content?: React.ReactNode }) => {
@@ -63,7 +64,7 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
   );
 };
 
-const ChecklistSection = ({ icon: Icon, title, items, onListUpdate }: { icon: React.ElementType; title: string; items: ChecklistItem[]; onListUpdate: (updatedList: ChecklistItem[]) => void; }) => {
+const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView }: { icon: React.ElementType; title: string; items: ChecklistItem[]; onListUpdate: (updatedList: ChecklistItem[]) => void; isPublicView?: boolean; }) => {
     if (!items || items.length === 0) {
         return null;
     }
@@ -88,6 +89,7 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate }: { icon: Re
                             id={`${item.id}-checkbox`}
                             checked={item.checked}
                             onCheckedChange={(checked) => handleCheckChange(item.id, !!checked)}
+                            disabled={isPublicView}
                         />
                         <Label htmlFor={`${item.id}-checkbox`} className={`text-base font-normal ${item.checked ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                             {item.text}
@@ -148,52 +150,14 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 };
 
 
-export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting }: ShootingDayCardProps) {
-  const [remainingTime, setRemainingTime] = useState<string | null>(null);
+export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) {
   const totalDuration = calculateDuration(day.startTime, day.endTime);
-
-  useEffect(() => {
-    if (!day.startTime || !day.endTime || !isToday(new Date(day.date))) {
-      setRemainingTime(null);
-      return;
-    }
-
-    const calculate = () => {
-      const now = new Date();
-      const date = new Date(day.date);
-      const [startH, startM] = day.startTime!.split(':').map(Number);
-      const [endH, endM] = day.endTime!.split(':').map(Number);
-
-      const startTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), startH, startM);
-      const endTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), endH, endM);
-
-      if (endTime < startTime) { // overnight
-        endTime.setDate(endTime.getDate() + 1);
-      }
-
-      if (now < startTime) {
-        setRemainingTime('Aguardando início');
-      } else if (now > endTime) {
-        setRemainingTime("Finalizado");
-      } else {
-        const remainingMs = endTime.getTime() - now.getTime();
-        const hours = Math.floor(remainingMs / 3600000);
-        const minutes = Math.floor((remainingMs % 3600000) / 60000);
-        setRemainingTime(`${hours}h ${minutes}m`);
-      }
-    };
-
-    calculate();
-    const intervalId = setInterval(calculate, 60000);
-
-    return () => clearInterval(intervalId);
-  }, [day.date, day.startTime, day.endTime]);
 
   return (
     <AccordionItem value={day.id} className="border-none">
       <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
         <div className="relative">
-          <AccordionTrigger className="flex w-full items-center p-6 text-left hover:no-underline">
+          <AccordionTrigger className="flex w-full items-center p-6 text-left hover:no-underline" disabled={isPublicView}>
             <div className="flex items-center gap-4">
                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                   <Calendar className="h-6 w-6" />
@@ -209,39 +173,41 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onSh
                 </div>
             </div>
           </AccordionTrigger>
-          <div className="absolute top-1/2 right-12 -translate-y-1/2">
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                        <MoreVertical className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar Ordem do Dia
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onShare} disabled={isExporting}>
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Compartilhar
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
-                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                        Exportar para Excel
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
-                        <FileDown className="mr-2 h-4 w-4" />
-                        Exportar como PDF
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {!isPublicView && (
+            <div className="absolute top-1/2 right-12 -translate-y-1/2">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar Ordem do Dia
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={onShare} disabled={isExporting}>
+                            <Share2 className="mr-2 h-4 w-4" />
+                            Compartilhar
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            Exportar para Excel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Exportar como PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+          )}
         </div>
         <AccordionContent className="pt-0">
           <CardContent className="flex-grow flex flex-col justify-between space-y-6">
@@ -250,12 +216,12 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onSh
                 {isFetchingWeather ? (
                   <Skeleton className="h-full w-full" />
                 ) : day.weather ? (
-                  <WeatherCard weather={day.weather} remainingDaylight={remainingTime} />
+                  <WeatherCard weather={day.weather} />
                 ) : (
                   <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                      <p className="text-sm font-semibold">Sem dados de clima</p>
                      <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
-                     <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>
+                     {!isPublicView && <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>}
                   </div>
                 )}
               </div>
@@ -287,7 +253,7 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onSh
                     ) : (
                          <div className="text-center text-sm text-muted-foreground">
                             <p>Horários não definidos.</p>
-                            <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>
+                            {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
                         </div>
                     )}
                 </Card>
@@ -354,14 +320,14 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onSh
                 {/* Department Notes */}
                 <div className="p-4 border rounded-lg space-y-2">
                      <h4 className="font-semibold text-xl flex items-center"><Users className="h-6 w-6 mr-2 text-primary"/>Notas dos Departamentos</h4>
-                     <ChecklistSection icon={Truck} title="Equipamentos" items={day.equipment} onListUpdate={(list) => onUpdateNotes(day.id, 'equipment', list)} />
-                     <ChecklistSection icon={Shirt} title="Figurino" items={day.costumes} onListUpdate={(list) => onUpdateNotes(day.id, 'costumes', list)} />
-                     <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={day.props} onListUpdate={(list) => onUpdateNotes(day.id, 'props', list)} />
+                     <ChecklistSection icon={Truck} title="Equipamentos" items={day.equipment} onListUpdate={(list) => onUpdateNotes(day.id, 'equipment', list)} isPublicView={isPublicView} />
+                     <ChecklistSection icon={Shirt} title="Figurino" items={day.costumes} onListUpdate={(list) => onUpdateNotes(day.id, 'costumes', list)} isPublicView={isPublicView} />
+                     <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={day.props} onListUpdate={(list) => onUpdateNotes(day.id, 'props', list)} isPublicView={isPublicView} />
                 </div>
                 
                  {/* Present Team & General Notes */}
                  <div className="p-4 border rounded-lg space-y-2">
-                    <ChecklistSection icon={FileText} title="Observações Gerais" items={day.generalNotes} onListUpdate={(list) => onUpdateNotes(day.id, 'generalNotes', list)} />
+                    <ChecklistSection icon={FileText} title="Observações Gerais" items={day.generalNotes} onListUpdate={(list) => onUpdateNotes(day.id, 'generalNotes', list)} isPublicView={isPublicView} />
                     <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
                         day.presentTeam && day.presentTeam.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
