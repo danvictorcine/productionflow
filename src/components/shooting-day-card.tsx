@@ -8,7 +8,7 @@ import { format, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clapperboard, Clock, Hourglass,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown
+  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -41,6 +41,7 @@ interface ShootingDayCardProps {
   isFetchingWeather: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onShare: () => void;
   onExportExcel: () => void;
   onExportPdf: () => void;
   onUpdateNotes: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
@@ -147,7 +148,7 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 };
 
 
-export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting }: ShootingDayCardProps) {
+export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting }: ShootingDayCardProps) {
   const [remainingTime, setRemainingTime] = useState<string | null>(null);
   const totalDuration = calculateDuration(day.startTime, day.endTime);
 
@@ -219,6 +220,10 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                     <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
                         <Edit className="mr-2 h-4 w-4" />
                         Editar Ordem do Dia
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onShare} disabled={isExporting}>
+                        <Share2 className="mr-2 h-4 w-4" />
+                        Compartilhar
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
