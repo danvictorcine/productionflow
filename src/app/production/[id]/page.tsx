@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Share2 } from 'lucide-react';
-import { format, isSameDay } from 'date-fns';
+import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 
@@ -153,7 +153,7 @@ function ProductionPageDetail() {
         processedDays.forEach(day => {
             const weather = day.weather;
             const locationMismatch = weather && weather.locationName !== day.location;
-            const dateMismatch = weather && weather.date !== format(day.date, 'yyyy-MM-dd');
+            const dateMismatch = weather && !isToday(new Date(weather.date));
             const shouldUpdateWeather = !weather || locationMismatch || dateMismatch;
 
             if (shouldUpdateWeather && day.latitude && day.longitude) {
@@ -579,7 +579,7 @@ function ProductionPageDetail() {
           </div>
         </div>
 
-        <Accordion type="multiple" defaultValue={['team']} className="w-full space-y-4">
+        <Accordion type="multiple" className="w-full space-y-4">
             {production.team && production.team.length > 0 && (
                 <AccordionItem value="team" className="border-none">
                     <Card>
