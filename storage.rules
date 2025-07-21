@@ -1,21 +1,14 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // By default, deny all reads and writes
-    // match /{allPaths=**} {
-    //   allow read, write: if false;
-    // }
-
-    // Allow anyone to read any file. This is necessary for public pages 
-    // (storyboards, call sheets, blog posts) to display images to unauthenticated users.
+    // Permite que qualquer pessoa leia (veja) qualquer arquivo.
+    // Isso é necessário para que as imagens nas páginas públicas possam ser exibidas.
     match /{allPaths=**} {
       allow read: if true;
-    }
-
-    // Restrict write access to authenticated users only. This prevents unauthorized uploads.
-    match /{allPaths=**} {
+      
+      // Permite que apenas usuários autenticados escrevam (façam upload, atualizem, excluam) arquivos.
+      // Isso protege seu armazenamento contra uploads não autorizados.
       allow write: if request.auth != null;
     }
   }
