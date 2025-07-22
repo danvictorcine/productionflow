@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -63,13 +64,13 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
 
   return (
     <>
-      <ScrollArea className="h-[265px] w-full">
+      <ScrollArea className="w-full">
         <div className="relative w-full overflow-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
-                <TableHead>Função</TableHead>
+                <TableHead className="hidden md:table-cell">Função</TableHead>
                 <TableHead className="text-right">Cachê</TableHead>
                 <TableHead className="text-center w-[150px]">Status</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
@@ -83,8 +84,11 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                   
                   return (
                     <TableRow key={talent.id}>
-                      <TableCell className="font-medium">{talent.name}</TableCell>
-                      <TableCell>{talent.role}</TableCell>
+                      <TableCell className="font-medium">
+                        <p>{talent.name}</p>
+                        <p className="text-xs text-muted-foreground md:hidden">{talent.role}</p>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{talent.role}</TableCell>
                       <TableCell className="text-right font-mono">
                         {isFixedFee
                           ? formatCurrency(talent.fee || 0)

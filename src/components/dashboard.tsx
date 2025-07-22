@@ -502,7 +502,7 @@ export default function Dashboard({
           totalInstallments={totalInstallments}
         />
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 flex flex-col gap-6">
+          <div className="lg:col-span-3 xl:col-span-2 flex flex-col gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -568,14 +568,14 @@ export default function Dashboard({
             </Card>
 
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-3 xl:col-span-1">
             <Card className="h-full flex flex-col">
                 <CardHeader>
                     <CardTitle>Histórico de Transações Pagas</CardTitle>
-                    <div className="flex items-center gap-2 pt-2">
-                        <label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground">Filtrar por Categoria:</label>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 pt-2">
+                        <label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground shrink-0">Filtrar por Categoria:</label>
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger id="category-filter" className="w-full sm:w-[220px]">
+                            <SelectTrigger id="category-filter" className="w-full">
                                 <SelectValue placeholder="Selecionar categoria" />
                             </SelectTrigger>
                             <SelectContent>
@@ -633,7 +633,7 @@ export default function Dashboard({
       {selectedTalent && (
         <PayDailyRateDialog
             isOpen={isDailyPaymentOpen}
-            setIsOpen={setIsOpen}
+            setIsOpen={setDailyPaymentOpen}
             talent={selectedTalent}
             transactions={transactions.filter(t => t.talentId === selectedTalent.id)}
             onPay={handlePayDailyRate}
