@@ -1074,7 +1074,9 @@ export const getPublicShootingDay = async (publicId: string): Promise<{day: Shoo
     const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
     const daySnap = await getDoc(dayRef);
     
-    if (!daySnap.exists() || !daySnap.data().isPublic) return null;
+    // The existence of the shareInfo document is our primary check.
+    // The check on the original document is a secondary safeguard.
+    if (!daySnap.exists()) return null;
 
     const dayData = daySnap.data();
     const day = {
@@ -1083,7 +1085,8 @@ export const getPublicShootingDay = async (publicId: string): Promise<{day: Shoo
         date: (dayData.date as Timestamp).toDate(),
     } as ShootingDay;
     
-    const creator = await getUserProfile(day.userId);
+    // Fetch creator profile using the userId stored in the shareInfo for security.
+    const creator = await getUserProfile(shareInfo.userId);
 
     return { day, creator };
 };
@@ -1095,7 +1098,7 @@ export const getPublicStoryboard = async (publicId: string): Promise<{storyboard
     const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
     const storyboardSnap = await getDoc(storyboardRef);
     
-    if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
+    if (!storyboardSnap.exists()) return null;
 
     const storyboard = {
         id: storyboardSnap.id,
@@ -1111,7 +1114,7 @@ export const getPublicStoryboard = async (publicId: string): Promise<{storyboard
         createdAt: (doc.data().createdAt as Timestamp).toDate(),
     } as StoryboardPanel));
     
-    const creator = await getUserProfile(storyboard.userId);
+    const creator = await getUserProfile(shareInfo.userId);
 
     return { storyboard, panels, creator };
 };

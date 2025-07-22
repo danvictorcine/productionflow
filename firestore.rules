@@ -10,83 +10,73 @@ service cloud.firestore {
 
     // --- User-specific, private collections ---
     
-    // Users can read and update their own profile.
     match /users/{userId} {
       allow read, update: if isOwner(userId);
     }
     
-    // Financial Projects
     match /projects/{projectId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
     
-    // Transactions for Financial Projects
     match /transactions/{transactionId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
     
-    // Production (Call Sheet) Projects
     match /productions/{productionId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
     
-    // Shooting Days for Productions
     match /shooting_days/{dayId} {
-       allow read, update, delete: if isOwner(resource.data.userId);
-       allow create: if isOwner(request.resource.data.userId);
+       allow write: if isOwner(request.auth.uid);
+       allow read: if isOwner(request.auth.uid) || resource.data.isPublic == true;
     }
     
-    // Creative Projects (Moodboards)
     match /creative_projects/{creativeProjectId} {
         allow read, update, delete: if isOwner(resource.data.userId);
         allow create: if isOwner(request.resource.data.userId);
     }
 
-    // Board Items for Creative Projects
     match /board_items/{itemId} {
         allow read, update, delete: if isOwner(resource.data.userId);
         allow create: if isOwner(request.resource.data.userId);
     }
-
-    // Storyboard Projects
-    match /storyboards/{storyboardId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
-    }
-
-    // Storyboard Panels
-    match /storyboard_panels/{panelId} {
-        // Individual read/write is allowed if user is owner
-        allow get, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
-        // Listing panels is allowed if the query filters by the user's own ID
-        allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
-    }
-
-    // --- Public Content Collections ---
     
-    // Blog Posts - anyone can read
+    match /storyboards/{storyboardId} {
+        allow write: if isOwner(request.auth.uid);
+        allow read: if isOwner(request.auth.uid) || resource.data.isPublic == true;
+    }
+
+    match /storyboard_panels/{panelId} {
+        allow write: if isOwner(request.auth.uid);
+        allow read: if isOwner(request.auth.uid) || get(/databases/$(database)/documents/storyboards/$(resource.data.storyboardId)).data.isPublic == true;
+    }
+    
+    // --- Public Shares Collection ---
+    match /public_shares/{shareId} {
+        allow get: if true;
+        allow create, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // --- Other Collections (Team, Content, etc.) ---
+    
     match /posts/{postId} {
       allow read: if true;
       allow create, update, delete: if request.auth != null;
     }
     
-    // Page Content (About, Contact, etc.) - anyone can read
     match /pages/{pageId} {
       allow read: if true;
       allow create, update, delete: if request.auth != null;
     }
     
-    // Team Members (for About page) - anyone can read
     match /teamMembers/{memberId} {
       allow read: if true;
       allow create, update, delete: if request.auth != null;
     }
     
-    // Theme Settings - anyone can read
     match /settings/theme {
       allow get: if true;
       allow create, update, delete: if request.auth != null;
