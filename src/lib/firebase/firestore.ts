@@ -1070,7 +1070,7 @@ const getPublicShareData = async (publicId: string): Promise<PublicShare | null>
 
 export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
     const shareInfo = await getPublicShareData(publicId);
-    if (!shareInfo) return null;
+    if (!shareInfo || shareInfo.type !== 'day') return null;
 
     const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
     const daySnap = await getDoc(dayRef);
@@ -1087,7 +1087,7 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
 
 export const getPublicStoryboard = async (publicId: string): Promise<Storyboard | null> => {
     const shareInfo = await getPublicShareData(publicId);
-    if (!shareInfo) return null;
+    if (!shareInfo || shareInfo.type !== 'storyboard') return null;
 
     const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
     const storyboardSnap = await getDoc(storyboardRef);
@@ -1124,7 +1124,7 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             publicId: publicId,
         });
     } else {
-        // DEACTIVATE SHARING
+        // DEACTIVATE SHARING: Read the doc first to get the correct publicId to delete
         const originalDocSnap = await getDoc(originalDocRef);
         const currentPublicId = originalDocSnap.data()?.publicId;
 

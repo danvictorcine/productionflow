@@ -28,8 +28,8 @@ interface ShareDialogProps {
 
 export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }: ShareDialogProps) {
     const [isPublic, setIsPublic] = useState(item.isPublic || false);
-    const [publicId, setPublicId] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
+    const [publicId, setPublicId] = useState(item.publicId || '');
+    const [isLoading, setIsLoading] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
     const { toast } = useToast();
 
@@ -38,8 +38,10 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
     useEffect(() => {
         if (isOpen) {
             setIsPublic(item.isPublic || false);
+            // If the item is not public, we prepare a new ID in case the user enables it.
+            // If it is public, we use the existing ID.
             setPublicId(item.publicId || crypto.randomUUID());
-            setIsSaving(false);
+            setIsLoading(false);
             setHasCopied(false);
         }
     }, [isOpen, item]);
@@ -47,25 +49,32 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
     const publicUrl = isPublic && publicId
         ? `${window.location.origin}/public/${itemType}/${publicId}`
         : '';
-    
-    const handleSave = async () => {
-        setIsSaving(true);
+
+    const handleSwitchChange = async (newPublicState: boolean) => {
+        setIsLoading(true);
         try {
-            await onStateChange(isPublic, publicId);
+            // We use the component's state for the publicId. 
+            // If it didn't exist before, a new one was generated on component mount.
+            await onStateChange(newPublicState, publicId);
+            
+            // Update local state after successful operation
+            setIsPublic(newPublicState);
+
             toast({
-                title: "Configuração Salva!",
-                description: `O compartilhamento da ${itemTypeName.toLowerCase()} foi atualizado.`,
+                title: newPublicState ? "Link Público Ativado" : "Link Público Desativado",
+                description: `O compartilhamento foi ${newPublicState ? 'habilitado' : 'desabilitado'}.`,
             });
-            setIsOpen(false);
         } catch (error) {
             console.error("Failed to update sharing state:", error);
             toast({
                 variant: 'destructive',
-                title: "Erro ao Salvar",
-                description: `Não foi possível atualizar o estado de compartilhamento.`
+                title: "Erro ao Atualizar",
+                description: `Não foi possível ${newPublicState ? 'ativar' : 'desativar'} o compartilhamento.`
             });
+            // Revert switch on error
+            setIsPublic(!newPublicState);
         } finally {
-            setIsSaving(false);
+            setIsLoading(false);
         }
     };
 
@@ -82,20 +91,21 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
                 <DialogHeader>
                     <DialogTitle>Compartilhar {itemTypeName}</DialogTitle>
                     <DialogDescription>
-                        Gere um link público para compartilhar uma versão de leitura da sua {itemTypeName.toLowerCase()}.
+                        Gere um link público para compartilhar uma versão de leitura da sua {itemTypeName.toLowerCase()}. A alteração é salva automaticamente.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="flex items-center space-x-2 py-4">
+                <div className="flex items-center space-x-3 py-4">
                     <Switch
                         id="public-switch"
                         checked={isPublic}
-                        onCheckedChange={setIsPublic}
-                        disabled={isSaving}
+                        onCheckedChange={handleSwitchChange}
+                        disabled={isLoading}
                     />
-                    <Label htmlFor="public-switch" className="flex items-center">
+                    <Label htmlFor="public-switch" className="flex items-center text-base">
                       Tornar público
                     </Label>
+                    {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                 </div>
 
                 {isPublic && (
@@ -111,12 +121,8 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
                 )}
 
                 <DialogFooter className="mt-4">
-                    <Button variant="ghost" onClick={() => setIsOpen(false)} disabled={isSaving}>
-                        Cancelar
-                    </Button>
-                    <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salvar
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>
+                        Fechar
                     </Button>
                 </DialogFooter>
             </DialogContent>
