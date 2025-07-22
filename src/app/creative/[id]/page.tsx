@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -490,27 +491,27 @@ function CreativeProjectPageDetail() {
                 </Card>
               </div>
             )}
-            <div className="p-4">
+            <div className="p-2 md:p-4">
                 <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                     <Button variant="ghost" size="sm" onClick={handleAddNote}>
-                        <FileText className="mr-2 h-4 w-4" />Adicionar Nota
+                        <FileText className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Adicionar Nota</span>
                     </Button>
                     <Button variant="ghost" size="sm" onClick={handleAddChecklist}>
-                        <ListTodo className="mr-2 h-4 w-4" />Adicionar Checklist
+                        <ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Adicionar Checklist</span>
                     </Button>
                      <Button variant="ghost" size="sm" onClick={handleAddPalette}>
-                        <Palette className="mr-2 h-4 w-4" />Adicionar Paleta
+                        <Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Adicionar Paleta</span>
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
-                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
-                        Adicionar Imagem
+                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}
+                        <span className="hidden md:inline">Adicionar Imagem</span>
                     </Button>
                     <input type="file" ref={imageUploadRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
                     <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)}>
-                        <Video className="mr-2 h-4 w-4" />Adicionar Vídeo
+                        <Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Adicionar Vídeo</span>
                     </Button>
                      <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)}>
-                        <MapPin className="mr-2 h-4 w-4" />Adicionar Local
+                        <MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Adicionar Local</span>
                     </Button>
                 </div>
             </div>
