@@ -478,11 +478,6 @@ function HomePage() {
               BETA
             </Badge>
           </div>
-          {user?.name && (
-            <span className="text-lg font-normal text-muted-foreground">
-              / {user.name}
-            </span>
-          )}
         </div>
         <div className="ml-auto flex items-center gap-4">
           <Button onClick={() => setIsTypeDialogOpen(true)}>
