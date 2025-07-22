@@ -8,13 +8,13 @@ import * as z from "zod";
 import type { CreativeProject } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Form,
   FormControl,
@@ -74,14 +74,14 @@ export function CreateEditCreativeProjectDialog({ isOpen, setIsOpen, onSubmit, p
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{isEditMode ? "Editar Projeto Criativo" : "Criar Projeto Criativo"}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetContent className="sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle>{isEditMode ? "Editar Projeto Criativo" : "Criar Projeto Criativo"}</SheetTitle>
+          <SheetDescription>
             {isEditMode ? "Atualize os detalhes do seu projeto." : "Dê um nome e uma breve descrição para seu moodboard."}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
             <FormField
@@ -110,13 +110,13 @@ export function CreateEditCreativeProjectDialog({ isOpen, setIsOpen, onSubmit, p
                 </FormItem>
               )}
             />
-            <DialogFooter>
+            <SheetFooter>
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

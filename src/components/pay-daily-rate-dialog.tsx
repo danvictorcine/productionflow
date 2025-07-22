@@ -3,13 +3,13 @@
 import { useMemo } from "react";
 import type { Talent, Transaction } from "@/lib/types";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -46,17 +46,17 @@ export function PayDailyRateDialog({ isOpen, setIsOpen, talent, transactions, on
   const allDaysPaid = paidDays.size === (talent.days || 0);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Gerenciar Diárias</DialogTitle>
-          <DialogDescription>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetContent className="sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>Gerenciar Diárias</SheetTitle>
+          <SheetDescription>
             Pague as diárias para <span className="font-semibold text-foreground">{talent.name}</span>.
             {allDaysPaid && <Badge className="ml-2 border-green-500 bg-green-50 text-green-700">Todas as diárias pagas</Badge>}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         
-        <ScrollArea className="max-h-[50vh] pr-4">
+        <ScrollArea className="max-h-[60vh] pr-4 my-4">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -97,10 +97,10 @@ export function PayDailyRateDialog({ isOpen, setIsOpen, talent, transactions, on
             </Table>
         </ScrollArea>
         
-        <DialogFooter>
+        <SheetFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Fechar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
@@ -76,93 +76,95 @@ export function ManageCategoriesDialog({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Gerenciar Categorias</DialogTitle>
-          <DialogDescription>Adicione, edite ou exclua suas categorias de despesa personalizadas.</DialogDescription>
-        </DialogHeader>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Gerenciar Categorias</SheetTitle>
+          <SheetDescription>Adicione, edite ou exclua suas categorias de despesa personalizadas.</SheetDescription>
+        </SheetHeader>
         
-        <div className="flex gap-2">
-          <Input 
-            placeholder="Nome da nova categoria" 
-            value={newCategoryName} 
-            onChange={e => setNewCategoryName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
-          />
-          <Button onClick={handleAdd} disabled={!newCategoryName.trim()}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Adicionar
-          </Button>
-        </div>
-        
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-xs">
-            Categorias padrão não podem ser editadas ou excluídas. A edição de um nome de categoria atualizará todas as transações existentes.
-          </AlertDescription>
-        </Alert>
+        <div className="py-4 space-y-4">
+            <div className="flex gap-2">
+              <Input 
+                placeholder="Nome da nova categoria" 
+                value={newCategoryName} 
+                onChange={e => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
+              />
+              <Button onClick={handleAdd} disabled={!newCategoryName.trim()}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar
+              </Button>
+            </div>
+            
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Categorias padrão não podem ser editadas ou excluídas. A edição de um nome de categoria atualizará todas as transações existentes.
+              </AlertDescription>
+            </Alert>
 
-        <ScrollArea className="h-[250px] border rounded-md p-2">
-            {customCategories.length > 0 ? (
-                <div className="space-y-2">
-                    {customCategories.map(cat => {
-                        const isUsed = (categoryUsage[cat] || 0) > 0;
-                        return (
-                          <div key={cat} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                              <span className="text-sm">{cat}</span>
-                              <div className="flex gap-1">
-                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCategory({ oldName: cat, newName: cat })}>
-                                      <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div tabIndex={isUsed ? 0 : -1}>
-                                          <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isUsed}>
-                                                <Trash2 className="h-4 w-4" />
-                                              </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                              <AlertDialogHeader>
-                                                <AlertDialogTitle>Excluir Categoria?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                  Você tem certeza que deseja excluir a categoria "{cat}"? Esta ação não pode ser desfeita.
-                                                </AlertDialogDescription>
-                                              </AlertDialogHeader>
-                                              <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDelete(cat)} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
-                                              </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                          </AlertDialog>
-                                        </div>
-                                      </TooltipTrigger>
-                                      {isUsed && (
-                                        <TooltipContent>
-                                          <p>Esta categoria não pode ser excluída pois está em uso.</p>
-                                        </TooltipContent>
-                                      )}
-                                    </Tooltip>
-                                  </TooltipProvider>
+            <ScrollArea className="h-[250px] border rounded-md p-2">
+                {customCategories.length > 0 ? (
+                    <div className="space-y-2">
+                        {customCategories.map(cat => {
+                            const isUsed = (categoryUsage[cat] || 0) > 0;
+                            return (
+                              <div key={cat} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                                  <span className="text-sm">{cat}</span>
+                                  <div className="flex gap-1">
+                                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCategory({ oldName: cat, newName: cat })}>
+                                          <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <div tabIndex={isUsed ? 0 : -1}>
+                                              <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isUsed}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                  </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                  <AlertDialogHeader>
+                                                    <AlertDialogTitle>Excluir Categoria?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                      Você tem certeza que deseja excluir a categoria "{cat}"? Esta ação não pode ser desfeita.
+                                                    </AlertDialogDescription>
+                                                  </AlertDialogHeader>
+                                                  <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(cat)} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
+                                                  </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                              </AlertDialog>
+                                            </div>
+                                          </TooltipTrigger>
+                                          {isUsed && (
+                                            <TooltipContent>
+                                              <p>Esta categoria não pode ser excluída pois está em uso.</p>
+                                            </TooltipContent>
+                                          )}
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                  </div>
                               </div>
-                          </div>
-                        )
-                    })}
-                </div>
-            ) : (
-                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                    Nenhuma categoria personalizada.
-                </div>
-            )}
-        </ScrollArea>
+                            )
+                        })}
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                        Nenhuma categoria personalizada.
+                    </div>
+                )}
+            </ScrollArea>
+        </div>
 
-        <DialogFooter>
+        <SheetFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Fechar</Button>
-        </DialogFooter>
-      </DialogContent>
+        </SheetFooter>
+      </SheetContent>
 
       {/* Edit Dialog */}
       <AlertDialog open={!!editingCategory} onOpenChange={(open) => !open && setEditingCategory(null)}>
@@ -184,6 +186,6 @@ export function ManageCategoriesDialog({
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Dialog>
+    </Sheet>
   )
 }

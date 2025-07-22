@@ -10,13 +10,13 @@ import { ptBR } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Form,
   FormControl,
@@ -193,17 +193,17 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-4xl flex flex-col max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetContent className="sm:max-w-2xl flex flex-col">
+        <SheetHeader>
+          <SheetTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</SheetTitle>
+          <SheetDescription>
             {isEditMode ? "Atualize os detalhes do seu projeto." : "Preencha os detalhes abaixo para criar seu projeto."}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-6 pt-2">
+            <div className="flex-1 overflow-y-auto p-1 pr-6">
                 <div className="space-y-6">
                   <FormField
                     control={form.control}
@@ -501,13 +501,13 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   </div>
               </div>
             </div>
-            <DialogFooter className="flex-shrink-0 border-t p-4">
+            <SheetFooter className="flex-shrink-0 border-t p-4 pt-6">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

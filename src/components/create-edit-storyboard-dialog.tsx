@@ -1,4 +1,3 @@
-
 // @/src/components/create-edit-storyboard-dialog.tsx
 "use client";
 
@@ -10,13 +9,13 @@ import * as z from "zod";
 import type { Storyboard } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Form,
   FormControl,
@@ -82,14 +81,14 @@ export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyb
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{isEditMode ? "Editar Storyboard" : "Criar Novo Storyboard"}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetContent className="sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle>{isEditMode ? "Editar Storyboard" : "Criar Novo Storyboard"}</SheetTitle>
+          <SheetDescription>
             {isEditMode ? "Atualize os detalhes do seu storyboard." : "Dê um nome e uma breve descrição para seu storyboard."}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
             <FormField
@@ -139,13 +138,13 @@ export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyb
                 </FormItem>
               )}
             />
-            <DialogFooter>
+            <SheetFooter>
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Storyboard"}</Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

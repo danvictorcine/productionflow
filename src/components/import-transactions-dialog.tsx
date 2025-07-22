@@ -9,13 +9,13 @@ import type { Transaction, Project } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
@@ -165,17 +165,17 @@ export function ImportTransactionsDialog({ isOpen, setIsOpen, onSubmit, project 
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
+    <Sheet open={isOpen} onOpenChange={(open) => {
         if (!open) resetState();
         setIsOpen(open);
     }}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Importar Despesas</DialogTitle>
-          <DialogDescription>
+      <SheetContent className="sm:max-w-4xl flex flex-col">
+        <SheetHeader>
+          <SheetTitle>Importar Despesas</SheetTitle>
+          <SheetDescription>
             Faça o upload de um arquivo .xlsx para adicionar múltiplas despesas de uma vez.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         
         <div className="grid md:grid-cols-2 gap-6 items-start flex-1 min-h-0">
             {/* Left Column: Instructions & Upload */}
@@ -285,14 +285,14 @@ export function ImportTransactionsDialog({ isOpen, setIsOpen, onSubmit, project 
             </div>
         </div>
 
-        <DialogFooter className="flex-shrink-0 border-t pt-4">
+        <SheetFooter className="flex-shrink-0 border-t pt-4">
             <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
             <Button type="button" onClick={handleSubmit} disabled={parsedData.length === 0 || isLoading}>
                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Importar {parsedData.length > 0 ? `${parsedData.length} Transações` : ''}
             </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

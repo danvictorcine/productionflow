@@ -10,13 +10,13 @@ import { PlusCircle, Trash2 } from "lucide-react";
 import type { Production, TeamMember } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Form,
   FormControl,
@@ -131,17 +131,17 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>{isEditMode ? "Editar Produção" : "Criar Nova Produção"}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetContent className="sm:max-w-2xl flex flex-col">
+        <SheetHeader>
+          <SheetTitle>{isEditMode ? "Editar Produção" : "Criar Nova Produção"}</SheetTitle>
+          <SheetDescription>
             {isEditMode ? "Atualize os detalhes da produção." : "Preencha as informações principais da sua produção."}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-6 pt-2">
+            <div className="flex-1 overflow-y-auto pr-6">
                 <div className="space-y-4">
                   <FormField
                     control={form.control}
@@ -316,13 +316,13 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                   </div>
                 </div>
             </div>
-            <DialogFooter className="flex-shrink-0 border-t p-4">
+            <SheetFooter className="flex-shrink-0 border-t p-4 pt-6">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Produção"}</Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

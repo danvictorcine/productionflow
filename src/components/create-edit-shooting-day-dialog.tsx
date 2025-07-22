@@ -1,4 +1,3 @@
-
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -15,13 +14,13 @@ import type { ShootingDay, TeamMember, ChecklistItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Form,
   FormControl,
@@ -254,17 +253,17 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Ordem do Dia</DialogTitle>
-          <DialogDescription>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetContent className="sm:max-w-4xl flex flex-col">
+        <SheetHeader>
+          <SheetTitle>Ordem do Dia</SheetTitle>
+          <SheetDescription>
             {isEditMode ? "Atualize os detalhes do dia de filmagem." : "Preencha os detalhes para a Ordem do Dia."}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-6 pt-2">
+            <div className="flex-1 overflow-y-auto pr-6">
                 <div className="space-y-6">
                     
                     <div>
@@ -523,13 +522,13 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     </div>
                 </div>
             </div>
-            <DialogFooter className="flex-shrink-0 border-t p-4">
+            <SheetFooter className="flex-shrink-0 border-t p-4 pt-6">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Ordem do Dia"}</Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
