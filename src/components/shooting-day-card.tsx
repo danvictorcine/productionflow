@@ -3,7 +3,7 @@
 // @/src/components/shooting-day-card.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import type { ShootingDay, Scene, ChecklistItem } from "@/lib/types";
 import { format, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -109,7 +109,7 @@ const SceneCard = ({ scene }: { scene: Scene }) => (
                 <h5 className="font-bold text-xl text-foreground">{scene.sceneNumber}</h5>
                 <p className="font-semibold text-lg text-primary">{scene.title}</p>
             </div>
-            <Badge variant="outline" className="text-sm">{scene.pages} pág.</Badge>
+            <Badge variant="outline" className="text-sm">{scene.pages}</Badge>
         </div>
         <div className="pl-2 space-y-3">
             <div className="flex items-start gap-2">
@@ -150,117 +150,64 @@ const calculateDuration = (start?: string, end?: string): string | null => {
     return `${hours}h ${minutes}m`;
 };
 
-
-export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) {
-  const [isClient, setIsClient] = useState(false);
+const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }, ref) => {
+    const [isClient, setIsClient] = useState(false);
   
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
-  const totalDuration = calculateDuration(day.startTime, day.endTime);
+    const totalDuration = calculateDuration(day.startTime, day.endTime);
 
-  return (
-    <AccordionItem value={day.id} className="border-none">
-      <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-        <div className="relative">
-          <AccordionTrigger className="flex w-full items-center p-6 text-left hover:no-underline [&>svg]:data-[public=true]:hidden" data-public={isPublicView}>
-            <div className="flex items-center gap-4">
-               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                  <Calendar className="h-6 w-6" />
-                </div>
-                <div>
-                    <h3 className="text-xl font-semibold leading-none tracking-tight">
-                        {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
-                        {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
-                    </h3>
-                    <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
-                      <MapPin className="h-4 w-4" /> {day.location}
-                    </p>
-                </div>
-            </div>
-          </AccordionTrigger>
-          {!isPublicView && (
-            <div className="absolute top-1/2 right-12 -translate-y-1/2">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                            <MoreVertical className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar Ordem do Dia
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
-                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                            Exportar para Excel
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
-                            <FileDown className="mr-2 h-4 w-4" />
-                            Exportar como PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-          )}
-        </div>
-        <AccordionContent className="pt-0">
-          <CardContent className="flex-grow flex flex-col justify-between space-y-6">
+    return (
+        <CardContent className="flex-grow flex flex-col justify-between space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="h-[180px]">
-                {isFetchingWeather ? (
-                  <Skeleton className="h-full w-full" />
-                ) : day.weather ? (
-                  <WeatherCard weather={day.weather} />
-                ) : (
-                  <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
-                     <p className="text-sm font-semibold">Sem dados de clima</p>
-                     <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
-                     {!isPublicView && <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>}
-                  </div>
-                )}
-              </div>
-              <div className="h-[180px]">
-                {day.latitude && day.longitude ? (
-                    <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" />
-                ) : (
-                  <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
-                    <p className="text-sm font-semibold">Sem mapa</p>
-                    <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
-                  </div>
-                )}
-              </div>
-              <div className="h-[180px]">
-                <Card className="h-full flex flex-col justify-center items-center text-center p-4 bg-card/50">
-                    <CardHeader className="p-0 mb-2">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Clock className="h-5 w-5 text-primary" />
-                            Horários da Diária
-                        </CardTitle>
-                    </CardHeader>
-                    {isClient && day.startTime && day.endTime ? (
-                        <div className="space-y-2">
-                            <p className="text-muted-foreground text-lg">
-                                <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
-                            </p>
-                            {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
-                        </div>
+                <div className="h-[180px]">
+                    {isFetchingWeather ? (
+                        <Skeleton className="h-full w-full" />
+                    ) : day.weather ? (
+                        <WeatherCard weather={day.weather} />
                     ) : (
-                         <div className="text-center text-sm text-muted-foreground">
-                            <p>Horários não definidos.</p>
-                            {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
+                        <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+                            <p className="text-sm font-semibold">Sem dados de clima</p>
+                            <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
+                            {!isPublicView && <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>}
                         </div>
                     )}
-                </Card>
-              </div>
+                </div>
+                <div className="h-[180px]">
+                    {day.latitude && day.longitude ? (
+                        <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" />
+                    ) : (
+                        <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+                        <p className="text-sm font-semibold">Sem mapa</p>
+                        <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
+                        </div>
+                    )}
+                </div>
+                <div className="h-[180px]">
+                    <Card className="h-full flex flex-col justify-center items-center text-center p-4 bg-card/50">
+                        <CardHeader className="p-0 mb-2">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <Clock className="h-5 w-5 text-primary" />
+                                Horários da Diária
+                            </CardTitle>
+                        </CardHeader>
+                        {isClient && day.startTime && day.endTime ? (
+                            <div className="space-y-2">
+                                <p className="text-muted-foreground text-lg">
+                                    <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
+                                </p>
+                                {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
+                            </div>
+                        ) : (
+                            <div className="text-center text-sm text-muted-foreground">
+                                <p>Horários não definidos.</p>
+                                {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
+                            </div>
+                        )}
+                    </Card>
+                </div>
             </div>
 
             <Separator />
@@ -342,9 +289,95 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onEx
                     }/>
                 </div>
             </div>
-          </CardContent>
-        </AccordionContent>
-      </Card>
-    </AccordionItem>
-  );
-}
+        </CardContent>
+    );
+});
+ShootingDayCardContent.displayName = 'ShootingDayCardContent';
+
+export const ShootingDayCard = ({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
+    
+    // For normal display, use the Accordion
+    if (!isPublicView) {
+        return (
+            <AccordionItem value={day.id} className="border-none">
+                <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
+                    <div className="relative">
+                    <AccordionTrigger className="flex w-full items-center p-6 text-left hover:no-underline [&>svg]:data-[public=true]:hidden" data-public={isPublicView}>
+                        <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                            <Calendar className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-semibold leading-none tracking-tight">
+                                    {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
+                                    {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
+                                </h3>
+                                <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
+                                <MapPin className="h-4 w-4" /> {day.location}
+                                </p>
+                            </div>
+                        </div>
+                    </AccordionTrigger>
+                    {!isPublicView && (
+                        <div className="absolute top-1/2 right-12 -translate-y-1/2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Editar Ordem do Dia
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                        Exportar para Excel
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
+                                        <FileDown className="mr-2 h-4 w-4" />
+                                        Exportar como PDF
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Excluir
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    )}
+                    </div>
+                    <AccordionContent className="pt-0">
+                        <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView }} />
+                    </AccordionContent>
+                </Card>
+            </AccordionItem>
+        );
+    }
+
+    // For PDF/public view, render without Accordion, fully expanded.
+    return (
+        <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full border-none shadow-none">
+            <CardHeader className="p-0 pb-6">
+                <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                        <Calendar className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-semibold leading-none tracking-tight">
+                            {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
+                            {format(new Date(day.date), "eeee, dd MMMM, yyyy", { locale: ptBR })}
+                        </h3>
+                        <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
+                            <MapPin className="h-4 w-4" /> {day.location}
+                        </p>
+                    </div>
+                </div>
+            </CardHeader>
+            <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView }} />
+        </Card>
+    );
+};

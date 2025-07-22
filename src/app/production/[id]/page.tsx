@@ -10,6 +10,8 @@ import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Inf
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
+import { createPortal } from 'react-dom';
+
 
 import type { Production, ShootingDay, WeatherInfo, ChecklistItem } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -17,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
 import { Button } from '@/components/ui/button';
-import { UserNav } from '@/components/user-nav';
+import { UserNav } from '@/components/ui/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateEditProductionDialog } from '@/components/create-edit-production-dialog';
 import { CreateEditShootingDayDialog } from '@/components/create-edit-shooting-day-dialog';
@@ -57,6 +59,7 @@ function ProductionPageDetail() {
   const { user } = useAuth();
   const { toast } = useToast();
   const mainRef = useRef<HTMLElement>(null);
+  const printRootRef = useRef<HTMLDivElement>(null);
 
   const [production, setProduction] = useState<Production | null>(null);
   const [shootingDays, setShootingDays] = useState<ProcessedShootingDay[]>([]);
@@ -64,6 +67,9 @@ function ProductionPageDetail() {
   const [isFetchingWeather, setIsFetchingWeather] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
   const [expandedAccordionItems, setExpandedAccordionItems] = useState<string[]>([]);
+
+  // States for PDF export
+  const [pdfDayToExport, setPdfDayToExport] = useState<ProcessedShootingDay | null>(null);
 
   // Dialog states
   const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
@@ -377,22 +383,21 @@ function ProductionPageDetail() {
     }
   };
   
-  const handleExportDayToPdf = async (dayId: string, day: ProcessedShootingDay) => {
-    const { default: jsPDF } = await import('jspdf');
-    const { default: html2canvas } = await import('html2canvas');
+  useEffect(() => {
+    if (!pdfDayToExport || !printRootRef.current) return;
 
-    const originalExpanded = [...expandedAccordionItems];
-    setExpandedAccordionItems(prev => [...prev, dayId]);
-    setIsExporting(true);
-    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
+    const exportToPdf = async () => {
+        const { default: jsPDF } = await import('jspdf');
+        const { default: html2canvas } = await import('html2canvas');
 
-    // Allow time for the accordion to render expanded
-    setTimeout(async () => {
-        const elementToCapture = document.getElementById(`shooting-day-card-${dayId}`);
+        setIsExporting(true);
+        toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
+
+        const elementToCapture = document.getElementById('pdf-export-content');
         if (!elementToCapture) {
             toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
             setIsExporting(false);
-            setExpandedAccordionItems(originalExpanded);
+            setPdfDayToExport(null);
             return;
         }
 
@@ -409,16 +414,28 @@ function ProductionPageDetail() {
                 unit: 'mm',
                 format: 'a4',
             });
-            
+
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const canvasWidth = canvas.width;
             const canvasHeight = canvas.height;
-            const ratio = canvasWidth / canvasHeight;
-            const imgHeight = pdfWidth / ratio;
-            
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
-            
-            const dateStr = format(day.date, "dd_MM_yyyy");
+            const ratio = pdfWidth / canvasWidth;
+            const pdfHeight = canvasHeight * ratio;
+
+            let position = 0;
+            let heightLeft = pdfHeight;
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft > 0) {
+                position -= pageHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                heightLeft -= pageHeight;
+            }
+
+            const dateStr = format(pdfDayToExport.date, "dd_MM_yyyy");
             pdf.save(`Ordem_do_Dia_${production?.name.replace(/ /g, "_")}_${dateStr}.pdf`);
             toast({ title: "Exportação para PDF Concluída!" });
 
@@ -427,10 +444,15 @@ function ProductionPageDetail() {
             toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPdf)', description: 'Não foi possível gerar o PDF.' });
         } finally {
             setIsExporting(false);
-            setExpandedAccordionItems(originalExpanded);
+            setPdfDayToExport(null);
         }
-    }, 500); // Delay to ensure content is expanded
-  };
+    };
+    
+    // Use a short timeout to allow the portal to render before capturing
+    const timer = setTimeout(exportToPdf, 100);
+    return () => clearTimeout(timer);
+
+  }, [pdfDayToExport, production?.name, toast]);
 
   const handleUpdateNotes = async (
     dayId: string,
@@ -614,7 +636,7 @@ function ProductionPageDetail() {
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
-                    onExportPdf={() => handleExportDayToPdf(day.id, day)}
+                    onExportPdf={() => setPdfDayToExport(day)}
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting}
                   />
@@ -656,6 +678,26 @@ function ProductionPageDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* PDF Export Portal */}
+      <div 
+        ref={printRootRef} 
+        id="pdf-export-root" 
+        className="fixed top-0 left-0 w-[1200px] -z-50 opacity-0 pointer-events-none"
+      >
+        {pdfDayToExport && createPortal(
+            <div id="pdf-export-content" className="p-8 bg-background">
+                <ShootingDayCard 
+                    day={pdfDayToExport}
+                    isFetchingWeather={false}
+                    isExporting={true}
+                    isPublicView={true}
+                />
+            </div>,
+            printRootRef.current!
+        )}
+      </div>
+
     </div>
   );
 }
