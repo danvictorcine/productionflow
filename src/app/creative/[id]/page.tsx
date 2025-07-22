@@ -480,17 +480,18 @@ function CreativeProjectPageDetail() {
       
       <main className="flex-1 flex flex-col">
         <div className="bg-background border-b z-30">
-            {project.description && (
-              <div className="px-4 md:px-6 pt-4 md:pt-6">
-                <Card>
-                  <CardContent className="p-4 md:p-6">
+            <div className="px-4 md:px-6 pt-4 md:pt-6">
+              <Card>
+                <CardContent className="p-4 md:p-6 space-y-1">
+                  <CardTitle>{project.name}</CardTitle>
+                  {project.description && (
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                       {project.description}
                     </p>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+                  )}
+                </CardContent>
+              </Card>
+            </div>
             <div className="p-2 md:p-4">
                 <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                     <Button variant="ghost" size="sm" onClick={handleAddNote}>
