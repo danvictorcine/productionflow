@@ -60,6 +60,7 @@ service cloud.firestore {
     // --- Public Shares Collection ---
     match /public_shares/{shareId} {
         allow get: if true;
+        // Only authenticated users can create/delete their own shares
         allow create, delete: if isOwner(request.resource.data.userId);
     }
 
