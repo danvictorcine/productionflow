@@ -1076,7 +1076,6 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
     const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
     const daySnap = await getDoc(dayRef);
     
-    // Check if the original document is actually public
     if (!daySnap.exists() || !daySnap.data().isPublic) return null;
 
     const dayData = daySnap.data();
@@ -1094,7 +1093,6 @@ export const getPublicStoryboard = async (publicId: string): Promise<Storyboard 
     const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
     const storyboardSnap = await getDoc(storyboardRef);
     
-    // Check if the original document is actually public
     if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
 
     return {
@@ -1113,12 +1111,13 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
     const originalDocRef = doc(db, collectionName, originalId);
     
     if (isPublic) {
+        // ACTIVATE SHARING
         const publicShareRef = doc(db, 'public_shares', publicId);
         const shareData: PublicShare = {
             id: publicId,
             originalId,
             type: itemType,
-            userId: user.uid,
+            userId: user.uid, // This field is required by security rules
         };
         batch.set(publicShareRef, shareData);
         batch.update(originalDocRef, { 
@@ -1126,7 +1125,9 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             publicId: publicId,
         });
     } else {
-        // To disable, we first need to find the correct publicId to delete from the shares collection
+        // DEACTIVATE SHARING
+        // First, we need to get the correct publicId from the original document itself,
+        // to ensure we delete the correct share document.
         const originalDocSnap = await getDoc(originalDocRef);
         const currentPublicId = originalDocSnap.data()?.publicId;
 
@@ -1135,6 +1136,7 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             batch.delete(publicShareRef);
         }
         
+        // Then, remove the public fields from the original document.
         batch.update(originalDocRef, { 
             isPublic: false, 
             publicId: deleteField(),
