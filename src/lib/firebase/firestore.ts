@@ -1076,6 +1076,7 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
     const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
     const daySnap = await getDoc(dayRef);
     
+    // Check if the original document is actually public
     if (!daySnap.exists() || !daySnap.data().isPublic) return null;
 
     const dayData = daySnap.data();
@@ -1093,6 +1094,7 @@ export const getPublicStoryboard = async (publicId: string): Promise<Storyboard 
     const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
     const storyboardSnap = await getDoc(storyboardRef);
     
+    // Check if the original document is actually public
     if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
 
     return {
@@ -1124,9 +1126,10 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             publicId: publicId,
         });
     } else {
-        const docSnap = await getDoc(originalDocRef);
-        const currentPublicId = docSnap.data()?.publicId;
-        
+        // To disable, we first need to find the correct publicId to delete from the shares collection
+        const originalDocSnap = await getDoc(originalDocRef);
+        const currentPublicId = originalDocSnap.data()?.publicId;
+
         if (currentPublicId) {
             const publicShareRef = doc(db, 'public_shares', currentPublicId);
             batch.delete(publicShareRef);
