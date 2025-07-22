@@ -1067,7 +1067,7 @@ const getPublicShareData = async (publicId: string): Promise<PublicShare | null>
     return shareSnap.data() as PublicShare;
 };
 
-export const getPublicShootingDay = async (publicId: string): Promise<{day: ShootingDay, creator: UserProfile | null} | null> => {
+export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
     const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'day') return null;
 
@@ -1076,29 +1076,24 @@ export const getPublicShootingDay = async (publicId: string): Promise<{day: Shoo
     
     // The existence of the shareInfo document is our primary check.
     // The check on the original document is a secondary safeguard.
-    if (!daySnap.exists()) return null;
+    if (!daySnap.exists() || !daySnap.data().isPublic) return null;
 
     const dayData = daySnap.data();
-    const day = {
+    return {
         id: daySnap.id,
         ...dayData,
         date: (dayData.date as Timestamp).toDate(),
     } as ShootingDay;
-    
-    // Fetch creator profile using the userId stored in the shareInfo for security.
-    const creator = await getUserProfile(shareInfo.userId);
-
-    return { day, creator };
 };
 
-export const getPublicStoryboard = async (publicId: string): Promise<{storyboard: Storyboard, panels: StoryboardPanel[], creator: UserProfile | null} | null> => {
+export const getPublicStoryboard = async (publicId: string): Promise<{storyboard: Storyboard, panels: StoryboardPanel[]} | null> => {
     const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'storyboard') return null;
 
     const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
     const storyboardSnap = await getDoc(storyboardRef);
     
-    if (!storyboardSnap.exists()) return null;
+    if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
 
     const storyboard = {
         id: storyboardSnap.id,
@@ -1114,9 +1109,7 @@ export const getPublicStoryboard = async (publicId: string): Promise<{storyboard
         createdAt: (doc.data().createdAt as Timestamp).toDate(),
     } as StoryboardPanel));
     
-    const creator = await getUserProfile(shareInfo.userId);
-
-    return { storyboard, panels, creator };
+    return { storyboard, panels };
 };
 
 export const setShareState = async (itemType: 'day' | 'storyboard', originalId: string, publicId: string, isPublic: boolean) => {

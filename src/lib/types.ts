@@ -182,8 +182,6 @@ export type ShootingDay = {
   callTimes: CallTime[];
   isPublic?: boolean;
   publicId?: string;
-  creatorName?: string;
-  creatorPhotoURL?: string;
   dayNumber?: number;
   totalDays?: number;
   startTime?: string; // e.g., "08:00"
@@ -232,8 +230,6 @@ export type Storyboard = {
   aspectRatio: '16:9' | '4:3';
   isPublic?: boolean;
   publicId?: string;
-  creatorName?: string;
-  creatorPhotoURL?: string;
   createdAt: Date;
 };
 
