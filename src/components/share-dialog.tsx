@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Copy, Check, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ShareDialogProps {
     isOpen: boolean;
@@ -26,37 +27,52 @@ interface ShareDialogProps {
 
 export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }: ShareDialogProps) {
     const [isPublic, setIsPublic] = useState(item.isPublic || false);
+    // Maintain a stable publicId throughout the dialog's lifecycle
     const [publicId, setPublicId] = useState(item.publicId || '');
     const [isSaving, setIsSaving] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
+    const { toast } = useToast();
 
     const itemTypeName = itemType === 'day' ? 'Ordem do Dia' : 'Storyboard';
+    
+    // Generate a new publicId only if one doesn't exist.
+    // This ensures the ID is stable if the user toggles the switch multiple times.
+    useEffect(() => {
+        if (isOpen && !publicId) {
+            setPublicId(crypto.randomUUID());
+        }
+    }, [isOpen, publicId]);
+
+    // Reset state when dialog is reopened with a different item
+    useEffect(() => {
+        if (isOpen) {
+            setIsPublic(item.isPublic || false);
+            setPublicId(item.publicId || crypto.randomUUID());
+            setIsSaving(false);
+            setHasCopied(false);
+        }
+    }, [isOpen, item]);
     
     const publicUrl = isPublic && publicId
         ? `${window.location.origin}/public/${itemType}/${publicId}`
         : '';
     
-    useEffect(() => {
-        if (isOpen) {
-            setIsPublic(item.isPublic || false);
-            setPublicId(item.publicId || '');
-            setIsSaving(false);
-            setHasCopied(false);
-        }
-    }, [isOpen, item.isPublic, item.publicId]);
-    
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // Ensure a publicId exists if it's being made public for the first time
-            const finalPublicId = isPublic && !publicId ? crypto.randomUUID() : publicId;
-            setPublicId(finalPublicId);
-            
-            await onStateChange(isPublic, finalPublicId);
+            await onStateChange(isPublic, publicId);
+            toast({
+                title: "Configuração Salva!",
+                description: `O compartilhamento da ${itemTypeName.toLowerCase()} foi atualizado.`,
+            });
             setIsOpen(false);
         } catch (error) {
             console.error("Failed to update sharing state:", error);
-            // Optionally show a toast message here
+            toast({
+                variant: 'destructive',
+                title: "Erro ao Salvar",
+                description: `Não foi possível atualizar o estado de compartilhamento.`
+            });
         } finally {
             setIsSaving(false);
         }
