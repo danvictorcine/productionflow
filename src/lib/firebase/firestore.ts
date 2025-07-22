@@ -1,4 +1,5 @@
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -18,7 +19,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, TeamMember, Scene, PublicShare } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, PublicShare } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID, returns null if not authenticated for public views
@@ -1111,12 +1112,11 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
     
     if (isPublic) {
         const publicShareRef = doc(db, 'public_shares', publicId);
-        // Correctly include the userId in the share document data
         const shareData: PublicShare = {
             id: publicId,
             originalId,
             type: itemType,
-            userId: user.uid, // This line was missing/incorrect
+            userId: user.uid,
         };
         batch.set(publicShareRef, shareData);
         batch.update(originalDocRef, { 
@@ -1124,7 +1124,6 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             publicId: publicId,
         });
     } else {
-        // Fetch the original document to get the publicId to delete it
         const docSnap = await getDoc(originalDocRef);
         const currentPublicId = docSnap.data()?.publicId;
         
