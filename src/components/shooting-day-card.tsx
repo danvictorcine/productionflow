@@ -106,7 +106,7 @@ const SceneCard = ({ scene }: { scene: Scene }) => (
     <div className="p-4 rounded-lg border bg-background/50 space-y-3">
         <div className="flex justify-between items-center">
             <div className="flex items-baseline gap-2">
-                <h5 className="font-bold text-xl text-foreground">{scene.sceneNumber}ª</h5>
+                <h5 className="font-bold text-xl text-foreground">{scene.sceneNumber}</h5>
                 <p className="font-semibold text-lg text-primary">{scene.title}</p>
             </div>
             <Badge variant="outline" className="text-sm">{scene.pages} pág.</Badge>
