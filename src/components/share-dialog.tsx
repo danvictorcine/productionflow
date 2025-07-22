@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Copy, Check, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { CopyableError } from './copyable-error';
 
 interface ShareDialogProps {
     isOpen: boolean;
@@ -38,8 +39,6 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
         if (isOpen) {
             const initialPublicState = item.isPublic || false;
             setIsPublic(initialPublicState);
-            // If the item is not public, we prepare a new ID in case the user enables it.
-            // If it is public, we use the existing ID.
             setPublicId(item.publicId || crypto.randomUUID());
             setIsLoading(false);
             setHasCopied(false);
@@ -53,23 +52,23 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
     const handleSwitchChange = async (newPublicState: boolean) => {
         setIsLoading(true);
         try {
-            // We use the component's state for the publicId. 
-            // If it didn't exist before, a new one was generated on component mount.
             await onStateChange(newPublicState, publicId);
-            
-            // Update local state after successful operation
             setIsPublic(newPublicState);
-
+            
             toast({
                 title: newPublicState ? "Link Público Ativado" : "Link Público Desativado",
                 description: `O compartilhamento foi ${newPublicState ? 'habilitado' : 'desabilitado'}.`,
             });
         } catch (error) {
+            const errorTyped = error as { code?: string; message: string };
             console.error("Failed to update sharing state:", error);
             toast({
                 variant: 'destructive',
-                title: "Erro ao Atualizar",
-                description: `Não foi possível ${newPublicState ? 'ativar' : 'desativar'} o compartilhamento.`
+                title: "Erro ao Atualizar Compartilhamento",
+                description: <CopyableError 
+                                userMessage={`Não foi possível ${newPublicState ? 'ativar' : 'desativar'} o compartilhamento.`}
+                                errorCode={`share-dialog.tsx: ${errorTyped.code || errorTyped.message}`} 
+                             />
             });
             // Revert switch on error
             setIsPublic(!newPublicState);
@@ -91,7 +90,7 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
                 <DialogHeader>
                     <DialogTitle>Compartilhar {itemTypeName}</DialogTitle>
                     <DialogDescription>
-                        Gere um link público para compartilhar uma versão de leitura da sua {itemTypeName.toLowerCase()}. A alteração é salva automaticamente.
+                        Gere um link público para compartilhar uma versão de leitura da sua {itemTypeName.toLowerCase()}. A alteração é salva automaticamente ao usar o interruptor.
                     </DialogDescription>
                 </DialogHeader>
 
