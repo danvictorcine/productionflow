@@ -14,50 +14,15 @@ service cloud.firestore {
       allow read, update: if isOwner(userId);
     }
     
-    match /projects/{projectId} {
-      // Read rule simplified to allow list queries
-      allow read: if isOwner(resource.data.userId);
+    // Rule for collections that are private to the user
+    match /{collection}/{docId} 
+      where collection in ['projects', 'transactions', 'productions', 'creative_projects', 'board_items'] {
+      allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
-      allow update, delete: if isOwner(resource.data.userId);
-    }
-    
-    match /transactions/{transactionId} {
-      allow read: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-      allow update, delete: if isOwner(resource.data.userId);
-    }
-    
-    match /productions/{productionId} {
-      // Read rule simplified to allow list queries
-      allow read: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-      allow update, delete: if isOwner(resource.data.userId);
-    }
-    
-    match /shooting_days/{dayId} {
-       // get allows public access, list is restricted to owner
-       allow get: if isOwner(resource.data.userId) || resource.data.isPublic == true;
-       allow list: if request.auth.uid == request.query.filters.productionId[0][2];
-       allow create: if isOwner(request.resource.data.userId);
-       allow update, delete: if isOwner(resource.data.userId);
-    }
-    
-    match /creative_projects/{creativeProjectId} {
-        // Read rule simplified to allow list queries
-        allow read: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
-        allow update, delete: if isOwner(resource.data.userId);
     }
 
-    match /board_items/{itemId} {
-        // Read rule simplified to allow list queries
-        allow read: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
-        allow update, delete: if isOwner(resource.data.userId);
-    }
-    
+    // Rule for storyboards (can be public)
     match /storyboards/{storyboardId} {
-        // get allows public access, list is restricted to owner
         allow get: if isOwner(resource.data.userId) || resource.data.isPublic == true;
         allow list: if request.auth.uid == request.query.filters.userId[0][2];
         allow create: if isOwner(request.resource.data.userId);
@@ -69,6 +34,14 @@ service cloud.firestore {
         allow list: if get(/databases/$(database)/documents/storyboards/$(request.query.filters.storyboardId[0][2])).data.userId == request.auth.uid;
         allow create: if isOwner(request.resource.data.userId);
         allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Rule for shooting_days (can be public)
+    match /shooting_days/{dayId} {
+       allow get: if isOwner(resource.data.userId) || resource.data.isPublic == true;
+       allow list: if get(/databases/$(database)/documents/productions/$(request.query.filters.productionId[0][2])).data.userId == request.auth.uid;
+       allow create: if isOwner(request.resource.data.userId);
+       allow update, delete: if isOwner(resource.data.userId);
     }
     
     // --- Public Shares Collection ---
