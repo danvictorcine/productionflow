@@ -63,6 +63,7 @@ function ProductionPageDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingWeather, setIsFetchingWeather] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
+  const [expandedAccordionItems, setExpandedAccordionItems] = useState<string[]>([]);
 
   // Dialog states
   const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
@@ -377,50 +378,58 @@ function ProductionPageDetail() {
   };
   
   const handleExportDayToPdf = async (dayId: string, day: ProcessedShootingDay) => {
-    const elementToCapture = document.getElementById(`shooting-day-card-${dayId}`);
-    if (!elementToCapture) {
-        toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
-        return;
-    }
-    
-    setIsExporting(true);
-    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
-    
     const { default: jsPDF } = await import('jspdf');
     const { default: html2canvas } = await import('html2canvas');
 
-    try {
-        const canvas = await html2canvas(elementToCapture, {
-            useCORS: true,
-            scale: 2,
-            logging: false,
-            backgroundColor: window.getComputedStyle(document.body).backgroundColor,
-        });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'mm',
-            format: 'a4',
-        });
-        
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / canvasHeight;
-        const imgHeight = pdfWidth / ratio;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
-        
-        const dateStr = format(day.date, "dd_MM_yyyy");
-        pdf.save(`Ordem_do_Dia_${production?.name.replace(/ /g, "_")}_${dateStr}.pdf`);
-        toast({ title: "Exportação para PDF Concluída!" });
+    const originalExpanded = [...expandedAccordionItems];
+    setExpandedAccordionItems(prev => [...prev, dayId]);
+    setIsExporting(true);
+    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
 
-    } catch (error) {
-        console.error("Error generating PDF for single day", error);
-        toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPdf)', description: 'Não foi possível gerar o PDF.' });
-    } finally {
-        setIsExporting(false);
-    }
+    // Allow time for the accordion to render expanded
+    setTimeout(async () => {
+        const elementToCapture = document.getElementById(`shooting-day-card-${dayId}`);
+        if (!elementToCapture) {
+            toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
+            setIsExporting(false);
+            setExpandedAccordionItems(originalExpanded);
+            return;
+        }
+
+        try {
+            const canvas = await html2canvas(elementToCapture, {
+                useCORS: true,
+                scale: 2,
+                logging: false,
+                backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+            });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'p',
+                unit: 'mm',
+                format: 'a4',
+            });
+            
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / canvasHeight;
+            const imgHeight = pdfWidth / ratio;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+            
+            const dateStr = format(day.date, "dd_MM_yyyy");
+            pdf.save(`Ordem_do_Dia_${production?.name.replace(/ /g, "_")}_${dateStr}.pdf`);
+            toast({ title: "Exportação para PDF Concluída!" });
+
+        } catch (error) {
+            console.error("Error generating PDF for single day", error);
+            toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPdf)', description: 'Não foi possível gerar o PDF.' });
+        } finally {
+            setIsExporting(false);
+            setExpandedAccordionItems(originalExpanded);
+        }
+    }, 500); // Delay to ensure content is expanded
   };
 
   const handleUpdateNotes = async (
@@ -523,7 +532,12 @@ function ProductionPageDetail() {
           </div>
         </div>
 
-        <Accordion type="multiple" className="w-full space-y-4">
+        <Accordion 
+          type="multiple" 
+          className="w-full space-y-4"
+          value={expandedAccordionItems}
+          onValueChange={setExpandedAccordionItems}
+        >
             <AccordionItem value="team" className="border-none">
                 <Card>
                     <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
