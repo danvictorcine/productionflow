@@ -29,7 +29,7 @@ export default function BudgetBreakdownChart({ data }: BreakdownChartProps) {
   return (
     <ChartContainer
       config={chartConfig}
-      className="min-h-[350px] w-full"
+      className="min-h-[250px] md:min-h-[350px] w-full"
     >
       <ResponsiveContainer width="100%" height={350}>
         <BarChart

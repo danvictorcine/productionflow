@@ -495,7 +495,7 @@ export default function Dashboard({
         </div>
       </header>
 
-      <main className="flex-1 p-4 sm:p-6 md:p-8 grid gap-6">
+      <main className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col gap-6">
         <SummaryCards
           budget={project.budget}
           talentFees={totalTalentFee}
@@ -505,8 +505,8 @@ export default function Dashboard({
           isBudgetParcelado={project.isBudgetParcelado}
           totalInstallments={totalInstallments}
         />
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-3 xl:col-span-2 flex flex-col gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col gap-6 lg:w-2/3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -572,7 +572,7 @@ export default function Dashboard({
             </Card>
 
           </div>
-          <div className="lg:col-span-3 xl:col-span-1">
+          <div className="lg:w-1/3">
             <Card className="h-full flex flex-col">
                 <CardHeader>
                     <CardTitle>Histórico de Transações Pagas</CardTitle>

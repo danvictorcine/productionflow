@@ -98,7 +98,7 @@ export default function SummaryCards({
            <p className="text-xs text-muted-foreground">Total de gastos até o momento.</p>
         </CardContent>
       </Card>
-      <Card className="bg-primary text-primary-foreground sm:col-span-2 lg:col-span-1 xl:col-span-1">
+      <Card className="bg-primary text-primary-foreground xl:col-span-1">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Saldo Atual</CardTitle>
           <Wallet className="h-4 w-4 text-primary-foreground/80" />
