@@ -1,5 +1,4 @@
 
-
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -1117,7 +1116,7 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             id: publicId,
             originalId,
             type: itemType,
-            userId: user.uid, // This field is required by security rules
+            userId: user.uid,
         };
         batch.set(publicShareRef, shareData);
         batch.update(originalDocRef, { 
@@ -1126,8 +1125,6 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
         });
     } else {
         // DEACTIVATE SHARING
-        // First, we need to get the correct publicId from the original document itself,
-        // to ensure we delete the correct share document.
         const originalDocSnap = await getDoc(originalDocRef);
         const currentPublicId = originalDocSnap.data()?.publicId;
 
@@ -1136,7 +1133,6 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             batch.delete(publicShareRef);
         }
         
-        // Then, remove the public fields from the original document.
         batch.update(originalDocRef, { 
             isPublic: false, 
             publicId: deleteField(),

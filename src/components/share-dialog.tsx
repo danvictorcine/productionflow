@@ -1,5 +1,4 @@
 
-
 // src/components/share-dialog.tsx
 "use client";
 
@@ -29,7 +28,6 @@ interface ShareDialogProps {
 
 export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }: ShareDialogProps) {
     const [isPublic, setIsPublic] = useState(item.isPublic || false);
-    // Maintain a stable publicId throughout the dialog's lifecycle
     const [publicId, setPublicId] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
@@ -40,7 +38,6 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
     useEffect(() => {
         if (isOpen) {
             setIsPublic(item.isPublic || false);
-            // Ensure we have a stable publicId for the session
             setPublicId(item.publicId || crypto.randomUUID());
             setIsSaving(false);
             setHasCopied(false);
