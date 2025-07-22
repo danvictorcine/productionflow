@@ -459,11 +459,11 @@ export default function Dashboard({
           <h1 className="text-lg md:text-xl font-bold text-primary truncate">{project.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => setEditDialogOpen(true)} variant="outline" size="sm" className="md:size-auto">
+          <Button onClick={() => setEditDialogOpen(true)} variant="outline" size="sm">
             <Edit className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Editar Projeto</span>
           </Button>
-          <Button onClick={openAddSheet} size="sm" className="md:size-auto">
+          <Button onClick={openAddSheet} size="sm">
             <PlusCircle className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Adicionar Despesa</span>
           </Button>

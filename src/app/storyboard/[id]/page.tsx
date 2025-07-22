@@ -374,11 +374,11 @@ function StoryboardPageDetail() {
                         <h1 className="text-lg md:text-xl font-bold text-primary truncate">{storyboard.name}</h1>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
-                        <Button onClick={() => setIsEditDialogOpen(true)} variant="outline" size="sm" className="md:size-auto">
+                        <Button onClick={() => setIsEditDialogOpen(true)} variant="outline" size="sm">
                           <Edit className="h-4 w-4 md:mr-2" />
                           <span className="hidden md:inline">Editar Detalhes</span>
                         </Button>
-                        <Button onClick={() => imageUploadRef.current?.click()} disabled={isUploading} size="sm" className="md:size-auto">
+                        <Button onClick={() => imageUploadRef.current?.click()} disabled={isUploading} size="sm">
                             {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <PlusCircle className="h-4 w-4 md:mr-2" />}
                             <span className="hidden md:inline">Adicionar</span>
                         </Button>

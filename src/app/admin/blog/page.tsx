@@ -147,7 +147,7 @@ export default function ManageBlogPage() {
                 </Link>
                 <h1 className="text-lg md:text-xl font-bold truncate">Gerenciar Blog</h1>
                 <div className="ml-auto flex items-center gap-2">
-                    <Button asChild size="sm" className="md:size-auto">
+                    <Button asChild size="sm">
                          <Link href="/admin/blog/edit/new">
                             <PlusCircle className="h-4 w-4 md:mr-2" />
                             <span className="hidden md:inline">Criar Publicação</span>

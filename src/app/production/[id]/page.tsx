@@ -353,57 +353,6 @@ function ProductionPageDetail() {
         setIsExporting(false);
     }
   };
-
-  const handleExportToPdf = async () => {
-    if (!mainRef.current) return;
-    setIsExporting(true);
-
-    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
-
-    const { default: jsPDF } = await import('jspdf');
-    const { default: html2canvas } = await import('html2canvas');
-
-    try {
-      const canvas = await html2canvas(mainRef.current, {
-          useCORS: true,
-          scale: 2,
-          logging: false,
-          backgroundColor: window.getComputedStyle(document.body).backgroundColor,
-      });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-          orientation: 'p',
-          unit: 'mm',
-          format: 'a4',
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const ratio = canvasWidth / canvasHeight;
-      const imgHeight = pdfWidth / ratio;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdf.internal.pageSize.getHeight();
-
-      while (heightLeft > 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-          heightLeft -= pdf.internal.pageSize.getHeight();
-      }
-
-      pdf.save(`Producao_${production?.name.replace(/ /g, "_")}.pdf`);
-      toast({ title: "Exportação para PDF Concluída!" });
-    } catch (error) {
-        console.error("Error generating PDF", error);
-        toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportToPdf)', description: 'Não foi possível gerar o PDF.' });
-    } finally {
-        setIsExporting(false);
-    }
-  };
   
   const handleExportDayToExcel = (day: ProcessedShootingDay) => {
     if (!production) return;
@@ -537,11 +486,11 @@ function ProductionPageDetail() {
           <h1 className="text-lg md:text-xl font-bold text-primary truncate">{production.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => setIsProductionDialogOpen(true)} variant="outline" size="sm" className="md:size-auto">
+          <Button onClick={() => setIsProductionDialogOpen(true)} variant="outline" size="sm">
             <Edit className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Editar Produção</span>
           </Button>
-          <Button onClick={() => { setEditingShootingDay(null); setIsShootingDayDialogOpen(true); }} size="sm" className="md:size-auto">
+          <Button onClick={() => { setEditingShootingDay(null); setIsShootingDayDialogOpen(true); }} size="sm">
             <PlusCircle className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Criar Ordem do Dia</span>
           </Button>
@@ -555,10 +504,6 @@ function ProductionPageDetail() {
               <DropdownMenuItem onClick={handleExportToExcel} disabled={isExporting}>
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                 <span>Exportar para Excel (.xlsx)</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportToPdf} disabled={isExporting}>
-                <FileDown className="mr-2 h-4 w-4" />
-                <span>Salvar como PDF</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
