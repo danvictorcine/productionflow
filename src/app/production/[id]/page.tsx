@@ -1,5 +1,3 @@
-
-
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -19,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
 import { Button } from '@/components/ui/button';
-import { UserNav } from '@/components/ui/user-nav';
+import { UserNav } from '@/components/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateEditProductionDialog } from '@/components/create-edit-production-dialog';
 import { CreateEditShootingDayDialog } from '@/components/create-edit-shooting-day-dialog';
