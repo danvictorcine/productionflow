@@ -1,5 +1,3 @@
-
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -158,7 +156,7 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(
     }, []);
 
     const totalDuration = calculateDuration(day.startTime, day.endTime);
-    const topGridClass = isPublicView ? "flex flex-col gap-4" : "grid grid-cols-1 md:grid-cols-3 gap-6";
+    const topGridClass = "grid grid-cols-1 md:grid-cols-3 gap-6";
 
     return (
         <CardContent className="flex-grow flex flex-col justify-between space-y-6">

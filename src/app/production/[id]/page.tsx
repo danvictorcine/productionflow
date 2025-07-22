@@ -9,6 +9,8 @@ import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { createPortal } from 'react-dom';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 
 import type { Production, ShootingDay, WeatherInfo, ChecklistItem } from '@/lib/types';
@@ -381,76 +383,61 @@ function ProductionPageDetail() {
     }
   };
   
-  useEffect(() => {
-    if (!pdfDayToExport || !printRootRef.current) return;
+  const handleExportDayToPdf = useCallback(async (dayToExport: ProcessedShootingDay) => {
+    if (!printRootRef.current) return;
+  
+    setIsExporting(true);
+    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
+  
+    setPdfDayToExport(dayToExport);
+  
+    // Use a timeout to allow the portal to render before capturing
+    setTimeout(async () => {
+      const elementToCapture = document.getElementById('pdf-export-content');
+      if (!elementToCapture) {
+        toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
+        setIsExporting(false);
+        setPdfDayToExport(null);
+        return;
+      }
+  
+      try {
+        const canvas = await html2canvas(elementToCapture, {
+          useCORS: true,
+          scale: 2,
+          logging: false,
+          backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+        });
+        const imgData = canvas.toDataURL('image/png');
+        
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const ratio = canvasWidth / canvasHeight;
 
-    const exportToPdf = async () => {
-        const { default: jsPDF } = await import('jspdf');
-        const { default: html2canvas } = await import('html2canvas');
+        const pdfWidth = 210; // A4 width in mm
+        const pdfHeight = pdfWidth / ratio;
 
-        setIsExporting(true);
-        toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: [pdfWidth, pdfHeight],
+        });
 
-        const elementToCapture = document.getElementById('pdf-export-content');
-        if (!elementToCapture) {
-            toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
-            setIsExporting(false);
-            setPdfDayToExport(null);
-            return;
-        }
-
-        try {
-            const canvas = await html2canvas(elementToCapture, {
-                useCORS: true,
-                scale: 2,
-                logging: false,
-                backgroundColor: window.getComputedStyle(document.body).backgroundColor,
-            });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'p',
-                unit: 'mm',
-                format: 'a4',
-            });
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            const ratio = pdfWidth / canvasWidth;
-            const pdfHeight = canvasHeight * ratio;
-
-            let position = 0;
-            let heightLeft = pdfHeight;
-            const pageHeight = pdf.internal.pageSize.getHeight();
-
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            heightLeft -= pageHeight;
-
-            while (heightLeft > 0) {
-                position -= pageHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-                heightLeft -= pageHeight;
-            }
-
-            const dateStr = format(pdfDayToExport.date, "dd_MM_yyyy");
-            pdf.save(`Ordem_do_Dia_${production?.name.replace(/ /g, "_")}_${dateStr}.pdf`);
-            toast({ title: "Exportação para PDF Concluída!" });
-
-        } catch (error) {
-            console.error("Error generating PDF for single day", error);
-            toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPdf)', description: 'Não foi possível gerar o PDF.' });
-        } finally {
-            setIsExporting(false);
-            setPdfDayToExport(null);
-        }
-    };
-    
-    // Use a short timeout to allow the portal to render before capturing
-    const timer = setTimeout(exportToPdf, 100);
-    return () => clearTimeout(timer);
-
-  }, [pdfDayToExport, production?.name, toast]);
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+  
+        const dateStr = format(dayToExport.date, "dd_MM_yyyy");
+        pdf.save(`Ordem_do_Dia_${production?.name.replace(/ /g, "_")}_${dateStr}.pdf`);
+        toast({ title: "Exportação para PDF Concluída!" });
+  
+      } catch (error) {
+        console.error("Error generating PDF for single day", error);
+        toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPdf)', description: 'Não foi possível gerar o PDF.' });
+      } finally {
+        setIsExporting(false);
+        setPdfDayToExport(null); // Clean up the portal content
+      }
+    }, 500); // A longer timeout to be safer
+  }, [production?.name, toast]);
 
   const handleUpdateNotes = async (
     dayId: string,
@@ -634,7 +621,7 @@ function ProductionPageDetail() {
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
-                    onExportPdf={() => setPdfDayToExport(day)}
+                    onExportPdf={() => handleExportDayToPdf(day)}
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting}
                   />
@@ -683,7 +670,7 @@ function ProductionPageDetail() {
         id="pdf-export-root" 
         className="fixed top-0 left-0 w-[1200px] -z-50 opacity-0 pointer-events-none"
       >
-        {pdfDayToExport && createPortal(
+        {pdfDayToExport && printRootRef.current && createPortal(
             <div id="pdf-export-content" className="p-8 bg-background">
                 <ShootingDayCard 
                     day={pdfDayToExport}
@@ -692,7 +679,7 @@ function ProductionPageDetail() {
                     isPublicView={true}
                 />
             </div>,
-            printRootRef.current!
+            printRootRef.current
         )}
       </div>
 
