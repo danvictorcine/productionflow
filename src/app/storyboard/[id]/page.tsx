@@ -363,21 +363,24 @@ function StoryboardPageDetail() {
     return (
         <DndProvider backend={dndBackend}>
             <div className="flex flex-col min-h-screen w-full bg-muted/40">
-                <header className="sticky top-0 z-40 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
+                <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
                     <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
                         <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
                     </Link>
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-full bg-primary/10">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="p-3 rounded-full bg-primary/10 flex-shrink-0">
                             <ImageIcon className="h-5 w-5 text-primary" />
                         </div>
-                        <h1 className="text-xl font-bold text-primary truncate">{storyboard.name}</h1>
+                        <h1 className="text-lg md:text-xl font-bold text-primary truncate">{storyboard.name}</h1>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
-                        <Button onClick={() => setIsEditDialogOpen(true)} variant="outline"><Edit className="mr-2 h-4 w-4" />Editar Detalhes</Button>
-                        <Button onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
-                            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                            Adicionar Quadro
+                        <Button onClick={() => setIsEditDialogOpen(true)} variant="outline" size="sm" className="md:size-auto">
+                          <Edit className="h-4 w-4 md:mr-2" />
+                          <span className="hidden md:inline">Editar Detalhes</span>
+                        </Button>
+                        <Button onClick={() => imageUploadRef.current?.click()} disabled={isUploading} size="sm" className="md:size-auto">
+                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <PlusCircle className="h-4 w-4 md:mr-2" />}
+                            <span className="hidden md:inline">Adicionar</span>
                         </Button>
                         <input
                             ref={imageUploadRef}

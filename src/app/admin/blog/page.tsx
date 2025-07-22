@@ -139,17 +139,18 @@ export default function ManageBlogPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
+            <header className="sticky top-0 z-10 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
                 <Link href="/admin" className="flex items-center gap-2" aria-label="Voltar para o Painel">
                     <Button variant="outline" size="icon" className="h-8 w-8">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 </Link>
-                <h1 className="text-xl font-bold">Gerenciar Blog</h1>
-                <div className="ml-auto flex items-center gap-4">
-                    <Button asChild>
+                <h1 className="text-lg md:text-xl font-bold truncate">Gerenciar Blog</h1>
+                <div className="ml-auto flex items-center gap-2">
+                    <Button asChild size="sm" className="md:size-auto">
                          <Link href="/admin/blog/edit/new">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Criar Publicação
+                            <PlusCircle className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Criar Publicação</span>
                         </Link>
                     </Button>
                     <UserNav />

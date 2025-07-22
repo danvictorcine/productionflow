@@ -454,7 +454,7 @@ function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
-      <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
+      <header className="sticky top-0 z-10 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
         <div className="flex items-center gap-2">
           <svg
             width="32"
@@ -471,7 +471,7 @@ function HomePage() {
             />
           </svg>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>
+            <h1 className="text-lg md:text-2xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>
               ProductionFlow
             </h1>
             <Badge variant="outline" className="text-xs font-normal">
@@ -479,10 +479,10 @@ function HomePage() {
             </Badge>
           </div>
         </div>
-        <div className="ml-auto flex items-center gap-4">
-          <Button onClick={() => setIsTypeDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Criar Novo Projeto
+        <div className="ml-auto flex items-center gap-2">
+          <Button onClick={() => setIsTypeDialogOpen(true)} size="sm" className="md:size-auto">
+            <PlusCircle className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Criar Novo</span>
           </Button>
           <UserNav />
         </div>

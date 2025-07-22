@@ -285,16 +285,16 @@ function SettingsPageDetail() {
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
-       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold md:text-base">
+       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold" aria-label="Voltar para Projetos">
             <Button variant="outline" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
                 <span className="sr-only">Voltar para Projetos</span>
             </Button>
         </Link>
-        <h1 className="text-xl font-bold">Configurações da Conta</h1>
-        <div className="ml-auto flex items-center gap-4">
-          <div className="flex items-center gap-2">
+        <h1 className="text-lg md:text-xl font-bold">Configurações da Conta</h1>
+        <div className="ml-auto flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
                   <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))"/>
                   <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
