@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -95,9 +96,12 @@ export default function TransactionsTable({
                       )}
                       <div>
                         <div className="font-medium">{t.description}</div>
-                        {t.category && (
-                          <Badge variant="outline" className="mt-1 font-normal">{t.category}</Badge>
-                        )}
+                        <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2">
+                            {t.category && (
+                              <Badge variant="outline" className="font-normal">{t.category}</Badge>
+                            )}
+                            <span className="md:hidden">{format(t.date, "d MMM, yy", { locale: ptBR })}</span>
+                        </div>
                       </div>
                     </div>
                   </TableCell>

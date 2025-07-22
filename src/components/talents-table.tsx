@@ -71,7 +71,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead className="hidden md:table-cell">Função</TableHead>
-                <TableHead className="text-right">Cachê</TableHead>
+                <TableHead className="text-right hidden md:table-cell">Cachê</TableHead>
                 <TableHead className="text-center w-[150px]">Status</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
@@ -87,9 +87,15 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                       <TableCell className="font-medium">
                         <p>{talent.name}</p>
                         <p className="text-xs text-muted-foreground md:hidden">{talent.role}</p>
+                         <p className="font-mono text-xs text-muted-foreground md:hidden mt-1">
+                            {isFixedFee
+                              ? formatCurrency(talent.fee || 0)
+                              : `${formatCurrency(talent.dailyRate || 0)}/diária`
+                            }
+                        </p>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{talent.role}</TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono hidden md:table-cell">
                         {isFixedFee
                           ? formatCurrency(talent.fee || 0)
                           : `${formatCurrency(talent.dailyRate || 0)} x ${talent.days} diárias = ${formatCurrency((talent.dailyRate || 0) * (talent.days || 0))}`

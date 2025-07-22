@@ -37,7 +37,7 @@ export default function SummaryCards({
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
+          <div className="text-xl md:text-2xl font-bold">
             {formatCurrency(budget)}
           </div>
           <p className="text-xs text-muted-foreground">Valor total para a produção.</p>
@@ -51,7 +51,7 @@ export default function SummaryCards({
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl md:text-2xl font-bold">
               {formatCurrency(totalInstallments || 0)}
             </div>
             <p className="text-xs text-muted-foreground">Soma das parcelas recebidas.</p>
@@ -64,7 +64,7 @@ export default function SummaryCards({
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl md:text-2xl font-bold">
               {formatCurrency(talentFees)}
             </div>
             <p className="text-xs text-muted-foreground">Custo total com talentos.</p>
@@ -75,11 +75,11 @@ export default function SummaryCards({
       {productionCosts > 0 && (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor de Produção (Planejado)</CardTitle>
+            <CardTitle className="text-sm font-medium">Valor de Produção</CardTitle>
             <Wrench className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl md:text-2xl font-bold">
                 {formatCurrency(productionCosts)}
             </div>
             <p className="text-xs text-muted-foreground">Valor geral da produção.</p>
@@ -92,7 +92,7 @@ export default function SummaryCards({
           <CreditCard className="h-4 w-4 text-red-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
+          <div className="text-xl md:text-2xl font-bold">
             {formatCurrency(paidExpenses)}
           </div>
            <p className="text-xs text-muted-foreground">Total de gastos até o momento.</p>
@@ -104,7 +104,7 @@ export default function SummaryCards({
           <Wallet className="h-4 w-4 text-primary-foreground/80" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
+          <div className="text-xl md:text-2xl font-bold">{formatCurrency(balance)}</div>
            <p className="text-xs text-primary-foreground/80">{isBudgetParcelado ? 'Saldo com base no valor em conta.' : 'Seu orçamento disponível.'}</p>
         </CardContent>
       </Card>
