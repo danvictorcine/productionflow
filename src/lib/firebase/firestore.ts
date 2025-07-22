@@ -1067,7 +1067,7 @@ const getPublicShareData = async (publicId: string): Promise<PublicShare | null>
     return shareSnap.data() as PublicShare;
 };
 
-export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
+export const getPublicShootingDay = async (publicId: string): Promise<{day: ShootingDay, creator: UserProfile | null} | null> => {
     const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'day') return null;
 
@@ -1077,14 +1077,18 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
     if (!daySnap.exists() || !daySnap.data().isPublic) return null;
 
     const dayData = daySnap.data();
-    return {
+    const day = {
         id: daySnap.id,
         ...dayData,
         date: (dayData.date as Timestamp).toDate(),
     } as ShootingDay;
+    
+    const creator = await getUserProfile(day.userId);
+
+    return { day, creator };
 };
 
-export const getPublicStoryboard = async (publicId: string): Promise<{storyboard: Storyboard, panels: StoryboardPanel[]} | null> => {
+export const getPublicStoryboard = async (publicId: string): Promise<{storyboard: Storyboard, panels: StoryboardPanel[], creator: UserProfile | null} | null> => {
     const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'storyboard') return null;
 
@@ -1093,7 +1097,7 @@ export const getPublicStoryboard = async (publicId: string): Promise<{storyboard
     
     if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
 
-    const storyboardData = {
+    const storyboard = {
         id: storyboardSnap.id,
         ...storyboardSnap.data(),
         createdAt: storyboardSnap.data().createdAt ? (storyboardSnap.data().createdAt as Timestamp).toDate() : new Date(0),
@@ -1107,10 +1111,9 @@ export const getPublicStoryboard = async (publicId: string): Promise<{storyboard
         createdAt: (doc.data().createdAt as Timestamp).toDate(),
     } as StoryboardPanel));
     
-    return {
-        storyboard: storyboardData,
-        panels: panels,
-    };
+    const creator = await getUserProfile(storyboard.userId);
+
+    return { storyboard, panels, creator };
 };
 
 export const setShareState = async (itemType: 'day' | 'storyboard', originalId: string, publicId: string, isPublic: boolean) => {
@@ -1134,8 +1137,6 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
         batch.update(originalDocRef, { 
             isPublic: true, 
             publicId: publicId,
-            creatorName: user.displayName || "Usuário Anônimo",
-            creatorPhotoURL: user.photoURL || ""
         });
     } else {
         const docSnap = await getDoc(originalDocRef);
@@ -1147,8 +1148,6 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
         batch.update(originalDocRef, { 
             isPublic: false, 
             publicId: deleteField(),
-            creatorName: deleteField(),
-            creatorPhotoURL: deleteField()
         });
     }
     
