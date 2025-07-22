@@ -1069,7 +1069,7 @@ const getPublicShareData = async (publicId: string): Promise<PublicShare | null>
 
 export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
     const shareInfo = await getPublicShareData(publicId);
-    if (!shareInfo || shareInfo.type !== 'day') return null;
+    if (!shareInfo) return null;
 
     const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
     const daySnap = await getDoc(dayRef);
@@ -1086,7 +1086,7 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
 
 export const getPublicStoryboard = async (publicId: string): Promise<Storyboard | null> => {
     const shareInfo = await getPublicShareData(publicId);
-    if (!shareInfo || shareInfo.type !== 'storyboard') return null;
+    if (!shareInfo) return null;
 
     const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
     const storyboardSnap = await getDoc(storyboardRef);
@@ -1114,7 +1114,7 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             id: publicId,
             originalId,
             type: itemType,
-            userId: user.uid, // Add this line
+            userId: user.uid,
         };
         batch.set(publicShareRef, shareData);
         batch.update(originalDocRef, { 
