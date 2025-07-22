@@ -85,7 +85,7 @@ export default function TransactionsTable({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
-                              <CheckCircle className="h-5 w-5 text-accent" />
+                              <CheckCircle className="h-5 w-5 text-green-600" />
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>Pago</p>
@@ -118,7 +118,7 @@ export default function TransactionsTable({
                             <Button
                                 size="sm"
                                 variant="outline"
-                                className="absolute inset-0 w-full h-full border-accent bg-accent/10 text-accent transition-opacity group-hover:opacity-0 pointer-events-none rounded-md"
+                                className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none rounded-md"
                                 aria-hidden="true"
                                 tabIndex={-1}
                             >

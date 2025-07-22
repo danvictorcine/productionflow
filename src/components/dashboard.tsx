@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, FileText, Upload, ClipboardList, DollarSign } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, FileText, Upload, ClipboardList, DollarSign, CheckCircle } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
