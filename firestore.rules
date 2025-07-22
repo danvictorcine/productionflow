@@ -35,7 +35,8 @@ service cloud.firestore {
     match /shooting_days/{dayId} {
        allow get: if isOwner(resource.data.userId) || resource.data.isPublic == true;
        allow list: if request.auth.uid == request.query.filters.productionId[0][2];
-       allow create, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
+       allow update, delete: if isOwner(resource.data.userId);
     }
     
     match /creative_projects/{creativeProjectId} {
@@ -53,19 +54,22 @@ service cloud.firestore {
     match /storyboards/{storyboardId} {
         allow get: if isOwner(resource.data.userId) || resource.data.isPublic == true;
         allow list: if request.auth.uid == request.query.filters.userId[0][2];
-        allow create, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+        allow update, delete: if isOwner(resource.data.userId);
     }
 
     match /storyboard_panels/{panelId} {
         allow get: if isOwner(resource.data.userId) || get(/databases/$(database)/documents/storyboards/$(resource.data.storyboardId)).data.isPublic == true;
-        allow list: if isOwner(get(/databases/$(database)/documents/storyboards/$(request.query.filters.storyboardId[0][2])).data.userId);
-        allow create, update, delete: if isOwner(resource.data.userId);
+        allow list: if get(/databases/$(database)/documents/storyboards/$(request.query.filters.storyboardId[0][2])).data.userId == request.auth.uid;
+        allow create: if isOwner(request.resource.data.userId);
+        allow update, delete: if isOwner(resource.data.userId);
     }
     
     // --- Public Shares Collection ---
     match /public_shares/{shareId} {
         allow get: if true;
-        allow create, delete: if isOwner(request.resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+        allow delete: if isOwner(resource.data.userId);
     }
 
     // --- Other Collections (Team, Content, etc.) ---
