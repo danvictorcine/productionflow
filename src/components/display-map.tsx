@@ -31,8 +31,7 @@ export function DisplayMap({ position, className, isExporting = false }: Display
       className={className}
       dragging={!isExporting} // Disable dragging when exporting
       zoomControl={!isExporting}
-      touchZoom={!isExporting}
-      attributionControl={isExporting} // Explicitly keep attribution for export
+      attributionControl={true} // Ensure attribution is always on
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
