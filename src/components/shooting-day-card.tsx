@@ -158,10 +158,11 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(
     }, []);
 
     const totalDuration = calculateDuration(day.startTime, day.endTime);
+    const topGridClass = isPublicView ? "flex flex-col gap-4" : "grid grid-cols-1 md:grid-cols-3 gap-6";
 
     return (
         <CardContent className="flex-grow flex flex-col justify-between space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className={topGridClass}>
                 <div className="h-[180px]">
                     {isFetchingWeather ? (
                         <Skeleton className="h-full w-full" />
@@ -360,8 +361,8 @@ export const ShootingDayCard = ({ day, isFetchingWeather, onEdit, onDelete, onEx
 
     // For PDF/public view, render without Accordion, fully expanded.
     return (
-        <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full border-none shadow-none">
-            <CardHeader className="p-0 pb-6">
+        <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full border-none shadow-none bg-background text-foreground">
+             <CardHeader className="p-0 pb-6">
                 <div className="flex items-center gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                         <Calendar className="h-6 w-6" />
