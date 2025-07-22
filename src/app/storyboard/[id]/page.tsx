@@ -438,7 +438,7 @@ function StoryboardPageDetail() {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
-                                <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <ImageIcon className="mx-auto h-12 w-12 text-primary" />
                                 <h3 className="mt-4 text-lg font-semibold">Storyboard Vazio</h3>
                                 <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro quadro ao seu storyboard.</p>
                                 <Button className="mt-6" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
