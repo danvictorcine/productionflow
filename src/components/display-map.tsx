@@ -21,28 +21,26 @@ export function DisplayMap({ position, className, isExporting = false }: Display
   
   const [lat, lng] = Array.isArray(position) ? position : [position.lat, position.lng];
   const zoom = 14;
-  const width = 400;
-  const height = 180;
 
-  // Use a static map image for PDF export to ensure it's captured
   if (isExporting) {
-    // Note: This is a basic implementation and might not perfectly center the pin.
-    // More advanced static map APIs might be needed for perfect centering.
-    const staticMapUrl = `https://a.tile.openstreetmap.org/${zoom}/${Math.floor(
-      (lng + 180) / 360 * Math.pow(2, zoom)
-    )}/${Math.floor(
-      (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)
-    )}.png`;
+    const lonToX = (lon: number, z: number) => Math.floor((lon + 180) / 360 * Math.pow(2, z));
+    const latToY = (lat: number, z: number) => Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+    const x = lonToX(lng, zoom);
+    const y = latToY(lat, zoom);
+    const staticMapUrl = `https://a.tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
 
     return (
-       <div className={className}>
-         <Image 
-            src={staticMapUrl}
-            alt="Mapa estático da localização"
-            width={width}
-            height={height}
-            className="w-full h-full object-cover"
-         />
+       <div 
+        className={className} 
+        style={{ 
+          backgroundImage: `url(${staticMapUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          height: '100%',
+          width: '100%'
+        }}
+       >
+         {/* Children can be added here if needed, like a marker overlay */}
        </div>
     );
   }

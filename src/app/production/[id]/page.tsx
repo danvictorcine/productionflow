@@ -485,6 +485,19 @@ function ProductionPageDetail() {
     return null; // or a not-found component
   }
 
+  const ProductionInfoCard = ({ production }: { production: Production }) => (
+     <div className="mb-6 p-4 border rounded-lg bg-card">
+        <h2 className="text-2xl font-bold tracking-tight">{production.name}</h2>
+        <p className="text-muted-foreground">{production.type}</p>
+        <div className="text-base mt-2 space-y-1">
+            <p><span className="font-semibold">Diretor(a):</span> {production.director}</p>
+            {production.responsibleProducer && <p><span className="font-semibold">Produtor(a) Responsável:</span> {production.responsibleProducer}</p>}
+            {production.producer && <p><span className="font-semibold">Produtora:</span> {production.producer}</p>}
+            {production.client && <p><span className="font-semibold">Cliente:</span> {production.client}</p>}
+        </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
@@ -526,16 +539,7 @@ function ProductionPageDetail() {
       </header>
 
       <main ref={mainRef} className="flex-1 p-4 sm:p-6 md:p-8">
-        <div className="mb-6 p-4 border rounded-lg bg-card">
-          <h2 className="text-2xl font-bold tracking-tight">{production.name}</h2>
-          <p className="text-muted-foreground">{production.type}</p>
-          <div className="text-base mt-2 space-y-1">
-            <p><span className="font-semibold">Diretor(a):</span> {production.director}</p>
-            {production.responsibleProducer && <p><span className="font-semibold">Produtor(a) Responsável:</span> {production.responsibleProducer}</p>}
-            {production.producer && <p><span className="font-semibold">Produtora:</span> {production.producer}</p>}
-            {production.client && <p><span className="font-semibold">Cliente:</span> {production.client}</p>}
-          </div>
-        </div>
+        <ProductionInfoCard production={production} />
 
         <Accordion 
           type="multiple" 
@@ -668,6 +672,7 @@ function ProductionPageDetail() {
       >
         {pdfDayToExport && printRootRef.current && createPortal(
             <div id="pdf-export-content" className="p-8 bg-background">
+                <ProductionInfoCard production={production} />
                 <ShootingDayCard 
                     day={pdfDayToExport}
                     isFetchingWeather={false}
