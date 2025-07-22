@@ -53,6 +53,20 @@ type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props'
     generalNotes: ChecklistItem[];
 };
 
+const PdfExportFooter = () => (
+    <div className="mt-8 flex items-center justify-end gap-2 text-sm text-muted-foreground">
+        <span>Criado com</span>
+        <div className="flex items-center gap-1.5">
+            <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))"/>
+                <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
+            </svg>
+            <p className="font-semibold" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</p>
+        </div>
+    </div>
+);
+
+
 function ProductionPageDetail() {
   const router = useRouter();
   const params = useParams();
@@ -391,6 +405,7 @@ function ProductionPageDetail() {
   
     setPdfDayToExport(dayToExport);
   
+    // Use a small timeout to allow React to render the portal content
     setTimeout(async () => {
       const elementToCapture = document.getElementById('pdf-export-content');
       if (!elementToCapture) {
@@ -408,21 +423,17 @@ function ProductionPageDetail() {
           backgroundColor: window.getComputedStyle(document.body).backgroundColor,
         });
         
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
         const A4_WIDTH_MM = 210;
-        const A4_HEIGHT_MM = 297;
-        const ratio = canvasWidth / canvasHeight;
-
-        // Calculate PDF page dimensions to fit content
-        const pdfWidth = A4_WIDTH_MM;
-        const pdfHeight = pdfWidth / ratio;
+        const pageHeight = (canvas.height * (A4_WIDTH_MM - 20)) / canvas.width; // A4 width with margins
         
         const pdf = new jsPDF({
-            orientation: pdfHeight > pdfWidth ? 'p' : 'l',
+            orientation: 'p',
             unit: 'mm',
-            format: [pdfWidth, pdfHeight],
+            format: [A4_WIDTH_MM, pageHeight + 20], // page height based on content + margin
         });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
   
@@ -437,7 +448,7 @@ function ProductionPageDetail() {
         setIsExporting(false);
         setPdfDayToExport(null);
       }
-    }, 500);
+    }, 500); // 500ms delay to ensure render
   }, [production?.name, toast]);
 
   const handleUpdateNotes = async (
@@ -684,6 +695,7 @@ function ProductionPageDetail() {
                     isExporting={true}
                     isPublicView={true}
                 />
+                <PdfExportFooter />
             </div>,
             printRootRef.current
         )}
