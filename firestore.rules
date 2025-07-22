@@ -30,9 +30,10 @@ service cloud.firestore {
     }
     
     match /shooting_days/{dayId} {
+       // Corrected rule: Checks ownership on the document being created or modified.
        allow create: if isOwner(request.resource.data.userId);
-       allow read: if isOwner(resource.data.userId) || resource.data.isPublic == true;
-       allow update, delete: if isOwner(resource.data.userId);
+       // Corrected rule: For read, update, delete, check ownership on the existing document.
+       allow read, update, delete: if isOwner(resource.data.userId) || (resource.data.isPublic == true && request.method == 'get');
     }
     
     match /creative_projects/{creativeProjectId} {
@@ -46,16 +47,19 @@ service cloud.firestore {
     }
     
     match /storyboards/{storyboardId} {
+        // Corrected rule: Separated create and other write operations for clarity and security.
         allow create: if isOwner(request.resource.data.userId);
-        allow read: if isOwner(resource.data.userId) || resource.data.isPublic == true;
+        // Corrected rule: Update and delete require ownership.
         allow update, delete: if isOwner(resource.data.userId);
+        // Corrected rule: Read is allowed for owner or if public.
+        allow read: if isOwner(resource.data.userId) || (resource.data.isPublic == true && request.method == 'get');
     }
 
     match /storyboard_panels/{panelId} {
-        // Owner can do everything.
+        // Corrected rule: Check ownership on create and write.
         allow create: if isOwner(request.resource.data.userId);
         allow update, delete: if isOwner(resource.data.userId);
-        // Allow read for owner, OR if the parent storyboard is public.
+        // Corrected rule: Read is allowed for owner or if parent is public.
         allow read: if isOwner(resource.data.userId) || get(/databases/$(database)/documents/storyboards/$(resource.data.storyboardId)).data.isPublic == true;
     }
     
@@ -63,7 +67,7 @@ service cloud.firestore {
     match /public_shares/{shareId} {
         // Anyone can read from this collection
         allow get: if true;
-        // Only authenticated users can create/delete their own shares
+        // Only authenticated users can create/delete their own shares, checks userId in the document
         allow create, delete: if isOwner(request.resource.data.userId);
     }
 
