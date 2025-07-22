@@ -2,43 +2,45 @@
 import { notFound } from 'next/navigation';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { ShootingDayCard } from '@/components/shooting-day-card';
+import { AppFooter } from '@/components/app-footer';
 import { Accordion } from '@/components/ui/accordion';
 import { PublicPageHeader } from '@/components/public-page-header';
 
-type Props = {
-  params: { publicId: string }
+interface PublicDayPageProps {
+  params: {
+    publicId: string;
+  };
 }
 
-// Revalidate this page every 60 seconds
-export const revalidate = 60;
+export default async function PublicDayPage({ params }: PublicDayPageProps) {
+  const day = await firestoreApi.getPublicShootingDay(params.publicId);
 
-export default async function PublicShootingDayPage({ params }: Props) {
-  const { publicId } = params;
-  if (!publicId) {
-    notFound();
+  if (!day) {
+    return notFound();
   }
-  
-  const data = await firestoreApi.getPublicShootingDay(publicId);
-  
-  if (!data) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
-        <h1 className="text-2xl font-bold">Erro de Acesso</h1>
-        <p className="mt-2 text-muted-foreground">Ocorreu um erro ao carregar os dados. Verifique o link e tente novamente.</p>
-      </div>
-    );
+
+  // Create a mock creator profile from the data stored on the day document
+  const creatorProfile = {
+      uid: day.userId,
+      name: day.creatorName || 'Criador Anônimo',
+      email: '', // Not needed for public view
+      photoURL: day.creatorPhotoURL || '',
   }
-  
-  const { day, creator } = data;
-  
+
   return (
-    <div className="min-h-screen bg-muted/40">
-        <PublicPageHeader creator={creator}/>
-        <main className="p-4 sm:p-6 md:p-8">
-             <Accordion type="single" collapsible defaultValue={day.id} className="w-full">
-                <ShootingDayCard day={day} isFetchingWeather={false} isExporting={false} isPublicView={true} />
+    <div className="flex flex-col min-h-screen bg-muted/40">
+        <PublicPageHeader creator={creatorProfile} />
+        <main className="flex-1 p-4 sm:p-6 md:p-8">
+            <Accordion type="single" collapsible defaultValue={day.id} className="w-full">
+                <ShootingDayCard
+                    day={day}
+                    isFetchingWeather={false}
+                    isExporting={false}
+                    isPublicView={true}
+                />
             </Accordion>
         </main>
+        <AppFooter />
     </div>
   );
 }

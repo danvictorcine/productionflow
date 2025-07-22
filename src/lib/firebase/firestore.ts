@@ -17,7 +17,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, TeamMember, Scene, PublicShare, PublicStoryboardData, PublicShootingDayData } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, TeamMember, Scene, PublicShare } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID, returns null if not authenticated for public views
@@ -1061,34 +1061,30 @@ export const deleteThemeSettings = async () => {
 const getPublicShareData = async (publicId: string): Promise<PublicShare | null> => {
     const shareRef = doc(db, 'public_shares', publicId);
     const shareSnap = await getDoc(shareRef);
-    if (!shareSnap.exists()) {
+    if (!shareSnap.exists() || !shareSnap.data().isPublic) {
         return null;
     }
     return shareSnap.data() as PublicShare;
 };
 
-export const getPublicShootingDay = async (publicId: string): Promise<PublicShootingDayData | null> => {
+export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
     const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'day') return null;
 
     const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
     const daySnap = await getDoc(dayRef);
+    
     if (!daySnap.exists() || !daySnap.data().isPublic) return null;
 
     const dayData = daySnap.data();
-    const creator = await getUserProfile(dayData.userId);
-
     return {
-        day: {
-            id: daySnap.id,
-            ...dayData,
-            date: (dayData.date as Timestamp).toDate(),
-        } as ShootingDay,
-        creator,
-    };
+        id: daySnap.id,
+        ...dayData,
+        date: (dayData.date as Timestamp).toDate(),
+    } as ShootingDay;
 };
 
-export const getPublicStoryboard = async (publicId: string): Promise<PublicStoryboardData | null> => {
+export const getPublicStoryboard = async (publicId: string): Promise<{storyboard: Storyboard, panels: StoryboardPanel[]} | null> => {
     const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'storyboard') return null;
 
@@ -1097,8 +1093,11 @@ export const getPublicStoryboard = async (publicId: string): Promise<PublicStory
     
     if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
 
-    const storyboardData = storyboardSnap.data();
-    const creator = await getUserProfile(storyboardData.userId);
+    const storyboardData = {
+        id: storyboardSnap.id,
+        ...storyboardSnap.data(),
+        createdAt: storyboardSnap.data().createdAt ? (storyboardSnap.data().createdAt as Timestamp).toDate() : new Date(0),
+    } as Storyboard;
 
     const panelsQuery = query(collection(db, 'storyboard_panels'), where('storyboardId', '==', shareInfo.originalId), orderBy('order'));
     const panelsSnapshot = await getDocs(panelsQuery);
@@ -1109,19 +1108,14 @@ export const getPublicStoryboard = async (publicId: string): Promise<PublicStory
     } as StoryboardPanel));
     
     return {
-        storyboard: {
-            id: storyboardSnap.id,
-            ...storyboardData,
-            createdAt: storyboardData.createdAt ? (storyboardData.createdAt as Timestamp).toDate() : new Date(0),
-        } as Storyboard,
-        panels,
-        creator,
+        storyboard: storyboardData,
+        panels: panels,
     };
 };
 
 export const setShareState = async (itemType: 'day' | 'storyboard', originalId: string, publicId: string, isPublic: boolean) => {
-    const userId = getUserId();
-    if (!userId) throw new Error("Usuário não autenticado.");
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
 
     const batch = writeBatch(db);
     const collectionName = itemType === 'day' ? 'shooting_days' : 'storyboards';
@@ -1131,12 +1125,18 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
         const publicShareRef = doc(db, 'public_shares', publicId);
         const shareData: PublicShare = {
             id: publicId,
-            userId,
+            userId: user.uid,
             originalId,
             type: itemType,
+            isPublic: true,
         };
         batch.set(publicShareRef, shareData);
-        batch.update(originalDocRef, { isPublic: true, publicId: publicId });
+        batch.update(originalDocRef, { 
+            isPublic: true, 
+            publicId: publicId,
+            creatorName: user.displayName || "Usuário Anônimo",
+            creatorPhotoURL: user.photoURL || ""
+        });
     } else {
         const docSnap = await getDoc(originalDocRef);
         const currentPublicId = docSnap.data()?.publicId;
@@ -1144,7 +1144,12 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             const publicShareRef = doc(db, 'public_shares', currentPublicId);
             batch.delete(publicShareRef);
         }
-        batch.update(originalDocRef, { isPublic: false, publicId: deleteField() });
+        batch.update(originalDocRef, { 
+            isPublic: false, 
+            publicId: deleteField(),
+            creatorName: deleteField(),
+            creatorPhotoURL: deleteField()
+        });
     }
     
     await batch.commit();

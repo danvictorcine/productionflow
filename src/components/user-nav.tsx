@@ -10,11 +10,37 @@ import { useRouter } from 'next/navigation';
 import { LogOut, Settings, User as UserIcon, Sun, Moon, Laptop, Shield } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { getInitials } from '@/lib/utils';
+import { useEffect } from 'react';
+import * as firestoreApi from '@/lib/firebase/firestore';
 
 export function UserNav() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    // Sync Auth profile to Firestore if they differ
+    const syncProfile = async () => {
+      if (user && auth.currentUser) {
+        const authUser = auth.currentUser;
+        const profileNeedsUpdate: Partial<Parameters<typeof firestoreApi.updateUserProfile>[1]> = {};
+
+        if (user.name !== authUser.displayName) {
+            profileNeedsUpdate.name = authUser.displayName || user.name;
+        }
+        if (user.photoURL !== authUser.photoURL) {
+            profileNeedsUpdate.photoURL = authUser.photoURL || user.photoURL;
+        }
+
+        if (Object.keys(profileNeedsUpdate).length > 0) {
+            await firestoreApi.updateUserProfile(user.uid, profileNeedsUpdate);
+            await refreshUser();
+        }
+      }
+    };
+    syncProfile();
+  }, [user, refreshUser]);
+
 
   const handleLogout = async () => {
     await signOut(auth);

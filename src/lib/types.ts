@@ -182,6 +182,8 @@ export type ShootingDay = {
   callTimes: CallTime[];
   isPublic?: boolean;
   publicId?: string;
+  creatorName?: string;
+  creatorPhotoURL?: string;
   dayNumber?: number;
   totalDays?: number;
   startTime?: string; // e.g., "08:00"
@@ -230,6 +232,8 @@ export type Storyboard = {
   aspectRatio: '16:9' | '4:3';
   isPublic?: boolean;
   publicId?: string;
+  creatorName?: string;
+  creatorPhotoURL?: string;
   createdAt: Date;
 };
 
@@ -248,19 +252,9 @@ export type PublicShare = {
     userId: string;
     originalId: string; // ID of the storyboard or shooting_day
     type: 'storyboard' | 'day';
+    isPublic: boolean;
 };
 
-// === Public Page Data Types ===
-export type PublicStoryboardData = {
-  storyboard: Storyboard;
-  panels: StoryboardPanel[];
-  creator: UserProfile | null;
-}
-
-export type PublicShootingDayData = {
-  day: ShootingDay;
-  creator: UserProfile | null;
-}
 
 // === Theme Settings ===
 export type ThemeSettings = {
