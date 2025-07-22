@@ -22,7 +22,7 @@ service cloud.firestore {
     
     match /transactions/{transactionId} {
       allow get, update, delete: if isOwner(resource.data.userId);
-      allow list: if request.auth.uid == request.query.filters.userId[0][2];
+      allow list: if request.auth.uid == request.query.filters.projectId[0][2];
       allow create: if isOwner(request.resource.data.userId);
     }
     
