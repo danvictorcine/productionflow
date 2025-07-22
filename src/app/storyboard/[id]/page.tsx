@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText, FileDown, Share2 } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText, FileDown } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -36,7 +36,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ShareDialog } from '@/components/share-dialog';
 
 const ItemType = 'PANEL';
 
@@ -158,7 +157,6 @@ function StoryboardPageDetail() {
     const [isUploading, setIsUploading] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [sharingItem, setSharingItem] = useState<Storyboard | null>(null);
     
     const dndBackend = typeof navigator !== 'undefined' && /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
 
@@ -349,13 +347,6 @@ function StoryboardPageDetail() {
         }, 200);
     };
 
-    const handleShareStateChange = async (isPublic: boolean, publicId: string) => {
-        if (!sharingItem) return;
-        await firestoreApi.setShareState('storyboard', sharingItem.id, publicId, isPublic);
-        await fetchStoryboardData();
-    };
-
-
     if (isLoading) {
         return (
             <div className="p-8 space-y-6">
@@ -397,10 +388,6 @@ function StoryboardPageDetail() {
                             onChange={handleImageUpload}
                             disabled={isUploading}
                         />
-                         <Button variant="outline" onClick={() => setSharingItem(storyboard)}>
-                            <Share2 className="mr-2 h-4 w-4" />
-                            Compartilhar
-                        </Button>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="icon" disabled={isExporting} aria-label="Exportar Storyboard">
@@ -471,18 +458,6 @@ function StoryboardPageDetail() {
                     onSubmit={handleStoryboardSubmit} 
                     storyboard={storyboard}
                 />
-                
-                {sharingItem && (
-                  <ShareDialog 
-                    isOpen={!!sharingItem}
-                    setIsOpen={(open) => {
-                        if (!open) setSharingItem(null);
-                    }}
-                    item={sharingItem}
-                    itemType="storyboard"
-                    onStateChange={handleShareStateChange}
-                  />
-                )}
             </div>
         </DndProvider>
     );
@@ -496,4 +471,3 @@ export default function StoryboardPage() {
         </AuthGuard>
     );
 }
-

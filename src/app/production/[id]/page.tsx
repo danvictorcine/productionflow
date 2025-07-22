@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Share2 } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -42,7 +42,6 @@ import { CopyableError } from '@/components/copyable-error';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ShareDialog } from '@/components/share-dialog';
 
 type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
     equipment: ChecklistItem[];
@@ -70,7 +69,6 @@ function ProductionPageDetail() {
   const [isShootingDayDialogOpen, setIsShootingDayDialogOpen] = useState(false);
   const [editingShootingDay, setEditingShootingDay] = useState<ProcessedShootingDay | null>(null);
   const [dayToDelete, setDayToDelete] = useState<ProcessedShootingDay | null>(null);
-  const [sharingDay, setSharingDay] = useState<ProcessedShootingDay | null>(null);
 
   const fetchAndUpdateWeather = useCallback(async (day: ShootingDay) => {
     if (!day.latitude || !day.longitude) return;
@@ -506,12 +504,6 @@ function ProductionPageDetail() {
     setEditingShootingDay(day);
     setIsShootingDayDialogOpen(true);
   };
-
-  const handleShareStateChange = async (isPublic: boolean, publicId: string) => {
-      if (!sharingDay) return;
-      await firestoreApi.setShareState('day', sharingDay.id, publicId, isPublic);
-      await fetchProductionData();
-  };
   
   if (isLoading) {
     return (
@@ -662,7 +654,6 @@ function ProductionPageDetail() {
                     isFetchingWeather={isFetchingWeather[day.id] ?? false}
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
-                    onShare={() => setSharingDay(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
                     onExportPdf={() => handleExportDayToPdf(day.id, day)}
                     onUpdateNotes={handleUpdateNotes}
@@ -706,18 +697,6 @@ function ProductionPageDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-       {sharingDay && (
-        <ShareDialog
-            isOpen={!!sharingDay}
-            setIsOpen={(open) => {
-                if (!open) setSharingDay(null);
-            }}
-            item={sharingDay}
-            itemType="day"
-            onStateChange={handleShareStateChange}
-        />
-      )}
     </div>
   );
 }
@@ -729,4 +708,3 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
-

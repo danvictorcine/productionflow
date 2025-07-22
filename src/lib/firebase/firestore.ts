@@ -18,7 +18,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, PublicShare } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID, returns null if not authenticated for public views
@@ -1056,89 +1056,3 @@ export const deleteThemeSettings = async () => {
     const docRef = doc(db, 'settings', 'theme');
     await deleteDoc(docRef);
 }
-
-// === Public Sharing Functions ===
-
-const getPublicShareData = async (publicId: string): Promise<PublicShare | null> => {
-    const shareRef = doc(db, 'public_shares', publicId);
-    const shareSnap = await getDoc(shareRef);
-    if (!shareSnap.exists()) {
-        return null;
-    }
-    return shareSnap.data() as PublicShare;
-};
-
-export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
-    const shareInfo = await getPublicShareData(publicId);
-    if (!shareInfo || shareInfo.type !== 'day') return null;
-
-    const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
-    const daySnap = await getDoc(dayRef);
-    
-    if (!daySnap.exists() || !daySnap.data().isPublic) return null;
-
-    const dayData = daySnap.data();
-    return {
-        id: daySnap.id,
-        ...dayData,
-        date: (dayData.date as Timestamp).toDate(),
-    } as ShootingDay;
-};
-
-export const getPublicStoryboard = async (publicId: string): Promise<Storyboard | null> => {
-    const shareInfo = await getPublicShareData(publicId);
-    if (!shareInfo || shareInfo.type !== 'storyboard') return null;
-
-    const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
-    const storyboardSnap = await getDoc(storyboardRef);
-    
-    if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
-
-    return {
-        id: storyboardSnap.id,
-        ...storyboardSnap.data(),
-        createdAt: storyboardSnap.data().createdAt ? (storyboardSnap.data().createdAt as Timestamp).toDate() : new Date(0),
-    } as Storyboard;
-};
-
-export const setShareState = async (itemType: 'day' | 'storyboard', originalId: string, publicId: string, isPublic: boolean) => {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Usuário não autenticado.");
-
-    const batch = writeBatch(db);
-    const collectionName = itemType === 'day' ? 'shooting_days' : 'storyboards';
-    const originalDocRef = doc(db, collectionName, originalId);
-    
-    if (isPublic) {
-        // ACTIVATE SHARING
-        const publicShareRef = doc(db, 'public_shares', publicId);
-        const shareData: PublicShare = {
-            id: publicId,
-            originalId,
-            type: itemType,
-            userId: user.uid,
-        };
-        batch.set(publicShareRef, shareData);
-        batch.update(originalDocRef, { 
-            isPublic: true, 
-            publicId: publicId,
-        });
-    } else {
-        // DEACTIVATE SHARING: Read the doc first to get the correct publicId
-        const originalDocSnap = await getDoc(originalDocRef);
-        if (originalDocSnap.exists()) {
-            const currentPublicId = originalDocSnap.data()?.publicId;
-            if (currentPublicId) {
-                const publicShareRef = doc(db, 'public_shares', currentPublicId);
-                batch.delete(publicShareRef);
-            }
-        }
-        
-        batch.update(originalDocRef, { 
-            isPublic: false, 
-            publicId: deleteField(),
-        });
-    }
-    
-    await batch.commit();
-};

@@ -196,8 +196,6 @@ export type ShootingDay = {
   latitude?: number;
   longitude?: number;
   weather?: WeatherInfo;
-  isPublic?: boolean;
-  publicId?: string;
 };
 
 // === Creative Project (Moodboard) Types ===
@@ -229,8 +227,6 @@ export type Storyboard = {
   description?: string;
   aspectRatio: '16:9' | '4:3';
   createdAt: Date;
-  isPublic?: boolean;
-  publicId?: string;
 };
 
 export type StoryboardPanel = {
@@ -242,14 +238,6 @@ export type StoryboardPanel = {
   order: number;
   createdAt: Date;
 };
-
-export type PublicShare = {
-    id: string; // Same as publicId
-    originalId: string; // ID of the storyboard or shooting_day
-    type: 'storyboard' | 'day';
-    userId: string;
-};
-
 
 // === Theme Settings ===
 export type ThemeSettings = {

@@ -1,4 +1,5 @@
 
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -43,7 +44,6 @@ interface ShootingDayCardProps {
   isPublicView?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
-  onShare?: () => void;
   onExportExcel?: () => void;
   onExportPdf?: () => void;
   onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
@@ -151,7 +151,7 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 };
 
 
-export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) {
+export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) {
   const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {
@@ -192,10 +192,6 @@ export function ShootingDayCard({ day, isFetchingWeather, onEdit, onDelete, onSh
                         <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
                             <Edit className="mr-2 h-4 w-4" />
                             Editar Ordem do Dia
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={onShare} disabled={isExporting}>
-                            <Share2 className="mr-2 h-4 w-4" />
-                            Compartilhar
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>

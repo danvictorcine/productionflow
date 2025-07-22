@@ -1,12 +1,10 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
-      // Permite que qualquer pessoa leia os arquivos (necessário para páginas públicas).
       allow read: if true;
-      
-      // Permite que usuários autenticados criem, atualizem e, crucialmente, DELETEM arquivos.
       allow write: if request.auth != null;
     }
   }
