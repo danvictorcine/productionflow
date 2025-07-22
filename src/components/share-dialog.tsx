@@ -1,4 +1,3 @@
-
 // src/components/share-dialog.tsx
 "use client";
 
@@ -37,7 +36,8 @@ export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }
     
     useEffect(() => {
         if (isOpen) {
-            setIsPublic(item.isPublic || false);
+            const initialPublicState = item.isPublic || false;
+            setIsPublic(initialPublicState);
             // If the item is not public, we prepare a new ID in case the user enables it.
             // If it is public, we use the existing ID.
             setPublicId(item.publicId || crypto.randomUUID());

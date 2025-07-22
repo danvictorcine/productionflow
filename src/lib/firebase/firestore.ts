@@ -1124,7 +1124,7 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             publicId: publicId,
         });
     } else {
-        // DEACTIVATE SHARING
+        // DEACTIVATE SHARING: Read the doc first to get the correct publicId
         const originalDocSnap = await getDoc(originalDocRef);
         if (originalDocSnap.exists()) {
             const currentPublicId = originalDocSnap.data()?.publicId;
