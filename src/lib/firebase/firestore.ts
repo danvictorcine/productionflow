@@ -1074,8 +1074,7 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
     const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
     const daySnap = await getDoc(dayRef);
     
-    // The existence of the shareInfo document is our primary check.
-    // The check on the original document is a secondary safeguard.
+    // Check if the original document is actually public.
     if (!daySnap.exists() || !daySnap.data().isPublic) return null;
 
     const dayData = daySnap.data();
@@ -1093,6 +1092,7 @@ export const getPublicStoryboard = async (publicId: string): Promise<{storyboard
     const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
     const storyboardSnap = await getDoc(storyboardRef);
     
+    // Check if the original document is actually public.
     if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
 
     const storyboard = {

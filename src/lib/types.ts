@@ -180,8 +180,6 @@ export type ShootingDay = {
   location: string;
   scenes: Scene[];
   callTimes: CallTime[];
-  isPublic?: boolean;
-  publicId?: string;
   dayNumber?: number;
   totalDays?: number;
   startTime?: string; // e.g., "08:00"
@@ -198,6 +196,8 @@ export type ShootingDay = {
   latitude?: number;
   longitude?: number;
   weather?: WeatherInfo;
+  isPublic?: boolean;
+  publicId?: string;
 };
 
 // === Creative Project (Moodboard) Types ===
@@ -228,9 +228,9 @@ export type Storyboard = {
   name: string;
   description?: string;
   aspectRatio: '16:9' | '4:3';
+  createdAt: Date;
   isPublic?: boolean;
   publicId?: string;
-  createdAt: Date;
 };
 
 export type StoryboardPanel = {
