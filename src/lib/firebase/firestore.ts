@@ -1122,7 +1122,6 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
         batch.update(originalDocRef, { 
             isPublic: true, 
             publicId: publicId,
-            userId: user.uid, // Ensure owner is set
         });
     } else {
         // DEACTIVATE SHARING
