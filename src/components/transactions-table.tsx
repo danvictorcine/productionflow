@@ -40,6 +40,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ScrollArea, ScrollBar } from './ui/scroll-area';
 
 interface TransactionsTableProps {
   transactions: Transaction[];
@@ -65,7 +66,7 @@ export default function TransactionsTable({
 
   return (
     <>
-      <div className="relative w-full overflow-auto">
+      <ScrollArea className="w-full whitespace-nowrap">
         <Table>
           <TableHeader>
             <TableRow>
@@ -136,8 +137,7 @@ export default function TransactionsTable({
                                 onClick={() => onUndo(t.id)}
                                 aria-label={`Desfazer pagamento de ${t.description}`}
                             >
-                                <Undo2 className="mr-2 h-4 w-4" />
-                                Desfazer
+                                <Undo2 className="mr-2 h-4 w-4" /> Desfazer
                             </Button>
                         </div>
                       )}
@@ -190,7 +190,8 @@ export default function TransactionsTable({
             )}
           </TableBody>
         </Table>
-      </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -31,8 +31,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from './ui/badge';
+import { ScrollArea, ScrollBar } from './ui/scroll-area';
 
 interface TalentsTableProps {
   talents: Talent[];
@@ -64,8 +64,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
 
   return (
     <>
-      <ScrollArea className="w-full">
-        <div className="relative w-full overflow-auto">
+      <ScrollArea className="w-full whitespace-nowrap">
           <Table>
             <TableHeader>
               <TableRow>
@@ -161,7 +160,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
               )}
             </TableBody>
           </Table>
-        </div>
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>

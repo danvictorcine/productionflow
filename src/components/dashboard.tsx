@@ -459,7 +459,7 @@ export default function Dashboard({
           <h1 className="text-lg md:text-xl font-bold text-primary truncate">{project.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => setEditDialogOpen(true)} variant="outline" size="sm">
+          <Button onClick={() => setEditDialogOpen(true)} variant="outline" size="sm" className="hidden md:inline-flex">
             <Edit className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Editar Projeto</span>
           </Button>
@@ -477,6 +477,10 @@ export default function Dashboard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setEditDialogOpen(true)} className="md:hidden">
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Editar Projeto</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExportToExcel}>
                     <FileSpreadsheet className="mr-2 h-4 w-4" />
                     <span>Relatório Financeiro</span>
@@ -588,7 +592,7 @@ export default function Dashboard({
                     </div>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-hidden p-0">
-                    <ScrollArea className="h-full whitespace-nowrap">
+                    <ScrollArea className="h-full">
                       <TransactionsTable
                         transactions={filteredPaidTransactions}
                         variant="history"
