@@ -250,6 +250,17 @@ export type PublicShare = {
     type: 'storyboard' | 'day';
 };
 
+// === Public Page Data Types ===
+export type PublicStoryboardData = {
+  storyboard: Storyboard;
+  panels: StoryboardPanel[];
+  creator: UserProfile | null;
+}
+
+export type PublicShootingDayData = {
+  day: ShootingDay;
+  creator: UserProfile | null;
+}
 
 // === Theme Settings ===
 export type ThemeSettings = {
@@ -268,5 +279,5 @@ export type ThemeSettings = {
   chart5: string;
   brandIcon: string;
   brandText: string;
-  brandLogin?: string;
+  brandLogin: string;
 };

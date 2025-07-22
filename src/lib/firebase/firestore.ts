@@ -17,7 +17,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, TeamMember, Scene, PublicShare } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, TeamMember, Scene, PublicShare, PublicStoryboardData, PublicShootingDayData } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID, returns null if not authenticated for public views
@@ -696,23 +696,17 @@ export const getStoryboards = async (): Promise<Storyboard[]> => {
 };
 
 export const getStoryboard = async (storyboardId: string): Promise<Storyboard | null> => {
-    const userId = getUserId();
     const docRef = doc(db, 'storyboards', storyboardId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) return null;
 
     const data = docSnap.data();
-    // Allow access if the user is the owner OR if the storyboard is public
-    if ((userId && data.userId === userId) || data.isPublic) {
-        return {
-            id: docSnap.id,
-            ...data,
-            createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-        } as Storyboard;
-    }
-    
-    return null;
+    return {
+        id: docSnap.id,
+        ...data,
+        createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+    } as Storyboard;
 }
 
 export const updateStoryboard = async (storyboardId: string, data: Partial<Omit<Storyboard, 'id' | 'userId' | 'createdAt'>>) => {
@@ -1073,7 +1067,7 @@ const getPublicShareData = async (publicId: string): Promise<PublicShare | null>
     return shareSnap.data() as PublicShare;
 };
 
-export const getPublicShootingDay = async (publicId: string): Promise<ShootingDay | null> => {
+export const getPublicShootingDay = async (publicId: string): Promise<PublicShootingDayData | null> => {
     const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'day') return null;
 
@@ -1081,15 +1075,20 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
     const daySnap = await getDoc(dayRef);
     if (!daySnap.exists() || !daySnap.data().isPublic) return null;
 
-    const data = daySnap.data();
+    const dayData = daySnap.data();
+    const creator = await getUserProfile(dayData.userId);
+
     return {
-        id: daySnap.id,
-        ...data,
-        date: (data.date as Timestamp).toDate(),
-    } as ShootingDay;
+        day: {
+            id: daySnap.id,
+            ...dayData,
+            date: (dayData.date as Timestamp).toDate(),
+        } as ShootingDay,
+        creator,
+    };
 };
 
-export const getPublicStoryboard = async (publicId: string): Promise<Storyboard | null> => {
+export const getPublicStoryboard = async (publicId: string): Promise<PublicStoryboardData | null> => {
     const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'storyboard') return null;
 
@@ -1098,12 +1097,26 @@ export const getPublicStoryboard = async (publicId: string): Promise<Storyboard 
     
     if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
 
-    const data = storyboardSnap.data();
+    const storyboardData = storyboardSnap.data();
+    const creator = await getUserProfile(storyboardData.userId);
+
+    const panelsQuery = query(collection(db, 'storyboard_panels'), where('storyboardId', '==', shareInfo.originalId), orderBy('order'));
+    const panelsSnapshot = await getDocs(panelsQuery);
+    const panels = panelsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: (doc.data().createdAt as Timestamp).toDate(),
+    } as StoryboardPanel));
+    
     return {
-        id: storyboardSnap.id,
-        ...data,
-        createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-    } as Storyboard;
+        storyboard: {
+            id: storyboardSnap.id,
+            ...storyboardData,
+            createdAt: storyboardData.createdAt ? (storyboardData.createdAt as Timestamp).toDate() : new Date(0),
+        } as Storyboard,
+        panels,
+        creator,
+    };
 };
 
 export const setShareState = async (itemType: 'day' | 'storyboard', originalId: string, publicId: string, isPublic: boolean) => {
@@ -1113,9 +1126,9 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
     const batch = writeBatch(db);
     const collectionName = itemType === 'day' ? 'shooting_days' : 'storyboards';
     const originalDocRef = doc(db, collectionName, originalId);
-    const publicShareRef = doc(db, 'public_shares', publicId);
     
     if (isPublic) {
+        const publicShareRef = doc(db, 'public_shares', publicId);
         const shareData: PublicShare = {
             id: publicId,
             userId,
@@ -1125,7 +1138,12 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
         batch.set(publicShareRef, shareData);
         batch.update(originalDocRef, { isPublic: true, publicId: publicId });
     } else {
-        batch.delete(publicShareRef);
+        const docSnap = await getDoc(originalDocRef);
+        const currentPublicId = docSnap.data()?.publicId;
+        if(currentPublicId) {
+            const publicShareRef = doc(db, 'public_shares', currentPublicId);
+            batch.delete(publicShareRef);
+        }
         batch.update(originalDocRef, { isPublic: false, publicId: deleteField() });
     }
     
