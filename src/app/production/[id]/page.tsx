@@ -44,6 +44,7 @@ import { CopyableError } from '@/components/copyable-error';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AppFooter } from '@/components/app-footer';
 
 type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
     equipment: ChecklistItem[];
@@ -390,7 +391,6 @@ function ProductionPageDetail() {
   
     setPdfDayToExport(dayToExport);
   
-    // Use a timeout to allow the portal to render before capturing
     setTimeout(async () => {
       const elementToCapture = document.getElementById('pdf-export-content');
       if (!elementToCapture) {
@@ -410,18 +410,21 @@ function ProductionPageDetail() {
         
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
+        const A4_WIDTH_MM = 210;
+        const A4_HEIGHT_MM = 297;
         const ratio = canvasWidth / canvasHeight;
 
-        const pdfWidth = 210; // A4 width in mm
+        // Calculate PDF page dimensions to fit content
+        const pdfWidth = A4_WIDTH_MM;
         const pdfHeight = pdfWidth / ratio;
-
+        
         const pdf = new jsPDF({
             orientation: pdfHeight > pdfWidth ? 'p' : 'l',
             unit: 'mm',
             format: [pdfWidth, pdfHeight],
         });
 
-        pdf.addImage(canvas, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
   
         const dateStr = format(dayToExport.date, "dd_MM_yyyy");
         pdf.save(`Ordem_do_Dia_${production?.name.replace(/ /g, "_")}_${dateStr}.pdf`);
@@ -432,9 +435,9 @@ function ProductionPageDetail() {
         toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPdf)', description: 'Não foi possível gerar o PDF.' });
       } finally {
         setIsExporting(false);
-        setPdfDayToExport(null); // Clean up the portal content
+        setPdfDayToExport(null);
       }
-    }, 500); // A longer timeout to be safer
+    }, 500);
   }, [production?.name, toast]);
 
   const handleUpdateNotes = async (
@@ -629,6 +632,8 @@ function ProductionPageDetail() {
             )}
         </Accordion>
       </main>
+
+      <AppFooter />
       
       <CreateEditProductionDialog
         isOpen={isProductionDialogOpen}
