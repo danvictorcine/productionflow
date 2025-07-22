@@ -1122,15 +1122,17 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
         batch.update(originalDocRef, { 
             isPublic: true, 
             publicId: publicId,
+            userId: user.uid, // Ensure owner is set
         });
     } else {
-        // DEACTIVATE SHARING: Read the doc first to get the correct publicId to delete
+        // DEACTIVATE SHARING
         const originalDocSnap = await getDoc(originalDocRef);
-        const currentPublicId = originalDocSnap.data()?.publicId;
-
-        if (currentPublicId) {
-            const publicShareRef = doc(db, 'public_shares', currentPublicId);
-            batch.delete(publicShareRef);
+        if (originalDocSnap.exists()) {
+            const currentPublicId = originalDocSnap.data()?.publicId;
+            if (currentPublicId) {
+                const publicShareRef = doc(db, 'public_shares', currentPublicId);
+                batch.delete(publicShareRef);
+            }
         }
         
         batch.update(originalDocRef, { 

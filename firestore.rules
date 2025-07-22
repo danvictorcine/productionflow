@@ -30,8 +30,12 @@ service cloud.firestore {
     }
     
     match /shooting_days/{dayId} {
-       allow write: if isOwner(request.auth.uid);
-       allow read: if isOwner(request.auth.uid) || resource.data.isPublic == true;
+       // Allow create if the user is the owner of the new document.
+       allow create: if isOwner(request.resource.data.userId);
+       // Allow read if owner, or if the document is marked as public.
+       allow read: if isOwner(resource.data.userId) || resource.data.isPublic == true;
+       // Allow update/delete only by the owner.
+       allow update, delete: if isOwner(resource.data.userId);
     }
     
     match /creative_projects/{creativeProjectId} {
@@ -45,19 +49,27 @@ service cloud.firestore {
     }
     
     match /storyboards/{storyboardId} {
-        allow write: if isOwner(request.auth.uid);
-        allow read: if isOwner(request.auth.uid) || resource.data.isPublic == true;
+        // Allow create if the user is the owner of the new document.
+        allow create: if isOwner(request.resource.data.userId);
+        // Allow read if owner, or if the document is marked as public.
+        allow read: if isOwner(resource.data.userId) || resource.data.isPublic == true;
+        // Allow update/delete only by the owner.
+        allow update, delete: if isOwner(resource.data.userId);
     }
 
     match /storyboard_panels/{panelId} {
-        allow write: if isOwner(request.auth.uid);
-        allow read: if isOwner(request.auth.uid) || get(/databases/$(database)/documents/storyboards/$(resource.data.storyboardId)).data.isPublic == true;
+        // Owner can do everything.
+        allow create: if isOwner(request.resource.data.userId);
+        allow read, update, delete: if isOwner(resource.data.userId) || get(/databases/$(database)/documents/storyboards/$(resource.data.storyboardId)).data.isPublic == true;
     }
     
     // --- Public Shares Collection ---
     match /public_shares/{shareId} {
+        // Anyone can read from this collection
         allow get: if true;
-        allow create, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        // Only authenticated users can create/delete their own shares
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
     // --- Other Collections (Team, Content, etc.) ---
