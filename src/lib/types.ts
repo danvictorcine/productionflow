@@ -245,10 +245,9 @@ export type StoryboardPanel = {
 
 export type PublicShare = {
     id: string; // Same as publicId
-    userId: string;
     originalId: string; // ID of the storyboard or shooting_day
     type: 'storyboard' | 'day';
-    isPublic: boolean;
+    userId: string;
 };
 
 

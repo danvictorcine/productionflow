@@ -1061,7 +1061,7 @@ export const deleteThemeSettings = async () => {
 const getPublicShareData = async (publicId: string): Promise<PublicShare | null> => {
     const shareRef = doc(db, 'public_shares', publicId);
     const shareSnap = await getDoc(shareRef);
-    if (!shareSnap.exists() || !shareSnap.data().isPublic) {
+    if (!shareSnap.exists()) {
         return null;
     }
     return shareSnap.data() as PublicShare;
@@ -1074,7 +1074,6 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
     const dayRef = doc(db, 'shooting_days', shareInfo.originalId);
     const daySnap = await getDoc(dayRef);
     
-    // Check if the original document is actually public.
     if (!daySnap.exists() || !daySnap.data().isPublic) return null;
 
     const dayData = daySnap.data();
@@ -1085,31 +1084,20 @@ export const getPublicShootingDay = async (publicId: string): Promise<ShootingDa
     } as ShootingDay;
 };
 
-export const getPublicStoryboard = async (publicId: string): Promise<{storyboard: Storyboard, panels: StoryboardPanel[]} | null> => {
+export const getPublicStoryboard = async (publicId: string): Promise<Storyboard | null> => {
     const shareInfo = await getPublicShareData(publicId);
     if (!shareInfo || shareInfo.type !== 'storyboard') return null;
 
     const storyboardRef = doc(db, 'storyboards', shareInfo.originalId);
     const storyboardSnap = await getDoc(storyboardRef);
     
-    // Check if the original document is actually public.
     if (!storyboardSnap.exists() || !storyboardSnap.data().isPublic) return null;
 
-    const storyboard = {
+    return {
         id: storyboardSnap.id,
         ...storyboardSnap.data(),
         createdAt: storyboardSnap.data().createdAt ? (storyboardSnap.data().createdAt as Timestamp).toDate() : new Date(0),
     } as Storyboard;
-
-    const panelsQuery = query(collection(db, 'storyboard_panels'), where('storyboardId', '==', shareInfo.originalId), orderBy('order'));
-    const panelsSnapshot = await getDocs(panelsQuery);
-    const panels = panelsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: (doc.data().createdAt as Timestamp).toDate(),
-    } as StoryboardPanel));
-    
-    return { storyboard, panels };
 };
 
 export const setShareState = async (itemType: 'day' | 'storyboard', originalId: string, publicId: string, isPublic: boolean) => {
@@ -1124,10 +1112,9 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
         const publicShareRef = doc(db, 'public_shares', publicId);
         const shareData: PublicShare = {
             id: publicId,
-            userId: user.uid,
             originalId,
             type: itemType,
-            isPublic: true,
+            userId: user.uid, // Add this line
         };
         batch.set(publicShareRef, shareData);
         batch.update(originalDocRef, { 
