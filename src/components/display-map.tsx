@@ -6,22 +6,51 @@ import type { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.webpack.css'; 
 import 'leaflet-defaulticon-compatibility';
-
+import Image from 'next/image';
 
 interface DisplayMapProps {
   position: LatLngExpression;
   className?: string;
+  isExporting?: boolean;
 }
 
-export function DisplayMap({ position, className }: DisplayMapProps) {
+export function DisplayMap({ position, className, isExporting = false }: DisplayMapProps) {
   if (typeof window === 'undefined') {
     return null;
+  }
+  
+  const [lat, lng] = Array.isArray(position) ? position : [position.lat, position.lng];
+  const zoom = 14;
+  const width = 400;
+  const height = 180;
+
+  // Use a static map image for PDF export to ensure it's captured
+  if (isExporting) {
+    // Note: This is a basic implementation and might not perfectly center the pin.
+    // More advanced static map APIs might be needed for perfect centering.
+    const staticMapUrl = `https://a.tile.openstreetmap.org/${zoom}/${Math.floor(
+      (lng + 180) / 360 * Math.pow(2, zoom)
+    )}/${Math.floor(
+      (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)
+    )}.png`;
+
+    return (
+       <div className={className}>
+         <Image 
+            src={staticMapUrl}
+            alt="Mapa estático da localização"
+            width={width}
+            height={height}
+            className="w-full h-full object-cover"
+         />
+       </div>
+    );
   }
   
   return (
     <MapContainer
       center={position}
-      zoom={14}
+      zoom={zoom}
       scrollWheelZoom={false}
       className={className}
       dragging={false}

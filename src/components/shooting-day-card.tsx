@@ -176,7 +176,7 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(
                 </div>
                 <div className="h-[180px]">
                     {day.latitude && day.longitude ? (
-                        <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" />
+                        <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" isExporting={isExporting} />
                     ) : (
                         <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                         <p className="text-sm font-semibold">Sem mapa</p>

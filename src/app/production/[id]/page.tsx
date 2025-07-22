@@ -66,8 +66,7 @@ function ProductionPageDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingWeather, setIsFetchingWeather] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
-  const [expandedAccordionItems, setExpandedAccordionItems] = useState<string[]>([]);
-
+  
   // States for PDF export
   const [pdfDayToExport, setPdfDayToExport] = useState<ProcessedShootingDay | null>(null);
 
@@ -408,7 +407,6 @@ function ProductionPageDetail() {
           logging: false,
           backgroundColor: window.getComputedStyle(document.body).backgroundColor,
         });
-        const imgData = canvas.toDataURL('image/png');
         
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
@@ -418,12 +416,12 @@ function ProductionPageDetail() {
         const pdfHeight = pdfWidth / ratio;
 
         const pdf = new jsPDF({
-            orientation: 'p',
+            orientation: pdfHeight > pdfWidth ? 'p' : 'l',
             unit: 'mm',
             format: [pdfWidth, pdfHeight],
         });
 
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.addImage(canvas, 'PNG', 0, 0, pdfWidth, pdfHeight);
   
         const dateStr = format(dayToExport.date, "dd_MM_yyyy");
         pdf.save(`Ordem_do_Dia_${production?.name.replace(/ /g, "_")}_${dateStr}.pdf`);
@@ -542,8 +540,6 @@ function ProductionPageDetail() {
         <Accordion 
           type="multiple" 
           className="w-full space-y-4"
-          value={expandedAccordionItems}
-          onValueChange={setExpandedAccordionItems}
         >
             <AccordionItem value="team" className="border-none">
                 <Card>
