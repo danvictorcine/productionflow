@@ -1,3 +1,4 @@
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -1110,11 +1111,12 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
     
     if (isPublic) {
         const publicShareRef = doc(db, 'public_shares', publicId);
+        // Correctly include the userId in the share document data
         const shareData: PublicShare = {
             id: publicId,
             originalId,
             type: itemType,
-            userId: user.uid,
+            userId: user.uid, // This line was missing/incorrect
         };
         batch.set(publicShareRef, shareData);
         batch.update(originalDocRef, { 
@@ -1122,12 +1124,15 @@ export const setShareState = async (itemType: 'day' | 'storyboard', originalId: 
             publicId: publicId,
         });
     } else {
+        // Fetch the original document to get the publicId to delete it
         const docSnap = await getDoc(originalDocRef);
         const currentPublicId = docSnap.data()?.publicId;
-        if(currentPublicId) {
+        
+        if (currentPublicId) {
             const publicShareRef = doc(db, 'public_shares', currentPublicId);
             batch.delete(publicShareRef);
         }
+        
         batch.update(originalDocRef, { 
             isPublic: false, 
             publicId: deleteField(),

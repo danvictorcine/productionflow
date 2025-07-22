@@ -1,3 +1,4 @@
+
 // src/components/share-dialog.tsx
 "use client";
 
@@ -28,25 +29,17 @@ interface ShareDialogProps {
 export function ShareDialog({ isOpen, setIsOpen, item, itemType, onStateChange }: ShareDialogProps) {
     const [isPublic, setIsPublic] = useState(item.isPublic || false);
     // Maintain a stable publicId throughout the dialog's lifecycle
-    const [publicId, setPublicId] = useState(item.publicId || '');
+    const [publicId, setPublicId] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
     const { toast } = useToast();
 
     const itemTypeName = itemType === 'day' ? 'Ordem do Dia' : 'Storyboard';
     
-    // Generate a new publicId only if one doesn't exist.
-    // This ensures the ID is stable if the user toggles the switch multiple times.
-    useEffect(() => {
-        if (isOpen && !publicId) {
-            setPublicId(crypto.randomUUID());
-        }
-    }, [isOpen, publicId]);
-
-    // Reset state when dialog is reopened with a different item
     useEffect(() => {
         if (isOpen) {
             setIsPublic(item.isPublic || false);
+            // Ensure we have a stable publicId for the session
             setPublicId(item.publicId || crypto.randomUUID());
             setIsSaving(false);
             setHasCopied(false);
