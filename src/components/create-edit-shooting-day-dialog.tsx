@@ -156,7 +156,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   const form = useForm<FormValues>({
     resolver: zodResolver(shootingDaySchema),
     defaultValues: {
-      date: new Date(),
+      date: undefined,
       location: "",
       latitude: defaultPosition[0],
       longitude: defaultPosition[1],
@@ -218,7 +218,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
         });
       } else {
         form.reset({
-            date: new Date(),
+            date: undefined,
             location: "",
             latitude: defaultPosition[0],
             longitude: defaultPosition[1],
