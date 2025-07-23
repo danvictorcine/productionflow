@@ -428,7 +428,7 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
                 }
             }
             return member;
-          });
+          }).filter(member => updatedTeamMap.has(member.id)); // Remove deleted members
       }
 
       // Sync scenes.presentInScene
@@ -445,7 +445,8 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
                 }
             }
             return member;
-            });
+            }).filter(member => updatedTeamMap.has(member.id)); // Remove deleted members
+
             if(sceneNeedsUpdate) {
                 dayNeedsUpdate = true;
                 return { ...scene, presentInScene: newPresentInScene };
