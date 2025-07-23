@@ -40,7 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CopyableError } from '@/components/copyable-error';
-import { Accordion, AccordionItem } from '@/components/ui/accordion';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
@@ -55,7 +55,7 @@ type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props'
 const PdfExportPortal = ({ day, production }: { day: ProcessedShootingDay, production: Production }) => {
   return (
     <div id="pdf-export-content" className="fixed top-0 left-0 w-[800px] bg-background z-[-1] opacity-0 pointer-events-none p-8">
-      <div className="mb-6">
+       <div className="mb-6">
         <ProductionInfoCard production={production} />
       </div>
       <Accordion type="single" collapsible className="w-full">
@@ -418,6 +418,7 @@ function ProductionPageDetail() {
       if (!production) return;
       toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
       setIsExporting(true);
+      setDayToExportPdf(dayToExport);
     
       setTimeout(async () => {
         const elementToCapture = document.getElementById('pdf-export-content');
@@ -461,11 +462,6 @@ function ProductionPageDetail() {
             setDayToExportPdf(null);
         }
       }, 500);
-  };
-
-  const handleExportDayToPdf = (dayToExport: ProcessedShootingDay) => {
-    setDayToExportPdf(dayToExport);
-    exportElementAsPdf(dayToExport);
   };
 
   const handleExportDayToPng = useCallback(async (dayToExport: ProcessedShootingDay) => {
@@ -695,7 +691,7 @@ function ProductionPageDetail() {
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
-                    onExportPdf={() => handleExportDayToPdf(day)}
+                    onExportPdf={() => exportElementAsPdf(day)}
                     onExportPng={() => handleExportDayToPng(day)}
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting || (day.id === dayToExportPng?.id)}
@@ -751,4 +747,3 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
-
