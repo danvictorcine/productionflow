@@ -10,6 +10,7 @@ import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { pdf } from '@react-pdf/renderer';
+import html2canvas from 'html2canvas';
 
 
 import type { Production, ShootingDay, WeatherInfo, ChecklistItem } from '@/lib/types';
@@ -44,7 +45,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
-import html2canvas from 'html2canvas';
 
 type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
     equipment: ChecklistItem[];
@@ -394,13 +394,20 @@ function ProductionPageDetail() {
       link.href = URL.createObjectURL(blob);
       const dateStr = format(dayToExport.date, "dd_MM_yyyy");
       link.download = `Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.pdf`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
 
       toast({ title: "Exportação para PDF Concluída!" });
     } catch (error) {
-      console.error("Error generating PDF", error);
-      toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível gerar o PDF.' });
+      const errorTyped = error as Error;
+      console.error("Error generating PDF", errorTyped);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Erro ao gerar PDF', 
+        description: <CopyableError userMessage="Não foi possível gerar o PDF." errorCode={errorTyped.message} />
+      });
     } finally {
       setIsExporting(false);
     }
