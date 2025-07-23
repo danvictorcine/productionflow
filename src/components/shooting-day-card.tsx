@@ -53,9 +53,9 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
 
   return (
     <div className="py-2">
-        <h4 className="flex items-baseline text-lg font-semibold">
+        <h4 className="flex items-center text-lg font-semibold">
             <Icon className="h-5 w-5 mr-2 text-primary" />
-            {title}
+            <span>{title}</span>
         </h4>
         <div className="text-base text-muted-foreground whitespace-pre-wrap pt-1 pl-7">{content}</div>
     </div>
@@ -77,9 +77,9 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
 
     return (
         <div className="py-2">
-            <h4 className="flex items-baseline text-lg font-semibold">
+            <h4 className="flex items-center text-lg font-semibold">
                 <Icon className="h-5 w-5 mr-2 text-primary" />
-                {title}
+                <span>{title}</span>
             </h4>
             <div className="space-y-2 pt-1 pl-7">
                 {items.map((item) => (
@@ -214,7 +214,7 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(
             <div className="space-y-4">
                 {/* Logistics Section */}
                 <div className="p-4 border rounded-lg space-y-2">
-                    <h4 className="font-semibold text-xl flex items-baseline"><Hash className="h-6 w-6 mr-2 text-primary"/>Logística e Segurança</h4>
+                    <h4 className="font-semibold text-xl flex items-center"><Hash className="h-6 w-6 mr-2 text-primary"/>Logística e Segurança</h4>
                     <StaticDetailSection icon={ParkingCircle} title="Estacionamento" content={day.parkingInfo} />
                     <StaticDetailSection icon={Utensils} title="Refeição" content={day.mealTime} />
                     <StaticDetailSection icon={Radio} title="Rádios" content={day.radioChannels} />
@@ -231,9 +231,9 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(
 
                 {/* Call Times */}
                 <div>
-                    <h4 className="flex items-baseline text-xl font-semibold mb-2">
+                    <h4 className="flex items-center text-xl font-semibold mb-2">
                         <Clock className="h-6 w-6 mr-2 text-primary" />
-                        Horários de Chamada
+                        <span>Horários de Chamada</span>
                     </h4>
                      {Array.isArray(day.callTimes) && day.callTimes.length > 0 ? (
                         <Table>
@@ -253,9 +253,9 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(
 
                  {/* Scenes */}
                 <div>
-                     <h4 className="flex items-baseline text-xl font-semibold mb-2">
+                     <h4 className="flex items-center text-xl font-semibold mb-2">
                         <Film className="h-6 w-6 mr-2 text-primary" />
-                        Cenas a Gravar
+                        <span>Cenas a Gravar</span>
                     </h4>
                     <div className="space-y-3">
                         {Array.isArray(day.scenes) && day.scenes.length > 0 ? (
@@ -268,7 +268,7 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(
 
                 {/* Department Notes */}
                 <div className="p-4 border rounded-lg space-y-2">
-                     <h4 className="font-semibold text-xl flex items-baseline"><Users className="h-6 w-6 mr-2 text-primary"/>Notas dos Departamentos</h4>
+                     <h4 className="font-semibold text-xl flex items-center"><Users className="h-6 w-6 mr-2 text-primary"/><span>Notas dos Departamentos</span></h4>
                      <ChecklistSection icon={Truck} title="Equipamentos" items={day.equipment} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'equipment', list) : undefined} isPublicView={isPublicView} />
                      <ChecklistSection icon={Shirt} title="Figurino" items={day.costumes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'costumes', list) : undefined} isPublicView={isPublicView} />
                      <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={day.props} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'props', list) : undefined} isPublicView={isPublicView} />
