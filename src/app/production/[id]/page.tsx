@@ -55,7 +55,7 @@ type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props'
 };
 
 const PdfExportFooter = () => (
-    <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground">
+    <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground mt-4">
         <span>Criado com</span>
         <div className="flex items-center gap-1.5">
             <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
@@ -424,21 +424,14 @@ function ProductionPageDetail() {
           backgroundColor: window.getComputedStyle(document.body).backgroundColor,
         });
         
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        
-        // A4 page width in mm is 210.
-        const PDF_PAGE_WIDTH = 210; 
-        const ratio = PDF_PAGE_WIDTH / canvasWidth;
-        const pdfImageHeight = canvasHeight * ratio;
-
+        const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'mm',
-            format: [PDF_PAGE_WIDTH, pdfImageHeight], // Create a single page with the exact height
+          orientation: 'p',
+          unit: 'px',
+          format: [canvas.width, canvas.height]
         });
         
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, PDF_PAGE_WIDTH, pdfImageHeight);
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
   
         const dateStr = format(dayToExport.date, "dd_MM_yyyy");
         pdf.save(`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.pdf`);
@@ -694,7 +687,7 @@ function ProductionPageDetail() {
         className="fixed top-0 left-0 w-[1200px] -z-50 opacity-0 pointer-events-none"
       >
         {pdfDayToExport && printRootRef.current && createPortal(
-            <div id="pdf-export-content" className="p-8 pb-12 bg-background">
+            <div id="pdf-export-content" className="p-8 bg-background">
                 <ProductionInfoCard production={production} />
                 <ShootingDayCard 
                     day={pdfDayToExport}
@@ -719,4 +712,3 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
-
