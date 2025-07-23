@@ -1,5 +1,3 @@
-
-
 // @/src/app/storyboard/[id]/page.tsx
 'use client';
 
@@ -380,7 +378,7 @@ function StoryboardPageDetail() {
                         </Button>
                         <Button onClick={() => imageUploadRef.current?.click()} disabled={isUploading} size="sm">
                             {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <PlusCircle className="h-4 w-4 md:mr-2" />}
-                            <span className="hidden md:inline">Adicionar</span>
+                            <span className="hidden md:inline">Adicionar Quadro</span>
                         </Button>
                         <input
                             ref={imageUploadRef}
