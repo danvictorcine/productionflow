@@ -365,14 +365,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
 };
 
 // PDF Document Component using @react-pdf/renderer
-Font.register({
-    family: 'Inter',
-    src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2'
-});
-
-
 const styles = StyleSheet.create({
-    page: { fontFamily: 'Inter', fontSize: 10, padding: 30, color: '#333' },
+    page: { fontFamily: 'Helvetica', fontSize: 10, padding: 30, color: '#333' },
     header: { marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 10 },
     productionTitle: { fontSize: 24, fontWeight: 'bold', color: '#111' },
     productionSubtitle: { fontSize: 12, color: '#555' },
