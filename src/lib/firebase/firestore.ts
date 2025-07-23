@@ -408,13 +408,13 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
     
     const daysQuery = query(
       collection(db, 'shooting_days'),
-      where('productionId', '==', productionId)
+      where('productionId', '==', productionId),
+      where('userId', '==', userId)
     );
     const daysSnapshot = await getDocs(daysQuery);
 
     daysSnapshot.forEach(dayDoc => {
       const dayData = dayDoc.data() as ShootingDay;
-      if (dayData.userId !== userId) return; // Security check
       
       let dayNeedsUpdate = false;
       let newPresentTeam = dayData.presentTeam || [];
@@ -1062,3 +1062,4 @@ export const deleteThemeSettings = async () => {
     const docRef = doc(db, 'settings', 'theme');
     await deleteDoc(docRef);
 }
+
