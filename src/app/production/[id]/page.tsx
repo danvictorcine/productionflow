@@ -424,16 +424,18 @@ function ProductionPageDetail() {
         });
         
         const A4_WIDTH_MM = 210;
-        const pageHeight = (canvas.height * (A4_WIDTH_MM - 20)) / canvas.width; // A4 width with margins
-        
         const pdf = new jsPDF({
             orientation: 'p',
             unit: 'mm',
-            format: [A4_WIDTH_MM, pageHeight + 20], // page height based on content + margin
+            format: 'a4',
         });
-
+        
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.internal.pageSize.height = pdfHeight;
+        pdf.internal.pageSize.setHeight(pdfHeight);
+
 
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
   
@@ -687,7 +689,7 @@ function ProductionPageDetail() {
         className="fixed top-0 left-0 w-[1200px] -z-50 opacity-0 pointer-events-none"
       >
         {pdfDayToExport && printRootRef.current && createPortal(
-            <div id="pdf-export-content" className="p-8 bg-background">
+            <div id="pdf-export-content" className="p-8 pb-12 bg-background">
                 <ProductionInfoCard production={production} />
                 <ShootingDayCard 
                     day={pdfDayToExport}
