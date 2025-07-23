@@ -1,3 +1,4 @@
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -7,7 +8,7 @@ import { format, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clapperboard, Clock, Hourglass,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2
+  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Image as ImageIcon
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -44,6 +45,7 @@ interface ShootingDayCardProps {
   onDelete?: () => void;
   onExportExcel?: () => void;
   onExportPdf?: () => void;
+  onExportPng?: () => void;
   onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
 }
 
@@ -293,7 +295,7 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(
 });
 ShootingDayCardContent.displayName = 'ShootingDayCardContent';
 
-export const ShootingDayCard = ({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
+export const ShootingDayCard = ({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onExportPng, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     
     // For normal display, use the Accordion
     if (!isPublicView) {
@@ -339,6 +341,10 @@ export const ShootingDayCard = ({ day, isFetchingWeather, onEdit, onDelete, onEx
                                         <FileDown className="mr-2 h-4 w-4" />
                                         Exportar como PDF
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={onExportPng} disabled={isExporting}>
+                                        <ImageIcon className="mr-2 h-4 w-4" />
+                                        Exportar como PNG
+                                    </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
                                         <Trash2 className="mr-2 h-4 w-4" />
@@ -350,7 +356,7 @@ export const ShootingDayCard = ({ day, isFetchingWeather, onEdit, onDelete, onEx
                     )}
                     </div>
                     <AccordionContent className="pt-0">
-                        <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView }} />
+                        <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onExportPng, onUpdateNotes, isExporting, isPublicView }} />
                     </AccordionContent>
                 </Card>
             </AccordionItem>
@@ -376,7 +382,7 @@ export const ShootingDayCard = ({ day, isFetchingWeather, onEdit, onDelete, onEx
                     </div>
                 </div>
             </CardHeader>
-            <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView }} />
+            <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onExportPng, onUpdateNotes, isExporting, isPublicView }} />
         </Card>
     );
 };

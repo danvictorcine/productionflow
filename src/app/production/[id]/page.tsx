@@ -406,7 +406,6 @@ function ProductionPageDetail() {
   
     setPdfDayToExport(dayToExport);
   
-    // Use a small timeout to allow React to render the portal content
     setTimeout(async () => {
       const elementToCapture = document.getElementById('pdf-export-content');
       if (!elementToCapture) {
@@ -444,8 +443,53 @@ function ProductionPageDetail() {
         setIsExporting(false);
         setPdfDayToExport(null);
       }
-    }, 500); // 500ms delay to ensure render
+    }, 500);
   }, [production, toast]);
+
+    const handleExportDayToPng = useCallback(async (dayToExport: ProcessedShootingDay) => {
+    if (!printRootRef.current || !production) return;
+  
+    setIsExporting(true);
+    toast({ title: "Gerando PNG...", description: "Isso pode levar alguns segundos." });
+  
+    setPdfDayToExport(dayToExport);
+  
+    setTimeout(async () => {
+      const elementToCapture = document.getElementById('pdf-export-content');
+      if (!elementToCapture) {
+        toast({ variant: 'destructive', title: 'Erro ao gerar PNG', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
+        setIsExporting(false);
+        setPdfDayToExport(null);
+        return;
+      }
+  
+      try {
+        const canvas = await html2canvas(elementToCapture, {
+          useCORS: true,
+          scale: 2,
+          logging: false,
+          backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        const dateStr = format(dayToExport.date, "dd_MM_yyyy");
+        link.download = `Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.png`;
+        link.href = imgData;
+        link.click();
+        
+        toast({ title: "Exportação para PNG Concluída!" });
+  
+      } catch (error) {
+        console.error("Error generating PNG for single day", error);
+        toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPng)', description: 'Não foi possível gerar o PNG.' });
+      } finally {
+        setIsExporting(false);
+        setPdfDayToExport(null);
+      }
+    }, 500);
+  }, [production, toast]);
+
 
   const handleUpdateNotes = async (
     dayId: string,
@@ -636,6 +680,7 @@ function ProductionPageDetail() {
                     onDelete={() => setDayToDelete(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
                     onExportPdf={() => handleExportDayToPdf(day)}
+                    onExportPng={() => handleExportDayToPng(day)}
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting}
                   />
