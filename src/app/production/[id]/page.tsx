@@ -1,3 +1,4 @@
+
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -54,7 +55,7 @@ type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props'
 };
 
 const PdfExportFooter = () => (
-    <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground mt-8">
+    <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground">
         <span>Criado com</span>
         <div className="flex items-center gap-1.5">
             <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
@@ -423,31 +424,21 @@ function ProductionPageDetail() {
           backgroundColor: window.getComputedStyle(document.body).backgroundColor,
         });
         
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        
+        // A4 page width in mm is 210.
+        const PDF_PAGE_WIDTH = 210; 
+        const ratio = PDF_PAGE_WIDTH / canvasWidth;
+        const pdfImageHeight = canvasHeight * ratio;
+
         const pdf = new jsPDF({
             orientation: 'p',
             unit: 'mm',
-            format: 'a4',
+            format: [PDF_PAGE_WIDTH, pdfImageHeight], // Create a single page with the exact height
         });
         
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = pdfWidth / canvasWidth;
-        const imgHeight = canvasHeight * ratio;
-        
-        let position = 0;
-        let remainingHeight = imgHeight;
-
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, pdfWidth, imgHeight);
-        remainingHeight -= pdfHeight;
-
-        while (remainingHeight > 0) {
-            position -= pdfHeight;
-            pdf.addPage();
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, pdfWidth, imgHeight);
-            remainingHeight -= pdfHeight;
-        }
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, PDF_PAGE_WIDTH, pdfImageHeight);
   
         const dateStr = format(dayToExport.date, "dd_MM_yyyy");
         pdf.save(`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.pdf`);
@@ -728,3 +719,4 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
+
