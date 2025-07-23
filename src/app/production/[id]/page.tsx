@@ -5,13 +5,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Image as ImageIcon } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
-import { createPortal } from 'react-dom';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 
 
 import type { Production, ShootingDay, WeatherInfo, ChecklistItem } from '@/lib/types';
@@ -24,7 +22,7 @@ import { UserNav } from '@/components/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateEditProductionDialog } from '@/components/create-edit-production-dialog';
 import { CreateEditShootingDayDialog } from '@/components/create-edit-shooting-day-dialog';
-import { ShootingDayCard } from '@/components/shooting-day-card';
+import { ShootingDayCard, ShootingDayPdfDocument } from '@/components/shooting-day-card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +44,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
+import html2canvas from 'html2canvas';
 
 type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
     equipment: ChecklistItem[];
@@ -53,20 +52,6 @@ type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props'
     props: ChecklistItem[];
     generalNotes: ChecklistItem[];
 };
-
-const PdfExportFooter = () => (
-    <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground mt-4">
-        <span>Criado com</span>
-        <div className="flex items-center gap-1.5">
-            <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
-                <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))"/>
-                <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
-            </svg>
-            <p className="text-base font-semibold" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</p>
-        </div>
-    </div>
-);
-
 
 function ProductionPageDetail() {
   const router = useRouter();
@@ -84,7 +69,9 @@ function ProductionPageDetail() {
   const [isExporting, setIsExporting] = useState(false);
   
   // States for PDF export
-  const [pdfDayToExport, setPdfDayToExport] = useState<ProcessedShootingDay | null>(null);
+  const [dayToExport, setDayToExport] = useState<ProcessedShootingDay | null>(null);
+  const pdfDownloadLinkRef = useRef<HTMLAnchorElement | null>(null);
+
 
   // Dialog states
   const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
@@ -201,6 +188,14 @@ function ProductionPageDetail() {
   useEffect(() => {
     fetchProductionData();
   }, [fetchProductionData]);
+  
+  useEffect(() => {
+    if (dayToExport && pdfDownloadLinkRef.current) {
+      pdfDownloadLinkRef.current.click();
+      setDayToExport(null); // Reset after download is triggered
+    }
+  }, [dayToExport]);
+
 
   const handleProductionSubmit = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
     if (!production) return;
@@ -397,54 +392,6 @@ function ProductionPageDetail() {
         setIsExporting(false);
     }
   };
-  
-  const handleExportDayToPdf = useCallback(async (dayToExport: ProcessedShootingDay) => {
-    if (!printRootRef.current || !production) return;
-  
-    setIsExporting(true);
-    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
-  
-    setPdfDayToExport(dayToExport);
-  
-    setTimeout(async () => {
-      const elementToCapture = document.getElementById('pdf-export-content');
-      if (!elementToCapture) {
-        toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
-        setIsExporting(false);
-        setPdfDayToExport(null);
-        return;
-      }
-  
-      try {
-        const canvas = await html2canvas(elementToCapture, {
-          useCORS: true,
-          scale: 2,
-          logging: false,
-          backgroundColor: window.getComputedStyle(document.body).backgroundColor,
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'p',
-          unit: 'px',
-          format: [canvas.width, canvas.height]
-        });
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-  
-        const dateStr = format(dayToExport.date, "dd_MM_yyyy");
-        pdf.save(`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.pdf`);
-        toast({ title: "Exportação para PDF Concluída!" });
-  
-      } catch (error) {
-        console.error("Error generating PDF for single day", error);
-        toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPdf)', description: 'Não foi possível gerar o PDF.' });
-      } finally {
-        setIsExporting(false);
-        setPdfDayToExport(null);
-      }
-    }, 500);
-  }, [production, toast]);
 
     const handleExportDayToPng = useCallback(async (dayToExport: ProcessedShootingDay) => {
     if (!printRootRef.current || !production) return;
@@ -452,14 +399,14 @@ function ProductionPageDetail() {
     setIsExporting(true);
     toast({ title: "Gerando PNG...", description: "Isso pode levar alguns segundos." });
   
-    setPdfDayToExport(dayToExport);
+    setDayToExport(dayToExport);
   
     setTimeout(async () => {
-      const elementToCapture = document.getElementById('pdf-export-content');
+      const elementToCapture = document.getElementById(`shooting-day-card-${dayToExport.id}`);
       if (!elementToCapture) {
         toast({ variant: 'destructive', title: 'Erro ao gerar PNG', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
         setIsExporting(false);
-        setPdfDayToExport(null);
+        setDayToExport(null);
         return;
       }
   
@@ -485,7 +432,7 @@ function ProductionPageDetail() {
         toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPng)', description: 'Não foi possível gerar o PNG.' });
       } finally {
         setIsExporting(false);
-        setPdfDayToExport(null);
+        setDayToExport(null);
       }
     }, 500);
   }, [production, toast]);
@@ -679,7 +626,7 @@ function ProductionPageDetail() {
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
-                    onExportPdf={() => handleExportDayToPdf(day)}
+                    onExportPdf={() => setDayToExport(day)}
                     onExportPng={() => handleExportDayToPng(day)}
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting}
@@ -725,26 +672,31 @@ function ProductionPageDetail() {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* PDF Export Portal */}
-      <div 
-        ref={printRootRef} 
-        id="pdf-export-root" 
-        className="fixed top-0 left-0 w-[1200px] -z-50 opacity-0 pointer-events-none"
-      >
-        {pdfDayToExport && printRootRef.current && createPortal(
-            <div id="pdf-export-content" className="p-8 bg-background">
-                <ProductionInfoCard production={production} />
-                <ShootingDayCard 
-                    day={pdfDayToExport}
-                    isFetchingWeather={false}
-                    isExporting={true}
-                    isPublicView={true}
-                />
-                <PdfExportFooter />
-            </div>,
-            printRootRef.current
-        )}
-      </div>
+      {/* PDF Export Link */}
+       {dayToExport && production && (
+          <PDFDownloadLink
+              document={<ShootingDayPdfDocument day={dayToExport} production={production} />}
+              fileName={`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${format(dayToExport.date, "dd_MM_yyyy")}.pdf`}
+              style={{ display: 'none' }}
+          >
+              {({ loading }) => {
+                const link = (
+                  <a href="#" ref={pdfDownloadLinkRef}>
+                    {loading ? 'Gerando PDF...' : 'Baixar PDF'}
+                  </a>
+                );
+                if (loading && !isExporting) {
+                  setIsExporting(true);
+                  toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
+                }
+                if (!loading && isExporting) {
+                  setIsExporting(false);
+                  toast({ title: "PDF Gerado!", description: "Seu download deve começar em breve." });
+                }
+                return link;
+              }}
+          </PDFDownloadLink>
+      )}
 
     </div>
   );
