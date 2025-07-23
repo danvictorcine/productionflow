@@ -398,7 +398,7 @@ function ProductionPageDetail() {
   };
   
   const handleExportDayToPdf = useCallback(async (dayToExport: ProcessedShootingDay) => {
-    if (!printRootRef.current) return;
+    if (!printRootRef.current || !production) return;
   
     setIsExporting(true);
     toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
@@ -423,24 +423,21 @@ function ProductionPageDetail() {
           backgroundColor: window.getComputedStyle(document.body).backgroundColor,
         });
         
-        const A4_WIDTH_MM = 210;
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const pdfWidth = 210; // A4 width in mm
+        const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
+
         const pdf = new jsPDF({
             orientation: 'p',
             unit: 'mm',
-            format: 'a4',
+            format: [pdfWidth, pdfHeight],
         });
-        
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
-        pdf.internal.pageSize.height = pdfHeight;
-        pdf.internal.pageSize.setHeight(pdfHeight);
-
 
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
   
         const dateStr = format(dayToExport.date, "dd_MM_yyyy");
-        pdf.save(`Ordem_do_Dia_${production?.name.replace(/ /g, "_")}_${dateStr}.pdf`);
+        pdf.save(`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.pdf`);
         toast({ title: "Exportação para PDF Concluída!" });
   
       } catch (error) {
@@ -451,7 +448,7 @@ function ProductionPageDetail() {
         setPdfDayToExport(null);
       }
     }, 500); // 500ms delay to ensure render
-  }, [production?.name, toast]);
+  }, [production, toast]);
 
   const handleUpdateNotes = async (
     dayId: string,
@@ -624,9 +621,13 @@ function ProductionPageDetail() {
 
             {shootingDays.length === 0 && !isLoading ? (
               <div className="text-center p-12 border-2 border-dashed rounded-lg mt-6">
-                <Clapperboard className="mx-auto h-12 w-12 text-muted-foreground" />
+                <Clapperboard className="mx-auto h-12 w-12 text-primary" />
                 <h3 className="mt-4 text-lg font-semibold">Nenhuma Ordem do Dia</h3>
                 <p className="mt-1 text-sm text-muted-foreground">Crie a primeira Ordem do Dia para esta produção.</p>
+                <Button className="mt-6" onClick={() => { setEditingShootingDay(null); setIsShootingDayDialogOpen(true); }}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Criar Ordem do Dia
+                </Button>
               </div>
             ) : (
                 shootingDays.map(day => (
