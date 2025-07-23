@@ -58,9 +58,9 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
 
   return (
     <div className="py-2">
-        <h4 className="flex items-center text-lg font-semibold">
+        <h4 className="flex items-center text-lg font-semibold relative">
             <Icon className="h-5 w-5 mr-2 text-primary" />
-            <span>{title}</span>
+            <span className="relative bottom-px">{title}</span>
         </h4>
         <div className="text-base text-muted-foreground whitespace-pre-wrap pt-1 pl-7">{content}</div>
     </div>
@@ -367,13 +367,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
 // PDF Document Component using @react-pdf/renderer
 Font.register({
     family: 'Inter',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2', fontWeight: 500 },
-        { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2', fontWeight: 600 },
-        { src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2', fontWeight: 700 },
-    ]
+    src: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2'
 });
+
 
 const styles = StyleSheet.create({
     page: { fontFamily: 'Inter', fontSize: 10, padding: 30, color: '#333' },
