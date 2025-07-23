@@ -40,7 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CopyableError } from '@/components/copyable-error';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Accordion, AccordionItem } from '@/components/ui/accordion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
@@ -51,6 +51,39 @@ type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props'
     props: ChecklistItem[];
     generalNotes: ChecklistItem[];
 };
+
+const PdfExportPortal = ({ day, production }: { day: ProcessedShootingDay, production: Production }) => {
+  return (
+    <div id="pdf-export-content" className="fixed top-0 left-0 w-[800px] bg-background z-[-1] opacity-0 pointer-events-none p-8">
+      <div className="mb-6">
+        <ProductionInfoCard production={production} />
+      </div>
+      <Accordion type="single" collapsible className="w-full">
+        <ShootingDayCard
+          day={day}
+          production={production}
+          isFetchingWeather={false}
+          isExporting={true}
+          isPublicView={true}
+        />
+      </Accordion>
+    </div>
+  );
+};
+
+const ProductionInfoCard = ({ production }: { production: Production }) => (
+    <div className="mb-6 p-4 border rounded-lg bg-card">
+    <h2 className="text-2xl font-bold tracking-tight">{production.name}</h2>
+    <p className="text-muted-foreground">{production.type}</p>
+    <div className="text-base mt-2 space-y-1">
+        <p><span className="font-semibold">Diretor(a):</span> {production.director}</p>
+        {production.responsibleProducer && <p><span className="font-semibold">Produtor(a) Responsável:</span> {production.responsibleProducer}</p>}
+        {production.producer && <p><span className="font-semibold">Produtora:</span> {production.producer}</p>}
+        {production.client && <p><span className="font-semibold">Cliente:</span> {production.client}</p>}
+    </div>
+    </div>
+);
+
 
 function ProductionPageDetail() {
   const router = useRouter();
@@ -65,8 +98,8 @@ function ProductionPageDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingWeather, setIsFetchingWeather] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
-  
   const [dayToExportPng, setDayToExportPng] = useState<ProcessedShootingDay | null>(null);
+  const [dayToExportPdf, setDayToExportPdf] = useState<ProcessedShootingDay | null>(null);
 
 
   // Dialog states
@@ -381,62 +414,61 @@ function ProductionPageDetail() {
     }
   };
 
-  const exportElementAsPdf = async (dayToExport: ProcessedShootingDay, element: HTMLElement) => {
+  const exportElementAsPdf = async (dayToExport: ProcessedShootingDay) => {
       if (!production) return;
       toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
       setIsExporting(true);
     
-      try {
-        const canvas = await html2canvas(element, {
-            useCORS: true,
-            scale: 2,
-            logging: false,
-            backgroundColor: window.getComputedStyle(document.body).backgroundColor,
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'px',
-            format: [canvas.width, canvas.height]
-        });
-
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-
-        const dateStr = format(dayToExport.date, "dd_MM_yyyy");
-        pdf.save(`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.pdf`);
-        toast({ title: "Exportação para PDF Concluída!" });
-
-      } catch (error) {
-        const errorTyped = error as Error;
-        console.error("Error generating PDF", errorTyped);
-        toast({ 
-            variant: 'destructive', 
-            title: 'Erro ao gerar PDF', 
-            description: <CopyableError userMessage="Não foi possível gerar o PDF." errorCode={errorTyped.message} />
-        });
-      } finally {
-        setIsExporting(false);
-        setDayToExportPng(null); // Reset the export state
-      }
-  };
-
-  const handleExportDayToPdf = async (dayToExport: ProcessedShootingDay) => {
-    setDayToExportPng(dayToExport);
-    // Use timeout to allow state to update and the hidden component to render
-    setTimeout(() => {
+      setTimeout(async () => {
         const elementToCapture = document.getElementById('pdf-export-content');
         if (elementToCapture) {
-            exportElementAsPdf(dayToExport, elementToCapture);
+            try {
+                const canvas = await html2canvas(elementToCapture, {
+                    useCORS: true,
+                    scale: 2,
+                    logging: false,
+                    backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'p',
+                    unit: 'px',
+                    format: [canvas.width, canvas.height]
+                });
+
+                pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+
+                const dateStr = format(dayToExport.date, "dd_MM_yyyy");
+                pdf.save(`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.pdf`);
+                toast({ title: "Exportação para PDF Concluída!" });
+
+            } catch (error) {
+                const errorTyped = error as Error;
+                console.error("Error generating PDF", errorTyped);
+                toast({ 
+                    variant: 'destructive', 
+                    title: 'Erro ao gerar PDF', 
+                    description: <CopyableError userMessage="Não foi possível gerar o PDF." errorCode={errorTyped.message} />
+                });
+            } finally {
+                setIsExporting(false);
+                setDayToExportPdf(null); // Reset the export state
+            }
         } else {
             toast({ variant: 'destructive', title: 'Erro ao exportar', description: 'Não foi possível encontrar o conteúdo para exportar.' });
             setIsExporting(false);
-            setDayToExportPng(null);
+            setDayToExportPdf(null);
         }
-    }, 100);
+      }, 500);
   };
 
-    const handleExportDayToPng = useCallback(async (dayToExport: ProcessedShootingDay) => {
+  const handleExportDayToPdf = (dayToExport: ProcessedShootingDay) => {
+    setDayToExportPdf(dayToExport);
+    exportElementAsPdf(dayToExport);
+  };
+
+  const handleExportDayToPng = useCallback(async (dayToExport: ProcessedShootingDay) => {
     if (!production) return;
   
     setIsExporting(true);
@@ -530,58 +562,11 @@ function ProductionPageDetail() {
     return null; // or a not-found component
   }
 
-  const ProductionInfoCard = ({ production }: { production: Production }) => (
-     <div className="mb-6 p-4 border rounded-lg bg-card">
-        <h2 className="text-2xl font-bold tracking-tight">{production.name}</h2>
-        <p className="text-muted-foreground">{production.type}</p>
-        <div className="text-base mt-2 space-y-1">
-            <p><span className="font-semibold">Diretor(a):</span> {production.director}</p>
-            {production.responsibleProducer && <p><span className="font-semibold">Produtor(a) Responsável:</span> {production.responsibleProducer}</p>}
-            {production.producer && <p><span className="font-semibold">Produtora:</span> {production.producer}</p>}
-            {production.client && <p><span className="font-semibold">Cliente:</span> {production.client}</p>}
-        </div>
-    </div>
-  );
-  
-  const PdfExportFooter = () => (
-      <div className="flex justify-center items-center text-xs text-gray-500 pt-4">
-        <p className="mr-1">Criado com</p>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 32 32"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
-        >
-          <rect width="32" height="32" rx="6" fill="#3F51B5" />
-          <path d="M22 16L12 22V10L22 16Z" fill="white" />
-        </svg>
-        <p className="font-semibold text-gray-600 ml-1">ProductionFlow</p>
-      </div>
-  );
-
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
       {/* Hidden container for PDF/PNG export rendering */}
-      {dayToExportPng && (
-        <div id="pdf-export-content" className="fixed top-0 left-0 w-[800px] bg-background z-[-1] opacity-0 pointer-events-none p-8">
-            <div className="mb-6">
-                <ProductionInfoCard production={production} />
-            </div>
-            <div className="w-full">
-                <ShootingDayCard
-                    day={dayToExportPng}
-                    production={production}
-                    isFetchingWeather={false}
-                    isExporting={true}
-                    isPublicView={true}
-                />
-            </div>
-            <div className="pt-8">
-                <PdfExportFooter />
-            </div>
-        </div>
+      {dayToExportPdf && (
+        <PdfExportPortal day={dayToExportPdf} production={production} />
       )}
       
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
@@ -766,3 +751,4 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
+
