@@ -1,4 +1,3 @@
-
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -9,7 +8,7 @@ import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Inf
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
-import { pdf } from '@react-pdf/renderer';
+import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 
@@ -23,7 +22,7 @@ import { UserNav } from '@/components/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateEditProductionDialog } from '@/components/create-edit-production-dialog';
 import { CreateEditShootingDayDialog } from '@/components/create-edit-shooting-day-dialog';
-import { ShootingDayCard, ShootingDayPdfDocument } from '@/components/shooting-day-card';
+import { ShootingDayCard } from '@/components/shooting-day-card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -382,35 +381,59 @@ function ProductionPageDetail() {
     }
   };
 
+  const exportElementAsPdf = async (dayToExport: ProcessedShootingDay, element: HTMLElement) => {
+      if (!production) return;
+      toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
+      setIsExporting(true);
+    
+      try {
+        const canvas = await html2canvas(element, {
+            useCORS: true,
+            scale: 2,
+            logging: false,
+            backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+
+        const dateStr = format(dayToExport.date, "dd_MM_yyyy");
+        pdf.save(`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.pdf`);
+        toast({ title: "Exportação para PDF Concluída!" });
+
+      } catch (error) {
+        const errorTyped = error as Error;
+        console.error("Error generating PDF", errorTyped);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Erro ao gerar PDF', 
+            description: <CopyableError userMessage="Não foi possível gerar o PDF." errorCode={errorTyped.message} />
+        });
+      } finally {
+        setIsExporting(false);
+        setDayToExportPng(null); // Reset the export state
+      }
+  };
+
   const handleExportDayToPdf = async (dayToExport: ProcessedShootingDay) => {
-    if (!production) return;
-    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
-    setIsExporting(true);
-
-    try {
-      const doc = <ShootingDayPdfDocument day={dayToExport} production={production} />;
-      const blob = await pdf(doc).toBlob();
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      const dateStr = format(dayToExport.date, "dd_MM_yyyy");
-      link.download = `Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-
-      toast({ title: "Exportação para PDF Concluída!" });
-    } catch (error) {
-      const errorTyped = error as Error;
-      console.error("Error generating PDF", errorTyped);
-      toast({ 
-        variant: 'destructive', 
-        title: 'Erro ao gerar PDF', 
-        description: <CopyableError userMessage="Não foi possível gerar o PDF." errorCode={errorTyped.message} />
-      });
-    } finally {
-      setIsExporting(false);
-    }
+    setDayToExportPng(dayToExport);
+    // Use timeout to allow state to update and the hidden component to render
+    setTimeout(() => {
+        const elementToCapture = document.getElementById('pdf-export-content');
+        if (elementToCapture) {
+            exportElementAsPdf(dayToExport, elementToCapture);
+        } else {
+            toast({ variant: 'destructive', title: 'Erro ao exportar', description: 'Não foi possível encontrar o conteúdo para exportar.' });
+            setIsExporting(false);
+            setDayToExportPng(null);
+        }
+    }, 100);
   };
 
     const handleExportDayToPng = useCallback(async (dayToExport: ProcessedShootingDay) => {
@@ -519,9 +542,48 @@ function ProductionPageDetail() {
         </div>
     </div>
   );
+  
+  const PdfExportFooter = () => (
+      <div className="flex justify-center items-center text-xs text-gray-500 pt-4">
+        <p className="mr-1">Criado com</p>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 32 32"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4"
+        >
+          <rect width="32" height="32" rx="6" fill="#3F51B5" />
+          <path d="M22 16L12 22V10L22 16Z" fill="white" />
+        </svg>
+        <p className="font-semibold text-gray-600 ml-1">ProductionFlow</p>
+      </div>
+  );
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
+      {/* Hidden container for PDF/PNG export rendering */}
+      {dayToExportPng && (
+        <div id="pdf-export-content" className="fixed top-0 left-0 w-[800px] bg-background z-[-1] opacity-0 pointer-events-none p-8">
+            <div className="mb-6">
+                <ProductionInfoCard production={production} />
+            </div>
+            <div className="w-full">
+                <ShootingDayCard
+                    day={dayToExportPng}
+                    production={production}
+                    isFetchingWeather={false}
+                    isExporting={true}
+                    isPublicView={true}
+                />
+            </div>
+            <div className="pt-8">
+                <PdfExportFooter />
+            </div>
+        </div>
+      )}
+      
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
           <Button variant="outline" size="icon" className="h-8 w-8">

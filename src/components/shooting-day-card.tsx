@@ -1,4 +1,3 @@
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -11,7 +10,6 @@ import {
   Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Image as ImageIcon
 } from "lucide-react";
 import dynamic from 'next/dynamic';
-import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
 
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -363,99 +361,3 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         </AccordionItem>
     );
 };
-
-// PDF Document Component using @react-pdf/renderer
-const styles = StyleSheet.create({
-    page: { fontFamily: 'Helvetica', fontSize: 10, padding: 30, color: '#333' },
-    header: { marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 10 },
-    productionTitle: { fontSize: 24, fontWeight: 'bold', color: '#111' },
-    productionSubtitle: { fontSize: 12, color: '#555' },
-    section: { marginBottom: 15, },
-    sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, color: '#000', borderBottom: 1, borderBottomColor: '#eee', paddingBottom: 4 },
-    text: { fontSize: 11, color: '#444' },
-    bold: { fontWeight: 'bold', color: '#222' },
-    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4, padding: '4px 0' },
-    table: { display: "flex", width: "auto", borderStyle: "solid", borderWidth: 1, borderRightWidth: 0, borderBottomWidth: 0, borderColor: '#ddd' },
-    tableRow: { flexDirection: "row" },
-    tableColHeader: { width: "50%", borderStyle: "solid", borderWidth: 1, borderLeftWidth: 0, borderTopWidth: 0, borderColor: '#ddd', backgroundColor: '#f8f8f8', padding: 5 },
-    tableCol: { width: "50%", borderStyle: "solid", borderWidth: 1, borderLeftWidth: 0, borderTopWidth: 0, borderColor: '#ddd', padding: 5 },
-    tableCellHeader: { fontWeight: 'bold' },
-    sceneCard: { backgroundColor: '#f9f9f9', borderRadius: 4, padding: 10, marginBottom: 8, border: 1, borderColor: '#eee' },
-    sceneHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
-    sceneNumber: { fontSize: 14, fontWeight: 'bold'},
-    sceneTitleText: { fontSize: 12, fontWeight: 'bold', color: '#1a1a1a' },
-    scenePages: { backgroundColor: '#eee', padding: '2px 5px', borderRadius: 10, fontSize: 10 },
-    checklistItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 3 },
-    checkbox: { width: 8, height: 8, borderWidth: 1, borderColor: '#555', marginRight: 5 },
-    footer: { position: 'absolute', bottom: 15, left: 30, right: 30, textAlign: 'center', fontSize: 8, color: '#aaa' }
-});
-
-export const ShootingDayPdfDocument = ({ day, production }: { day: ProcessedShootingDay, production: Production }) => (
-    <Document>
-        <Page size="A4" style={styles.page}>
-            <View style={styles.header}>
-                <Text style={styles.productionTitle}>{production.name}</Text>
-                <Text style={styles.productionSubtitle}>{production.type} | Diretor: {production.director}</Text>
-                <Text style={styles.productionSubtitle}>
-                    {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays} | ` : ''} 
-                    {format(new Date(day.date), "eeee, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                </Text>
-                 <Text style={styles.productionSubtitle}>Local: {day.location}</Text>
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Horários de Chamada</Text>
-                <View style={styles.table}>
-                    <View style={styles.tableRow}>
-                        <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Departamento/Pessoa</Text></View>
-                        <View style={{ ...styles.tableColHeader, textAlign: 'right' }}><Text style={styles.tableCellHeader}>Horário</Text></View>
-                    </View>
-                    {(day.callTimes || []).map(ct => (
-                        <View key={ct.id} style={styles.tableRow}>
-                            <View style={styles.tableCol}><Text>{ct.department}</Text></View>
-                            <View style={{...styles.tableCol, textAlign: 'right'}}><Text>{ct.time}</Text></View>
-                        </View>
-                    ))}
-                </View>
-            </View>
-            
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Cenas a Gravar</Text>
-                {(day.scenes || []).map(scene => (
-                     <View key={scene.id} style={styles.sceneCard}>
-                        <View style={styles.sceneHeader}>
-                            <Text><Text style={styles.sceneNumber}>{scene.sceneNumber}</Text> <Text style={styles.sceneTitleText}>{scene.title}</Text></Text>
-                            <Text style={styles.scenePages}>{scene.pages}</Text>
-                        </View>
-                        <Text style={styles.text}>{scene.description}</Text>
-                        {scene.presentInScene && scene.presentInScene.length > 0 && (
-                            <Text style={{...styles.text, marginTop: 5}}><Text style={styles.bold}>Elenco:</Text> {scene.presentInScene.map(m => m.name).join(', ')}</Text>
-                        )}
-                    </View>
-                ))}
-            </View>
-
-            <View style={styles.section}>
-                 <Text style={styles.sectionTitle}>Notas dos Departamentos</Text>
-                 {(day.equipment || []).length > 0 && <Text style={{...styles.bold, marginTop: 5}}>Equipamentos:</Text>}
-                 {(day.equipment || []).map(item => (<View key={item.id} style={styles.checklistItem}><View style={styles.checkbox}/><Text>{item.text}</Text></View>))}
-                 {(day.costumes || []).length > 0 && <Text style={{...styles.bold, marginTop: 5}}>Figurino:</Text>}
-                 {(day.costumes || []).map(item => (<View key={item.id} style={styles.checklistItem}><View style={styles.checkbox}/><Text>{item.text}</Text></View>))}
-                 {(day.props || []).length > 0 && <Text style={{...styles.bold, marginTop: 5}}>Objetos de Cena e Arte:</Text>}
-                 {(day.props || []).map(item => (<View key={item.id} style={styles.checklistItem}><View style={styles.checkbox}/><Text>{item.text}</Text></View>))}
-                 {(day.generalNotes || []).length > 0 && <Text style={{...styles.bold, marginTop: 5}}>Observações Gerais:</Text>}
-                 {(day.generalNotes || []).map(item => (<View key={item.id} style={styles.checklistItem}><View style={styles.checkbox}/><Text>{item.text}</Text></View>))}
-            </View>
-            
-             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Logística e Segurança</Text>
-                <Text><Text style={styles.bold}>Estacionamento:</Text> {day.parkingInfo || 'N/A'}</Text>
-                <Text><Text style={styles.bold}>Refeição:</Text> {day.mealTime || 'N/A'}</Text>
-                <Text><Text style={styles.bold}>Canais de Rádio:</Text> {day.radioChannels || 'N/A'}</Text>
-                 {day.nearestHospital?.name && <Text><Text style={styles.bold}>Hospital:</Text> {`${day.nearestHospital.name}, ${day.nearestHospital.address}, ${day.nearestHospital.phone}`}</Text>}
-            </View>
-
-            <Text style={styles.footer}>Gerado com ProductionFlow - © {new Date().getFullYear()} Candeeiro Filmes</Text>
-        </Page>
-    </Document>
-);
