@@ -53,9 +53,9 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
 
   return (
     <div className="py-2">
-        <h4 className="flex items-center text-lg font-semibold">
+        <h4 className="flex text-lg font-semibold relative">
             <Icon className="h-5 w-5 mr-2 text-primary" />
-            <span>{title}</span>
+            <span className="relative bottom-px">{title}</span>
         </h4>
         <div className="text-base text-muted-foreground whitespace-pre-wrap pt-1 pl-7">{content}</div>
     </div>
