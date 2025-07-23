@@ -11,7 +11,7 @@ import {
   Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Image as ImageIcon
 } from "lucide-react";
 import dynamic from 'next/dynamic';
-import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Font, PDFDownloadLink } from '@react-pdf/renderer';
 
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,13 +40,13 @@ const DisplayMap = dynamic(() => import('./display-map').then(mod => mod.Display
 
 interface ShootingDayCardProps {
   day: Omit<ShootingDay, 'equipment'|'costumes'|'props'|'generalNotes'> & { equipment: ChecklistItem[], costumes: ChecklistItem[], props: ChecklistItem[], generalNotes: ChecklistItem[]};
+  production: Production;
   isFetchingWeather: boolean;
   isExporting: boolean;
   isPublicView?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   onExportExcel?: () => void;
-  onExportPdf?: () => void;
   onExportPng?: () => void;
   onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
 }
@@ -152,7 +152,7 @@ const calculateDuration = (start?: string, end?: string): string | null => {
     return `${hours}h ${minutes}m`;
 };
 
-const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }, ref) => {
+const ShootingDayCardContent = forwardRef<HTMLDivElement, Omit<ShootingDayCardProps, 'production'>>(({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onUpdateNotes, isExporting, isPublicView = false }, ref) => {
     const [isClient, setIsClient] = useState(false);
   
     useEffect(() => {
@@ -297,95 +297,79 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, ShootingDayCardProps>(
 });
 ShootingDayCardContent.displayName = 'ShootingDayCardContent';
 
-export const ShootingDayCard = ({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onExportPng, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
+export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPng, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     
-    // For normal display, use the Accordion
-    if (!isPublicView) {
-        return (
-            <AccordionItem value={day.id} className="border-none">
-                <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                    <div className="relative">
-                    <AccordionTrigger className="flex w-full items-center p-6 text-left hover:no-underline [&>svg]:data-[public=true]:hidden" data-public={isPublicView}>
-                        <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                            <Calendar className="h-6 w-6" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-semibold leading-none tracking-tight">
-                                    {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
-                                    {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
-                                </h3>
-                                <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
-                                <MapPin className="h-4 w-4" /> {day.location}
-                                </p>
-                            </div>
-                        </div>
-                    </AccordionTrigger>
-                    {!isPublicView && (
-                        <div className="absolute top-1/2 right-12 -translate-y-1/2">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Editar Ordem do Dia
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
-                                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                        Exportar para Excel
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
-                                        <FileDown className="mr-2 h-4 w-4" />
-                                        Exportar como PDF
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={onExportPng} disabled={isExporting}>
-                                        <ImageIcon className="mr-2 h-4 w-4" />
-                                        Exportar como PNG
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Excluir
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    )}
-                    </div>
-                    <AccordionContent className="pt-0">
-                        <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onExportPng, onUpdateNotes, isExporting, isPublicView }} />
-                    </AccordionContent>
-                </Card>
-            </AccordionItem>
-        );
-    }
-
-    // For PDF/public view, render without Accordion, fully expanded.
     return (
-        <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full border-none shadow-none bg-background text-foreground">
-             <CardHeader className="p-0 pb-6">
-                <div className="flex items-center gap-4">
+        <AccordionItem value={day.id} className="border-none">
+            <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
+                <div className="relative">
+                <AccordionTrigger className="flex w-full items-center p-6 text-left hover:no-underline [&>svg]:data-[public=true]:hidden" data-public={isPublicView}>
+                    <div className="flex items-center gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                         <Calendar className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-semibold leading-none tracking-tight">
-                            {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
-                            {format(new Date(day.date), "eeee, dd MMMM, yyyy", { locale: ptBR })}
-                        </h3>
-                        <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold leading-none tracking-tight">
+                                {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
+                                {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
+                            </h3>
+                            <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
                             <MapPin className="h-4 w-4" /> {day.location}
-                        </p>
+                            </p>
+                        </div>
                     </div>
+                </AccordionTrigger>
+                {!isPublicView && (
+                    <div className="absolute top-1/2 right-12 -translate-y-1/2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Editar Ordem do Dia
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                    Exportar para Excel
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild disabled={isExporting}>
+                                    <PDFDownloadLink
+                                      document={<ShootingDayPdfDocument day={day} production={production} />}
+                                      fileName={`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${format(day.date, "dd_MM_yyyy")}.pdf`}
+                                      className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                    >
+                                        {({ loading }) => (
+                                            <>
+                                                <FileDown className="mr-2 h-4 w-4" />
+                                                {loading ? "Gerando..." : "Exportar como PDF"}
+                                            </>
+                                        )}
+                                    </PDFDownloadLink>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={onExportPng} disabled={isExporting}>
+                                    <ImageIcon className="mr-2 h-4 w-4" />
+                                    Exportar como PNG
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                )}
                 </div>
-            </CardHeader>
-            <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onExportPng, onUpdateNotes, isExporting, isPublicView }} />
-        </Card>
+                <AccordionContent className="pt-0">
+                    <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPng, onUpdateNotes, isExporting, isPublicView }} />
+                </AccordionContent>
+            </Card>
+        </AccordionItem>
     );
 };
 

@@ -60,17 +60,14 @@ function ProductionPageDetail() {
   const { user } = useAuth();
   const { toast } = useToast();
   const mainRef = useRef<HTMLElement>(null);
-  const printRootRef = useRef<HTMLDivElement>(null);
-
+  
   const [production, setProduction] = useState<Production | null>(null);
   const [shootingDays, setShootingDays] = useState<ProcessedShootingDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingWeather, setIsFetchingWeather] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
   
-  // States for PDF export
-  const [dayToExport, setDayToExport] = useState<ProcessedShootingDay | null>(null);
-  const pdfDownloadLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const [dayToExportPng, setDayToExportPng] = useState<ProcessedShootingDay | null>(null);
 
 
   // Dialog states
@@ -188,14 +185,6 @@ function ProductionPageDetail() {
   useEffect(() => {
     fetchProductionData();
   }, [fetchProductionData]);
-  
-  useEffect(() => {
-    if (dayToExport && pdfDownloadLinkRef.current) {
-      pdfDownloadLinkRef.current.click();
-      setDayToExport(null); // Reset after download is triggered
-    }
-  }, [dayToExport]);
-
 
   const handleProductionSubmit = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
     if (!production) return;
@@ -394,19 +383,20 @@ function ProductionPageDetail() {
   };
 
     const handleExportDayToPng = useCallback(async (dayToExport: ProcessedShootingDay) => {
-    if (!printRootRef.current || !production) return;
+    if (!production) return;
   
     setIsExporting(true);
     toast({ title: "Gerando PNG...", description: "Isso pode levar alguns segundos." });
   
-    setDayToExport(dayToExport);
+    setDayToExportPng(dayToExport);
   
+    // Use a short timeout to allow the DOM to update with the new state
     setTimeout(async () => {
       const elementToCapture = document.getElementById(`shooting-day-card-${dayToExport.id}`);
       if (!elementToCapture) {
         toast({ variant: 'destructive', title: 'Erro ao gerar PNG', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
         setIsExporting(false);
-        setDayToExport(null);
+        setDayToExportPng(null);
         return;
       }
   
@@ -432,7 +422,7 @@ function ProductionPageDetail() {
         toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPng)', description: 'Não foi possível gerar o PNG.' });
       } finally {
         setIsExporting(false);
-        setDayToExport(null);
+        setDayToExportPng(null);
       }
     }, 500);
   }, [production, toast]);
@@ -622,14 +612,14 @@ function ProductionPageDetail() {
                   <ShootingDayCard 
                     key={day.id} 
                     day={day} 
+                    production={production}
                     isFetchingWeather={isFetchingWeather[day.id] ?? false}
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
-                    onExportPdf={() => setDayToExport(day)}
                     onExportPng={() => handleExportDayToPng(day)}
                     onUpdateNotes={handleUpdateNotes}
-                    isExporting={isExporting}
+                    isExporting={isExporting || (day.id === dayToExportPng?.id)}
                   />
                 ))
             )}
@@ -671,33 +661,6 @@ function ProductionPageDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-      {/* PDF Export Link */}
-       {dayToExport && production && (
-          <PDFDownloadLink
-              document={<ShootingDayPdfDocument day={dayToExport} production={production} />}
-              fileName={`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${format(dayToExport.date, "dd_MM_yyyy")}.pdf`}
-              style={{ display: 'none' }}
-          >
-              {({ loading }) => {
-                const link = (
-                  <a href="#" ref={pdfDownloadLinkRef}>
-                    {loading ? 'Gerando PDF...' : 'Baixar PDF'}
-                  </a>
-                );
-                if (loading && !isExporting) {
-                  setIsExporting(true);
-                  toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
-                }
-                if (!loading && isExporting) {
-                  setIsExporting(false);
-                  toast({ title: "PDF Gerado!", description: "Seu download deve começar em breve." });
-                }
-                return link;
-              }}
-          </PDFDownloadLink>
-      )}
-
     </div>
   );
 }
