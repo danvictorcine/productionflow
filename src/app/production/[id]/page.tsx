@@ -62,7 +62,7 @@ const PdfExportPortal = ({ day, production }: { day: ProcessedShootingDay, produ
        <div className="mb-6">
         <ProductionInfoCard production={production} />
       </div>
-      <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
+      <Accordion type="single" collapsible defaultValue={day.id} className="w-full">
         <ShootingDayCard
           day={day}
           production={production}
@@ -71,8 +71,8 @@ const PdfExportPortal = ({ day, production }: { day: ProcessedShootingDay, produ
           isPublicView={true}
         />
       </Accordion>
-      <div className="mt-8">
-        <AppFooter />
+      <div className="mt-8 text-center text-sm text-muted-foreground">
+        Criado com ProductionFlow
       </div>
     </div>
   );
@@ -421,7 +421,7 @@ function ProductionPageDetail() {
     }
   };
 
-  const exportElementAsPdf = async (dayToExport: ProcessedShootingDay) => {
+  const handleExportDayToPdf = async (dayToExport: ProcessedShootingDay) => {
       if (!production) return;
       toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
       setIsExporting(true);
@@ -699,7 +699,7 @@ function ProductionPageDetail() {
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
-                    onExportPdf={() => exportElementAsPdf(day)}
+                    onExportPdf={() => handleExportDayToPdf(day)}
                     onExportPng={() => handleExportDayToPng(day)}
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting || (day.id === dayToExportPng?.id)}
