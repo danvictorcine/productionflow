@@ -9,7 +9,7 @@ import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Inf
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { pdf } from '@react-pdf/renderer';
 
 
 import type { Production, ShootingDay, WeatherInfo, ChecklistItem } from '@/lib/types';
@@ -382,6 +382,30 @@ function ProductionPageDetail() {
     }
   };
 
+  const handleExportDayToPdf = async (dayToExport: ProcessedShootingDay) => {
+    if (!production) return;
+    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
+    setIsExporting(true);
+
+    try {
+      const doc = <ShootingDayPdfDocument day={dayToExport} production={production} />;
+      const blob = await pdf(doc).toBlob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      const dateStr = format(dayToExport.date, "dd_MM_yyyy");
+      link.download = `Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.pdf`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+
+      toast({ title: "Exportação para PDF Concluída!" });
+    } catch (error) {
+      console.error("Error generating PDF", error);
+      toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível gerar o PDF.' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
     const handleExportDayToPng = useCallback(async (dayToExport: ProcessedShootingDay) => {
     if (!production) return;
   
@@ -617,6 +641,7 @@ function ProductionPageDetail() {
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
+                    onExportPdf={() => handleExportDayToPdf(day)}
                     onExportPng={() => handleExportDayToPng(day)}
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting || (day.id === dayToExportPng?.id)}

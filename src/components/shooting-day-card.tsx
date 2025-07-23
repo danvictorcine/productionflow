@@ -11,7 +11,7 @@ import {
   Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Image as ImageIcon
 } from "lucide-react";
 import dynamic from 'next/dynamic';
-import { Page, Text, View, Document, StyleSheet, Font, PDFDownloadLink } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
 
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +47,7 @@ interface ShootingDayCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onExportExcel?: () => void;
+  onExportPdf?: () => void;
   onExportPng?: () => void;
   onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
 }
@@ -59,7 +60,7 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
     <div className="py-2">
         <h4 className="flex items-center text-lg font-semibold">
             <Icon className="h-5 w-5 mr-2 text-primary" />
-            {title}
+            <span>{title}</span>
         </h4>
         <div className="text-base text-muted-foreground whitespace-pre-wrap pt-1 pl-7">{content}</div>
     </div>
@@ -297,7 +298,7 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, Omit<ShootingDayCardPr
 });
 ShootingDayCardContent.displayName = 'ShootingDayCardContent';
 
-export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPng, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
+export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onExportPng, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     
     return (
         <AccordionItem value={day.id} className="border-none">
@@ -337,19 +338,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     <FileSpreadsheet className="mr-2 h-4 w-4" />
                                     Exportar para Excel
                                 </DropdownMenuItem>
-                                <DropdownMenuItem asChild disabled={isExporting}>
-                                    <PDFDownloadLink
-                                      document={<ShootingDayPdfDocument day={day} production={production} />}
-                                      fileName={`Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${format(day.date, "dd_MM_yyyy")}.pdf`}
-                                      className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                                    >
-                                        {({ loading }) => (
-                                            <>
-                                                <FileDown className="mr-2 h-4 w-4" />
-                                                {loading ? "Gerando..." : "Exportar como PDF"}
-                                            </>
-                                        )}
-                                    </PDFDownloadLink>
+                                <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
+                                    <FileDown className="mr-2 h-4 w-4" />
+                                    Exportar como PDF
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={onExportPng} disabled={isExporting}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
@@ -366,7 +357,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 )}
                 </div>
                 <AccordionContent className="pt-0">
-                    <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPng, onUpdateNotes, isExporting, isPublicView }} />
+                    <ShootingDayCardContent {...{ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onUpdateNotes, isExporting, isPublicView }} />
                 </AccordionContent>
             </Card>
         </AccordionItem>
@@ -386,7 +377,7 @@ Font.register({
 
 const styles = StyleSheet.create({
     page: { fontFamily: 'Inter', fontSize: 10, padding: 30, color: '#333' },
-    header: { marginBottom: 20 },
+    header: { marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 10 },
     productionTitle: { fontSize: 24, fontWeight: 'bold', color: '#111' },
     productionSubtitle: { fontSize: 12, color: '#555' },
     section: { marginBottom: 15, },
@@ -402,7 +393,7 @@ const styles = StyleSheet.create({
     sceneCard: { backgroundColor: '#f9f9f9', borderRadius: 4, padding: 10, marginBottom: 8, border: 1, borderColor: '#eee' },
     sceneHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
     sceneNumber: { fontSize: 14, fontWeight: 'bold'},
-    sceneTitleText: { fontSize: 12, fontWeight: 'semibold', color: '#1a1a1a' },
+    sceneTitleText: { fontSize: 12, fontWeight: 'bold', color: '#1a1a1a' },
     scenePages: { backgroundColor: '#eee', padding: '2px 5px', borderRadius: 10, fontSize: 10 },
     checklistItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 3 },
     checkbox: { width: 8, height: 8, borderWidth: 1, borderColor: '#555', marginRight: 5 },
