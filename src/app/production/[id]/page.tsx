@@ -703,7 +703,7 @@ function ProductionPageDetail() {
         className="fixed top-0 left-0 w-[1200px] -z-50 opacity-0 pointer-events-none"
       >
         {pdfDayToExport && printRootRef.current && createPortal(
-            <div id="pdf-export-content" className="p-8 bg-background">
+            <div id="pdf-export-content" className="p-8 pb-8 bg-background">
                 <ProductionInfoCard production={production} />
                 <ShootingDayCard 
                     day={pdfDayToExport}
