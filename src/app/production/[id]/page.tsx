@@ -54,14 +54,14 @@ type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props'
 };
 
 const PdfExportFooter = () => (
-    <div className="mt-8 flex items-center justify-end gap-2 text-sm text-muted-foreground">
+    <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground">
         <span>Criado com</span>
         <div className="flex items-center gap-1.5">
             <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
                 <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))"/>
                 <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
             </svg>
-            <p className="text-base font-semibold relative bottom-px" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</p>
+            <p className="text-base font-semibold" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</p>
         </div>
     </div>
 );
@@ -703,7 +703,7 @@ function ProductionPageDetail() {
         className="fixed top-0 left-0 w-[1200px] -z-50 opacity-0 pointer-events-none"
       >
         {pdfDayToExport && printRootRef.current && createPortal(
-            <div id="pdf-export-content" className="p-8 pb-12 bg-background">
+            <div id="pdf-export-content" className="p-8 bg-background">
                 <ProductionInfoCard production={production} />
                 <ShootingDayCard 
                     day={pdfDayToExport}
