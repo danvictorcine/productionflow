@@ -18,7 +18,7 @@ import { useAuth } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
 import AdminGuard from '@/components/admin-guard';
 import { Button } from '@/components/ui/button';
-import { UserNav } from '@/components/ui/user-nav';
+import { UserNav } from '@/components/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { AppFooter } from '@/components/app-footer';
