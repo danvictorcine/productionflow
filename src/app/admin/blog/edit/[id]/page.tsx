@@ -35,17 +35,23 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-import type Quill from 'quill';
+// Import Quill dynamically to ensure it runs only on the client-side
+const QuillEditor = dynamic(() => import('react-quill'), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-[200px] w-full rounded-b-md" />
+});
+
+// Register the image resize module only on the client-side
+if (typeof window !== 'undefined') {
+    const Quill = require('quill');
+    const ImageResize = require('quill-image-resize-module-react').default;
+    Quill.register('modules/imageResize', ImageResize);
+}
 
 
 const postSchema = z.object({
     title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres.' }),
     content: z.string().min(10, { message: 'O conteúdo deve ter pelo menos 10 caracteres.' }),
-});
-
-const QuillEditor = dynamic(() => import('react-quill'), { 
-    ssr: false,
-    loading: () => <Skeleton className="h-[200px] w-full rounded-b-md" />
 });
 
 const getUrlsFromHtml = (html: string): string[] => {
@@ -76,22 +82,6 @@ export default function EditPostPage() {
         defaultValues: { title: '', content: '' },
     });
     
-    // Register the image resize module
-    useEffect(() => {
-        const registerResizeModule = async () => {
-            if (typeof window !== 'undefined') {
-                try {
-                    const Quill = (await import('quill')).default;
-                    const ImageResize = (await import('quill-image-resize-module-react')).default;
-                    Quill.register('modules/imageResize', ImageResize);
-                } catch (error) {
-                    console.error("Failed to load or register image resize module", error);
-                }
-            }
-        };
-        registerResizeModule();
-    }, []);
-
     useEffect(() => {
         if (!isNewPost && postId) {
             firestoreApi.getPost(postId)
@@ -117,69 +107,75 @@ export default function EditPostPage() {
         }
     }, [postId, isNewPost, router, toast, form]);
 
+    const modules = useMemo(() => ({
+        toolbar: {
+            container: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+                ['link', 'image', 'video'],
+                ['clean']
+            ],
+            handlers: {
+                image: function() { // Use function keyword to get correct `this` binding
+                    const editor = quillRef.current?.getEditor();
+                    if (!editor) {
+                        toast({ variant: 'destructive', title: 'Erro', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY' /> });
+                        return;
+                    }
+                    const range = editor.getSelection(true) || { index: editor.getLength(), length: 0 };
+                    const input = document.createElement('input');
+                    input.setAttribute('type', 'file');
+                    input.setAttribute('accept', 'image/*');
+                    document.body.appendChild(input);
 
-    const imageHandler = () => {
-        const editor = quillRef.current?.getEditor();
-        if (!editor) {
-            toast({ variant: 'destructive', title: 'Erro', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY' /> });
-            return;
-        }
-        const range = editor.getSelection(true) || { index: editor.getLength(), length: 0 };
-        const input = document.createElement('input');
-        input.setAttribute('type', 'file');
-        input.setAttribute('accept', 'image/*');
-        document.body.appendChild(input);
-
-        input.onchange = async () => {
-            try {
-                if (!input.files || input.files.length === 0) return;
-                
-                const file = input.files[0];
-                const insertIndex = range ? range.index : 0;
-
-                if (!/^image\//.test(file.type)) {
-                    toast({ variant: 'destructive', title: 'Arquivo Inválido', description: <CopyableError userMessage='Por favor, selecione um arquivo de imagem.' errorCode='INVALID_FILE_TYPE'/> });
-                    return;
-                }
-
-                editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
-                editor.setSelection(insertIndex + 1);
-
-                try {
-                    const options = {
-                        maxSizeMB: 1,
-                        maxWidthOrHeight: 1920,
-                        useWebWorker: true,
+                    input.onchange = async () => {
+                        try {
+                            if (!input.files || input.files.length === 0) return;
+                            const file = input.files[0];
+                            const insertIndex = range ? range.index : 0;
+                            if (!/^image\//.test(file.type)) {
+                                toast({ variant: 'destructive', title: 'Arquivo Inválido', description: <CopyableError userMessage='Por favor, selecione um arquivo de imagem.' errorCode='INVALID_FILE_TYPE'/> });
+                                return;
+                            }
+                            editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
+                            editor.setSelection(insertIndex + 1);
+                            try {
+                                const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
+                                const compressedBlob = await imageCompression(file, options);
+                                const compressedFile = new File([compressedBlob], file.name, { type: file.type, lastModified: Date.now() });
+                                const url = await firestoreApi.uploadImageForPageContent(compressedFile);
+                                editor.deleteText(insertIndex, 1);
+                                editor.insertEmbed(insertIndex, 'image', url);
+                                editor.setSelection(insertIndex + 1);
+                            } catch (uploadError) {
+                                editor.deleteText(insertIndex, 1);
+                                const errorTyped = uploadError as { code?: string; message: string };
+                                toast({
+                                    variant: 'destructive',
+                                    title: 'Erro de Upload',
+                                    description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
+                                });
+                            }
+                        } finally {
+                            if (input.parentNode) {
+                                input.parentNode.removeChild(input);
+                            }
+                        }
                     };
-                    const compressedBlob = await imageCompression(file, options);
-                    const compressedFile = new File([compressedBlob], file.name, { type: file.type, lastModified: Date.now() });
-
-                    const url = await firestoreApi.uploadImageForPageContent(compressedFile);
-                    editor.deleteText(insertIndex, 1);
-                    editor.insertEmbed(insertIndex, 'image', url);
-                    editor.setSelection(insertIndex + 1);
-                } catch (uploadError) {
-                    editor.deleteText(insertIndex, 1);
-                    const errorTyped = uploadError as { code?: string; message: string };
-                    toast({
-                        variant: 'destructive',
-                        title: 'Erro de Upload',
-                        description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
-                    });
-                }
-            } finally {
-                if (input.parentNode) {
-                    input.parentNode.removeChild(input);
+                    input.click();
+                },
+                video: function() {
+                     setVideoUrlInput('');
+                     setIsVideoDialogOpen(true);
                 }
             }
-        };
-        input.click();
-    };
-
-    const videoHandler = () => {
-        setVideoUrlInput('');
-        setIsVideoDialogOpen(true);
-    };
+        },
+        imageResize: {
+            parchment: require('quill').Quill.import('parchment'),
+            modules: ['Resize', 'DisplaySize', 'Toolbar']
+        }
+    }), []); // Re-calculate only if dependencies change
 
     const handleEmbedVideo = () => {
         const editor = quillRef.current?.getEditor();
@@ -202,26 +198,6 @@ export default function EditPostPage() {
         setIsVideoDialogOpen(false);
         setVideoUrlInput('');
     };
-
-    const modules = useMemo(() => ({
-        toolbar: {
-            container: [
-                [{ 'header': [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-                [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-                ['link', 'image', 'video'],
-                ['clean']
-            ],
-            handlers: {
-                image: imageHandler,
-                video: videoHandler,
-            }
-        },
-        imageResize: {
-            modules: ['Resize', 'DisplaySize']
-        }
-    }), []); // Handlers are stable, so no dependency array is needed here.
-
 
     async function onSubmit(values: z.infer<typeof postSchema>) {
         if (!user) return;
