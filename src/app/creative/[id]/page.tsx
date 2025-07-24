@@ -1,3 +1,4 @@
+
 // @/src/app/creative/[id]/page.tsx
 'use client';
 
@@ -242,7 +243,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-0.5 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-20 text-muted-foreground hover:text-foreground"
+                className="absolute top-0.5 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-20 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
                 onClick={() => onDelete(item.id)}
             >
                 <X className="h-4 w-4" />
@@ -666,3 +667,4 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
+
