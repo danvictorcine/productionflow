@@ -94,6 +94,17 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
     const handlePaletteUpdate = (updatedColors: string[]) => {
         onUpdate(item.id, { content: JSON.stringify(updatedColors) });
     };
+    
+    const handlePdfError = (error: Error) => {
+        return (
+            <div className="p-2 text-destructive bg-destructive/20 h-full">
+                <CopyableError 
+                    userMessage="Falha ao carregar PDF." 
+                    errorCode={error ? `${error.name}: ${error.message}`: 'UNKNOWN_PDF_ERROR'}
+                />
+            </div>
+        )
+    };
 
     const renderContent = () => {
         switch (item.type) {
@@ -202,7 +213,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                             file={item.content}
                             onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                             loading={<div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>}
-                            error={({ name, message }) => <div className="p-2 text-destructive bg-destructive/20 h-full"><CopyableError userMessage="Falha ao carregar PDF." errorCode={`${name}: ${message}`}/></div>}
+                            error={handlePdfError}
                         >
                             {Array.from(new Array(numPages), (el, index) => (
                                 <Page key={`page_${index + 1}`} pageNumber={index + 1} renderTextLayer={false} renderAnnotationLayer={false}/>
