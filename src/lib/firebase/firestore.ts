@@ -990,10 +990,12 @@ export const getTeamMembers = async (): Promise<TeamMemberAbout[]> => {
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => {
     const data = doc.data();
+    // Fallback for documents that might not have createdAt
+    const createdAt = data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date();
     return {
       id: doc.id,
       ...data,
-      createdAt: (data.createdAt as Timestamp).toDate(),
+      createdAt,
     } as TeamMemberAbout;
   });
 };
@@ -1016,11 +1018,12 @@ export const saveTeamMembers = async (members: Omit<TeamMemberAbout, 'createdAt'
 
     // Set/Update members
     members.forEach((member, index) => {
-        const { file, ...data } = member;
+        const { file, ...data } = member as Partial<TeamMemberAbout> & { id: string }; // Type assertion
         const docRef = doc(collectionRef, member.id);
         const dataToSave = {
             ...data,
             order: index, // Update order based on array position
+            createdAt: Timestamp.now(), // Always set/update timestamp on save
         };
         batch.set(docRef, dataToSave, { merge: true });
     });
@@ -1063,3 +1066,6 @@ export const deleteThemeSettings = async () => {
     await deleteDoc(docRef);
 }
 
+
+
+    
