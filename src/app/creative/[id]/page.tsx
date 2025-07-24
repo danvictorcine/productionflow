@@ -74,7 +74,37 @@ const getSpotifyEmbedUrl = (url: string) => {
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
+    const [pdfError, setPdfError] = useState<string | null>(null);
+    const [isPdfLoading, setIsPdfLoading] = useState(false);
+    const [pdfFile, setPdfFile] = useState<any | null>(null);
+
+    const handlePdfError = (error: Error) => {
+        setPdfError(error?.message || 'UNKNOWN_PDF_ERROR');
+    };
     
+    useEffect(() => {
+        if (item.type === 'pdf' && !item.content.startsWith('data:')) {
+            setIsPdfLoading(true);
+            setPdfError(null);
+            const fetchPdf = async () => {
+                try {
+                    const response = await fetch(item.content);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+                    }
+                    const blob = await response.blob();
+                    setPdfFile(blob);
+                } catch (fetchError: any) {
+                    handlePdfError(fetchError);
+                } finally {
+                    setIsPdfLoading(false);
+                }
+            };
+            fetchPdf();
+        }
+    }, [item.type, item.content]);
+
+
     const noteModules = useMemo(() => ({
         toolbar: {
             container: [
@@ -197,6 +227,20 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'pdf':
+                if (isPdfLoading) {
+                    return <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+                }
+                if (pdfError) {
+                     return (
+                        <div className="flex flex-col items-center justify-center h-full bg-destructive/10 p-4 text-center">
+                            <FileIcon className="h-10 w-10 text-destructive mb-2" />
+                             <CopyableError 
+                                 userMessage="Falha ao carregar PDF." 
+                                 errorCode={pdfError || 'UNKNOWN_PDF_ERROR'}
+                             />
+                         </div>
+                     )
+                }
                 const isExternalPdf = !item.content.startsWith('data:');
                 if (isExternalPdf) {
                     return (
@@ -304,7 +348,7 @@ function CreativeProjectPageDetail() {
         setItems(itemsData);
         itemCountRef.current = itemsData.length;
       } else {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Projeto não encontrado.' });
+        toast({ variant: 'destructive', title: 'Erro', description: 'Moodboard não encontrado.' });
         router.push('/');
       }
     } catch (error) {
@@ -312,7 +356,7 @@ function CreativeProjectPageDetail() {
       toast({
         variant: 'destructive',
         title: 'Erro em /creative/[id]/page.tsx (fetchProjectData)',
-        description: <CopyableError userMessage="Não foi possível carregar os dados do projeto." errorCode={errorTyped.code || errorTyped.message} />,
+        description: <CopyableError userMessage="Não foi possível carregar os dados do moodboard." errorCode={errorTyped.code || errorTyped.message} />,
       });
     } finally {
       setIsLoading(false);
@@ -329,13 +373,13 @@ function CreativeProjectPageDetail() {
       await firestoreApi.updateCreativeProject(project.id, data);
       await fetchProjectData();
       setIsEditDialogOpen(false);
-      toast({ title: 'Projeto atualizado com sucesso!' });
+      toast({ title: 'Moodboard atualizado com sucesso!' });
     } catch (error) {
        const errorTyped = error as { code?: string; message: string };
         toast({
             variant: 'destructive',
             title: 'Erro em /creative/[id]/page.tsx (handleProjectSubmit)',
-            description: <CopyableError userMessage="Não foi possível atualizar o projeto." errorCode={errorTyped.code || errorTyped.message} />,
+            description: <CopyableError userMessage="Não foi possível atualizar o moodboard." errorCode={errorTyped.code || errorTyped.message} />,
         });
     }
   };

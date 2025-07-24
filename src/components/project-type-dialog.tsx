@@ -3,12 +3,12 @@
 
 import { DollarSign, Clapperboard, Brush, Image } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -21,18 +21,15 @@ interface ProjectTypeDialogProps {
 
 export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect, userIsAdmin }: ProjectTypeDialogProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Criar Novo Projeto</DialogTitle>
-          <DialogDescription>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Criar Novo Projeto</SheetTitle>
+          <SheetDescription>
             Escolha o tipo de projeto que você deseja criar.
-          </DialogDescription>
-        </DialogHeader>
-        <div className={cn(
-          "grid grid-cols-1 gap-4 py-4 md:grid-cols-2",
-          userIsAdmin && "lg:grid-cols-4"
-        )}>
+          </SheetDescription>
+        </SheetHeader>
+        <div className="grid grid-cols-1 gap-4 py-4">
           <Card 
             className="cursor-pointer hover:bg-muted/50 transition-colors"
             onClick={() => onSelect('financial')}
@@ -78,13 +75,13 @@ export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect, userIsAdmin }: 
                 <div className="p-3 rounded-full bg-primary/10 mb-2">
                   <Brush className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle>Projeto Criativo</CardTitle>
+                <CardTitle>Moodboard</CardTitle>
                 <CardDescription>Crie um moodboard e organize suas ideias.</CardDescription>
               </CardHeader>
             </Card>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

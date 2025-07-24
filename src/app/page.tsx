@@ -230,10 +230,10 @@ function HomePage() {
     try {
       if (editingCreativeProject) {
         await firestoreApi.updateCreativeProject(editingCreativeProject.id, data);
-        toast({ title: 'Projeto criativo atualizado!' });
+        toast({ title: 'Moodboard atualizado!' });
       } else {
         await firestoreApi.addCreativeProject(data);
-        toast({ title: 'Projeto criativo criado!' });
+        toast({ title: 'Moodboard criado!' });
       }
       await fetchItems();
     } catch (error) {
@@ -243,7 +243,7 @@ function HomePage() {
         title: 'Erro em /page.tsx (handleCreativeProjectSubmit)',
         description: (
           <CopyableError
-            userMessage="Não foi possível salvar o projeto criativo."
+            userMessage="Não foi possível salvar o moodboard."
             errorCode={errorTyped.code || errorTyped.message}
           />
         ),
@@ -376,7 +376,7 @@ function HomePage() {
             case 'creative':
               link = `/creative/${item.id}`;
               Icon = Brush;
-              projectType = 'Projeto Criativo';
+              projectType = 'Moodboard';
               break;
             case 'storyboard':
               link = `/storyboard/${item.id}`;

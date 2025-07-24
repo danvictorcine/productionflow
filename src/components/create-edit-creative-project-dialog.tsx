@@ -77,9 +77,9 @@ export function CreateEditCreativeProjectDialog({ isOpen, setIsOpen, onSubmit, p
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent className="sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>{isEditMode ? "Editar Projeto Criativo" : "Criar Projeto Criativo"}</SheetTitle>
+          <SheetTitle>{isEditMode ? "Editar Moodboard" : "Criar Novo Moodboard"}</SheetTitle>
           <SheetDescription>
-            {isEditMode ? "Atualize os detalhes do seu projeto." : "Dê um nome e uma breve descrição para seu moodboard."}
+            {isEditMode ? "Atualize os detalhes do seu moodboard." : "Dê um nome e uma breve descrição para seu moodboard."}
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
@@ -89,7 +89,7 @@ export function CreateEditCreativeProjectDialog({ isOpen, setIsOpen, onSubmit, p
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Projeto</FormLabel>
+                  <FormLabel>Nome do Moodboard</FormLabel>
                   <FormControl>
                     <Input placeholder="ex: Ideias para o curta 'Amanhecer'" {...field} />
                   </FormControl>
@@ -112,7 +112,7 @@ export function CreateEditCreativeProjectDialog({ isOpen, setIsOpen, onSubmit, p
             />
             <SheetFooter>
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
-              <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
+              <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Moodboard"}</Button>
             </SheetFooter>
           </form>
         </Form>
