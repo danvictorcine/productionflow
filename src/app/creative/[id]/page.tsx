@@ -1,4 +1,3 @@
-
 // @/src/app/creative/[id]/page.tsx
 'use client';
 
@@ -23,7 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { AppFooter } from '@/components/app-footer';
 import { CreateEditCreativeProjectDialog } from '@/components/create-edit-creative-project-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -76,31 +75,37 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
     const colorInputRef = useRef<HTMLInputElement>(null);
     const [pdfError, setPdfError] = useState<string | null>(null);
     const [isPdfLoading, setIsPdfLoading] = useState(false);
-    const [pdfFile, setPdfFile] = useState<any | null>(null);
+    const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(null);
 
     const handlePdfError = (error: Error) => {
         setPdfError(error?.message || 'UNKNOWN_PDF_ERROR');
     };
     
     useEffect(() => {
-        if (item.type === 'pdf' && !item.content.startsWith('data:')) {
+        if (item.type === 'pdf') {
             setIsPdfLoading(true);
             setPdfError(null);
-            const fetchPdf = async () => {
-                try {
-                    const response = await fetch(item.content);
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch PDF: ${response.statusText}`);
-                    }
-                    const blob = await response.blob();
-                    setPdfFile(blob);
-                } catch (fetchError: any) {
+            fetch(item.content)
+                .then(res => {
+                    if (!res.ok) { throw new Error(`Failed to fetch PDF: ${res.statusText}`); }
+                    return res.blob();
+                })
+                .then(blob => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setPdfDataUrl(reader.result as string);
+                        setIsPdfLoading(false);
+                    };
+                    reader.onerror = () => {
+                        handlePdfError(new Error("Failed to read blob as Data URL."));
+                        setIsPdfLoading(false);
+                    };
+                    reader.readAsDataURL(blob);
+                })
+                .catch(fetchError => {
                     handlePdfError(fetchError);
-                } finally {
                     setIsPdfLoading(false);
-                }
-            };
-            fetchPdf();
+                });
         }
     }, [item.type, item.content]);
 
@@ -227,7 +232,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'pdf':
-                if (isPdfLoading) {
+                 if (isPdfLoading) {
                     return <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin" /></div>;
                 }
                 if (pdfError) {
@@ -241,23 +246,14 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                          </div>
                      )
                 }
-                const isExternalPdf = !item.content.startsWith('data:');
-                if (isExternalPdf) {
-                    return (
-                        <iframe
-                            src={`https://docs.google.com/gview?url=${encodeURIComponent(item.content)}&embedded=true`}
-                            className="w-full h-full"
-                            style={{ border: 'none' }}
-                            title="PDF Viewer"
-                        ></iframe>
-                    );
+                if (pdfDataUrl) {
+                    return <iframe src={pdfDataUrl} className="w-full h-full" style={{ border: 'none' }} title="PDF Viewer"></iframe>;
                 }
-                // Fallback for non-http URLs or if it's a data URI (though we're moving away from that)
-                return (
+                 return (
                     <div className="flex flex-col items-center justify-center h-full bg-muted p-4 text-center">
                         <FileIcon className="h-10 w-10 text-muted-foreground mb-2" />
                         <p className="font-semibold text-sm">Visualizar PDF</p>
-                        <p className="text-xs text-muted-foreground mb-3">Este arquivo será aberto em uma nova aba.</p>
+                        <p className="text-xs text-muted-foreground mb-3">Clique para abrir em nova aba.</p>
                         <Button size="sm" onClick={() => window.open(item.content, '_blank')}>
                             Abrir PDF <ExternalLink className="ml-2 h-4 w-4" />
                         </Button>
@@ -681,36 +677,36 @@ function CreativeProjectPageDetail() {
       <CreateEditCreativeProjectDialog isOpen={isEditDialogOpen} setIsOpen={setIsEditDialogOpen} onSubmit={handleProjectSubmit} project={project} />
 
       {/* Add Video Dialog */}
-      <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
-        <DialogContent>
-            <DialogHeader><DialogTitle>Adicionar Vídeo</DialogTitle><DialogDescription>Cole a URL de um vídeo do YouTube ou Vimeo.</DialogDescription></DialogHeader>
+      <Sheet open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
+        <SheetContent>
+            <SheetHeader><SheetTitle>Adicionar Vídeo</SheetTitle><SheetDescription>Cole a URL de um vídeo do YouTube ou Vimeo.</SheetDescription></SheetHeader>
             <div className="grid gap-4 py-4"><Label htmlFor="video-url">URL do Vídeo</Label><Input id="video-url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..."/></div>
-            <DialogFooter><Button onClick={handleAddVideo}>Adicionar</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <SheetFooter><Button onClick={handleAddVideo}>Adicionar</Button></SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       {/* Add Spotify Dialog */}
-      <Dialog open={isSpotifyDialogOpen} onOpenChange={setIsSpotifyDialogOpen}>
-        <DialogContent>
-            <DialogHeader><DialogTitle>Adicionar Música</DialogTitle><DialogDescription>Cole a URL de uma música, álbum ou playlist do Spotify.</DialogDescription></DialogHeader>
+      <Sheet open={isSpotifyDialogOpen} onOpenChange={setIsSpotifyDialogOpen}>
+        <SheetContent>
+            <SheetHeader><SheetTitle>Adicionar Música</SheetTitle><SheetDescription>Cole a URL de uma música, álbum ou playlist do Spotify.</SheetDescription></SheetHeader>
             <div className="grid gap-4 py-4"><Label htmlFor="spotify-url">URL do Spotify</Label><Input id="spotify-url" value={spotifyUrl} onChange={e => setSpotifyUrl(e.target.value)} placeholder="https://open.spotify.com/track/..."/></div>
-            <DialogFooter><Button onClick={handleAddSpotify}>Adicionar</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <SheetFooter><Button onClick={handleAddSpotify}>Adicionar</Button></SheetFooter>
+        </SheetContent>
+      </Sheet>
       
       {/* Add Location Dialog */}
-      <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
-            <DialogHeader><DialogTitle>Adicionar Localização</DialogTitle><DialogDescription>Pesquise ou clique no mapa para adicionar um local.</DialogDescription></DialogHeader>
+      <Sheet open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
+        <SheetContent className="sm:max-w-2xl">
+            <SheetHeader><SheetTitle>Adicionar Localização</SheetTitle><SheetDescription>Pesquise ou clique no mapa para adicionar um local.</SheetDescription></SheetHeader>
             <div className="py-4">
                 <LocationPicker
                     initialPosition={[-14.235, -51.925]}
                     onLocationChange={(lat, lng, name) => setSelectedLocation({ lat, lng, name })}
                 />
             </div>
-            <DialogFooter><Button onClick={handleAddLocation} disabled={!selectedLocation}>Adicionar Local</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <SheetFooter><Button onClick={handleAddLocation} disabled={!selectedLocation}>Adicionar Local</Button></SheetFooter>
+        </SheetContent>
+      </Sheet>
 
     </div>
   );
