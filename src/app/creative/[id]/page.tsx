@@ -329,14 +329,17 @@ function CreativeProjectPageDetail() {
     fetchProjectData();
   }, [fetchProjectData]);
 
-  // Debounced save effect
+  // Debounced save effect for position and size
   useEffect(() => {
     if (isLoading || !hasUnsavedChanges.current) return;
   
     const debounceTimer = setTimeout(() => {
       const changedItems = items.filter(item => {
         const initialItem = initialItemsRef.current.find(i => i.id === item.id);
-        return !initialItem || JSON.stringify(item) !== JSON.stringify(initialItem);
+        // Only consider position and size changes for batch update
+        return !initialItem || 
+               JSON.stringify(item.position) !== JSON.stringify(initialItem.position) ||
+               JSON.stringify(item.size) !== JSON.stringify(initialItem.size);
       });
   
       if (changedItems.length > 0) {
@@ -344,9 +347,7 @@ function CreativeProjectPageDetail() {
             id: item.id,
             data: {
                 position: item.position,
-                size: item.size,
-                content: item.content,
-                items: item.items
+                size: item.size
             }
         }));
 
@@ -396,18 +397,24 @@ function CreativeProjectPageDetail() {
         return newItems;
     });
 
-    // Content updates (like text) should be saved more quickly.
-    if (!data.position && !data.size) {
-        if (data.content) { // Debounce content changes to avoid saving on every keystroke
-            const contentDebounceTimer = setTimeout(() => {
-                firestoreApi.updateBoardItem(itemId, { content: data.content })
+    // Save content-related changes immediately (debounced within component) or via specific API call
+    if (data.content || data.items) {
+        const contentUpdate = {
+            ...(data.content && { content: data.content }),
+            ...(data.items && { items: data.items })
+        };
+        
+        const debounceContentTimer = setTimeout(() => {
+             firestoreApi.updateBoardItem(itemId, contentUpdate)
+                .then(() => {
+                    // Update initial state for content changes as well
+                    initialItemsRef.current = initialItemsRef.current.map(item => 
+                        item.id === itemId ? { ...item, ...contentUpdate } : item
+                    );
+                })
                 .catch(err => console.error("Failed to save content", err));
-            }, 500);
-            return () => clearTimeout(contentDebounceTimer);
-        } else { // For other instant updates like checklist items
-             firestoreApi.updateBoardItem(itemId, data)
-             .catch(err => console.error("Failed to save item update", err));
-        }
+        }, 500); // Debounce content updates to avoid saving on every keystroke
+        return () => clearTimeout(debounceContentTimer);
     }
   }, []);
 
