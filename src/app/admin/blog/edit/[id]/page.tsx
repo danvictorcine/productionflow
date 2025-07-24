@@ -72,7 +72,7 @@ export default function EditPostPage() {
     const postId = params.id as string;
     const isNewPost = postId === 'new';
 
-    const [isLoading, setIsLoading] = useState(!isNewPost);
+    const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
     const [videoUrlInput, setVideoUrlInput] = useState("");
@@ -83,6 +83,11 @@ export default function EditPostPage() {
     });
     
     useEffect(() => {
+        if (isNewPost) {
+            setIsLoading(false);
+            return;
+        }
+
         if (!isNewPost && postId) {
             firestoreApi.getPost(postId)
                 .then(post => {
