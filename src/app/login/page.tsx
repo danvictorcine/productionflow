@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -213,10 +212,8 @@ export default function LoginPage() {
                             <rect width="32" height="32" rx="6" style={{fill: `hsl(var(--brand-icon))`}}/>
                             <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))" style={{opacity: 0.8}}/>
                         </svg>
-                        <div className="flex items-center gap-2">
-                            <h1 className={cn("text-4xl font-bold tracking-tighter", showBackground ? "text-white" : "text-foreground")} style={{color: showBackground ? 'white' : 'hsl(var(--brand-text))'}}>ProductionFlow</h1>
-                            <Badge variant="outline" className={cn(showBackground && "bg-black/20 text-white border-white/50")}>BETA</Badge>
-                        </div>
+                        <h1 className={cn("text-4xl font-bold tracking-tighter", showBackground ? "text-white" : "text-foreground")} style={{color: showBackground ? 'white' : 'hsl(var(--brand-text))'}}>ProductionFlow</h1>
+                        <Badge variant="outline" className={cn(showBackground && "bg-black/20 text-white border-white/50")}>BETA</Badge>
                     </div>
                     <p className="text-lg text-muted-foreground">
                         Sua plataforma completa para a gestão de produções audiovisuais.
@@ -378,3 +375,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
