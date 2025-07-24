@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -99,7 +99,7 @@ export default function EditPostPage() {
         }
     }, [postId, isNewPost, router, toast, form]);
 
-    const imageHandler = useCallback(async () => {
+    const imageHandler = () => {
         const editor = quillRef.current?.getEditor();
         if (!editor) {
             toast({ variant: 'destructive', title: 'Erro no Editor', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY'/> });
@@ -157,9 +157,9 @@ export default function EditPostPage() {
         };
 
         input.click();
-    }, [toast]);
+    };
     
-    const videoHandler = useCallback(() => {
+    const videoHandler = () => {
         const editor = quillRef.current?.getEditor();
         if (!editor) {
             toast({ variant: 'destructive', title: 'Erro no Editor', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY'/> });
@@ -167,7 +167,7 @@ export default function EditPostPage() {
         }
         setVideoUrlInput('');
         setIsVideoDialogOpen(true);
-    }, [toast]);
+    };
 
     const handleEmbedVideo = () => {
         const editor = quillRef.current?.getEditor();
@@ -176,21 +176,20 @@ export default function EditPostPage() {
         const embedUrl = getYoutubeEmbedUrl(videoUrlInput) || getVimeoEmbedUrl(videoUrlInput);
 
         if (!embedUrl) {
-            toast({ variant: 'destructive', title: 'URL Inválida', description: 'Por favor, insira uma URL válida do YouTube ou Vimeo.' });
+            toast({ variant: 'destructive', title: 'URL Inválida', description: <CopyableError userMessage='Por favor, insira uma URL válida do YouTube ou Vimeo.' errorCode='INVALID_VIDEO_URL'/> });
             return;
         }
 
         const range = editor.getSelection(true) || { index: editor.getLength() };
-        // Embed video in a container to make it responsive
         editor.insertEmbed(range.index, 'video', embedUrl);
-        editor.formatLine(range.index, 1, 'align', 'center'); // Center the iframe
+        editor.formatLine(range.index + 1, 1, 'align', 'center');
         
         setIsVideoDialogOpen(false);
         setVideoUrlInput('');
     };
 
 
-    const modules = useMemo(() => ({
+    const modules = {
         toolbar: {
             container: [
                 [{ 'header': [1, 2, 3, false] }],
@@ -204,7 +203,7 @@ export default function EditPostPage() {
                 video: videoHandler,
             }
         },
-    }), [imageHandler, videoHandler]);
+    };
 
 
     async function onSubmit(values: z.infer<typeof postSchema>) {
@@ -340,5 +339,3 @@ export default function EditPostPage() {
         </div>
     )
 }
-
-      
