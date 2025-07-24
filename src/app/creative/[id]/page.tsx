@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -109,7 +110,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                         value={item.content}
                         onChange={(content) => onUpdate(item.id, { content })}
                         modules={titleModules}
-                        className="h-full w-full text-2xl font-bold"
+                        className="h-full w-full text-2xl quill-title-editor"
                         placeholder="Escreva um título..."
                     />
                 );
@@ -714,6 +715,7 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
+
 
 
 

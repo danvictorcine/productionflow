@@ -142,3 +142,9 @@
     max-width: 100%;
     height: auto !important;
 }
+
+/* Custom style for title editor in moodboard */
+.quill-title-editor .ql-editor {
+  padding-bottom: 0;
+  min-height: unset;
+}
