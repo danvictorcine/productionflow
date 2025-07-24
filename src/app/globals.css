@@ -144,8 +144,12 @@
 }
 
 /* Custom style for text editor in moodboard */
-.text-item-wrapper .ql-editor {
-  padding: 0;
+.text-item-wrapper .ql-container.ql-bubble .ql-editor {
+    padding: 1rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .text-item-wrapper .ql-container.ql-bubble:not(.ql-disabled) {
   height: 100%;
