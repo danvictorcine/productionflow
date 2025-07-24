@@ -309,7 +309,7 @@ function StoryboardPageDetail() {
                     link.click();
                 } else { // PDF
                     const pdf = new jsPDF({
-                        orientation: 'p',
+                        orientation: 'l', // landscape
                         unit: 'px',
                         format: [canvas.width, canvas.height],
                     });
