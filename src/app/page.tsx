@@ -360,47 +360,28 @@ function HomePage() {
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => {
-          let link, Icon, description;
+          let link, Icon, projectType;
 
           switch (item.itemType) {
             case 'financial':
               link = `/project/${item.id}`;
               Icon = DollarSign;
-              description = (
-                <CardDescription>{`Orçamento: ${formatCurrency(
-                  (item as Project).budget
-                )}`}</CardDescription>
-              );
+              projectType = 'Gerenciamento Financeiro';
               break;
             case 'production':
               link = `/production/${item.id}`;
               Icon = Clapperboard;
-              description = (
-                <div className="text-sm text-muted-foreground">
-                  <p>{(item as Production).type}</p>
-                  <p>Dir: {(item as Production).director}</p>
-                </div>
-              );
+              projectType = 'Ordem do Dia';
               break;
             case 'creative':
               link = `/creative/${item.id}`;
               Icon = Brush;
-              description = (
-                <CardDescription className="line-clamp-2">
-                  {(item as CreativeProject).description ||
-                    'Acesse para adicionar ideias.'}
-                </CardDescription>
-              );
+              projectType = 'Projeto Criativo';
               break;
             case 'storyboard':
               link = `/storyboard/${item.id}`;
               Icon = ImageIcon;
-              description = (
-                <CardDescription className="line-clamp-2">
-                  {(item as Storyboard).description ||
-                    'Visualize sua história, cena a cena.'}
-                </CardDescription>
-              );
+              projectType = 'Storyboard';
               break;
           }
 
@@ -438,7 +419,7 @@ function HomePage() {
                   </div>
                   <div>
                     <CardTitle>{item.name}</CardTitle>
-                    {description}
+                    <CardDescription>{projectType}</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="mt-auto">
