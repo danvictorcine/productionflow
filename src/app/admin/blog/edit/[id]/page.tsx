@@ -34,12 +34,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import Quill from 'quill';
-import ImageResize from 'quill-image-resize-module-react';
 
-if (typeof window !== 'undefined') {
-    Quill.register('modules/imageResize', ImageResize);
-}
+import Quill from 'quill';
+import * as ImageResize from 'quill-image-resize-module-react';
 
 
 const postSchema = z.object({
@@ -144,9 +141,11 @@ export default function EditPostPage() {
     };
     
     useEffect(() => {
-        if (!quillRef.current) return;
-
-        const editor = quillRef.current.getEditor();
+        if (typeof window !== 'undefined') {
+            Quill.register('modules/imageResize', ImageResize.default);
+        }
+        
+        const editor = quillRef.current?.getEditor();
         if (!editor) return;
 
         const toolbar = editor.getModule('toolbar');
