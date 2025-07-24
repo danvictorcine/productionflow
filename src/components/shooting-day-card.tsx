@@ -31,7 +31,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
 
-const DisplayMap = dynamic(() => import('./display-map').then(mod => mod.DisplayMap), {
+const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
   loading: () => <Skeleton className="h-full w-full rounded-lg" />,
 });
