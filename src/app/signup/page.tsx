@@ -163,7 +163,7 @@ export default function SignupPage() {
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
-      <div className="hidden bg-muted lg:flex lg:flex-col lg:items-center lg:justify-center p-8 relative">
+      <div className="flex flex-col items-center justify-center p-8 relative bg-muted lg:flex">
         <div className="mx-auto w-full max-w-md space-y-4 text-center">
             <div className="flex items-center justify-center gap-3">
               <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
