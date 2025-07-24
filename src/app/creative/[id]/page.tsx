@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X } from 'lucide-react';
+import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X, ExternalLink } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
@@ -63,34 +63,7 @@ const getVimeoEmbedUrl = (url: string) => {
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
-    const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
-    const [isLoadingPdf, setIsLoadingPdf] = useState(true);
-
-    useEffect(() => {
-        let objectUrl: string;
-        if (item.type === 'pdf') {
-            setIsLoadingPdf(true);
-            fetch(item.content)
-                .then(res => res.blob())
-                .then(blob => {
-                    objectUrl = URL.createObjectURL(blob);
-                    setPdfFileUrl(objectUrl);
-                })
-                .catch(err => {
-                    console.error("Failed to fetch PDF blob", err);
-                })
-                .finally(() => {
-                    setIsLoadingPdf(false);
-                });
-        }
-        return () => {
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-            }
-        };
-    }, [item.type, item.content]);
-
-
+    
     const noteModules = useMemo(() => ({
         toolbar: {
             container: [
@@ -213,16 +186,16 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'pdf':
-                if (isLoadingPdf) {
-                    return <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin" /></div>;
-                }
-                if (pdfFileUrl) {
-                    return <iframe src={pdfFileUrl} title={`PDF Viewer - ${item.id}`} className="w-full h-full" />;
-                }
                 return (
-                    <div className="p-2 text-red-500 text-xs flex flex-col items-center justify-center h-full text-center">
-                        <p>Falha ao carregar PDF.</p>
-                        <p className="text-muted-foreground text-xs">O arquivo pode estar corrompido ou o formato não é suportado.</p>
+                    <div 
+                        className="w-full h-full flex flex-col items-center justify-center bg-muted/50 p-4 text-center cursor-pointer hover:bg-muted"
+                        onClick={() => window.open(item.content, '_blank')}
+                        role="button"
+                    >
+                        <FileIcon className="h-10 w-10 text-primary" />
+                        <p className="mt-2 font-semibold text-foreground">Abrir PDF</p>
+                        <p className="text-xs text-muted-foreground">O arquivo será aberto em uma nova aba.</p>
+                        <ExternalLink className="h-4 w-4 absolute top-2 right-2 text-muted-foreground" />
                     </div>
                 );
             case 'video':
