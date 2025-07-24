@@ -33,7 +33,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url,
+).toString();
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -230,26 +233,29 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'pdf':
+                if (isPdfLoading) {
+                  return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>
+                }
                 if (pdfError) {
                     return handlePdfError(new Error(pdfError));
                 }
-                if (isPdfLoading || !pdfFile) {
-                  return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>
+                if (pdfFile) {
+                    return (
+                        <ScrollArea className="h-full w-full bg-gray-200">
+                            <Document
+                                file={pdfFile}
+                                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                                loading={<div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>}
+                                error={handlePdfError}
+                            >
+                                {Array.from(new Array(numPages), (el, index) => (
+                                    <Page key={`page_${index + 1}`} pageNumber={index + 1} renderTextLayer={false} renderAnnotationLayer={false}/>
+                                ))}
+                            </Document>
+                        </ScrollArea>
+                    )
                 }
-                return (
-                    <ScrollArea className="h-full w-full bg-gray-200">
-                        <Document
-                            file={pdfFile}
-                            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                            loading={<div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>}
-                            error={handlePdfError}
-                        >
-                            {Array.from(new Array(numPages), (el, index) => (
-                                <Page key={`page_${index + 1}`} pageNumber={index + 1} renderTextLayer={false} renderAnnotationLayer={false}/>
-                            ))}
-                        </Document>
-                    </ScrollArea>
-                )
+                return null;
             case 'video':
                  const youtubeUrl = getYoutubeEmbedUrl(item.content);
                  const vimeoUrl = getVimeoEmbedUrl(item.content);
@@ -676,7 +682,3 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
-
-    
-
-    
