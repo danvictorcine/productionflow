@@ -289,7 +289,6 @@ function StoryboardPageDetail() {
         if (!exportRef.current || !storyboard) return;
 
         toast({ title: "Gerando arquivo...", description: "Isso pode levar alguns segundos." });
-        window.scrollTo(0, 0);
         setIsExporting(true);
         
         setTimeout(async () => {
@@ -299,40 +298,22 @@ function StoryboardPageDetail() {
                     scale: 2,
                     logging: false,
                     backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+                    scrollY: -window.scrollY,
                 });
 
+                const imgData = canvas.toDataURL('image/png');
                 if (format === 'png') {
-                    const imgData = canvas.toDataURL('image/png');
                     const link = document.createElement('a');
                     link.href = imgData;
                     link.download = `Storyboard_${storyboard.name.replace(/ /g, "_")}.png`;
                     link.click();
                 } else { // PDF
-                    const imgData = canvas.toDataURL('image/png');
                     const pdf = new jsPDF({
                         orientation: 'p',
-                        unit: 'mm',
-                        format: 'a4',
+                        unit: 'px',
+                        format: [canvas.width, canvas.height],
                     });
-
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const canvasWidth = canvas.width;
-                    const canvasHeight = canvas.height;
-                    const ratio = canvasWidth / canvasHeight;
-                    const imgHeight = pdfWidth / ratio;
-                    let heightLeft = imgHeight;
-                    let position = 0;
-
-                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                    heightLeft -= pdf.internal.pageSize.getHeight();
-
-                    while (heightLeft > 0) {
-                        position = heightLeft - imgHeight;
-                        pdf.addPage();
-                        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                        heightLeft -= pdf.internal.pageSize.getHeight();
-                    }
-
+                    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
                     pdf.save(`Storyboard_${storyboard.name.replace(/ /g, "_")}.pdf`);
                 }
                 toast({ title: "Exportação Concluída!" });
@@ -407,8 +388,8 @@ function StoryboardPageDetail() {
                         <UserNav />
                     </div>
                 </header>
-                <main className="flex-1 p-4 sm:p-6 md:p-8">
-                     <div ref={exportRef}>
+                <main ref={exportRef} className="flex-1 p-4 sm:p-6 md:p-8">
+                     <div>
                         <div className="mb-6">
                             <Card>
                                 <CardContent className="p-4 space-y-1">
@@ -446,6 +427,11 @@ function StoryboardPageDetail() {
                                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                                     Adicionar Quadro
                                 </Button>
+                            </div>
+                        )}
+                         {isExporting && (
+                            <div className="mt-8 text-center text-sm text-muted-foreground">
+                                Criado com ProductionFlow
                             </div>
                         )}
                     </div>
