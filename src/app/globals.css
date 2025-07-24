@@ -126,3 +126,53 @@
     width: 100%;
     aspect-ratio: 16 / 9;
 }
+
+/* Styles for quill-image-resize-module */
+.ql-snow .ql-editor img {
+  max-width: 100%;
+  height: auto;
+}
+
+.ql-editor .ql-resizer {
+  border: 1px solid hsl(var(--primary));
+  position: absolute;
+}
+
+.ql-editor .ql-resizer .ql-resizer-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary-foreground));
+  border-radius: 50%;
+}
+.ql-editor .ql-resizer .ql-resizer-handle.ql-resizer-handle-north-west {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+.ql-editor .ql-resizer .ql-resizer-handle.ql-resizer-handle-north-east {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+.ql-editor .ql-resizer .ql-resizer-handle.ql-resizer-handle-south-east {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
+}
+.ql-editor .ql-resizer .ql-resizer-handle.ql-resizer-handle-south-west {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+
+.ql-editor .ql-video {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ql-align-center {
+    text-align: center;
+}

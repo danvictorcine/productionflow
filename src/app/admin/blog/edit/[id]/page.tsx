@@ -34,6 +34,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import Quill from 'quill';
+import ImageResize from 'quill-image-resize-module-react';
+
+Quill.register('modules/imageResize', ImageResize);
 
 
 const postSchema = z.object({
@@ -101,7 +105,10 @@ export default function EditPostPage() {
 
     const handleEmbedVideo = () => {
         const editor = quillRef.current?.getEditor();
-        if (!editor || !videoUrlInput) return;
+        if (!editor || !videoUrlInput) {
+            toast({ variant: 'destructive', title: 'Erro', description: <CopyableError userMessage="Ocorreu um erro ao incorporar o vídeo." errorCode="EDITOR_NOT_READY" /> });
+            return;
+        }
 
         const embedUrl = getYoutubeEmbedUrl(videoUrlInput) || getVimeoEmbedUrl(videoUrlInput);
 
@@ -112,13 +119,13 @@ export default function EditPostPage() {
 
         const range = editor.getSelection(true) || { index: editor.getLength() };
         editor.insertEmbed(range.index, 'video', embedUrl);
-        editor.formatLine(range.index + 1, 1, 'align', 'center');
+        editor.formatLine(range.index, 1, 'align', 'center');
         
         setIsVideoDialogOpen(false);
         setVideoUrlInput('');
     };
 
-    const modules = useMemo(() => ({
+    const modules = {
         toolbar: {
             container: [
                 [{ 'header': [1, 2, 3, false] }],
@@ -128,16 +135,27 @@ export default function EditPostPage() {
                 ['clean']
             ],
         },
-    }), []);
+        imageResize: {
+            parchment: Quill.import('parchment'),
+            modules: ['Resize', 'DisplaySize']
+        }
+    };
     
     useEffect(() => {
         if (!quillRef.current) return;
 
         const editor = quillRef.current.getEditor();
+        if (!editor) return;
+
         const toolbar = editor.getModule('toolbar');
         
         const imageHandler = () => {
-            const range = editor.getSelection(true);
+             const editorInstance = quillRef.current?.getEditor();
+            if (!editorInstance) {
+                 toast({ variant: 'destructive', title: 'Erro', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY' /> });
+                 return;
+            }
+            const range = editorInstance.getSelection(true);
             const input = document.createElement('input');
             input.setAttribute('type', 'file');
             input.setAttribute('accept', 'image/*');
@@ -155,8 +173,8 @@ export default function EditPostPage() {
                         return;
                     }
 
-                    editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
-                    editor.setSelection(insertIndex + 1);
+                    editorInstance.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
+                    editorInstance.setSelection(insertIndex + 1);
 
                     try {
                         const options = {
@@ -168,11 +186,11 @@ export default function EditPostPage() {
                         const compressedFile = new File([compressedBlob], file.name, { type: file.type, lastModified: Date.now() });
 
                         const url = await firestoreApi.uploadImageForPageContent(compressedFile);
-                        editor.deleteText(insertIndex, 1);
-                        editor.insertEmbed(insertIndex, 'image', url);
-                        editor.setSelection(insertIndex + 1);
+                        editorInstance.deleteText(insertIndex, 1);
+                        editorInstance.insertEmbed(insertIndex, 'image', url);
+                        editorInstance.setSelection(insertIndex + 1);
                     } catch (uploadError) {
-                        editor.deleteText(insertIndex, 1);
+                        editorInstance.deleteText(insertIndex, 1);
                         const errorTyped = uploadError as { code?: string; message: string };
                         toast({
                             variant: 'destructive',
@@ -190,6 +208,11 @@ export default function EditPostPage() {
         };
 
         const videoHandler = () => {
+            const editorInstance = quillRef.current?.getEditor();
+            if (!editorInstance) {
+                 toast({ variant: 'destructive', title: 'Erro', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY' /> });
+                 return;
+            }
             setVideoUrlInput('');
             setIsVideoDialogOpen(true);
         };
