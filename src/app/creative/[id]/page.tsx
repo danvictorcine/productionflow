@@ -71,9 +71,12 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
     const [numPages, setNumPages] = useState<number | null>(null);
     const [pdfFile, setPdfFile] = useState<Blob | null>(null);
     const [pdfError, setPdfError] = useState<string | null>(null);
+    const [isPdfLoading, setIsPdfLoading] = useState(true);
 
     useEffect(() => {
         if (item.type === 'pdf') {
+            setIsPdfLoading(true);
+            setPdfError(null);
             const fetchPdf = async () => {
                 try {
                     const response = await fetch(item.content);
@@ -85,6 +88,8 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 } catch (error) {
                     console.error("Error fetching PDF blob:", error);
                     setPdfError((error as Error).message || "UNKNOWN_PDF_ERROR");
+                } finally {
+                    setIsPdfLoading(false);
                 }
             };
             fetchPdf();
@@ -227,6 +232,9 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'pdf':
                 if (pdfError) {
                     return handlePdfError(new Error(pdfError));
+                }
+                if (isPdfLoading || !pdfFile) {
+                  return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>
                 }
                 return (
                     <ScrollArea className="h-full w-full bg-gray-200">
@@ -668,5 +676,7 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
+
+    
 
     
