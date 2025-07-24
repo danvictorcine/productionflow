@@ -1,10 +1,10 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // Permite leitura pública de todos os arquivos
     match /{allPaths=**} {
-      allow read: if true;
+      allow read;
       allow write: if request.auth != null;
     }
   }
