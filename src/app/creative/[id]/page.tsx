@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon } from 'lucide-react';
+import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
@@ -251,12 +251,12 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 {renderContent()}
             </div>
             <Button
-                variant="destructive"
+                variant="ghost"
                 size="icon"
-                className="absolute top-0.5 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                className="absolute top-0.5 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-20 text-muted-foreground hover:text-foreground"
                 onClick={() => onDelete(item.id)}
             >
-                <Trash2 className="h-3 w-3" />
+                <X className="h-4 w-4" />
             </Button>
         </div>
     );
