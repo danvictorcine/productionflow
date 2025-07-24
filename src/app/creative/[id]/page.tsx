@@ -113,12 +113,12 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
         onUpdate(item.id, { content: JSON.stringify(updatedColors) });
     };
     
-    const handlePdfError = (error: Error) => {
+    const handlePdfError = (error?: Error | null) => {
         return (
             <div className="p-2 text-destructive bg-destructive/20 h-full flex items-center justify-center">
-                <CopyableError 
-                    userMessage="Falha ao carregar PDF." 
-                    errorCode={pdfError || error.message || 'UNKNOWN_PDF_ERROR'}
+                <CopyableError
+                    userMessage="Falha ao carregar PDF."
+                    errorCode={pdfError || (error ? error.message : null) || 'UNKNOWN_PDF_ERROR'}
                 />
             </div>
         )
