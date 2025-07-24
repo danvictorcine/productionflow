@@ -1,4 +1,5 @@
 
+// @/src/app/creative/[id]/page.tsx
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -9,10 +10,6 @@ import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
-
 
 import type { CreativeProject, BoardItem, ChecklistItem } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -32,11 +29,6 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url,
-).toString();
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -71,34 +63,6 @@ const getVimeoEmbedUrl = (url: string) => {
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
-    const [numPages, setNumPages] = useState<number | null>(null);
-    const [pdfFile, setPdfFile] = useState<Blob | null>(null);
-    const [pdfError, setPdfError] = useState<string | null>(null);
-    const [isPdfLoading, setIsPdfLoading] = useState(true);
-
-    useEffect(() => {
-        if (item.type === 'pdf') {
-            setIsPdfLoading(true);
-            setPdfError(null);
-            const fetchPdf = async () => {
-                try {
-                    const response = await fetch(item.content);
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch PDF: ${response.statusText}`);
-                    }
-                    const blob = await response.blob();
-                    setPdfFile(blob);
-                } catch (error) {
-                    console.error("Error fetching PDF blob:", error);
-                    setPdfError((error as Error).message || "UNKNOWN_PDF_ERROR");
-                } finally {
-                    setIsPdfLoading(false);
-                }
-            };
-            fetchPdf();
-        }
-    }, [item.type, item.content]);
-
 
     const noteModules = useMemo(() => ({
         toolbar: {
@@ -121,17 +85,6 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
         onUpdate(item.id, { content: JSON.stringify(updatedColors) });
     };
     
-    const handlePdfError = (error?: Error | null) => {
-        return (
-            <div className="p-2 text-destructive bg-destructive/20 h-full flex items-center justify-center">
-                <CopyableError
-                    userMessage="Falha ao carregar PDF."
-                    errorCode={pdfError || (error ? error.message : null) || 'UNKNOWN_PDF_ERROR'}
-                />
-            </div>
-        )
-    };
-
     const renderContent = () => {
         switch (item.type) {
             case 'note':
@@ -233,29 +186,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'pdf':
-                if (isPdfLoading) {
-                  return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>
-                }
-                if (pdfError) {
-                    return handlePdfError(new Error(pdfError));
-                }
-                if (pdfFile) {
-                    return (
-                        <ScrollArea className="h-full w-full bg-gray-200">
-                            <Document
-                                file={pdfFile}
-                                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                                loading={<div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>}
-                                error={handlePdfError}
-                            >
-                                {Array.from(new Array(numPages), (el, index) => (
-                                    <Page key={`page_${index + 1}`} pageNumber={index + 1} renderTextLayer={false} renderAnnotationLayer={false}/>
-                                ))}
-                            </Document>
-                        </ScrollArea>
-                    )
-                }
-                return null;
+                return <iframe src={item.content} title={`PDF Viewer - ${item.id}`} className="w-full h-full" />;
             case 'video':
                  const youtubeUrl = getYoutubeEmbedUrl(item.content);
                  const vimeoUrl = getVimeoEmbedUrl(item.content);
