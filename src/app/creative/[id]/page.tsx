@@ -234,8 +234,8 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
 
     return (
         <div className="w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col">
-            <div className="drag-handle bg-muted/50 hover:bg-muted cursor-move py-1 text-center text-muted-foreground flex items-center justify-center z-10">
-                <GripVertical className="h-4 w-4" />
+            <div className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-move z-10 opacity-30 group-hover:opacity-100 transition-opacity">
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="flex-grow min-h-0">
                 {renderContent()}
@@ -243,7 +243,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-0.5 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-20 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
+                className="absolute top-0.5 right-0.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-20 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
                 onClick={() => onDelete(item.id)}
             >
                 <X className="h-4 w-4" />
