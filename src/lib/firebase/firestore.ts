@@ -598,12 +598,12 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
     where('userId', '==', userId)
   );
   const itemsSnapshot = await getDocs(itemsQuery);
-  for (const doc of itemsSnapshot.docs) {
-    const itemData = doc.data();
+  for (const itemDoc of itemsSnapshot.docs) {
+    const itemData = itemDoc.data();
     if ((itemData.type === 'image' || itemData.type === 'pdf') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
       await deleteImageFromUrl(itemData.content);
     }
-    batch.delete(doc.ref);
+    batch.delete(itemDoc.ref);
   }
 
   await batch.commit();
@@ -752,14 +752,14 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
     where('userId', '==', userId)
   );
   const panelsSnapshot = await getDocs(panelsQuery);
-  for (const doc of panelsSnapshot.docs) {
-      if (doc.data().userId !== userId) continue;
+  for (const panelDoc of panelsSnapshot.docs) {
+      if (panelDoc.data().userId !== userId) continue;
       
-      const panelData = doc.data();
+      const panelData = panelDoc.data();
       if (panelData.imageUrl && panelData.imageUrl.includes('firebasestorage.googleapis.com')) {
           await deleteImageFromUrl(panelData.imageUrl);
       }
-      batch.delete(doc.ref);
+      batch.delete(panelDoc.ref);
   }
 
   await batch.commit();

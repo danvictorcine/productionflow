@@ -2,7 +2,9 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite leitura pública de todos os arquivos
+    // As regras de correspondência para todos os caminhos permitem o acesso de leitura pública
+    // a todos os arquivos, incluindo o acesso de leitura a arquivos e imagens de 
+    // visualizadores de PDF.
     match /{allPaths=**} {
       allow read;
       allow write: if request.auth != null;
