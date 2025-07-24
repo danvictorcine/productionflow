@@ -63,6 +63,33 @@ const getVimeoEmbedUrl = (url: string) => {
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
+    const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
+    const [isLoadingPdf, setIsLoadingPdf] = useState(true);
+
+    useEffect(() => {
+        let objectUrl: string;
+        if (item.type === 'pdf') {
+            setIsLoadingPdf(true);
+            fetch(item.content)
+                .then(res => res.blob())
+                .then(blob => {
+                    objectUrl = URL.createObjectURL(blob);
+                    setPdfFileUrl(objectUrl);
+                })
+                .catch(err => {
+                    console.error("Failed to fetch PDF blob", err);
+                })
+                .finally(() => {
+                    setIsLoadingPdf(false);
+                });
+        }
+        return () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+    }, [item.type, item.content]);
+
 
     const noteModules = useMemo(() => ({
         toolbar: {
@@ -186,7 +213,18 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'pdf':
-                return <iframe src={item.content} title={`PDF Viewer - ${item.id}`} className="w-full h-full" />;
+                if (isLoadingPdf) {
+                    return <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+                }
+                if (pdfFileUrl) {
+                    return <iframe src={pdfFileUrl} title={`PDF Viewer - ${item.id}`} className="w-full h-full" />;
+                }
+                return (
+                    <div className="p-2 text-red-500 text-xs flex flex-col items-center justify-center h-full text-center">
+                        <p>Falha ao carregar PDF.</p>
+                        <p className="text-muted-foreground text-xs">O arquivo pode estar corrompido ou o formato não é suportado.</p>
+                    </div>
+                );
             case 'video':
                  const youtubeUrl = getYoutubeEmbedUrl(item.content);
                  const vimeoUrl = getVimeoEmbedUrl(item.content);
