@@ -210,10 +210,10 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 return (
                     <ScrollArea className="h-full w-full bg-gray-200">
                         <Document
-                            file={item.content}
+                            file={{ url: item.content }}
                             onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                             loading={<div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>}
-                            error={(error) => <div className="p-2 text-destructive bg-destructive/20 h-full"><CopyableError userMessage="Falha ao carregar PDF." errorCode={error ? `${error.name}: ${error.message}`: 'UNKNOWN_PDF_ERROR'}/></div>}
+                            error={handlePdfError}
                         >
                             {Array.from(new Array(numPages), (el, index) => (
                                 <Page key={`page_${index + 1}`} pageNumber={index + 1} renderTextLayer={false} renderAnnotationLayer={false}/>
