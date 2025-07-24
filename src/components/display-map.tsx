@@ -1,11 +1,13 @@
 // @/src/components/display-map.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.webpack.css'; 
 import 'leaflet-defaulticon-compatibility';
+import { Skeleton } from './ui/skeleton';
 
 interface DisplayMapProps {
   position: LatLngExpression;
@@ -14,15 +16,19 @@ interface DisplayMapProps {
 }
 
 export function DisplayMap({ position, className, isExporting = false }: DisplayMapProps) {
-  if (typeof window === 'undefined') {
-    return null;
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return <Skeleton className={className} />;
   }
-  
+
   const [lat, lng] = Array.isArray(position) ? position : [position.lat, position.lng];
   const zoom = 14;
   
-  // Always render the interactive map. The PDF export logic will handle the capture.
-  // This ensures the marker and attribution are always present.
   return (
     <MapContainer
       center={position}
