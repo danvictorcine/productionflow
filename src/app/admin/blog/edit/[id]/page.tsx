@@ -155,14 +155,21 @@ export default function EditPostPage() {
     }, [toast]);
 
     const videoHandler = useCallback(() => {
-        const editor = quillRef.current?.getEditor();
-        if (!editor) {
-            toast({ variant: 'destructive', title: 'Erro de Editor', description: <CopyableError userMessage='O editor de texto não está pronto.' errorCode='EDITOR_NOT_READY' /> });
-            return;
-        }
         setVideoUrlInput('');
         setIsVideoDialogOpen(true);
-    }, [toast]);
+    }, []);
+
+     useEffect(() => {
+        if (quillRef.current) {
+            const editor = quillRef.current.getEditor();
+            if (editor) {
+                // This is a bit of a hack, but it's the most reliable way to
+                // add handlers to the toolbar after it has been rendered.
+                editor.getModule('toolbar').addHandler('image', imageHandler);
+                editor.getModule('toolbar').addHandler('video', videoHandler);
+            }
+        }
+    }, [imageHandler, videoHandler]);
     
     const modules = useMemo(() => ({
         toolbar: {
@@ -173,12 +180,8 @@ export default function EditPostPage() {
                 ['link', 'image', 'video'],
                 ['clean']
             ],
-            handlers: {
-                image: imageHandler,
-                video: videoHandler
-            }
         }
-    }), [imageHandler, videoHandler]);
+    }), []);
 
     const handleEmbedVideo = () => {
         const editor = quillRef.current?.getEditor();
@@ -200,7 +203,7 @@ export default function EditPostPage() {
 
         const range = editor.getSelection(true) || { index: editor.getLength(), length: 0 };
         editor.insertEmbed(range.index, 'video', embedUrl);
-        editor.formatLine(range.index + 1, 1, 'align', 'center');
+        editor.formatLine(range.index, 1, 'align', 'center');
         
         setIsVideoDialogOpen(false);
         setVideoUrlInput('');
