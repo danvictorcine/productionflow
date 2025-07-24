@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X, ExternalLink, Music } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
@@ -60,6 +60,17 @@ const getVimeoEmbedUrl = (url: string) => {
     const videoId = match ? match[1] : null;
     return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
 };
+
+const getSpotifyEmbedUrl = (url: string) => {
+    const spotifyRegex = /https?:\/\/open\.spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/;
+    const match = url.match(spotifyRegex);
+    if (match && match[1] && match[2]) {
+        const type = match[1];
+        const id = match[2];
+        return `https://open.spotify.com/embed/${type}/${id}`;
+    }
+    return null;
+}
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
@@ -186,12 +197,27 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'pdf':
+                const isExternalPdf = !item.content.startsWith('data:');
+                if (isExternalPdf) {
+                    return (
+                        <iframe
+                            src={`https://docs.google.com/gview?url=${encodeURIComponent(item.content)}&embedded=true`}
+                            className="w-full h-full"
+                            style={{ border: 'none' }}
+                            title="PDF Viewer"
+                        ></iframe>
+                    );
+                }
+                // Fallback for non-http URLs or if it's a data URI (though we're moving away from that)
                 return (
-                    <iframe
-                        src={`https://docs.google.com/gview?url=${encodeURIComponent(item.content)}&embedded=true`}
-                        className="w-full h-full"
-                        style={{ border: 'none' }}
-                    ></iframe>
+                    <div className="flex flex-col items-center justify-center h-full bg-muted p-4 text-center">
+                        <FileIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                        <p className="font-semibold text-sm">Visualizar PDF</p>
+                        <p className="text-xs text-muted-foreground mb-3">Este arquivo será aberto em uma nova aba.</p>
+                        <Button size="sm" onClick={() => window.open(item.content, '_blank')}>
+                            Abrir PDF <ExternalLink className="ml-2 h-4 w-4" />
+                        </Button>
+                    </div>
                 );
             case 'video':
                  const youtubeUrl = getYoutubeEmbedUrl(item.content);
@@ -201,6 +227,12 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                      return <iframe src={embedUrl} className="w-full h-full" frameBorder="0" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen></iframe>;
                  }
                  return <div className="p-2 text-red-500 text-xs">Link de vídeo inválido ou não suportado. Use links do YouTube ou Vimeo.</div>;
+            case 'spotify':
+                 const spotifyEmbedUrl = getSpotifyEmbedUrl(item.content);
+                 if (spotifyEmbedUrl) {
+                     return <iframe src={spotifyEmbedUrl} className="w-full h-full" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowFullScreen></iframe>;
+                 }
+                 return <div className="p-2 text-red-500 text-xs">Link do Spotify inválido. Use um link de música, álbum ou playlist.</div>;
             case 'location':
                 const locationData = JSON.parse(item.content);
                 return (
@@ -254,6 +286,8 @@ function CreativeProjectPageDetail() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
+  const [isSpotifyDialogOpen, setIsSpotifyDialogOpen] = useState(false);
+  const [spotifyUrl, setSpotifyUrl] = useState("");
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number, name: string} | null>(null);
 
@@ -359,12 +393,17 @@ function CreativeProjectPageDetail() {
           pdf: 'PDF',
           video: 'Vídeo',
           location: 'Localização',
+          spotify: 'Spotify',
       };
       toast({ title: `${typeDisplayNames[type]} adicionada!` });
 
       if (type === 'video') {
         setIsVideoDialogOpen(false);
         setVideoUrl("");
+      }
+       if (type === 'spotify') {
+        setIsSpotifyDialogOpen(false);
+        setSpotifyUrl("");
       }
       if (type === 'location') {
         setIsLocationDialogOpen(false);
@@ -471,6 +510,17 @@ function CreativeProjectPageDetail() {
     }
     handleAddItem('video', videoUrl, { width: 480, height: 270 });
   };
+  
+  const handleAddSpotify = () => {
+    if (!spotifyUrl) return;
+    const embedUrl = getSpotifyEmbedUrl(spotifyUrl);
+    if (!embedUrl) {
+        toast({ variant: 'destructive', title: 'URL Inválida', description: 'Use uma URL de música, álbum ou playlist do Spotify.' });
+        return;
+    }
+    handleAddItem('spotify', spotifyUrl, { width: 350, height: 380 });
+  };
+
 
   const handleAddLocation = () => {
     if (!selectedLocation) return;
@@ -548,6 +598,9 @@ function CreativeProjectPageDetail() {
                     <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)}>
                         <Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Vídeo</span>
                     </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)}>
+                        <Music className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Música</span>
+                    </Button>
                      <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)}>
                         <MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span>
                     </Button>
@@ -589,6 +642,15 @@ function CreativeProjectPageDetail() {
             <DialogHeader><DialogTitle>Adicionar Vídeo</DialogTitle><DialogDescription>Cole a URL de um vídeo do YouTube ou Vimeo.</DialogDescription></DialogHeader>
             <div className="grid gap-4 py-4"><Label htmlFor="video-url">URL do Vídeo</Label><Input id="video-url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..."/></div>
             <DialogFooter><Button onClick={handleAddVideo}>Adicionar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Spotify Dialog */}
+      <Dialog open={isSpotifyDialogOpen} onOpenChange={setIsSpotifyDialogOpen}>
+        <DialogContent>
+            <DialogHeader><DialogTitle>Adicionar Música</DialogTitle><DialogDescription>Cole a URL de uma música, álbum ou playlist do Spotify.</DialogDescription></DialogHeader>
+            <div className="grid gap-4 py-4"><Label htmlFor="spotify-url">URL do Spotify</Label><Input id="spotify-url" value={spotifyUrl} onChange={e => setSpotifyUrl(e.target.value)} placeholder="https://open.spotify.com/track/..."/></div>
+            <DialogFooter><Button onClick={handleAddSpotify}>Adicionar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
       
