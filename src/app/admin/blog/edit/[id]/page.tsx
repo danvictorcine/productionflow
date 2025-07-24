@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -6,7 +7,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Video } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 import imageCompression from 'browser-image-compression';
@@ -22,6 +23,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
+import { getYoutubeEmbedUrl, getVimeoEmbedUrl } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 const postSchema = z.object({
     title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres.' }),
@@ -53,6 +66,8 @@ export default function EditPostPage() {
 
     const [isLoading, setIsLoading] = useState(!isNewPost);
     const [isSaving, setIsSaving] = useState(false);
+    const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+    const [videoUrlInput, setVideoUrlInput] = useState("");
 
     const form = useForm<z.infer<typeof postSchema>>({
         resolver: zodResolver(postSchema),
@@ -67,7 +82,7 @@ export default function EditPostPage() {
                         form.reset({ title: post.title, content: post.content });
                         initialImageUrlsRef.current = new Set(getUrlsFromHtml(post.content));
                     } else {
-                        toast({ variant: 'destructive', title: 'Post não encontrado.' });
+                        toast({ variant: 'destructive', title: 'Erro', description: <CopyableError userMessage='Post não encontrado.' errorCode='POST_NOT_FOUND'/> });
                         router.push('/admin/blog');
                     }
                 })
@@ -75,7 +90,7 @@ export default function EditPostPage() {
                     const errorTyped = error as { code?: string; message: string };
                     toast({ 
                         variant: 'destructive',
-                        title: 'Erro em /admin/blog/edit/[id]/page.tsx (getPost)',
+                        title: 'Erro ao Carregar Post',
                         description: <CopyableError userMessage="Não foi possível carregar os dados do post." errorCode={errorTyped.code || errorTyped.message} />,
                     });
                     router.push('/admin/blog');
@@ -87,7 +102,7 @@ export default function EditPostPage() {
     const imageHandler = useCallback(async () => {
         const editor = quillRef.current?.getEditor();
         if (!editor) {
-            toast({ variant: 'destructive', title: 'Erro', description: 'O editor de texto não está pronto. Tente novamente.' });
+            toast({ variant: 'destructive', title: 'Erro no Editor', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY'/> });
             return;
         }
 
@@ -105,7 +120,7 @@ export default function EditPostPage() {
                 const insertIndex = range ? range.index : 0;
 
                 if (!/^image\//.test(file.type)) {
-                    toast({ variant: 'destructive', title: 'Arquivo Inválido', description: 'Por favor, selecione um arquivo de imagem.' });
+                    toast({ variant: 'destructive', title: 'Arquivo Inválido', description: <CopyableError userMessage='Por favor, selecione um arquivo de imagem.' errorCode='INVALID_FILE_TYPE'/> });
                     return;
                 }
 
@@ -130,7 +145,7 @@ export default function EditPostPage() {
                     const errorTyped = uploadError as { code?: string; message: string };
                     toast({
                         variant: 'destructive',
-                        title: 'Erro em /admin/blog/edit/[id]/page.tsx (uploadImage)',
+                        title: 'Erro de Upload',
                         description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
                     });
                 }
@@ -143,6 +158,37 @@ export default function EditPostPage() {
 
         input.click();
     }, [toast]);
+    
+    const videoHandler = useCallback(() => {
+        const editor = quillRef.current?.getEditor();
+        if (!editor) {
+            toast({ variant: 'destructive', title: 'Erro no Editor', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY'/> });
+            return;
+        }
+        setVideoUrlInput('');
+        setIsVideoDialogOpen(true);
+    }, [toast]);
+
+    const handleEmbedVideo = () => {
+        const editor = quillRef.current?.getEditor();
+        if (!editor || !videoUrlInput) return;
+
+        const embedUrl = getYoutubeEmbedUrl(videoUrlInput) || getVimeoEmbedUrl(videoUrlInput);
+
+        if (!embedUrl) {
+            toast({ variant: 'destructive', title: 'URL Inválida', description: 'Por favor, insira uma URL válida do YouTube ou Vimeo.' });
+            return;
+        }
+
+        const range = editor.getSelection(true) || { index: editor.getLength() };
+        // Embed video in a container to make it responsive
+        editor.insertEmbed(range.index, 'video', embedUrl);
+        editor.formatLine(range.index, 1, 'align', 'center'); // Center the iframe
+        
+        setIsVideoDialogOpen(false);
+        setVideoUrlInput('');
+    };
+
 
     const modules = useMemo(() => ({
         toolbar: {
@@ -150,14 +196,15 @@ export default function EditPostPage() {
                 [{ 'header': [1, 2, 3, false] }],
                 ['bold', 'italic', 'underline', 'strike', 'blockquote'],
                 [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-                ['link', 'image'],
+                ['link', 'image', 'video'],
                 ['clean']
             ],
             handlers: {
-                image: imageHandler
+                image: imageHandler,
+                video: videoHandler,
             }
         },
-    }), [imageHandler]);
+    }), [imageHandler, videoHandler]);
 
 
     async function onSubmit(values: z.infer<typeof postSchema>) {
@@ -184,7 +231,6 @@ export default function EditPostPage() {
                 toast({ title: 'Publicação atualizada com sucesso!' });
             }
 
-            // Delete unused images only after a successful save
             if (imageUrlsToDelete.length > 0) {
               await Promise.all(
                 imageUrlsToDelete.map(url => firestoreApi.deleteImageFromUrl(url))
@@ -196,7 +242,7 @@ export default function EditPostPage() {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro em /admin/blog/edit/[id]/page.tsx (onSubmit)',
+                title: 'Erro ao Salvar',
                 description: <CopyableError userMessage="Não foi possível salvar a publicação." errorCode={errorTyped.code || errorTyped.message} />,
             });
         } finally {
@@ -271,6 +317,28 @@ export default function EditPostPage() {
                 </Form>
             </main>
             <AppFooter />
+
+            <AlertDialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Incorporar Vídeo</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Cole a URL de um vídeo do YouTube ou Vimeo para adicioná-lo à sua publicação.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <Input 
+                        value={videoUrlInput} 
+                        onChange={(e) => setVideoUrlInput(e.target.value)} 
+                        placeholder="https://www.youtube.com/watch?v=..."
+                    />
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleEmbedVideo}>Incorporar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
+
+      

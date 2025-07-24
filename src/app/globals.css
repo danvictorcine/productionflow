@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -119,3 +120,11 @@
   border-bottom-left-radius: var(--radius);
   border-bottom-right-radius: var(--radius);
 }
+
+/* Responsive iframe for video embeds */
+.ql-video {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+      
