@@ -73,42 +73,6 @@ const getSpotifyEmbedUrl = (url: string) => {
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
-    const [pdfError, setPdfError] = useState<string | null>(null);
-    const [isPdfLoading, setIsPdfLoading] = useState(false);
-    const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(null);
-
-    const handlePdfError = (error: Error) => {
-        setPdfError(error?.message || 'UNKNOWN_PDF_ERROR');
-    };
-    
-    useEffect(() => {
-        if (item.type === 'pdf') {
-            setIsPdfLoading(true);
-            setPdfError(null);
-            fetch(item.content)
-                .then(res => {
-                    if (!res.ok) { throw new Error(`Failed to fetch PDF: ${res.statusText}`); }
-                    return res.blob();
-                })
-                .then(blob => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        setPdfDataUrl(reader.result as string);
-                        setIsPdfLoading(false);
-                    };
-                    reader.onerror = () => {
-                        handlePdfError(new Error("Failed to read blob as Data URL."));
-                        setIsPdfLoading(false);
-                    };
-                    reader.readAsDataURL(blob);
-                })
-                .catch(fetchError => {
-                    handlePdfError(fetchError);
-                    setIsPdfLoading(false);
-                });
-        }
-    }, [item.type, item.content]);
-
 
     const noteModules = useMemo(() => ({
         toolbar: {
@@ -232,32 +196,13 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'pdf':
-                 if (isPdfLoading) {
-                    return <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin" /></div>;
-                }
-                if (pdfError) {
-                     return (
-                        <div className="flex flex-col items-center justify-center h-full bg-destructive/10 p-4 text-center">
-                            <FileIcon className="h-10 w-10 text-destructive mb-2" />
-                             <CopyableError 
-                                 userMessage="Falha ao carregar PDF." 
-                                 errorCode={pdfError || 'UNKNOWN_PDF_ERROR'}
-                             />
-                         </div>
-                     )
-                }
-                if (pdfDataUrl) {
-                    return <iframe src={pdfDataUrl} className="w-full h-full" style={{ border: 'none' }} title="PDF Viewer"></iframe>;
-                }
-                 return (
-                    <div className="flex flex-col items-center justify-center h-full bg-muted p-4 text-center">
-                        <FileIcon className="h-10 w-10 text-muted-foreground mb-2" />
-                        <p className="font-semibold text-sm">Visualizar PDF</p>
-                        <p className="text-xs text-muted-foreground mb-3">Clique para abrir em nova aba.</p>
-                        <Button size="sm" onClick={() => window.open(item.content, '_blank')}>
-                            Abrir PDF <ExternalLink className="ml-2 h-4 w-4" />
-                        </Button>
-                    </div>
+                return (
+                    <iframe
+                        src={`https://docs.google.com/gview?url=${encodeURIComponent(item.content)}&embedded=true`}
+                        className="w-full h-full"
+                        style={{ border: 'none' }}
+                        title="PDF Viewer"
+                    ></iframe>
                 );
             case 'video':
                  const youtubeUrl = getYoutubeEmbedUrl(item.content);

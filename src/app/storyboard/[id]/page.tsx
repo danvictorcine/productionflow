@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText, FileDown } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileText, FileDown, X } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -120,11 +120,9 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                     {index + 1}
                 </div>
                 {!isExporting && (
-                  <div className="absolute top-1 right-1 flex gap-1">
-                      <Button variant="destructive" size="icon" className="h-7 w-7 opacity-80 hover:opacity-100" onClick={() => onDelete(panel.id)}>
-                          <Trash2 className="h-4 w-4" />
-                      </Button>
-                  </div>
+                  <Button variant="ghost" size="icon" className="absolute top-0.5 right-1 h-7 w-7 text-white/70 hover:text-white hover:bg-black/50" onClick={() => onDelete(panel.id)}>
+                      <X className="h-4 w-4" />
+                  </Button>
                 )}
             </div>
             <Textarea 
