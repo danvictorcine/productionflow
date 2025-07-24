@@ -598,7 +598,13 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
     where('userId', '==', userId)
   );
   const itemsSnapshot = await getDocs(itemsQuery);
-  itemsSnapshot.forEach(doc => batch.delete(doc.ref));
+  for (const doc of itemsSnapshot.docs) {
+    const itemData = doc.data();
+    if ((itemData.type === 'image' || itemData.type === 'pdf') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
+      await deleteImageFromUrl(itemData.content);
+    }
+    batch.delete(doc.ref);
+  }
 
   await batch.commit();
 };
@@ -646,8 +652,7 @@ export const deleteBoardItem = async (itemId: string) => {
 
   if (itemSnap.exists()) {
     const itemData = itemSnap.data();
-    // If it's an image with a Firebase Storage URL, delete it from storage first
-    if (itemData.type === 'image' && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
+    if ((itemData.type === 'image' || itemData.type === 'pdf') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
       await deleteImageFromUrl(itemData.content);
     }
   }
@@ -669,6 +674,22 @@ export const uploadImageForBoard = async (file: File): Promise<string> => {
   
   return downloadURL;
 };
+
+export const uploadPdfForBoard = async (file: File): Promise<string> => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+  const timestamp = new Date().getTime();
+  const randomString = Math.random().toString(36).substring(2, 8);
+  const fileName = `${timestamp}-${randomString}-${file.name}`;
+  const filePath = `content/board_pdfs/${userId}/${fileName}`;
+  const storageRef = ref(storage, filePath);
+  
+  await uploadBytes(storageRef, file);
+  const downloadURL = await getDownloadURL(storageRef);
+  
+  return downloadURL;
+};
+
 
 // === Storyboard Functions ===
 
@@ -1065,7 +1086,3 @@ export const deleteThemeSettings = async () => {
     const docRef = doc(db, 'settings', 'theme');
     await deleteDoc(docRef);
 }
-
-
-
-    

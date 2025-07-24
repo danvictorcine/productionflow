@@ -5,11 +5,15 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus } from 'lucide-react';
+import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
 
 import type { CreativeProject, BoardItem, ChecklistItem } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -28,6 +32,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url,
+).toString();
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -62,6 +72,7 @@ const getVimeoEmbedUrl = (url: string) => {
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
+    const [numPages, setNumPages] = useState<number | null>(null);
 
     const noteModules = useMemo(() => ({
         toolbar: {
@@ -184,6 +195,21 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             }
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
+            case 'pdf':
+                return (
+                    <ScrollArea className="h-full w-full bg-gray-200">
+                        <Document
+                            file={item.content}
+                            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                            loading={<div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>}
+                            error={<div className="p-4 text-destructive-foreground bg-destructive">Falha ao carregar PDF.</div>}
+                        >
+                            {Array.from(new Array(numPages), (el, index) => (
+                                <Page key={`page_${index + 1}`} pageNumber={index + 1} renderTextLayer={false} renderAnnotationLayer={false}/>
+                            ))}
+                        </Document>
+                    </ScrollArea>
+                )
             case 'video':
                  const youtubeUrl = getYoutubeEmbedUrl(item.content);
                  const vimeoUrl = getVimeoEmbedUrl(item.content);
@@ -233,6 +259,7 @@ function CreativeProjectPageDetail() {
   const { user } = useAuth();
   const { toast } = useToast();
   const imageUploadRef = useRef<HTMLInputElement>(null);
+  const pdfUploadRef = useRef<HTMLInputElement>(null);
   const itemCountRef = useRef(0);
 
   const [project, setProject] = useState<CreativeProject | null>(null);
@@ -346,6 +373,7 @@ function CreativeProjectPageDetail() {
           checklist: 'Checklist',
           palette: 'Paleta de cores',
           image: 'Imagem',
+          pdf: 'PDF',
           video: 'Vídeo',
           location: 'Localização',
       };
@@ -412,6 +440,27 @@ function CreativeProjectPageDetail() {
     } finally {
       setIsUploading(false);
       if (imageUploadRef.current) imageUploadRef.current.value = "";
+    }
+  };
+  
+  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files?.[0]) return;
+    setIsUploading(true);
+    const file = event.target.files[0];
+
+    try {
+      const url = await firestoreApi.uploadPdfForBoard(file);
+      await handleAddItem('pdf', url, { width: 400, height: 500 });
+    } catch (error) {
+       const errorTyped = error as { code?: string; message: string };
+       toast({ 
+          variant: 'destructive', 
+          title: 'Erro em /creative/[id]/page.tsx (handlePdfUpload)',
+          description: <CopyableError userMessage="Não foi possível fazer o upload do PDF." errorCode={errorTyped.code || errorTyped.message} />
+       });
+    } finally {
+      setIsUploading(false);
+      if (pdfUploadRef.current) pdfUploadRef.current.value = "";
     }
   };
 
@@ -508,6 +557,11 @@ function CreativeProjectPageDetail() {
                         <span className="hidden md:inline">Imagem</span>
                     </Button>
                     <input type="file" ref={imageUploadRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                    <Button variant="ghost" size="sm" onClick={() => pdfUploadRef.current?.click()} disabled={isUploading}>
+                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <FileIcon className="h-4 w-4 md:mr-2" />}
+                        <span className="hidden md:inline">PDF</span>
+                    </Button>
+                    <input type="file" ref={pdfUploadRef} onChange={handlePdfUpload} accept="application/pdf" className="hidden" />
                     <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)}>
                         <Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Vídeo</span>
                     </Button>
