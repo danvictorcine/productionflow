@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,12 +35,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-// Register the image resize module only on the client-side
-if (typeof window !== 'undefined') {
-    const Quill = require('quill');
-    const ImageResize = require('quill-image-resize-module-react').default;
-    Quill.register('modules/imageResize', ImageResize);
-}
 
 // Import Quill dynamically to ensure it runs only on the client-side
 const QuillEditor = dynamic(() => import('react-quill'), { 
@@ -111,6 +105,65 @@ export default function EditPostPage() {
         }
     }, [postId, isNewPost, router, toast, form]);
 
+    const imageHandler = useCallback(() => {
+        const editor = quillRef.current?.getEditor();
+        if (!editor) {
+            toast({ variant: 'destructive', title: 'Erro de Editor', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY' /> });
+            return;
+        }
+        const range = editor.getSelection(true) || { index: editor.getLength(), length: 0 };
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        document.body.appendChild(input);
+
+        input.onchange = async () => {
+            try {
+                if (!input.files || input.files.length === 0) return;
+                const file = input.files[0];
+                const insertIndex = range ? range.index : 0;
+                if (!/^image\//.test(file.type)) {
+                    toast({ variant: 'destructive', title: 'Arquivo Inválido', description: <CopyableError userMessage='Por favor, selecione um arquivo de imagem.' errorCode='INVALID_FILE_TYPE'/> });
+                    return;
+                }
+                editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
+                editor.setSelection(insertIndex + 1);
+                try {
+                    const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
+                    const compressedBlob = await imageCompression(file, options);
+                    const compressedFile = new File([compressedBlob], file.name, { type: file.type, lastModified: Date.now() });
+                    const url = await firestoreApi.uploadImageForPageContent(compressedFile);
+                    editor.deleteText(insertIndex, 1);
+                    editor.insertEmbed(insertIndex, 'image', url);
+                    editor.setSelection(insertIndex + 1);
+                } catch (uploadError) {
+                    editor.deleteText(insertIndex, 1);
+                    const errorTyped = uploadError as { code?: string; message: string };
+                    toast({
+                        variant: 'destructive',
+                        title: 'Erro de Upload',
+                        description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || 'UPLOAD_FAILED'} />,
+                    });
+                }
+            } finally {
+                if (input.parentNode) {
+                    input.parentNode.removeChild(input);
+                }
+            }
+        };
+        input.click();
+    }, [toast]);
+
+    const videoHandler = useCallback(() => {
+        const editor = quillRef.current?.getEditor();
+        if (!editor) {
+            toast({ variant: 'destructive', title: 'Erro de Editor', description: <CopyableError userMessage='O editor de texto não está pronto.' errorCode='EDITOR_NOT_READY' /> });
+            return;
+        }
+        setVideoUrlInput('');
+        setIsVideoDialogOpen(true);
+    }, [toast]);
+    
     const modules = useMemo(() => ({
         toolbar: {
             container: [
@@ -121,70 +174,11 @@ export default function EditPostPage() {
                 ['clean']
             ],
             handlers: {
-                image: function() { // Use function keyword to get correct `this` binding
-                    const editor = quillRef.current?.getEditor();
-                    if (!editor) {
-                        toast({ variant: 'destructive', title: 'Erro de Editor', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY' /> });
-                        return;
-                    }
-                    const range = editor.getSelection(true) || { index: editor.getLength(), length: 0 };
-                    const input = document.createElement('input');
-                    input.setAttribute('type', 'file');
-                    input.setAttribute('accept', 'image/*');
-                    document.body.appendChild(input);
-
-                    input.onchange = async () => {
-                        try {
-                            if (!input.files || input.files.length === 0) return;
-                            const file = input.files[0];
-                            const insertIndex = range ? range.index : 0;
-                            if (!/^image\//.test(file.type)) {
-                                toast({ variant: 'destructive', title: 'Arquivo Inválido', description: <CopyableError userMessage='Por favor, selecione um arquivo de imagem.' errorCode='INVALID_FILE_TYPE'/> });
-                                return;
-                            }
-                            editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
-                            editor.setSelection(insertIndex + 1);
-                            try {
-                                const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
-                                const compressedBlob = await imageCompression(file, options);
-                                const compressedFile = new File([compressedBlob], file.name, { type: file.type, lastModified: Date.now() });
-                                const url = await firestoreApi.uploadImageForPageContent(compressedFile);
-                                editor.deleteText(insertIndex, 1);
-                                editor.insertEmbed(insertIndex, 'image', url);
-                                editor.setSelection(insertIndex + 1);
-                            } catch (uploadError) {
-                                editor.deleteText(insertIndex, 1);
-                                const errorTyped = uploadError as { code?: string; message: string };
-                                toast({
-                                    variant: 'destructive',
-                                    title: 'Erro de Upload',
-                                    description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || 'UPLOAD_FAILED'} />,
-                                });
-                            }
-                        } finally {
-                            if (input.parentNode) {
-                                input.parentNode.removeChild(input);
-                            }
-                        }
-                    };
-                    input.click();
-                },
-                video: function() {
-                     const editor = quillRef.current?.getEditor();
-                     if (!editor) {
-                        toast({ variant: 'destructive', title: 'Erro de Editor', description: <CopyableError userMessage='O editor de texto não está pronto.' errorCode='EDITOR_NOT_READY' /> });
-                        return;
-                    }
-                     setVideoUrlInput('');
-                     setIsVideoDialogOpen(true);
-                }
+                image: imageHandler,
+                video: videoHandler
             }
-        },
-        imageResize: {
-            parchment: require('quill').Quill.import('parchment'),
-            modules: ['Resize', 'DisplaySize', 'Toolbar']
         }
-    }), []);
+    }), [imageHandler, videoHandler]);
 
     const handleEmbedVideo = () => {
         const editor = quillRef.current?.getEditor();
@@ -206,7 +200,7 @@ export default function EditPostPage() {
 
         const range = editor.getSelection(true) || { index: editor.getLength(), length: 0 };
         editor.insertEmbed(range.index, 'video', embedUrl);
-        editor.formatLine(range.index, 1, 'align', 'center');
+        editor.formatLine(range.index + 1, 1, 'align', 'center');
         
         setIsVideoDialogOpen(false);
         setVideoUrlInput('');
