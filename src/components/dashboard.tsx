@@ -29,6 +29,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DEFAULT_EXPENSE_CATEGORIES } from "@/lib/types";
@@ -459,7 +460,7 @@ export default function Dashboard({
           <h1 className="text-lg md:text-xl font-bold text-primary truncate">{project.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => setEditDialogOpen(true)} variant="outline" size="sm" className="hidden md:inline-flex">
+          <Button onClick={() => setEditDialogOpen(true)} variant="outline" size="sm">
             <Edit className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Editar Projeto</span>
           </Button>
@@ -467,20 +468,18 @@ export default function Dashboard({
             <PlusCircle className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Adicionar Despesa</span>
           </Button>
-          <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" size="icon" aria-label="Importar Despesas">
-            <Upload className="h-4 w-4" />
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" aria-label="Opções de Exportação">
+              <Button variant="outline" size="icon" aria-label="Opções de Importação/Exportação">
                   <FileSpreadsheet className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setEditDialogOpen(true)} className="md:hidden">
-                    <Edit className="mr-2 h-4 w-4" />
-                    <span>Editar Projeto</span>
+                <DropdownMenuItem onClick={() => setIsImportDialogOpen(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    <span>Importar Despesas (.xlsx)</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleExportToExcel}>
                     <FileSpreadsheet className="mr-2 h-4 w-4" />
                     <span>Relatório Financeiro</span>
