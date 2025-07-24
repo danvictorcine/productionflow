@@ -420,8 +420,20 @@ function CreativeProjectPageDetail() {
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files?.[0]) return;
-    setIsUploading(true);
     const file = event.target.files[0];
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+    if (file.size > MAX_FILE_SIZE) {
+        toast({
+            variant: 'destructive',
+            title: 'Arquivo Muito Grande',
+            description: 'O tamanho máximo para upload de imagem é de 10MB.'
+        });
+        if (imageUploadRef.current) imageUploadRef.current.value = "";
+        return;
+    }
+
+    setIsUploading(true);
 
     try {
       const image = new window.Image();
@@ -453,8 +465,20 @@ function CreativeProjectPageDetail() {
   
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files?.[0]) return;
-    setIsUploading(true);
     const file = event.target.files[0];
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+    if (file.size > MAX_FILE_SIZE) {
+        toast({
+            variant: 'destructive',
+            title: 'Arquivo Muito Grande',
+            description: 'O tamanho máximo para upload de PDF é de 10MB.'
+        });
+        if (pdfUploadRef.current) pdfUploadRef.current.value = "";
+        return;
+    }
+    
+    setIsUploading(true);
 
     try {
       const url = await firestoreApi.uploadPdfForBoard(file);

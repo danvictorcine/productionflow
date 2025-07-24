@@ -205,8 +205,21 @@ function StoryboardPageDetail() {
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files?.length) return;
         
-        setIsUploading(true);
         const files = Array.from(event.target.files);
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+        const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
+        if (oversizedFiles.length > 0) {
+            toast({
+                variant: 'destructive',
+                title: 'Arquivos Muito Grandes',
+                description: `Um ou mais arquivos excedem o limite de 10MB.`
+            });
+            if (imageUploadRef.current) imageUploadRef.current.value = "";
+            return;
+        }
+
+        setIsUploading(true);
 
         try {
             const newPanelsData = await Promise.all(files.map(async (file, index) => {
