@@ -143,8 +143,10 @@
     height: auto !important;
 }
 
-/* Custom style for title editor in moodboard */
-.quill-title-editor .ql-editor {
-  padding-bottom: 0;
-  min-height: unset;
+/* Custom style for text editor in moodboard */
+.text-item-wrapper .ql-editor {
+  padding: 0;
+}
+.text-item-wrapper .ql-container.ql-bubble:not(.ql-disabled) {
+  height: 100%;
 }

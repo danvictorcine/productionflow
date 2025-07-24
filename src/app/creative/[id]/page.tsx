@@ -89,7 +89,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
         },
     }), []);
 
-    const titleModules = useMemo(() => ({
+    const textModules = useMemo(() => ({
         toolbar: false
     }), []);
 
@@ -103,16 +103,18 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
     
     const renderContent = () => {
         switch (item.type) {
-            case 'title':
+            case 'text':
                  return (
-                    <QuillEditor
-                        theme="bubble"
-                        value={item.content}
-                        onChange={(content) => onUpdate(item.id, { content })}
-                        modules={titleModules}
-                        className="h-full w-full text-2xl quill-title-editor"
-                        placeholder="Escreva um título..."
-                    />
+                    <div className="h-full w-full text-item-wrapper">
+                        <QuillEditor
+                            theme="bubble"
+                            value={item.content}
+                            onChange={(content) => onUpdate(item.id, { content })}
+                            modules={textModules}
+                            className="h-full w-full text-2xl"
+                            placeholder="Escreva algo..."
+                        />
+                    </div>
                 );
             case 'note':
                 return (
@@ -389,7 +391,7 @@ function CreativeProjectPageDetail() {
 
       const typeDisplayNames = {
           note: 'Nota',
-          title: 'Título',
+          text: 'Texto',
           checklist: 'Checklist',
           palette: 'Paleta de cores',
           image: 'Imagem',
@@ -398,7 +400,7 @@ function CreativeProjectPageDetail() {
           location: 'Localização',
           spotify: 'Spotify',
       };
-      toast({ title: `${typeDisplayNames[type]} adicionada!` });
+      toast({ title: `${typeDisplayNames[type]} adicionado(a)!` });
 
       if (type === 'video') {
         setIsVideoDialogOpen(false);
@@ -423,8 +425,8 @@ function CreativeProjectPageDetail() {
     }
   };
   
-  const handleAddTitle = () => {
-    handleAddItem('title', '<h2>Seu Título</h2>', { width: 400, height: 100 });
+  const handleAddText = () => {
+    handleAddItem('text', '<h2>Seu Texto</h2>', { width: 400, height: 100 });
   }
 
   const handleAddNote = () => {
@@ -607,8 +609,8 @@ function CreativeProjectPageDetail() {
             </div>
             <div className="p-2 md:p-4">
                 <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                    <Button variant="ghost" size="sm" onClick={handleAddTitle}>
-                        <Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Título</span>
+                    <Button variant="ghost" size="sm" onClick={handleAddText}>
+                        <Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span>
                     </Button>
                     <Button variant="ghost" size="sm" onClick={handleAddNote}>
                         <FileText className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Nota</span>
@@ -715,6 +717,7 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
+
 
 
 
