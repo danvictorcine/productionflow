@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -70,6 +69,28 @@ const getVimeoEmbedUrl = (url: string) => {
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const [numPages, setNumPages] = useState<number | null>(null);
+    const [pdfFile, setPdfFile] = useState<Blob | null>(null);
+    const [pdfError, setPdfError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (item.type === 'pdf') {
+            const fetchPdf = async () => {
+                try {
+                    const response = await fetch(item.content);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+                    }
+                    const blob = await response.blob();
+                    setPdfFile(blob);
+                } catch (error) {
+                    console.error("Error fetching PDF blob:", error);
+                    setPdfError((error as Error).message || "UNKNOWN_PDF_ERROR");
+                }
+            };
+            fetchPdf();
+        }
+    }, [item.type, item.content]);
+
 
     const noteModules = useMemo(() => ({
         toolbar: {
@@ -97,7 +118,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             <div className="p-2 text-destructive bg-destructive/20 h-full flex items-center justify-center">
                 <CopyableError 
                     userMessage="Falha ao carregar PDF." 
-                    errorCode={error ? `${error.name}: ${error.message}`: 'UNKNOWN_PDF_ERROR'}
+                    errorCode={pdfError || error.message || 'UNKNOWN_PDF_ERROR'}
                 />
             </div>
         )
@@ -204,10 +225,13 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'pdf':
+                if (pdfError) {
+                    return handlePdfError(new Error(pdfError));
+                }
                 return (
                     <ScrollArea className="h-full w-full bg-gray-200">
                         <Document
-                            file={{ url: item.content }}
+                            file={pdfFile}
                             onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                             loading={<div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>}
                             error={handlePdfError}
