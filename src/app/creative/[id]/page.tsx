@@ -63,6 +63,8 @@ const getVimeoEmbedUrl = (url: string) => {
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
+    const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(null);
+    const [isPdfLoading, setIsPdfLoading] = useState(false);
     
     const noteModules = useMemo(() => ({
         toolbar: {
@@ -76,6 +78,39 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             ],
         },
     }), []);
+    
+    useEffect(() => {
+        if (item.type === 'pdf') {
+            setIsPdfLoading(true);
+            const fetchPdf = async () => {
+                try {
+                    const response = await fetch(item.content);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+                    }
+                    const blob = await response.blob();
+                    
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const base64data = reader.result;
+                        setPdfDataUrl(base64data as string);
+                        setIsPdfLoading(false);
+                    };
+                    reader.onerror = () => {
+                         throw new Error('Failed to read blob as Data URL');
+                    }
+                    reader.readAsDataURL(blob);
+
+                } catch (error) {
+                    console.error("Error fetching or processing PDF:", error);
+                    setIsPdfLoading(false);
+                    setPdfDataUrl(null); // Explicitly set to null on error
+                }
+            };
+            fetchPdf();
+        }
+    }, [item.type, item.content]);
+
 
     const handleChecklistUpdate = (updatedItems: ChecklistItem[]) => {
         onUpdate(item.id, { items: updatedItems });
@@ -186,16 +221,25 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
             case 'pdf':
+                if (isPdfLoading) {
+                    return (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-muted/50 p-4">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="mt-2 text-sm text-muted-foreground">Carregando PDF...</p>
+                        </div>
+                    );
+                }
+                if (pdfDataUrl) {
+                    return <iframe src={pdfDataUrl} className="w-full h-full" title={item.content} />;
+                }
                 return (
-                    <div 
-                        className="w-full h-full flex flex-col items-center justify-center bg-muted/50 p-4 text-center cursor-pointer hover:bg-muted"
-                        onClick={() => window.open(item.content, '_blank')}
-                        role="button"
-                    >
-                        <FileIcon className="h-10 w-10 text-primary" />
-                        <p className="mt-2 font-semibold text-foreground">Abrir PDF</p>
-                        <p className="text-xs text-muted-foreground">O arquivo será aberto em uma nova aba.</p>
-                        <ExternalLink className="h-4 w-4 absolute top-2 right-2 text-muted-foreground" />
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-destructive/10 p-4 text-center">
+                        <FileIcon className="h-10 w-10 text-destructive" />
+                        <p className="mt-2 font-semibold text-destructive-foreground">Falha ao Carregar PDF</p>
+                        <p className="text-xs text-destructive-foreground/80">Não foi possível exibir o arquivo.</p>
+                         <Button variant="link" size="sm" className="mt-2 text-destructive-foreground h-auto p-0" onClick={() => window.open(item.content, '_blank')}>
+                            Tentar abrir em nova aba
+                        </Button>
                     </div>
                 );
             case 'video':
