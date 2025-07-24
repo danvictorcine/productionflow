@@ -34,10 +34,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url,
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -97,7 +94,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
     
     const handlePdfError = (error: Error) => {
         return (
-            <div className="p-2 text-destructive bg-destructive/20 h-full">
+            <div className="p-2 text-destructive bg-destructive/20 h-full flex items-center justify-center">
                 <CopyableError 
                     userMessage="Falha ao carregar PDF." 
                     errorCode={error ? `${error.name}: ${error.message}`: 'UNKNOWN_PDF_ERROR'}
@@ -647,3 +644,5 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
+
+    
