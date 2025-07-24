@@ -306,7 +306,9 @@ function StoryboardPageDetail() {
                     const link = document.createElement('a');
                     link.href = imgData;
                     link.download = `Storyboard_${storyboard.name.replace(/ /g, "_")}.png`;
+                    document.body.appendChild(link);
                     link.click();
+                    document.body.removeChild(link);
                 } else { // PDF
                     const pdf = new jsPDF({
                         orientation: 'l', // landscape
