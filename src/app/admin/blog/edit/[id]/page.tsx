@@ -3,11 +3,11 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Video } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 import imageCompression from 'browser-image-compression';
@@ -99,76 +99,6 @@ export default function EditPostPage() {
         }
     }, [postId, isNewPost, router, toast, form]);
 
-    const imageHandler = () => {
-        const editor = quillRef.current?.getEditor();
-        if (!editor) {
-            toast({ variant: 'destructive', title: 'Erro no Editor', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY'/> });
-            return;
-        }
-
-        const range = editor.getSelection(true);
-        const input = document.createElement('input');
-        input.setAttribute('type', 'file');
-        input.setAttribute('accept', 'image/*');
-        document.body.appendChild(input);
-
-        input.onchange = async () => {
-            try {
-                if (!input.files || input.files.length === 0) return;
-                
-                const file = input.files[0];
-                const insertIndex = range ? range.index : 0;
-
-                if (!/^image\//.test(file.type)) {
-                    toast({ variant: 'destructive', title: 'Arquivo Inválido', description: <CopyableError userMessage='Por favor, selecione um arquivo de imagem.' errorCode='INVALID_FILE_TYPE'/> });
-                    return;
-                }
-
-                editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
-                editor.setSelection(insertIndex + 1);
-
-                try {
-                    const options = {
-                        maxSizeMB: 1,
-                        maxWidthOrHeight: 1920,
-                        useWebWorker: true,
-                    };
-                    const compressedBlob = await imageCompression(file, options);
-                    const compressedFile = new File([compressedBlob], file.name, { type: file.type, lastModified: Date.now() });
-
-                    const url = await firestoreApi.uploadImageForPageContent(compressedFile);
-                    editor.deleteText(insertIndex, 1);
-                    editor.insertEmbed(insertIndex, 'image', url);
-                    editor.setSelection(insertIndex + 1);
-                } catch (uploadError) {
-                    editor.deleteText(insertIndex, 1);
-                    const errorTyped = uploadError as { code?: string; message: string };
-                    toast({
-                        variant: 'destructive',
-                        title: 'Erro de Upload',
-                        description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
-                    });
-                }
-            } finally {
-                if (input.parentNode) {
-                    input.parentNode.removeChild(input);
-                }
-            }
-        };
-
-        input.click();
-    };
-    
-    const videoHandler = () => {
-        const editor = quillRef.current?.getEditor();
-        if (!editor) {
-            toast({ variant: 'destructive', title: 'Erro no Editor', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY'/> });
-            return;
-        }
-        setVideoUrlInput('');
-        setIsVideoDialogOpen(true);
-    };
-
     const handleEmbedVideo = () => {
         const editor = quillRef.current?.getEditor();
         if (!editor || !videoUrlInput) return;
@@ -188,8 +118,7 @@ export default function EditPostPage() {
         setVideoUrlInput('');
     };
 
-
-    const modules = {
+    const modules = useMemo(() => ({
         toolbar: {
             container: [
                 [{ 'header': [1, 2, 3, false] }],
@@ -198,12 +127,76 @@ export default function EditPostPage() {
                 ['link', 'image', 'video'],
                 ['clean']
             ],
-            handlers: {
-                image: imageHandler,
-                video: videoHandler,
-            }
         },
-    };
+    }), []);
+    
+    useEffect(() => {
+        if (!quillRef.current) return;
+
+        const editor = quillRef.current.getEditor();
+        const toolbar = editor.getModule('toolbar');
+        
+        const imageHandler = () => {
+            const range = editor.getSelection(true);
+            const input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*');
+            document.body.appendChild(input);
+
+            input.onchange = async () => {
+                try {
+                    if (!input.files || input.files.length === 0) return;
+                    
+                    const file = input.files[0];
+                    const insertIndex = range ? range.index : 0;
+
+                    if (!/^image\//.test(file.type)) {
+                        toast({ variant: 'destructive', title: 'Arquivo Inválido', description: <CopyableError userMessage='Por favor, selecione um arquivo de imagem.' errorCode='INVALID_FILE_TYPE'/> });
+                        return;
+                    }
+
+                    editor.insertEmbed(insertIndex, 'image', 'https://placehold.co/300x200.png?text=Enviando...');
+                    editor.setSelection(insertIndex + 1);
+
+                    try {
+                        const options = {
+                            maxSizeMB: 1,
+                            maxWidthOrHeight: 1920,
+                            useWebWorker: true,
+                        };
+                        const compressedBlob = await imageCompression(file, options);
+                        const compressedFile = new File([compressedBlob], file.name, { type: file.type, lastModified: Date.now() });
+
+                        const url = await firestoreApi.uploadImageForPageContent(compressedFile);
+                        editor.deleteText(insertIndex, 1);
+                        editor.insertEmbed(insertIndex, 'image', url);
+                        editor.setSelection(insertIndex + 1);
+                    } catch (uploadError) {
+                        editor.deleteText(insertIndex, 1);
+                        const errorTyped = uploadError as { code?: string; message: string };
+                        toast({
+                            variant: 'destructive',
+                            title: 'Erro de Upload',
+                            description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
+                        });
+                    }
+                } finally {
+                    if (input.parentNode) {
+                        input.parentNode.removeChild(input);
+                    }
+                }
+            };
+            input.click();
+        };
+
+        const videoHandler = () => {
+            setVideoUrlInput('');
+            setIsVideoDialogOpen(true);
+        };
+
+        toolbar.addHandler('image', imageHandler);
+        toolbar.addHandler('video', videoHandler);
+    }, []);
 
 
     async function onSubmit(values: z.infer<typeof postSchema>) {
