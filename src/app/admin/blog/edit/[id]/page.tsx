@@ -35,12 +35,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-// Import Quill dynamically to ensure it runs only on the client-side
-const QuillEditor = dynamic(() => import('react-quill'), { 
-    ssr: false,
-    loading: () => <Skeleton className="h-[200px] w-full rounded-b-md" />
-});
-
 // Register the image resize module only on the client-side
 if (typeof window !== 'undefined') {
     const Quill = require('quill');
@@ -48,6 +42,11 @@ if (typeof window !== 'undefined') {
     Quill.register('modules/imageResize', ImageResize);
 }
 
+// Import Quill dynamically to ensure it runs only on the client-side
+const QuillEditor = dynamic(() => import('react-quill'), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-[200px] w-full rounded-b-md" />
+});
 
 const postSchema = z.object({
     title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres.' }),
@@ -88,14 +87,14 @@ export default function EditPostPage() {
             return;
         }
 
-        if (!isNewPost && postId) {
+        if (postId) {
             firestoreApi.getPost(postId)
                 .then(post => {
                     if (post) {
                         form.reset({ title: post.title, content: post.content });
                         initialImageUrlsRef.current = new Set(getUrlsFromHtml(post.content));
                     } else {
-                        toast({ variant: 'destructive', title: 'Erro', description: <CopyableError userMessage='Post não encontrado.' errorCode='POST_NOT_FOUND'/> });
+                        toast({ variant: 'destructive', title: 'Erro ao Carregar', description: <CopyableError userMessage='Post não encontrado.' errorCode='POST_NOT_FOUND'/> });
                         router.push('/admin/blog');
                     }
                 })
@@ -104,7 +103,7 @@ export default function EditPostPage() {
                     toast({ 
                         variant: 'destructive',
                         title: 'Erro ao Carregar Post',
-                        description: <CopyableError userMessage="Não foi possível carregar os dados do post." errorCode={errorTyped.code || errorTyped.message} />,
+                        description: <CopyableError userMessage="Não foi possível carregar os dados do post." errorCode={errorTyped.code || 'UNKNOWN_FETCH_ERROR'} />,
                     });
                     router.push('/admin/blog');
                 })
@@ -125,7 +124,7 @@ export default function EditPostPage() {
                 image: function() { // Use function keyword to get correct `this` binding
                     const editor = quillRef.current?.getEditor();
                     if (!editor) {
-                        toast({ variant: 'destructive', title: 'Erro', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY' /> });
+                        toast({ variant: 'destructive', title: 'Erro de Editor', description: <CopyableError userMessage='O editor de texto não está pronto. Tente novamente.' errorCode='EDITOR_NOT_READY' /> });
                         return;
                     }
                     const range = editor.getSelection(true) || { index: editor.getLength(), length: 0 };
@@ -159,7 +158,7 @@ export default function EditPostPage() {
                                 toast({
                                     variant: 'destructive',
                                     title: 'Erro de Upload',
-                                    description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || errorTyped.message} />,
+                                    description: <CopyableError userMessage="Não foi possível enviar a imagem." errorCode={errorTyped.code || 'UPLOAD_FAILED'} />,
                                 });
                             }
                         } finally {
@@ -171,6 +170,11 @@ export default function EditPostPage() {
                     input.click();
                 },
                 video: function() {
+                     const editor = quillRef.current?.getEditor();
+                     if (!editor) {
+                        toast({ variant: 'destructive', title: 'Erro de Editor', description: <CopyableError userMessage='O editor de texto não está pronto.' errorCode='EDITOR_NOT_READY' /> });
+                        return;
+                    }
                      setVideoUrlInput('');
                      setIsVideoDialogOpen(true);
                 }
@@ -180,12 +184,16 @@ export default function EditPostPage() {
             parchment: require('quill').Quill.import('parchment'),
             modules: ['Resize', 'DisplaySize', 'Toolbar']
         }
-    }), []); // Re-calculate only if dependencies change
+    }), []);
 
     const handleEmbedVideo = () => {
         const editor = quillRef.current?.getEditor();
-        if (!editor || !videoUrlInput) {
-            toast({ variant: 'destructive', title: 'Erro', description: <CopyableError userMessage="Ocorreu um erro ao incorporar o vídeo." errorCode="EDITOR_NOT_READY" /> });
+        if (!editor) {
+            toast({ variant: 'destructive', title: 'Erro de Editor', description: <CopyableError userMessage="Ocorreu um erro ao incorporar o vídeo." errorCode="EDITOR_NOT_READY" /> });
+            return;
+        }
+        if (!videoUrlInput) {
+            toast({ variant: 'destructive', title: 'URL Ausente', description: <CopyableError userMessage="É necessário inserir uma URL." errorCode="MISSING_VIDEO_URL" /> });
             return;
         }
 
@@ -240,7 +248,7 @@ export default function EditPostPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Salvar',
-                description: <CopyableError userMessage="Não foi possível salvar a publicação." errorCode={errorTyped.code || errorTyped.message} />,
+                description: <CopyableError userMessage="Não foi possível salvar a publicação." errorCode={errorTyped.code || 'SAVE_FAILED'} />,
             });
         } finally {
             setIsSaving(false);
