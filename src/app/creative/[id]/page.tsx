@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X, ExternalLink, Music } from 'lucide-react';
+import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X, ExternalLink, Music, Type } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
@@ -88,6 +88,10 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
         },
     }), []);
 
+    const titleModules = useMemo(() => ({
+        toolbar: false
+    }), []);
+
     const handleChecklistUpdate = (updatedItems: ChecklistItem[]) => {
         onUpdate(item.id, { items: updatedItems });
     };
@@ -98,6 +102,17 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
     
     const renderContent = () => {
         switch (item.type) {
+            case 'title':
+                 return (
+                    <QuillEditor
+                        theme="bubble"
+                        value={item.content}
+                        onChange={(content) => onUpdate(item.id, { content })}
+                        modules={titleModules}
+                        className="h-full w-full text-2xl font-bold"
+                        placeholder="Escreva um título..."
+                    />
+                );
             case 'note':
                 return (
                     <QuillEditor
@@ -243,7 +258,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-20 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
+                className="absolute top-0.5 right-0.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-20 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
                 onClick={() => onDelete(item.id)}
             >
                 <X className="h-4 w-4" />
@@ -373,6 +388,7 @@ function CreativeProjectPageDetail() {
 
       const typeDisplayNames = {
           note: 'Nota',
+          title: 'Título',
           checklist: 'Checklist',
           palette: 'Paleta de cores',
           image: 'Imagem',
@@ -406,6 +422,10 @@ function CreativeProjectPageDetail() {
     }
   };
   
+  const handleAddTitle = () => {
+    handleAddItem('title', '<h2>Seu Título</h2>', { width: 400, height: 100 });
+  }
+
   const handleAddNote = () => {
     handleAddItem('note', '<h2>Novo Título</h2><p>Comece a escrever aqui...</p>', { width: 350, height: 300 });
   }
@@ -586,6 +606,9 @@ function CreativeProjectPageDetail() {
             </div>
             <div className="p-2 md:p-4">
                 <div className="flex items-center gap-1 md:gap-2 flex-wrap">
+                    <Button variant="ghost" size="sm" onClick={handleAddTitle}>
+                        <Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Título</span>
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={handleAddNote}>
                         <FileText className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Nota</span>
                     </Button>
@@ -691,5 +714,6 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
+
 
 
