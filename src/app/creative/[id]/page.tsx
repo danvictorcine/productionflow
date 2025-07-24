@@ -1,4 +1,3 @@
-
 // @/src/app/creative/[id]/page.tsx
 'use client';
 
@@ -111,7 +110,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                             value={item.content}
                             onChange={(content) => onUpdate(item.id, { content })}
                             modules={textModules}
-                            className="w-full h-full text-2xl"
+                            className="w-full text-2xl"
                             placeholder="Escreva algo..."
                         />
                     </div>
@@ -426,7 +425,7 @@ function CreativeProjectPageDetail() {
   };
   
   const handleAddText = () => {
-    handleAddItem('text', '<p><br></p>', { width: 400, height: 100 });
+    handleAddItem('text', '<h2>Texto</h2>', { width: 400, height: 100 });
   }
 
   const handleAddNote = () => {
@@ -717,6 +716,7 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
+
 
 
 
