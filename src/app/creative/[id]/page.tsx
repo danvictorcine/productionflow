@@ -104,7 +104,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
         switch (item.type) {
             case 'text':
                 return (
-                    <div className="h-full w-full text-item-wrapper">
+                    <div className="flex items-center justify-center h-full w-full text-item-wrapper">
                         <QuillEditor
                             theme="bubble"
                             value={item.content}
@@ -279,6 +279,8 @@ function CreativeProjectPageDetail() {
   const imageUploadRef = useRef<HTMLInputElement>(null);
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const itemCountRef = useRef(0);
+  const initialItemsRef = useRef<BoardItem[]>([]);
+  const hasUnsavedChanges = useRef(false);
 
   const [project, setProject] = useState<CreativeProject | null>(null);
   const [items, setItems] = useState<BoardItem[]>([]);
@@ -306,6 +308,7 @@ function CreativeProjectPageDetail() {
         setProject(projData);
         setItems(itemsData);
         itemCountRef.current = itemsData.length;
+        initialItemsRef.current = JSON.parse(JSON.stringify(itemsData));
       } else {
         toast({ variant: 'destructive', title: 'Erro', description: 'Moodboard não encontrado.' });
         router.push('/');
@@ -325,6 +328,46 @@ function CreativeProjectPageDetail() {
   useEffect(() => {
     fetchProjectData();
   }, [fetchProjectData]);
+
+  // Debounced save effect
+  useEffect(() => {
+    if (isLoading || !hasUnsavedChanges.current) return;
+  
+    const debounceTimer = setTimeout(() => {
+      const changedItems = items.filter(item => {
+        const initialItem = initialItemsRef.current.find(i => i.id === item.id);
+        return !initialItem || JSON.stringify(item) !== JSON.stringify(initialItem);
+      });
+  
+      if (changedItems.length > 0) {
+        const updates = changedItems.map(item => ({
+            id: item.id,
+            data: {
+                position: item.position,
+                size: item.size,
+                content: item.content,
+                items: item.items
+            }
+        }));
+
+        firestoreApi.updateBoardItemsBatch(updates)
+          .then(() => {
+            initialItemsRef.current = JSON.parse(JSON.stringify(items));
+            hasUnsavedChanges.current = false;
+          })
+          .catch(error => {
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+              variant: 'destructive',
+              title: 'Erro de Sincronização',
+              description: <CopyableError userMessage="Não foi possível salvar as últimas alterações." errorCode={errorTyped.code || 'BATCH_UPDATE_FAILED'} />,
+            });
+          });
+      }
+    }, 2000); // 2-second debounce time
+  
+    return () => clearTimeout(debounceTimer);
+  }, [items, isLoading, toast]);
   
   const handleProjectSubmit = async (data: Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>) => {
     if (!project) return;
@@ -343,31 +386,30 @@ function CreativeProjectPageDetail() {
     }
   };
 
-  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
-
   const handleItemUpdate = useCallback((itemId: string, data: Partial<BoardItem>) => {
-      setItems(prevItems =>
-          prevItems.map(item => (item.id === itemId ? { ...item, ...data } : item))
-      );
-  
-      if (debounceTimers.current[itemId]) {
-          clearTimeout(debounceTimers.current[itemId]);
-      }
-  
-      debounceTimers.current[itemId] = setTimeout(() => {
-          firestoreApi.updateBoardItem(itemId, data)
-              .catch(error => {
-                  const errorTyped = error as { code?: string; message: string };
-                    toast({
-                        variant: 'destructive',
-                        title: 'Erro em /creative/[id]/page.tsx (handleItemUpdate)',
-                        description: <CopyableError userMessage="Não foi possível salvar a alteração." errorCode={errorTyped.code || errorTyped.message} />,
-                    });
-                  fetchProjectData();
-              });
-      }, 500);
-  }, [fetchProjectData, toast]);
+    setItems(prevItems => {
+        const newItems = prevItems.map(item => (item.id === itemId ? { ...item, ...data } : item));
+        // Check for actual changes before setting the flag
+        if (JSON.stringify(newItems) !== JSON.stringify(prevItems)) {
+            hasUnsavedChanges.current = true;
+        }
+        return newItems;
+    });
 
+    // Content updates (like text) should be saved more quickly.
+    if (!data.position && !data.size) {
+        if (data.content) { // Debounce content changes to avoid saving on every keystroke
+            const contentDebounceTimer = setTimeout(() => {
+                firestoreApi.updateBoardItem(itemId, { content: data.content })
+                .catch(err => console.error("Failed to save content", err));
+            }, 500);
+            return () => clearTimeout(contentDebounceTimer);
+        } else { // For other instant updates like checklist items
+             firestoreApi.updateBoardItem(itemId, data)
+             .catch(err => console.error("Failed to save item update", err));
+        }
+    }
+  }, []);
 
   const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, items?: ChecklistItem[]) => {
     try {
@@ -716,10 +758,3 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
-
-
-
-
-
-
-

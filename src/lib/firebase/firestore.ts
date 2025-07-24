@@ -646,6 +646,16 @@ export const updateBoardItem = async (itemId: string, data: Partial<Omit<BoardIt
   await updateDoc(itemRef, data);
 }
 
+export const updateBoardItemsBatch = async (items: { id: string; data: Partial<BoardItem> }[]) => {
+  if (items.length === 0) return;
+  const batch = writeBatch(db);
+  items.forEach(item => {
+    const itemRef = doc(db, 'board_items', item.id);
+    batch.update(itemRef, item.data);
+  });
+  await batch.commit();
+};
+
 export const deleteBoardItem = async (itemId: string) => {
   const itemRef = doc(db, 'board_items', itemId);
   const itemSnap = await getDoc(itemRef);
