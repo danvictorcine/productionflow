@@ -617,9 +617,6 @@ function CreativeProjectPageDetail() {
   };
   
    const handleWheel = (e: React.WheelEvent) => {
-        if (!canvasRef.current || (e.target as HTMLElement) !== canvasRef.current) {
-            return;
-        }
         e.preventDefault();
         const scaleAmount = 0.1;
         let newScale = scale - (e.deltaY > 0 ? scaleAmount : -scaleAmount);
