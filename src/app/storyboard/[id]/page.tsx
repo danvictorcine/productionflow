@@ -129,7 +129,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                 placeholder="Adicione suas anotações aqui..."
                 value={notes}
                 onChange={handleNotesChange}
-                className="text-sm border-none bg-transparent focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-ring p-1"
+                className="text-sm bg-transparent border-none focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-ring p-1"
             />
         </div>
     );
@@ -145,6 +145,8 @@ function StoryboardPageDetail() {
     const { toast } = useToast();
     const imageUploadRef = useRef<HTMLInputElement>(null);
     const exportRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLDivElement>(null);
+
 
     const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
     const [panels, setPanels] = useState<StoryboardPanel[]>([]);
@@ -152,6 +154,13 @@ function StoryboardPageDetail() {
     const [isUploading, setIsUploading] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    
+    // Zoom and Pan state
+    const [scale, setScale] = useState(1);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isPanning, setIsPanning] = useState(false);
+    const [startPanPoint, setStartPanPoint] = useState({ x: 0, y: 0 });
+
     
     const dndBackend = typeof navigator !== 'undefined' && /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
 
@@ -301,6 +310,12 @@ function StoryboardPageDetail() {
         toast({ title: "Gerando arquivo...", description: "Isso pode levar alguns segundos." });
         setIsExporting(true);
         
+        // Temporarily reset zoom for export
+        const originalScale = scale;
+        const originalPosition = { ...position };
+        setScale(1);
+        setPosition({ x: 0, y: 0 });
+        
         setTimeout(async () => {
             try {
                 const canvas = await html2canvas(exportRef.current!, {
@@ -334,9 +349,47 @@ function StoryboardPageDetail() {
                 toast({ variant: 'destructive', title: 'Erro ao exportar', description: 'Não foi possível gerar o arquivo.' });
             } finally {
                 setIsExporting(false);
+                // Restore original zoom and position
+                setScale(originalScale);
+                setPosition(originalPosition);
             }
-        }, 200);
+        }, 500); // Give time for the UI to reset zoom
     };
+
+    const handleWheel = (e: React.WheelEvent) => {
+        e.preventDefault();
+        const scaleAmount = 0.1;
+        let newScale = scale - (e.deltaY > 0 ? scaleAmount : -scaleAmount);
+        newScale = Math.min(Math.max(0.1, newScale), 2); // Clamp scale between 0.1 and 2
+        setScale(newScale);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        // Prevent panning when interacting with an input, textarea, or button
+        if ((e.target as HTMLElement).closest('input, textarea, button, [data-handler-id]')) {
+            return;
+        }
+        e.preventDefault();
+        setIsPanning(true);
+        setStartPanPoint({
+            x: e.clientX - position.x,
+            y: e.clientY - position.y,
+        });
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isPanning) return;
+        e.preventDefault();
+        setPosition({
+            x: e.clientX - startPanPoint.x,
+            y: e.clientY - startPanPoint.y,
+        });
+    };
+
+    const handleMouseUp = () => {
+        setIsPanning(false);
+    };
+
 
     if (isLoading) {
         return (
@@ -353,7 +406,7 @@ function StoryboardPageDetail() {
 
     return (
         <DndProvider backend={dndBackend}>
-            <div className="flex flex-col min-h-screen w-full bg-muted/40">
+            <div className="flex flex-col h-screen w-full bg-muted/40">
                 <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
                     <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
                         <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
@@ -400,52 +453,68 @@ function StoryboardPageDetail() {
                         <UserNav />
                     </div>
                 </header>
-                <main ref={exportRef} className="flex-1 p-4 sm:p-6 md:p-8">
-                     <div>
-                        <div className="mb-6">
-                            <Card>
-                                <CardContent className="p-4 space-y-1">
-                                    <CardTitle>{storyboard.name}</CardTitle>
-                                    {storyboard.description && (
-                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                                        {storyboard.description}
-                                        </p>
-                                    )}
-                                </CardContent>
-                            </Card>
+                 <main 
+                    className={cn(
+                        "flex-1 overflow-hidden relative",
+                        isPanning ? "cursor-grabbing" : "cursor-grab"
+                    )}
+                    onWheel={handleWheel}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                 >
+                    <div 
+                        ref={canvasRef} 
+                        className="absolute inset-0 transition-transform duration-75" 
+                        style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}}
+                    >
+                         <div ref={exportRef} className="p-4 sm:p-6 md:p-8">
+                            <div className="mb-6">
+                                <Card>
+                                    <CardContent className="p-4 space-y-1">
+                                        <CardTitle>{storyboard.name}</CardTitle>
+                                        {storyboard.description && (
+                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                            {storyboard.description}
+                                            </p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            {panels.length > 0 ? (
+                                <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
+                                    {panels.map((panel, index) => (
+                                    <PanelCard 
+                                        key={panel.id} 
+                                        panel={panel} 
+                                        aspectRatio={storyboard.aspectRatio}
+                                        index={index} 
+                                        onDelete={handleDeletePanel} 
+                                        onUpdateNotes={handleUpdatePanelNotes} 
+                                        movePanel={movePanel}
+                                        onDropPanel={handleDropPanel}
+                                        isExporting={isExporting}
+                                    />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
+                                    <ImageIcon className="mx-auto h-12 w-12 text-primary" />
+                                    <h3 className="mt-4 text-lg font-semibold">Storyboard Vazio</h3>
+                                    <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro quadro ao seu storyboard.</p>
+                                    <Button className="mt-6" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
+                                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                        Adicionar Quadro
+                                    </Button>
+                                </div>
+                            )}
+                            {isExporting && (
+                                <div className="mt-8 text-center text-sm text-muted-foreground">
+                                    Criado com ProductionFlow
+                                </div>
+                            )}
                         </div>
-                        {panels.length > 0 ? (
-                            <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
-                                {panels.map((panel, index) => (
-                                <PanelCard 
-                                    key={panel.id} 
-                                    panel={panel} 
-                                    aspectRatio={storyboard.aspectRatio}
-                                    index={index} 
-                                    onDelete={handleDeletePanel} 
-                                    onUpdateNotes={handleUpdatePanelNotes} 
-                                    movePanel={movePanel}
-                                    onDropPanel={handleDropPanel}
-                                    isExporting={isExporting}
-                                />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
-                                <ImageIcon className="mx-auto h-12 w-12 text-primary" />
-                                <h3 className="mt-4 text-lg font-semibold">Storyboard Vazio</h3>
-                                <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro quadro ao seu storyboard.</p>
-                                <Button className="mt-6" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
-                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                    Adicionar Quadro
-                                </Button>
-                            </div>
-                        )}
-                         {isExporting && (
-                            <div className="mt-8 text-center text-sm text-muted-foreground">
-                                Criado com ProductionFlow
-                            </div>
-                        )}
                     </div>
                 </main>
 
