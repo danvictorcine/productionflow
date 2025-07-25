@@ -116,7 +116,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                 )}
             >
                 <Image src={panel.imageUrl} alt={`Storyboard panel ${index + 1}`} layout="fill" objectFit="cover" />
-                <div className="absolute top-1 left-1 bg-black/50 text-white/90 text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none transition-colors group-hover:bg-black/50 group-hover:text-white">
+                 <div className="absolute top-1 left-1 bg-transparent text-white/70 text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none transition-colors group-hover:bg-black/50 group-hover:text-white">
                     {index + 1}
                 </div>
                 {!isExporting && (
@@ -407,7 +407,7 @@ function StoryboardPageDetail() {
     return (
         <DndProvider backend={dndBackend}>
             <div className="flex flex-col h-screen w-full bg-muted/40">
-                <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
+                <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6 shrink-0">
                     <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
                         <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
                     </Link>
@@ -453,69 +453,69 @@ function StoryboardPageDetail() {
                         <UserNav />
                     </div>
                 </header>
-                 <main 
-                    className="flex-1 flex flex-col overflow-hidden"
-                 >
-                    <div className="bg-background border-b z-30">
-                        <div className="px-4 md:px-6 pt-4 md:pt-6">
-                            <Card>
-                                <CardContent className="p-4 space-y-1">
-                                    <CardTitle>{storyboard.name}</CardTitle>
-                                    {storyboard.description && (
-                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                                        {storyboard.description}
-                                        </p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
+                 <main className="flex-1 flex flex-col overflow-hidden">
+                    <div className="bg-background border-b z-30 p-4 md:p-6 shrink-0">
+                        <Card>
+                            <CardContent className="p-4 space-y-1">
+                                <CardTitle>{storyboard.name}</CardTitle>
+                                {storyboard.description && (
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                    {storyboard.description}
+                                    </p>
+                                )}
+                            </CardContent>
+                        </Card>
                     </div>
                     <div 
-                        className={cn("flex-1 relative", isPanning ? "cursor-grabbing" : "cursor-grab")}
-                        onWheel={handleWheel}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
+                        className={cn("flex-1 relative overflow-auto", isPanning ? "cursor-grabbing" : "cursor-grab")}
                     >
                         <div 
-                            ref={canvasRef} 
-                            className="absolute inset-0 transition-transform duration-75" 
-                            style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}}
+                            className={cn("absolute inset-0")}
+                            onWheel={handleWheel}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
                         >
-                            <div ref={exportRef} className="p-4 sm:p-6 md:p-8">
-                                {panels.length > 0 ? (
-                                    <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
-                                        {panels.map((panel, index) => (
-                                        <PanelCard 
-                                            key={panel.id} 
-                                            panel={panel} 
-                                            aspectRatio={storyboard.aspectRatio}
-                                            index={index} 
-                                            onDelete={handleDeletePanel} 
-                                            onUpdateNotes={handleUpdatePanelNotes} 
-                                            movePanel={movePanel}
-                                            onDropPanel={handleDropPanel}
-                                            isExporting={isExporting}
-                                        />
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
-                                        <ImageIcon className="mx-auto h-12 w-12 text-primary" />
-                                        <h3 className="mt-4 text-lg font-semibold">Storyboard Vazio</h3>
-                                        <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro quadro ao seu storyboard.</p>
-                                        <Button className="mt-6" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
-                                            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                            Adicionar Quadro
-                                        </Button>
-                                    </div>
-                                )}
-                                {isExporting && (
-                                    <div className="mt-8 text-center text-sm text-muted-foreground">
-                                        Criado com ProductionFlow
-                                    </div>
-                                )}
+                            <div 
+                                ref={canvasRef} 
+                                className="absolute inset-0 transition-transform duration-75" 
+                                style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}}
+                            >
+                                <div ref={exportRef} className="p-4 sm:p-6 md:p-8">
+                                    {panels.length > 0 ? (
+                                        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
+                                            {panels.map((panel, index) => (
+                                            <PanelCard 
+                                                key={panel.id} 
+                                                panel={panel} 
+                                                aspectRatio={storyboard.aspectRatio}
+                                                index={index} 
+                                                onDelete={handleDeletePanel} 
+                                                onUpdateNotes={handleUpdatePanelNotes} 
+                                                movePanel={movePanel}
+                                                onDropPanel={handleDropPanel}
+                                                isExporting={isExporting}
+                                            />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
+                                            <ImageIcon className="mx-auto h-12 w-12 text-primary" />
+                                            <h3 className="mt-4 text-lg font-semibold">Storyboard Vazio</h3>
+                                            <p className="mt-2 text-sm text-muted-foreground">Comece adicionando o primeiro quadro ao seu storyboard.</p>
+                                            <Button className="mt-6" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
+                                                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                                Adicionar Quadro
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {isExporting && (
+                                        <div className="mt-8 text-center text-sm text-muted-foreground">
+                                            Criado com ProductionFlow
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
