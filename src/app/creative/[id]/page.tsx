@@ -641,7 +641,7 @@ function CreativeProjectPageDetail() {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col overflow-hidden">
         <div className="bg-background border-b z-30">
             <div className="px-4 md:px-6 pt-4 md:pt-6">
               <Card>
@@ -691,28 +691,29 @@ function CreativeProjectPageDetail() {
                 </div>
             </div>
         </div>
-        <div className="relative flex-1 w-full h-full bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]">
-          {items.map(item => (
-            <Rnd
-              key={item.id}
-              size={{ width: item.size.width, height: item.size.height }}
-              position={{ x: item.position.x, y: item.position.y }}
-              onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y }})}
-              onResizeStop={(_e, _direction, ref, _delta, position) => {
-                handleItemUpdate(item.id, {
-                  size: { width: ref.style.width, height: ref.style.height },
-                  position,
-                });
-              }}
-              minWidth={150}
-              minHeight={80}
-              bounds="parent"
-              className="z-20"
-              dragHandleClassName="drag-handle"
-            >
-              <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} />
-            </Rnd>
-          ))}
+        <div className="flex-1 overflow-auto">
+            <div className="relative w-[4000px] h-[4000px] bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]">
+            {items.map(item => (
+                <Rnd
+                key={item.id}
+                size={{ width: item.size.width, height: item.size.height }}
+                position={{ x: item.position.x, y: item.position.y }}
+                onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y }})}
+                onResizeStop={(_e, _direction, ref, _delta, position) => {
+                    handleItemUpdate(item.id, {
+                    size: { width: ref.style.width, height: ref.style.height },
+                    position,
+                    });
+                }}
+                minWidth={150}
+                minHeight={80}
+                className="z-20"
+                dragHandleClassName="drag-handle"
+                >
+                <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} />
+                </Rnd>
+            ))}
+            </div>
         </div>
       </main>
       
