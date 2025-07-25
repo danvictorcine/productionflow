@@ -730,17 +730,20 @@ export const getStoryboards = async (): Promise<Storyboard[]> => {
 };
 
 export const getStoryboard = async (storyboardId: string): Promise<Storyboard | null> => {
+    const userId = getUserId();
+    if (!userId) return null;
     const docRef = doc(db, 'storyboards', storyboardId);
     const docSnap = await getDoc(docRef);
 
-    if (!docSnap.exists()) return null;
-
-    const data = docSnap.data();
-    return {
-        id: docSnap.id,
-        ...data,
-        createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-    } as Storyboard;
+    if (docSnap.exists() && docSnap.data().userId === userId) {
+        const data = docSnap.data();
+        return {
+            id: docSnap.id,
+            ...data,
+            createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+        } as Storyboard;
+    }
+    return null;
 }
 
 export const updateStoryboard = async (storyboardId: string, data: Partial<Omit<Storyboard, 'id' | 'userId' | 'createdAt'>>) => {
@@ -953,8 +956,11 @@ export const getPost = async (postId: string): Promise<Post | null> => {
 }
 
 export const addPost = async (data: Omit<Post, 'id'|'createdAt'|'updatedAt'>) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   await addDoc(collection(db, 'posts'), {
     ...data,
+    authorId: userId,
     createdAt: Timestamp.now(),
   });
 };
