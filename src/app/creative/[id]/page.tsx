@@ -691,8 +691,8 @@ function CreativeProjectPageDetail() {
                 </div>
             </div>
         </div>
-        <div className="flex-1 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] overflow-auto">
-            <div className="relative w-[4000px] h-[4000px]">
+        <div className="flex-1 overflow-auto">
+            <div className="relative min-w-full min-h-full bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]">
             {items.map(item => (
                 <Rnd
                 key={item.id}
