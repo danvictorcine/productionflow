@@ -104,7 +104,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
         switch (item.type) {
             case 'text':
                 return (
-                    <div className="flex items-center justify-center h-full w-full text-item-wrapper">
+                    <div className="text-item-wrapper h-full w-full">
                         <QuillEditor
                             theme="bubble"
                             value={item.content}
