@@ -95,8 +95,7 @@ function HomePage() {
         const projectsPromise = firestoreApi.getProjects();
         const productionsPromise = firestoreApi.getProductions();
         const storyboardsPromise = firestoreApi.getStoryboards();
-        // Only fetch creative projects if the user is an admin
-        const creativeProjectsPromise = user.isAdmin ? firestoreApi.getCreativeProjects() : Promise.resolve([]);
+        const creativeProjectsPromise = firestoreApi.getCreativeProjects();
 
         const [projects, productions, creativeProjects, storyboards] = await Promise.all([
           projectsPromise,
@@ -483,7 +482,6 @@ function HomePage() {
         isOpen={isTypeDialogOpen}
         setIsOpen={setIsTypeDialogOpen}
         onSelect={handleSelectProjectType}
-        userIsAdmin={!!user?.isAdmin}
       />
 
       <CreateEditProjectDialog

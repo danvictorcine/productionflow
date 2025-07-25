@@ -17,10 +17,9 @@ interface ProjectTypeDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSelect: (type: 'financial' | 'production' | 'creative' | 'storyboard') => void;
-  userIsAdmin?: boolean;
 }
 
-export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect, userIsAdmin }: ProjectTypeDialogProps) {
+export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect }: ProjectTypeDialogProps) {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent className="flex flex-col">
@@ -68,20 +67,18 @@ export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect, userIsAdmin }: 
                   <CardDescription>Visualize sua história com painéis sequenciais.</CardDescription>
                 </CardHeader>
               </Card>
-              {userIsAdmin && (
-                <Card 
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => onSelect('creative')}
-                >
-                  <CardHeader className="items-center text-center">
-                    <div className="p-3 rounded-full bg-primary/10 mb-2">
-                      <Brush className="h-8 w-8 text-primary" />
-                    </div>
-                    <CardTitle>Moodboard</CardTitle>
-                    <CardDescription>Crie um moodboard e organize suas ideias.</CardDescription>
-                  </CardHeader>
-                </Card>
-              )}
+              <Card 
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => onSelect('creative')}
+              >
+                <CardHeader className="items-center text-center">
+                  <div className="p-3 rounded-full bg-primary/10 mb-2">
+                    <Brush className="h-8 w-8 text-primary" />
+                  </div>
+                  <CardTitle>Moodboard</CardTitle>
+                  <CardDescription>Crie um moodboard e organize suas ideias.</CardDescription>
+                </CardHeader>
+              </Card>
             </div>
         </ScrollArea>
       </SheetContent>

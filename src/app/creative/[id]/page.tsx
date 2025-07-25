@@ -15,7 +15,6 @@ import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
-import AdminGuard from '@/components/admin-guard';
 import { Button } from '@/components/ui/button';
 import { UserNav } from '@/components/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -733,7 +732,7 @@ function CreativeProjectPageDetail() {
             </div>
         </div>
         <div 
-            className={cn("flex-1 relative overflow-auto", isPanning ? "cursor-grabbing" : "cursor-grab")}
+            className={cn("flex-1 relative overflow-hidden", isPanning ? "cursor-grabbing" : "cursor-grab")}
             onWheel={handleWheel}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -814,9 +813,7 @@ function CreativeProjectPageDetail() {
 export default function CreativeProjectPage() {
   return (
     <AuthGuard>
-      <AdminGuard>
-        <CreativeProjectPageDetail />
-      </AdminGuard>
+      <CreativeProjectPageDetail />
     </AuthGuard>
   );
 }
