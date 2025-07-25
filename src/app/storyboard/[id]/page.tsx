@@ -107,7 +107,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
             ref={ref}
             data-handler-id={handlerId}
             style={{ opacity: isDragging ? 0.3 : 1 }}
-            className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm break-inside-avoid"
+            className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm break-inside-avoid group"
         >
             <div
                 className={cn(
@@ -116,7 +116,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                 )}
             >
                 <Image src={panel.imageUrl} alt={`Storyboard panel ${index + 1}`} layout="fill" objectFit="cover" />
-                <div className="absolute top-1 left-1 bg-black/50 text-white text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none">
+                <div className="absolute top-1 left-1 bg-transparent text-white/70 text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none transition-colors group-hover:bg-black/50 group-hover:text-white">
                     {index + 1}
                 </div>
                 {!isExporting && (
