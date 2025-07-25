@@ -19,7 +19,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, StoryboardScene } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID, returns null if not authenticated for public views
@@ -598,12 +598,12 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
 
   const itemsQuery = query(
     collection(db, 'board_items'),
-    where('projectId', '==', projectId),
-    where('userId', '==', userId)
+    where('projectId', '==', projectId)
   );
   const itemsSnapshot = await getDocs(itemsQuery);
   
   for (const itemDoc of itemsSnapshot.docs) {
+    if (itemDoc.data().userId !== userId) continue;
     const itemData = itemDoc.data();
     if ((itemData.type === 'image' || itemData.type === 'pdf') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
       await deleteImageFromUrl(itemData.content);
@@ -620,21 +620,19 @@ export const getBoardItems = async (projectId: string): Promise<BoardItem[]> => 
   if (!userId) return [];
   const q = query(
     collection(db, 'board_items'),
-    where('projectId', '==', projectId)
+    where('projectId', '==', projectId),
+    where('userId', '==', userId),
+    orderBy('createdAt', 'asc')
   );
   const querySnapshot = await getDocs(q);
-  const items = querySnapshot.docs
-    .map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: (data.createdAt as Timestamp).toDate(),
-      } as BoardItem;
-    })
-    .filter(item => item.userId === userId);
-
-  items.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const items = querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: (data.createdAt as Timestamp).toDate(),
+    } as BoardItem;
+  });
   return items;
 }
 
@@ -771,15 +769,9 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
   const projectRef = doc(db, 'storyboards', storyboardId);
   batch.delete(projectRef);
 
-  // Also delete scenes
-  const scenesQuery = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId));
-  const scenesSnapshot = await getDocs(scenesQuery);
-  scenesSnapshot.forEach(doc => batch.delete(doc.ref));
-
   const panelsQuery = query(
     collection(db, 'storyboard_panels'),
-    where('storyboardId', '==', storyboardId),
-    where('userId', '==', userId)
+    where('storyboardId', '==', storyboardId)
   );
   const panelsSnapshot = await getDocs(panelsQuery);
   for (const panelDoc of panelsSnapshot.docs) {
@@ -794,101 +786,26 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
   await batch.commit();
 };
 
-export const addStoryboardScene = async (storyboardId: string, data: Omit<StoryboardScene, 'id' | 'storyboardId' | 'order' | 'userId'>): Promise<string> => {
-    const userId = getUserId();
-    if (!userId) throw new Error("Usuário não autenticado.");
-    const scenesCollectionRef = collection(db, 'storyboard_scenes');
-    const q = query(scenesCollectionRef, where('storyboardId', '==', storyboardId), orderBy('order', 'desc'), limit(1));
-    const querySnapshot = await getDocs(q);
-    const lastOrder = querySnapshot.empty ? -1 : querySnapshot.docs[0].data().order;
-
-    const docRef = await addDoc(scenesCollectionRef, {
-        ...data,
-        storyboardId,
-        userId,
-        order: lastOrder + 1,
-    });
-    return docRef.id;
-};
-
-export const getStoryboardScenes = async (storyboardId: string): Promise<StoryboardScene[]> => {
-    const userId = getUserId();
-    if (!userId) return [];
-    
-    const unmigratedQuery = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId), where('userId', '==', null));
-    const unmigratedSnapshot = await getDocs(unmigratedQuery);
-    if (!unmigratedSnapshot.empty) {
-        const batch = writeBatch(db);
-        unmigratedSnapshot.forEach(doc => {
-            batch.update(doc.ref, { userId });
-        });
-        await batch.commit();
-    }
-
-    const q = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId), where('userId', '==', userId));
-    const querySnapshot = await getDocs(q);
-    const scenes = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as StoryboardScene);
-    scenes.sort((a,b) => a.order - b.order);
-    return scenes;
-};
-
-export const updateStoryboardScene = async (sceneId: string, data: Partial<Omit<StoryboardScene, 'id' | 'storyboardId' | 'order' | 'userId'>>) => {
-    const docRef = doc(db, 'storyboard_scenes', sceneId);
-    await updateDoc(docRef, data);
-};
-
-export const deleteStoryboardScene = async (sceneId: string, panelsToDelete: StoryboardPanel[]) => {
-    const batch = writeBatch(db);
-    
-    // Delete all panels within the scene
-    for (const panel of panelsToDelete) {
-        if (panel.imageUrl && panel.imageUrl.includes('firebasestorage.googleapis.com')) {
-            await deleteImageFromUrl(panel.imageUrl);
-        }
-        const panelRef = doc(db, 'storyboard_panels', panel.id);
-        batch.delete(panelRef);
-    }
-    
-    // Delete the scene itself
-    const sceneRef = doc(db, 'storyboard_scenes', sceneId);
-    batch.delete(sceneRef);
-
-    await batch.commit();
-};
-
 export const getStoryboardPanels = async (storyboardId: string): Promise<StoryboardPanel[]> => {
   const userId = getUserId();
   if (!userId) return [];
   const q = query(
-        collection(db, 'storyboard_panels'),
-        where('storyboardId', '==', storyboardId),
-        where('userId', '==', userId)
-      );
-
+    collection(db, 'storyboard_panels'),
+    where('storyboardId', '==', storyboardId),
+    where('userId', '==', userId),
+    orderBy('order', 'asc')
+  );
   const querySnapshot = await getDocs(q);
   const panels = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-            createdAt: (data.createdAt as Timestamp).toDate(),
-        } as StoryboardPanel;
-    });
-  
-  panels.sort((a, b) => a.order - b.order);
-  
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: (data.createdAt as Timestamp).toDate(),
+    } as StoryboardPanel;
+  });
   return panels;
 }
-
-export const updatePanelBatch = async (updates: { id: string; sceneId: string }[]) => {
-    const batch = writeBatch(db);
-    updates.forEach(({ id, sceneId }) => {
-        const docRef = doc(db, 'storyboard_panels', id);
-        batch.update(docRef, { sceneId });
-    });
-    await batch.commit();
-};
-
 
 export const addStoryboardPanelsBatch = async (panelsData: Omit<StoryboardPanel, 'id' | 'userId' | 'createdAt'>[]) => {
   const userId = getUserId();
@@ -957,7 +874,7 @@ export const uploadImageForStoryboard = async (file: File): Promise<string> => {
 
 export const getPosts = async (limitCount?: number): Promise<Post[]> => {
   const postsCollection = collection(db, 'posts');
-  let q = query(postsCollection);
+  let q = query(postsCollection, orderBy('createdAt', 'desc'));
   
   if (limitCount) {
     q = query(q, limit(limitCount));
@@ -972,8 +889,6 @@ export const getPosts = async (limitCount?: number): Promise<Post[]> => {
       createdAt: (data.createdAt as Timestamp).toDate(),
     } as Post;
   });
-  
-  posts.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   return posts;
 };

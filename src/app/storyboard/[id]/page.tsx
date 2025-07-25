@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileDown, X, GripVertical, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileDown, X, GripVertical } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -14,7 +14,7 @@ import Image from 'next/image';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-import type { Storyboard, StoryboardPanel, StoryboardScene } from '@/lib/types';
+import type { Storyboard, StoryboardPanel } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -34,7 +34,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CreateEditStoryboardSceneDialog } from '@/components/create-edit-storyboard-scene-dialog';
 
 
 const ItemType = 'PANEL';
@@ -149,7 +148,6 @@ function StoryboardPageDetail() {
     const exportRef = useRef<HTMLDivElement>(null);
 
     const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
-    const [scenes, setScenes] = useState<StoryboardScene[]>([]);
     const [panels, setPanels] = useState<StoryboardPanel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
@@ -157,8 +155,6 @@ function StoryboardPageDetail() {
     
     // Dialog states
     const [isStoryboardInfoDialogOpen, setIsStoryboardInfoDialogOpen] = useState(false);
-    const [isSceneDialogOpen, setIsSceneDialogOpen] = useState(false);
-    const [editingScene, setEditingScene] = useState<StoryboardScene | null>(null);
     
     const dndBackend = typeof navigator !== 'undefined' && /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
 
@@ -166,35 +162,18 @@ function StoryboardPageDetail() {
         if (!storyboardId || !user) return;
         setIsLoading(true);
         try {
-            const storyboardData = await firestoreApi.getStoryboard(storyboardId);
+            const [storyboardData, panelsData] = await Promise.all([
+                firestoreApi.getStoryboard(storyboardId),
+                firestoreApi.getStoryboardPanels(storyboardId),
+            ]);
+
             if (!storyboardData) {
                 toast({ variant: 'destructive', title: 'Erro', description: 'Storyboard não encontrado.' });
                 router.push('/');
                 return;
             }
             setStoryboard(storyboardData);
-
-            const panelsData = await firestoreApi.getStoryboardPanels(storyboardId);
-            let scenesData = await firestoreApi.getStoryboardScenes(storyboardId);
-
-            // Backward compatibility: If no scenes exist, but panels do, create a default scene.
-            if (scenesData.length === 0 && panelsData.length > 0) {
-                const newSceneId = await firestoreApi.addStoryboardScene(storyboardId, {
-                    title: "Cena 1",
-                    description: "Quadros importados do projeto original.",
-                });
-                
-                const panelUpdates = panelsData.map(p => ({ id: p.id, sceneId: newSceneId }));
-                await firestoreApi.updatePanelBatch(panelUpdates);
-
-                // Re-fetch data after migration to ensure consistency
-                await fetchStoryboardData(); 
-                return;
-            }
-
-            setScenes(scenesData);
             setPanels(panelsData);
-            
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({
@@ -226,30 +205,7 @@ function StoryboardPageDetail() {
         }
     };
 
-    const handleSceneSubmit = async (data: Omit<StoryboardScene, 'id' | 'storyboardId' | 'order'>) => {
-        try {
-            if (editingScene) {
-                await firestoreApi.updateStoryboardScene(editingScene.id, data);
-                toast({ title: 'Cena atualizada!' });
-            } else {
-                await firestoreApi.addStoryboardScene(storyboardId, data);
-                toast({ title: 'Cena adicionada!' });
-            }
-            await fetchStoryboardData();
-        } catch (error) {
-            const errorTyped = error as { code?: string; message: string };
-            toast({
-                variant: 'destructive',
-                title: 'Erro ao salvar cena',
-                description: <CopyableError userMessage="Não foi possível salvar a cena." errorCode={errorTyped.code || errorTyped.message} />,
-            });
-        } finally {
-            setIsSceneDialogOpen(false);
-            setEditingScene(null);
-        }
-    };
-
-    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, sceneId: string) => {
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files?.length) return;
         
         const files = Array.from(event.target.files);
@@ -265,16 +221,14 @@ function StoryboardPageDetail() {
         setIsUploading(true);
 
         try {
-            const panelsInScene = panels.filter(p => p.sceneId === sceneId).length;
             const newPanelsData = await Promise.all(files.map(async (file, index) => {
                 const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
                 const imageUrl = await firestoreApi.uploadImageForStoryboard(compressedFile);
                 return {
                     storyboardId,
-                    sceneId,
                     imageUrl,
                     notes: "",
-                    order: panelsInScene + index,
+                    order: panels.length + index,
                 };
             }));
 
@@ -301,18 +255,6 @@ function StoryboardPageDetail() {
             toast({ variant: 'destructive', title: 'Erro em /storyboard/[id]/page.tsx (handleDeletePanel)', description: <CopyableError userMessage="Não foi possível remover o painel." errorCode={errorTyped.code || errorTyped.message} /> });
         }
     };
-    
-    const handleDeleteScene = async (sceneId: string) => {
-        try {
-            await firestoreApi.deleteStoryboardScene(sceneId, panels.filter(p => p.sceneId === sceneId));
-            await fetchStoryboardData();
-            toast({ title: 'Cena removida.' });
-        } catch (error) {
-            const errorTyped = error as { code?: string; message: string };
-            toast({ variant: 'destructive', title: 'Erro ao remover cena', description: <CopyableError userMessage="Não foi possível remover a cena e seus quadros." errorCode={errorTyped.code || errorTyped.message} /> });
-        }
-    };
-
 
     const handleUpdatePanelNotes = useCallback(async (panelId: string, notes: string) => {
         try {
@@ -324,22 +266,18 @@ function StoryboardPageDetail() {
         }
     }, [fetchStoryboardData, toast]);
 
-    const movePanel = useCallback((sceneId: string, dragIndex: number, hoverIndex: number) => {
-      setPanels((prevPanels) => {
-          const scenePanels = prevPanels.filter(p => p.sceneId === sceneId);
-          const otherPanels = prevPanels.filter(p => p.sceneId !== sceneId);
-          const updatedScenePanels = update(scenePanels, {
-              $splice: [[dragIndex, 1], [hoverIndex, 0, scenePanels[dragIndex]]],
-          });
-          return [...otherPanels, ...updatedScenePanels];
-      });
+    const movePanel = useCallback((dragIndex: number, hoverIndex: number) => {
+        setPanels((prevPanels) =>
+            update(prevPanels, {
+                $splice: [[dragIndex, 1], [hoverIndex, 0, prevPanels[dragIndex]]],
+            })
+        );
     }, []);
 
-    const handleDropPanel = async (sceneId: string) => {
-        const panelsInScene = panels.filter(p => p.sceneId === sceneId);
-        const updatedPanels = panelsInScene.map((panel, index) => ({ id: panel.id, order: index }));
+    const handleDropPanel = async () => {
+        const updatedPanels = panels.map((panel, index) => ({ id: panel.id, order: index }));
         await firestoreApi.updatePanelOrder(updatedPanels);
-        toast({ title: 'Ordem da cena salva!' });
+        toast({ title: 'Ordem do storyboard salva!' });
     };
     
     const handleExport = async (format: 'pdf' | 'png') => {
@@ -404,10 +342,19 @@ function StoryboardPageDetail() {
                           <Edit className="h-4 w-4 md:mr-2" />
                           <span className="hidden md:inline">Editar Projeto</span>
                         </Button>
-                        <Button onClick={() => { setEditingScene(null); setIsSceneDialogOpen(true); }} size="sm">
-                            <PlusCircle className="h-4 w-4 md:mr-2" />
-                            <span className="hidden md:inline">Adicionar Cena</span>
+                        <Button onClick={() => imageUploadRef.current?.click()} size="sm" disabled={isUploading}>
+                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <PlusCircle className="h-4 w-4 md:mr-2" />}
+                            <span className="hidden md:inline">Adicionar Quadros</span>
                         </Button>
+                         <input
+                            ref={imageUploadRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={handleImageUpload}
+                            disabled={isUploading}
+                        />
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="icon" disabled={isExporting} aria-label="Exportar Storyboard">
@@ -432,101 +379,30 @@ function StoryboardPageDetail() {
                                 )}
                             </CardHeader>
                         </Card>
-                        <div className="space-y-8">
-                            {scenes.map((scene, sceneIndex) => (
-                                <Card key={scene.id} className="overflow-hidden">
-                                    <CardHeader className="flex-row items-start justify-between">
-                                        <div>
-                                            <CardTitle className="text-xl">Cena {sceneIndex + 1}: {scene.title}</CardTitle>
-                                            {scene.description && <CardDescription className="mt-1">{scene.description}</CardDescription>}
-                                        </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0"><MoreVertical className="h-4 w-4" /></Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent>
-                                                <DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}>
-                                                    <Edit className="mr-2 h-4 w-4" /> Editar Cena
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleDeleteScene(scene.id)} className="text-destructive focus:text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" /> Excluir Cena
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                            {(panels.filter(p => p.sceneId === scene.id)).map((panel, index) => (
-                                                <PanelCard 
-                                                    key={panel.id} 
-                                                    panel={panel} 
-                                                    aspectRatio={storyboard.aspectRatio}
-                                                    index={index} 
-                                                    onDelete={handleDeletePanel} 
-                                                    onUpdateNotes={handleUpdatePanelNotes} 
-                                                    movePanel={(dragIndex, hoverIndex) => movePanel(scene.id, dragIndex, hoverIndex)}
-                                                    onDropPanel={() => handleDropPanel(scene.id)}
-                                                    isExporting={isExporting}
-                                                />
-                                            ))}
-                                            <button
-                                              onClick={() => {
-                                                  // This is a bit of a hack to tie the upload to a specific scene
-                                                  // A better approach might involve a different state management strategy
-                                                  if (imageUploadRef.current) {
-                                                    imageUploadRef.current.setAttribute('data-scene-id', scene.id);
-                                                    imageUploadRef.current.click();
-                                                  }
-                                              }}
-                                              className={cn("flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-muted-foreground hover:bg-muted hover:border-primary hover:text-primary transition-colors",
-                                              storyboard.aspectRatio === '16:9' ? 'aspect-video' : 'aspect-[4/3]')}
-                                            >
-                                                <div className="flex flex-col items-center gap-1">
-                                                    <PlusCircle className="h-8 w-8" />
-                                                    <span className="text-sm font-medium">Adicionar Quadro</span>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            {panels.map((panel, index) => (
+                                <PanelCard 
+                                    key={panel.id} 
+                                    panel={panel} 
+                                    aspectRatio={storyboard.aspectRatio}
+                                    index={index} 
+                                    onDelete={handleDeletePanel} 
+                                    onUpdateNotes={handleUpdatePanelNotes} 
+                                    movePanel={movePanel}
+                                    onDropPanel={handleDropPanel}
+                                    isExporting={isExporting}
+                                />
                             ))}
-                            {scenes.length === 0 && (
-                                <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                                    <p className="text-muted-foreground">Nenhuma cena criada ainda.</p>
-                                    <Button onClick={() => { setEditingScene(null); setIsSceneDialogOpen(true); }} className="mt-4">
-                                      <PlusCircle className="mr-2 h-4 w-4" />
-                                      Criar Primeira Cena
-                                    </Button>
-                                </div>
-                            )}
                         </div>
                         {isExporting && ( <div className="mt-8 text-center text-sm text-muted-foreground">Criado com ProductionFlow</div> )}
                     </div>
                 </main>
-                 <input
-                    ref={imageUploadRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                        const sceneId = e.currentTarget.getAttribute('data-scene-id');
-                        if (sceneId) handleImageUpload(e, sceneId);
-                    }}
-                    disabled={isUploading}
-                />
                 <AppFooter />
                 <CreateEditStoryboardDialog 
                     isOpen={isStoryboardInfoDialogOpen} 
                     setIsOpen={setIsStoryboardInfoDialogOpen} 
                     onSubmit={handleStoryboardSubmit} 
                     storyboard={storyboard}
-                />
-                <CreateEditStoryboardSceneDialog 
-                    isOpen={isSceneDialogOpen}
-                    setIsOpen={setIsSceneDialogOpen}
-                    onSubmit={handleSceneSubmit}
-                    scene={editingScene}
                 />
             </div>
         </DndProvider>
