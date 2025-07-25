@@ -129,7 +129,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                 placeholder="Adicione suas anotações aqui..."
                 value={notes}
                 onChange={handleNotesChange}
-                className="text-sm"
+                className="text-sm border-none bg-transparent focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-ring p-1"
             />
         </div>
     );
