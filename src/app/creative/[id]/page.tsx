@@ -1,3 +1,4 @@
+
 // @/src/app/creative/[id]/page.tsx
 'use client';
 
@@ -426,6 +427,15 @@ function CreativeProjectPageDetail() {
   }, []);
 
   const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, items?: ChecklistItem[]) => {
+    if (itemCountRef.current >= 20) {
+        toast({
+            variant: "destructive",
+            title: "Limite atingido!",
+            description: "A versão Beta permite até 20 itens por moodboard.",
+        });
+        return;
+    }
+    
     try {
       const offset = itemCountRef.current * 20;
       const newPosition = { x: 50 + offset, y: 50 + offset };
@@ -497,6 +507,16 @@ function CreativeProjectPageDetail() {
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (itemCountRef.current >= 20) {
+        toast({
+            variant: "destructive",
+            title: "Limite atingido!",
+            description: "A versão Beta permite até 20 itens por moodboard.",
+        });
+        if (imageUploadRef.current) imageUploadRef.current.value = "";
+        return;
+    }
+    
     if (!event.target.files?.[0]) return;
     const file = event.target.files[0];
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -542,6 +562,16 @@ function CreativeProjectPageDetail() {
   };
   
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (itemCountRef.current >= 20) {
+        toast({
+            variant: "destructive",
+            title: "Limite atingido!",
+            description: "A versão Beta permite até 20 itens por moodboard.",
+        });
+        if (pdfUploadRef.current) pdfUploadRef.current.value = "";
+        return;
+    }
+    
     if (!event.target.files?.[0]) return;
     const file = event.target.files[0];
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
