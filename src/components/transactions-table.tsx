@@ -113,13 +113,13 @@ export default function TransactionsTable({
                   {variant === 'default' && (
                     <TableCell className="text-center">
                       {t.status === 'planned' && onPay && (
-                        <Button size="sm" variant="outline" onClick={() => onPay(t.id)} aria-label={`Pagar ${t.description}`} className="w-[100px]">
+                        <Button size="sm" variant="outline" onClick={() => onPay(t.id)} aria-label={`Pagar ${t.description}`} className="w-[120px]">
                             <Banknote className="mr-2 h-4 w-4" />
                             Pagar
                         </Button>
                       )}
                       {t.status === 'paid' && onUndo && (
-                        <div className="group relative w-[100px] h-9 mx-auto">
+                        <div className="group relative w-[120px] h-9 mx-auto">
                             <Button
                                 size="sm"
                                 variant="outline"
