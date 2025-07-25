@@ -67,22 +67,21 @@ export const getProjects = async (): Promise<Project[]> => {
 export const getProject = async (projectId: string): Promise<Project | null> => {
     const userId = getUserId();
     if (!userId) return null;
+
     const projectRef = doc(db, 'projects', projectId);
     const projectSnap = await getDoc(projectRef);
 
-    if (projectSnap.exists()) {
+    if (projectSnap.exists() && projectSnap.data().userId === userId) {
         const projectData = projectSnap.data();
-        if (projectData.userId === userId) {
-            return {
-              ...projectData,
-              id: projectSnap.id,
-              installments: (projectData.installments || []).map((inst: any) => ({
-                ...inst,
-                date: (inst.date as Timestamp).toDate()
-              })),
-               createdAt: projectData.createdAt ? (projectData.createdAt as Timestamp).toDate() : new Date(0),
-            } as Project;
-        }
+        return {
+          ...projectData,
+          id: projectSnap.id,
+          installments: (projectData.installments || []).map((inst: any) => ({
+            ...inst,
+            date: (inst.date as Timestamp).toDate()
+          })),
+           createdAt: projectData.createdAt ? (projectData.createdAt as Timestamp).toDate() : new Date(0),
+        } as Project;
     }
     return null;
 }
