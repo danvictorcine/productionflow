@@ -164,37 +164,37 @@ function StoryboardPageDetail() {
 
     const fetchStoryboardData = useCallback(async () => {
         if (!storyboardId || !user) return;
+        setIsLoading(true);
         try {
-            const [storyboardData, scenesData, panelsData] = await Promise.all([
-                firestoreApi.getStoryboard(storyboardId),
-                firestoreApi.getStoryboardScenes(storyboardId),
-                firestoreApi.getStoryboardPanels(storyboardId),
-            ]);
-
-            if (storyboardData) {
-                setStoryboard(storyboardData);
-                
-                // Backward compatibility: If no scenes exist, create one from existing panels
-                if (scenesData.length === 0 && panelsData.length > 0) {
-                    const newSceneId = await firestoreApi.addStoryboardScene(storyboardId, {
-                        title: "Cena 1",
-                        description: "Quadros importados do projeto original.",
-                    });
-                    
-                    const panelUpdates = panelsData.map(p => ({ id: p.id, sceneId: newSceneId }));
-                    await firestoreApi.updatePanelBatch(panelUpdates);
-
-                    // Re-fetch after migration
-                    await fetchStoryboardData();
-                    return;
-                }
-
-                setScenes(scenesData);
-                setPanels(panelsData);
-            } else {
+            const storyboardData = await firestoreApi.getStoryboard(storyboardId);
+            if (!storyboardData) {
                 toast({ variant: 'destructive', title: 'Erro', description: 'Storyboard não encontrado.' });
                 router.push('/');
+                return;
             }
+            setStoryboard(storyboardData);
+
+            const panelsData = await firestoreApi.getStoryboardPanels(storyboardId);
+            let scenesData = await firestoreApi.getStoryboardScenes(storyboardId);
+
+            // Backward compatibility: If no scenes exist, but panels do, create a default scene.
+            if (scenesData.length === 0 && panelsData.length > 0) {
+                const newSceneId = await firestoreApi.addStoryboardScene(storyboardId, {
+                    title: "Cena 1",
+                    description: "Quadros importados do projeto original.",
+                });
+                
+                const panelUpdates = panelsData.map(p => ({ id: p.id, sceneId: newSceneId }));
+                await firestoreApi.updatePanelBatch(panelUpdates);
+
+                // Re-fetch data after migration to ensure consistency
+                await fetchStoryboardData(); 
+                return;
+            }
+
+            setScenes(scenesData);
+            setPanels(panelsData);
+            
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({
@@ -470,7 +470,14 @@ function StoryboardPageDetail() {
                                                 />
                                             ))}
                                             <button
-                                              onClick={() => imageUploadRef.current?.click()}
+                                              onClick={() => {
+                                                  // This is a bit of a hack to tie the upload to a specific scene
+                                                  // A better approach might involve a different state management strategy
+                                                  if (imageUploadRef.current) {
+                                                    imageUploadRef.current.setAttribute('data-scene-id', scene.id);
+                                                    imageUploadRef.current.click();
+                                                  }
+                                              }}
                                               className={cn("flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-muted-foreground hover:bg-muted hover:border-primary hover:text-primary transition-colors",
                                               storyboard.aspectRatio === '16:9' ? 'aspect-video' : 'aspect-[4/3]')}
                                             >
@@ -478,15 +485,6 @@ function StoryboardPageDetail() {
                                                     <PlusCircle className="h-8 w-8" />
                                                     <span className="text-sm font-medium">Adicionar Quadro</span>
                                                 </div>
-                                                <input
-                                                  ref={imageUploadRef}
-                                                  type="file"
-                                                  accept="image/*"
-                                                  multiple
-                                                  className="hidden"
-                                                  onChange={(e) => handleImageUpload(e, scene.id)}
-                                                  disabled={isUploading}
-                                                />
                                             </button>
                                         </div>
                                     </CardContent>
@@ -505,6 +503,18 @@ function StoryboardPageDetail() {
                         {isExporting && ( <div className="mt-8 text-center text-sm text-muted-foreground">Criado com ProductionFlow</div> )}
                     </div>
                 </main>
+                 <input
+                    ref={imageUploadRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                        const sceneId = e.currentTarget.getAttribute('data-scene-id');
+                        if (sceneId) handleImageUpload(e, sceneId);
+                    }}
+                    disabled={isUploading}
+                />
                 <AppFooter />
                 <CreateEditStoryboardDialog 
                     isOpen={isStoryboardInfoDialogOpen} 

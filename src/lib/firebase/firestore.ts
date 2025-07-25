@@ -762,8 +762,10 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
 
+  const batch = writeBatch(db);
+
   const projectRef = doc(db, 'storyboards', storyboardId);
-  await deleteDoc(projectRef);
+  batch.delete(projectRef);
 
   const panelsQuery = query(
     collection(db, 'storyboard_panels'),
@@ -771,7 +773,6 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
   );
   const panelsSnapshot = await getDocs(panelsQuery);
   if (!panelsSnapshot.empty) {
-    const batch = writeBatch(db);
     for (const panelDoc of panelsSnapshot.docs) {
         if (panelDoc.data().userId !== userId) continue;
         const panelData = panelDoc.data();
@@ -780,8 +781,9 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
         }
         batch.delete(panelDoc.ref);
     }
-    await batch.commit();
   }
+
+  await batch.commit();
 };
 
 export const addStoryboardScene = async (storyboardId: string, data: Omit<StoryboardScene, 'id' | 'storyboardId' | 'order'>): Promise<string> => {
@@ -799,11 +801,16 @@ export const addStoryboardScene = async (storyboardId: string, data: Omit<Storyb
 };
 
 export const getStoryboardScenes = async (storyboardId: string): Promise<StoryboardScene[]> => {
-    const q = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId));
-    const querySnapshot = await getDocs(q);
-    const scenes = querySnapshot.docs.map(doc => doc.data() as StoryboardScene);
-    scenes.sort((a,b) => a.order - b.order); // Sort client-side
-    return scenes;
+    try {
+        const q = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId));
+        const querySnapshot = await getDocs(q);
+        const scenes = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as StoryboardScene);
+        scenes.sort((a,b) => a.order - b.order); // Sort client-side
+        return scenes;
+    } catch (error) {
+        console.error("Error fetching storyboard scenes: ", error);
+        return [];
+    }
 };
 
 export const updateStoryboardScene = async (sceneId: string, data: Partial<Omit<StoryboardScene, 'id' | 'storyboardId' | 'order'>>) => {
@@ -1169,5 +1176,3 @@ export const deleteThemeSettings = async () => {
     const docRef = doc(db, 'settings', 'theme');
     await deleteDoc(docRef);
 }
-
-    
