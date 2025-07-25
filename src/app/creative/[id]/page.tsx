@@ -29,6 +29,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -282,11 +284,13 @@ function CreativeProjectPageDetail() {
   const initialItemsRef = useRef<BoardItem[]>([]);
   const hasUnsavedChanges = useRef(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const mainContainerRef = useRef<HTMLDivElement>(null);
 
   const [project, setProject] = useState<CreativeProject | null>(null);
   const [items, setItems] = useState<BoardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const isMobile = useIsMobile();
 
   // Dialog states
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -300,9 +304,50 @@ function CreativeProjectPageDetail() {
   // Zoom and Pan state
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
-  const [startPanPoint, setStartPanPoint] = useState({ x: 0, y: 0 });
+  const isPanning = useRef(false);
+  const startPanPoint = useRef({ x: 0, y: 0 });
+  const pinchStartDistance = useRef(0);
 
+  const setInitialView = useCallback(() => {
+    if (!isMobile || items.length === 0 || !mainContainerRef.current) return;
+    
+    const container = mainContainerRef.current;
+    const padding = 50;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    items.forEach(item => {
+        const width = typeof item.size.width === 'string' ? parseFloat(item.size.width) : item.size.width;
+        const height = typeof item.size.height === 'string' ? parseFloat(item.size.height) : item.size.height;
+        minX = Math.min(minX, item.position.x);
+        minY = Math.min(minY, item.position.y);
+        maxX = Math.max(maxX, item.position.x + width);
+        maxY = Math.max(maxY, item.position.y + height);
+    });
+
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+    
+    if (contentWidth <= 0 || contentHeight <= 0) return;
+
+    const scaleX = (container.offsetWidth - padding * 2) / contentWidth;
+    const scaleY = (container.offsetHeight - padding * 2) / contentHeight;
+    const newScale = Math.min(scaleX, scaleY, 1);
+    
+    const newX = (container.offsetWidth - contentWidth * newScale) / 2 - minX * newScale;
+    const newY = (container.offsetHeight - contentHeight * newScale) / 2 - minY * newScale;
+
+    setScale(newScale);
+    setPosition({ x: newX, y: newY });
+
+  }, [isMobile, items]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setInitialView();
+    }
+  }, [isLoading, setInitialView]);
+  
 
   const fetchProjectData = useCallback(async () => {
     if (!projectId || !user) return;
@@ -658,24 +703,71 @@ function CreativeProjectPageDetail() {
             return;
         }
         e.preventDefault();
-        setIsPanning(true);
-        setStartPanPoint({
+        isPanning.current = true;
+        startPanPoint.current = {
             x: e.clientX - position.x,
             y: e.clientY - position.y,
-        });
+        };
+        (e.target as HTMLElement).classList.add('cursor-grabbing');
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isPanning) return;
+        if (!isPanning.current) return;
         e.preventDefault();
         setPosition({
-            x: e.clientX - startPanPoint.x,
-            y: e.clientY - startPanPoint.y,
+            x: e.clientX - startPanPoint.current.x,
+            y: e.clientY - startPanPoint.current.y,
         });
     };
 
-    const handleMouseUp = () => {
-        setIsPanning(false);
+    const handleMouseUp = (e: React.MouseEvent) => {
+        isPanning.current = false;
+        (e.target as HTMLElement).classList.remove('cursor-grabbing');
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+      if ((e.target as HTMLElement).closest('input, textarea, button, .drag-handle, a, .ql-editor')) {
+        return;
+      }
+      if (e.touches.length === 2) { // Pinch zoom
+        e.preventDefault();
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        pinchStartDistance.current = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        isPanning.current = false;
+      } else if (e.touches.length === 1) { // Panning
+        e.preventDefault();
+        isPanning.current = true;
+        startPanPoint.current = {
+          x: e.touches[0].clientX - position.x,
+          y: e.touches[0].clientY - position.y,
+        };
+      }
+    };
+    
+    const handleTouchMove = (e: React.TouchEvent) => {
+      if (e.touches.length === 2) { // Pinch zoom
+        e.preventDefault();
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const currentDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        const scaleFactor = currentDistance / pinchStartDistance.current;
+        setScale(prevScale => {
+            const newScale = Math.min(Math.max(0.1, prevScale * scaleFactor), 2);
+            return newScale;
+        });
+        pinchStartDistance.current = currentDistance; // Update for continuous scaling
+      } else if (isPanning.current && e.touches.length === 1) { // Panning
+        e.preventDefault();
+        setPosition({
+          x: e.touches[0].clientX - startPanPoint.current.x,
+          y: e.touches[0].clientY - startPanPoint.current.y,
+        });
+      }
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+      isPanning.current = false;
     };
   
   if (isLoading) {
@@ -762,12 +854,16 @@ function CreativeProjectPageDetail() {
             </div>
         </div>
         <div 
-            className={cn("flex-1 relative overflow-hidden", isPanning ? "cursor-grabbing" : "cursor-grab")}
+            ref={mainContainerRef}
+            className={cn("flex-1 relative overflow-hidden cursor-grab")}
             onWheel={handleWheel}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
         >
             <div 
               ref={canvasRef}
