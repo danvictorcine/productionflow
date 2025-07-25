@@ -591,21 +591,19 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
 
-  // Delete project document first
   const projectRef = doc(db, 'creative_projects', projectId);
   await deleteDoc(projectRef);
 
-  // Then query and delete associated items
   const itemsQuery = query(
     collection(db, 'board_items'),
-    where('projectId', '==', projectId),
+    where('projectId', '==', projectId)
   );
   const itemsSnapshot = await getDocs(itemsQuery);
   
   if (!itemsSnapshot.empty) {
     const batch = writeBatch(db);
     for (const itemDoc of itemsSnapshot.docs) {
-      if (itemDoc.data().userId !== userId) continue; // Security check
+      if (itemDoc.data().userId !== userId) continue;
       const itemData = itemDoc.data();
       if ((itemData.type === 'image' || itemData.type === 'pdf') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
         await deleteImageFromUrl(itemData.content);
@@ -622,19 +620,20 @@ export const getBoardItems = async (projectId: string): Promise<BoardItem[]> => 
   if (!userId) return [];
   const q = query(
     collection(db, 'board_items'),
-    where('projectId', '==', projectId),
-    where('userId', '==', userId)
+    where('projectId', '==', projectId)
   );
   const querySnapshot = await getDocs(q);
-  const items = querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: (data.createdAt as Timestamp).toDate(),
-    } as BoardItem;
-  });
-  // Sort client-side to avoid complex index
+  const items = querySnapshot.docs
+    .map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: (data.createdAt as Timestamp).toDate(),
+      } as BoardItem;
+    })
+    .filter(item => item.userId === userId);
+
   items.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   return items;
 }
@@ -750,6 +749,24 @@ export const getStoryboard = async (storyboardId: string): Promise<Storyboard | 
     }
 
     const data = docSnap.data();
+
+    // Data migration for existing scenes that don't have userId
+    const scenesQuery = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId));
+    const scenesSnapshot = await getDocs(scenesQuery);
+    if (!scenesSnapshot.empty) {
+      const batch = writeBatch(db);
+      let needsMigration = false;
+      scenesSnapshot.forEach(sceneDoc => {
+        if (!sceneDoc.data().userId) {
+          needsMigration = true;
+          batch.update(sceneDoc.ref, { userId });
+        }
+      });
+      if (needsMigration) {
+        await batch.commit();
+      }
+    }
+    
     return {
         id: docSnap.id,
         ...data,
@@ -771,6 +788,11 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
   const projectRef = doc(db, 'storyboards', storyboardId);
   batch.delete(projectRef);
 
+  // Also delete scenes
+  const scenesQuery = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId));
+  const scenesSnapshot = await getDocs(scenesQuery);
+  scenesSnapshot.forEach(doc => batch.delete(doc.ref));
+
   const panelsQuery = query(
     collection(db, 'storyboard_panels'),
     where('storyboardId', '==', storyboardId)
@@ -790,7 +812,9 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
   await batch.commit();
 };
 
-export const addStoryboardScene = async (storyboardId: string, data: Omit<StoryboardScene, 'id' | 'storyboardId' | 'order'>): Promise<string> => {
+export const addStoryboardScene = async (storyboardId: string, data: Omit<StoryboardScene, 'id' | 'storyboardId' | 'order' | 'userId'>): Promise<string> => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
     const scenesCollectionRef = collection(db, 'storyboard_scenes');
     const q = query(scenesCollectionRef, where('storyboardId', '==', storyboardId), orderBy('order', 'desc'), limit(1));
     const querySnapshot = await getDocs(q);
@@ -799,14 +823,17 @@ export const addStoryboardScene = async (storyboardId: string, data: Omit<Storyb
     const docRef = await addDoc(scenesCollectionRef, {
         ...data,
         storyboardId,
+        userId,
         order: lastOrder + 1,
     });
     return docRef.id;
 };
 
 export const getStoryboardScenes = async (storyboardId: string): Promise<StoryboardScene[]> => {
+    const userId = getUserId();
+    if (!userId) return [];
     try {
-        const q = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId));
+        const q = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId), where('userId', '==', userId));
         const querySnapshot = await getDocs(q);
         const scenes = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as StoryboardScene);
         scenes.sort((a,b) => a.order - b.order); // Sort client-side
@@ -817,7 +844,7 @@ export const getStoryboardScenes = async (storyboardId: string): Promise<Storybo
     }
 };
 
-export const updateStoryboardScene = async (sceneId: string, data: Partial<Omit<StoryboardScene, 'id' | 'storyboardId' | 'order'>>) => {
+export const updateStoryboardScene = async (sceneId: string, data: Partial<Omit<StoryboardScene, 'id' | 'storyboardId' | 'order' | 'userId'>>) => {
     const docRef = doc(db, 'storyboard_scenes', sceneId);
     await updateDoc(docRef, data);
 };
@@ -846,7 +873,8 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
   if (!userId) return [];
   const q = query(
         collection(db, 'storyboard_panels'),
-        where('storyboardId', '==', storyboardId)
+        where('storyboardId', '==', storyboardId),
+        where('userId', '==', userId)
       );
 
   const querySnapshot = await getDocs(q);
@@ -858,8 +886,7 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
             ...data,
             createdAt: (data.createdAt as Timestamp).toDate(),
         } as StoryboardPanel;
-    })
-    .filter(panel => panel.userId === userId); // Filter for ownership client-side
+    });
   
   panels.sort((a, b) => a.order - b.order);
   

@@ -232,6 +232,7 @@ export type Storyboard = {
 export type StoryboardScene = {
   id: string;
   storyboardId: string;
+  userId: string;
   title: string;
   description?: string;
   order: number;
