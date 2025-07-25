@@ -281,6 +281,7 @@ function CreativeProjectPageDetail() {
   const itemCountRef = useRef(0);
   const initialItemsRef = useRef<BoardItem[]>([]);
   const hasUnsavedChanges = useRef(false);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   const [project, setProject] = useState<CreativeProject | null>(null);
   const [items, setItems] = useState<BoardItem[]>([]);
@@ -616,6 +617,9 @@ function CreativeProjectPageDetail() {
   };
   
    const handleWheel = (e: React.WheelEvent) => {
+        if (!canvasRef.current || (e.target as HTMLElement) !== canvasRef.current) {
+            return;
+        }
         e.preventDefault();
         const scaleAmount = 0.1;
         let newScale = scale - (e.deltaY > 0 ? scaleAmount : -scaleAmount);
@@ -740,29 +744,32 @@ function CreativeProjectPageDetail() {
             onMouseLeave={handleMouseUp}
         >
             <div 
-              className="relative w-[4000px] h-[4000px] bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75"
+              ref={canvasRef}
+              className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75"
               style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}}
             >
-            {items.map(item => (
-                <Rnd
-                key={item.id}
-                size={{ width: item.size.width, height: item.size.height }}
-                position={{ x: item.position.x, y: item.position.y }}
-                onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y }})}
-                onResizeStop={(_e, _direction, ref, _delta, position) => {
-                    handleItemUpdate(item.id, {
-                    size: { width: ref.style.width, height: ref.style.height },
-                    position,
-                    });
-                }}
-                minWidth={150}
-                minHeight={80}
-                className="z-20"
-                dragHandleClassName="drag-handle"
-                >
-                <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} />
-                </Rnd>
-            ))}
+              <div className="relative min-w-full min-h-full">
+                {items.map(item => (
+                    <Rnd
+                    key={item.id}
+                    size={{ width: item.size.width, height: item.size.height }}
+                    position={{ x: item.position.x, y: item.position.y }}
+                    onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y }})}
+                    onResizeStop={(_e, _direction, ref, _delta, position) => {
+                        handleItemUpdate(item.id, {
+                        size: { width: ref.style.width, height: ref.style.height },
+                        position,
+                        });
+                    }}
+                    minWidth={150}
+                    minHeight={80}
+                    className="z-20"
+                    dragHandleClassName="drag-handle"
+                    >
+                    <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} />
+                    </Rnd>
+                ))}
+              </div>
             </div>
         </div>
       </main>
