@@ -1,5 +1,4 @@
 
-
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -591,8 +590,10 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
 
+  const batch = writeBatch(db);
+
   const projectRef = doc(db, 'creative_projects', projectId);
-  await deleteDoc(projectRef);
+  batch.delete(projectRef);
 
   const itemsQuery = query(
     collection(db, 'board_items'),
@@ -601,7 +602,6 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
   const itemsSnapshot = await getDocs(itemsQuery);
   
   if (!itemsSnapshot.empty) {
-    const batch = writeBatch(db);
     for (const itemDoc of itemsSnapshot.docs) {
       if (itemDoc.data().userId !== userId) continue;
       const itemData = itemDoc.data();
@@ -749,23 +749,6 @@ export const getStoryboard = async (storyboardId: string): Promise<Storyboard | 
     }
 
     const data = docSnap.data();
-
-    // Data migration for existing scenes that don't have userId
-    const scenesQuery = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId));
-    const scenesSnapshot = await getDocs(scenesQuery);
-    if (!scenesSnapshot.empty) {
-      const batch = writeBatch(db);
-      let needsMigration = false;
-      scenesSnapshot.forEach(sceneDoc => {
-        if (!sceneDoc.data().userId) {
-          needsMigration = true;
-          batch.update(sceneDoc.ref, { userId });
-        }
-      });
-      if (needsMigration) {
-        await batch.commit();
-      }
-    }
     
     return {
         id: docSnap.id,
@@ -832,6 +815,18 @@ export const addStoryboardScene = async (storyboardId: string, data: Omit<Storyb
 export const getStoryboardScenes = async (storyboardId: string): Promise<StoryboardScene[]> => {
     const userId = getUserId();
     if (!userId) return [];
+    
+    // One-time migration for old scenes without a userId
+    const unmigratedQuery = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId), where('userId', '==', null));
+    const unmigratedSnapshot = await getDocs(unmigratedQuery);
+    if (!unmigratedSnapshot.empty) {
+        const batch = writeBatch(db);
+        unmigratedSnapshot.forEach(doc => {
+            batch.update(doc.ref, { userId });
+        });
+        await batch.commit();
+    }
+
     try {
         const q = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId), where('userId', '==', userId));
         const querySnapshot = await getDocs(q);
@@ -873,8 +868,7 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
   if (!userId) return [];
   const q = query(
         collection(db, 'storyboard_panels'),
-        where('storyboardId', '==', storyboardId),
-        where('userId', '==', userId)
+        where('storyboardId', '==', storyboardId)
       );
 
   const querySnapshot = await getDocs(q);
@@ -886,7 +880,8 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
             ...data,
             createdAt: (data.createdAt as Timestamp).toDate(),
         } as StoryboardPanel;
-    });
+    })
+    .filter(p => p.userId === userId);
   
   panels.sort((a, b) => a.order - b.order);
   
