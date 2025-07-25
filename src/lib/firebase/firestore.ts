@@ -1,4 +1,5 @@
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -597,21 +598,20 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
 
   const itemsQuery = query(
     collection(db, 'board_items'),
-    where('projectId', '==', projectId)
+    where('projectId', '==', projectId),
+    where('userId', '==', userId)
   );
   const itemsSnapshot = await getDocs(itemsQuery);
   
-  if (!itemsSnapshot.empty) {
-    for (const itemDoc of itemsSnapshot.docs) {
-      if (itemDoc.data().userId !== userId) continue;
-      const itemData = itemDoc.data();
-      if ((itemData.type === 'image' || itemData.type === 'pdf') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
-        await deleteImageFromUrl(itemData.content);
-      }
-      batch.delete(itemDoc.ref);
+  for (const itemDoc of itemsSnapshot.docs) {
+    const itemData = itemDoc.data();
+    if ((itemData.type === 'image' || itemData.type === 'pdf') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
+      await deleteImageFromUrl(itemData.content);
     }
-    await batch.commit();
+    batch.delete(itemDoc.ref);
   }
+  
+  await batch.commit();
 };
 
 
@@ -778,18 +778,17 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
 
   const panelsQuery = query(
     collection(db, 'storyboard_panels'),
-    where('storyboardId', '==', storyboardId)
+    where('storyboardId', '==', storyboardId),
+    where('userId', '==', userId)
   );
   const panelsSnapshot = await getDocs(panelsQuery);
-  if (!panelsSnapshot.empty) {
-    for (const panelDoc of panelsSnapshot.docs) {
-        if (panelDoc.data().userId !== userId) continue;
-        const panelData = panelDoc.data();
-        if (panelData.imageUrl && panelData.imageUrl.includes('firebasestorage.googleapis.com')) {
-            await deleteImageFromUrl(panelData.imageUrl);
-        }
-        batch.delete(panelDoc.ref);
-    }
+  for (const panelDoc of panelsSnapshot.docs) {
+      if (panelDoc.data().userId !== userId) continue;
+      const panelData = panelDoc.data();
+      if (panelData.imageUrl && panelData.imageUrl.includes('firebasestorage.googleapis.com')) {
+          await deleteImageFromUrl(panelData.imageUrl);
+      }
+      batch.delete(panelDoc.ref);
   }
 
   await batch.commit();
@@ -816,7 +815,6 @@ export const getStoryboardScenes = async (storyboardId: string): Promise<Storybo
     const userId = getUserId();
     if (!userId) return [];
     
-    // One-time migration for old scenes without a userId
     const unmigratedQuery = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId), where('userId', '==', null));
     const unmigratedSnapshot = await getDocs(unmigratedQuery);
     if (!unmigratedSnapshot.empty) {
@@ -827,16 +825,11 @@ export const getStoryboardScenes = async (storyboardId: string): Promise<Storybo
         await batch.commit();
     }
 
-    try {
-        const q = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId), where('userId', '==', userId));
-        const querySnapshot = await getDocs(q);
-        const scenes = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as StoryboardScene);
-        scenes.sort((a,b) => a.order - b.order); // Sort client-side
-        return scenes;
-    } catch (error) {
-        console.error("Error fetching storyboard scenes: ", error);
-        return [];
-    }
+    const q = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId), where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    const scenes = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as StoryboardScene);
+    scenes.sort((a,b) => a.order - b.order);
+    return scenes;
 };
 
 export const updateStoryboardScene = async (sceneId: string, data: Partial<Omit<StoryboardScene, 'id' | 'storyboardId' | 'order' | 'userId'>>) => {
@@ -868,20 +861,19 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
   if (!userId) return [];
   const q = query(
         collection(db, 'storyboard_panels'),
-        where('storyboardId', '==', storyboardId)
+        where('storyboardId', '==', storyboardId),
+        where('userId', '==', userId)
       );
 
   const querySnapshot = await getDocs(q);
-  const panels = querySnapshot.docs
-    .map(doc => {
+  const panels = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
             id: doc.id,
             ...data,
             createdAt: (data.createdAt as Timestamp).toDate(),
         } as StoryboardPanel;
-    })
-    .filter(p => p.userId === userId);
+    });
   
   panels.sort((a, b) => a.order - b.order);
   
@@ -965,7 +957,6 @@ export const uploadImageForStoryboard = async (file: File): Promise<string> => {
 
 export const getPosts = async (limitCount?: number): Promise<Post[]> => {
   const postsCollection = collection(db, 'posts');
-  // Remove orderBy from the query to prevent needing a composite index
   let q = query(postsCollection);
   
   if (limitCount) {
@@ -982,7 +973,6 @@ export const getPosts = async (limitCount?: number): Promise<Post[]> => {
     } as Post;
   });
   
-  // Sort client-side
   posts.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   return posts;
