@@ -295,6 +295,13 @@ function CreativeProjectPageDetail() {
   const [spotifyUrl, setSpotifyUrl] = useState("");
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number, name: string} | null>(null);
+  
+  // Zoom and Pan state
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [startPanPoint, setStartPanPoint] = useState({ x: 0, y: 0 });
+
 
   const fetchProjectData = useCallback(async () => {
     if (!projectId || !user) return;
@@ -608,6 +615,39 @@ function CreativeProjectPageDetail() {
     handleAddItem('location', JSON.stringify(selectedLocation), { width: 300, height: 300 });
   };
   
+   const handleWheel = (e: React.WheelEvent) => {
+        e.preventDefault();
+        const scaleAmount = 0.1;
+        let newScale = scale - (e.deltaY > 0 ? scaleAmount : -scaleAmount);
+        newScale = Math.min(Math.max(0.1, newScale), 2); // Clamp scale between 0.1 and 2
+        setScale(newScale);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('input, textarea, button, .drag-handle, a, .ql-editor')) {
+            return;
+        }
+        e.preventDefault();
+        setIsPanning(true);
+        setStartPanPoint({
+            x: e.clientX - position.x,
+            y: e.clientY - position.y,
+        });
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isPanning) return;
+        e.preventDefault();
+        setPosition({
+            x: e.clientX - startPanPoint.x,
+            y: e.clientY - startPanPoint.y,
+        });
+    };
+
+    const handleMouseUp = () => {
+        setIsPanning(false);
+    };
+  
   if (isLoading) {
     return (
       <div className="p-8 space-y-6">
@@ -691,8 +731,18 @@ function CreativeProjectPageDetail() {
                 </div>
             </div>
         </div>
-        <div className="flex-1 overflow-auto">
-            <div className="relative min-w-full min-h-full bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]">
+        <div 
+            className={cn("flex-1 relative overflow-auto", isPanning ? "cursor-grabbing" : "cursor-grab")}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+        >
+            <div 
+              className="relative w-[4000px] h-[4000px] bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75"
+              style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}}
+            >
             {items.map(item => (
                 <Rnd
                 key={item.id}
