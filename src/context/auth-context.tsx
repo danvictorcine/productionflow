@@ -8,7 +8,7 @@ import { onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { auth, firebaseError } from '@/lib/firebase/config';
 import { getUserProfile, updateUserProfile } from '@/lib/firebase/firestore';
 import type { UserProfile } from '@/lib/types';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
                 </div>
              </div>
-             <p className="text-muted-foreground">Carregando...</p>
+             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
       </div>
     );
