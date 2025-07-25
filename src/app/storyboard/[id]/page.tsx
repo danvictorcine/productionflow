@@ -116,7 +116,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                 )}
             >
                 <Image src={panel.imageUrl} alt={`Storyboard panel ${index + 1}`} layout="fill" objectFit="cover" />
-                <div className="absolute top-1 left-1 bg-black/30 text-white/90 text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none transition-colors group-hover:bg-black/50 group-hover:text-white">
+                <div className="absolute top-1 left-1 bg-black/50 text-white/90 text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none transition-colors group-hover:bg-black/50 group-hover:text-white">
                     {index + 1}
                 </div>
                 {!isExporting && (
@@ -456,17 +456,19 @@ function StoryboardPageDetail() {
                  <main 
                     className="flex-1 flex flex-col overflow-hidden"
                  >
-                    <div className="px-4 md:px-6 pt-4 md:pt-6 bg-background border-b">
-                        <Card>
-                            <CardContent className="p-4 space-y-1">
-                                <CardTitle>{storyboard.name}</CardTitle>
-                                {storyboard.description && (
-                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                                    {storyboard.description}
-                                    </p>
-                                )}
-                            </CardContent>
-                        </Card>
+                    <div className="bg-background border-b z-30">
+                        <div className="px-4 md:px-6 pt-4 md:pt-6">
+                            <Card>
+                                <CardContent className="p-4 space-y-1">
+                                    <CardTitle>{storyboard.name}</CardTitle>
+                                    {storyboard.description && (
+                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                        {storyboard.description}
+                                        </p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
                     <div 
                         className={cn("flex-1 relative", isPanning ? "cursor-grabbing" : "cursor-grab")}
