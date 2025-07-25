@@ -68,22 +68,29 @@ export const getProject = async (projectId: string): Promise<Project | null> => 
     const userId = getUserId();
     if (!userId) return null;
 
-    const projectRef = doc(db, 'projects', projectId);
-    const projectSnap = await getDoc(projectRef);
+    const q = query(
+        collection(db, 'projects'),
+        where('__name__', '==', projectId),
+        where('userId', '==', userId)
+    );
+    const querySnapshot = await getDocs(q);
 
-    if (projectSnap.exists() && projectSnap.data().userId === userId) {
-        const projectData = projectSnap.data();
-        return {
-          ...projectData,
-          id: projectSnap.id,
-          installments: (projectData.installments || []).map((inst: any) => ({
-            ...inst,
-            date: (inst.date as Timestamp).toDate()
-          })),
-           createdAt: projectData.createdAt ? (projectData.createdAt as Timestamp).toDate() : new Date(0),
-        } as Project;
+    if (querySnapshot.empty) {
+        return null;
     }
-    return null;
+
+    const projectSnap = querySnapshot.docs[0];
+    const projectData = projectSnap.data();
+    
+    return {
+      ...projectData,
+      id: projectSnap.id,
+      installments: (projectData.installments || []).map((inst: any) => ({
+        ...inst,
+        date: (inst.date as Timestamp).toDate()
+      })),
+       createdAt: projectData.createdAt ? (projectData.createdAt as Timestamp).toDate() : new Date(0),
+    } as Project;
 }
 
 export const updateProject = async (projectId: string, projectData: Partial<Omit<Project, 'id' | 'userId' | 'createdAt'>>) => {
@@ -378,17 +385,23 @@ export const getProductions = async (): Promise<Production[]> => {
 export const getProduction = async (productionId: string): Promise<Production | null> => {
   const userId = getUserId();
   if (!userId) return null;
-  const docRef = doc(db, 'productions', productionId);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists() && docSnap.data().userId === userId) {
-    const data = docSnap.data();
-    return {
-      id: docSnap.id,
-      ...data,
-      createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-    } as Production;
+  const q = query(
+    collection(db, 'productions'),
+    where('__name__', '==', productionId),
+    where('userId', '==', userId)
+  );
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    return null;
   }
-  return null;
+  const docSnap = querySnapshot.docs[0];
+  const data = docSnap.data();
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+  } as Production;
 };
 
 export const updateProduction = async (productionId: string, data: Partial<Omit<Production, 'id' | 'userId' | 'createdAt'>>) => {
@@ -565,17 +578,22 @@ export const getCreativeProjects = async (): Promise<CreativeProject[]> => {
 export const getCreativeProject = async (projectId: string): Promise<CreativeProject | null> => {
     const userId = getUserId();
     if (!userId) return null;
-    const docRef = doc(db, 'creative_projects', projectId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists() && docSnap.data().userId === userId) {
-        const data = docSnap.data();
-        return {
-            id: docSnap.id,
-            ...data,
-            createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-        } as CreativeProject;
+    const q = query(
+        collection(db, 'creative_projects'),
+        where('__name__', '==', projectId),
+        where('userId', '==', userId)
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
     }
-    return null;
+    const docSnap = querySnapshot.docs[0];
+    const data = docSnap.data();
+    return {
+        id: docSnap.id,
+        ...data,
+        createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+    } as CreativeProject;
 }
 
 export const updateCreativeProject = async (projectId: string, data: Partial<Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>>) => {
@@ -614,11 +632,10 @@ export const getBoardItems = async (projectId: string): Promise<BoardItem[]> => 
   const q = query(
     collection(db, 'board_items'),
     where('projectId', '==', projectId),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'asc')
+    where('userId', '==', userId)
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => {
+  const items = querySnapshot.docs.map(doc => {
     const data = doc.data();
     return {
       id: doc.id,
@@ -626,6 +643,9 @@ export const getBoardItems = async (projectId: string): Promise<BoardItem[]> => 
       createdAt: (data.createdAt as Timestamp).toDate(),
     } as BoardItem;
   });
+  // Sort client-side to avoid complex index
+  items.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  return items;
 }
 
 export const addBoardItem = async (projectId: string, itemData: Omit<BoardItem, 'id' | 'userId' | 'projectId' | 'createdAt'>) => {
@@ -731,18 +751,23 @@ export const getStoryboards = async (): Promise<Storyboard[]> => {
 export const getStoryboard = async (storyboardId: string): Promise<Storyboard | null> => {
     const userId = getUserId();
     if (!userId) return null;
-    const docRef = doc(db, 'storyboards', storyboardId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists() && docSnap.data().userId === userId) {
-        const data = docSnap.data();
-        return {
-            id: docSnap.id,
-            ...data,
-            createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-        } as Storyboard;
+    const q = query(
+        collection(db, 'storyboards'),
+        where('__name__', '==', storyboardId),
+        where('userId', '==', userId)
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
     }
-    return null;
+
+    const docSnap = querySnapshot.docs[0];
+    const data = docSnap.data();
+    return {
+        id: docSnap.id,
+        ...data,
+        createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
+    } as Storyboard;
 }
 
 export const updateStoryboard = async (storyboardId: string, data: Partial<Omit<Storyboard, 'id' | 'userId' | 'createdAt'>>) => {
@@ -922,14 +947,15 @@ export const uploadImageForStoryboard = async (file: File): Promise<string> => {
 
 export const getPosts = async (limitCount?: number): Promise<Post[]> => {
   const postsCollection = collection(db, 'posts');
-  let q = query(postsCollection, orderBy('createdAt', 'desc'));
+  // Remove orderBy from the query to prevent needing a composite index
+  let q = query(postsCollection);
   
   if (limitCount) {
     q = query(q, limit(limitCount));
   }
 
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => {
+  const posts = querySnapshot.docs.map(doc => {
     const data = doc.data();
     return {
       id: doc.id,
@@ -937,6 +963,11 @@ export const getPosts = async (limitCount?: number): Promise<Post[]> => {
       createdAt: (data.createdAt as Timestamp).toDate(),
     } as Post;
   });
+  
+  // Sort client-side
+  posts.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  return posts;
 };
 
 export const getPost = async (postId: string): Promise<Post | null> => {
