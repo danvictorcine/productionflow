@@ -591,14 +591,17 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
 
+  // Delete project document first
   const projectRef = doc(db, 'creative_projects', projectId);
   await deleteDoc(projectRef);
 
+  // Then query and delete associated items
   const itemsQuery = query(
     collection(db, 'board_items'),
     where('projectId', '==', projectId),
   );
   const itemsSnapshot = await getDocs(itemsQuery);
+  
   if (!itemsSnapshot.empty) {
     const batch = writeBatch(db);
     for (const itemDoc of itemsSnapshot.docs) {
@@ -612,6 +615,7 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
     await batch.commit();
   }
 };
+
 
 export const getBoardItems = async (projectId: string): Promise<BoardItem[]> => {
   const userId = getUserId();
@@ -842,19 +846,20 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
   if (!userId) return [];
   const q = query(
         collection(db, 'storyboard_panels'),
-        where('storyboardId', '==', storyboardId),
-        where('userId', '==', userId)
+        where('storyboardId', '==', storyboardId)
       );
 
   const querySnapshot = await getDocs(q);
-  const panels = querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: (data.createdAt as Timestamp).toDate(),
-    } as StoryboardPanel;
-  });
+  const panels = querySnapshot.docs
+    .map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            createdAt: (data.createdAt as Timestamp).toDate(),
+        } as StoryboardPanel;
+    })
+    .filter(panel => panel.userId === userId); // Filter for ownership client-side
   
   panels.sort((a, b) => a.order - b.order);
   
