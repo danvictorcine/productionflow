@@ -143,6 +143,18 @@ function HomePage() {
     }
   }, [user, toast]);
 
+  const handleCreateNewClick = () => {
+    if (!user?.isAdmin && items.length >= 20) {
+      toast({
+        variant: 'destructive',
+        title: "Limite atingido!",
+        description: "A versão Beta permite até 20 projetos.",
+      });
+    } else {
+      setIsTypeDialogOpen(true);
+    }
+  };
+
   const handleSelectProjectType = (
     type: 'financial' | 'production' | 'creative' | 'storyboard'
   ) => {
@@ -348,7 +360,7 @@ function HomePage() {
           <p className="mt-2 text-sm text-muted-foreground">
             Comece criando seu primeiro projeto.
           </p>
-          <Button className="mt-6" onClick={() => setIsTypeDialogOpen(true)}>
+          <Button className="mt-6" onClick={handleCreateNewClick}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Criar Projeto
           </Button>
@@ -460,7 +472,7 @@ function HomePage() {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => setIsTypeDialogOpen(true)} size="sm">
+          <Button onClick={handleCreateNewClick} size="sm">
             <PlusCircle className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Criar Novo</span>
           </Button>
