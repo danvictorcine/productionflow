@@ -104,7 +104,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
         switch (item.type) {
             case 'text':
                 return (
-                    <div className="text-item-wrapper h-full w-full">
+                    <div className="text-item-wrapper h-full w-full flex items-center justify-center">
                         <QuillEditor
                             theme="bubble"
                             value={item.content}
@@ -621,7 +621,7 @@ function CreativeProjectPageDetail() {
   if (!project) return null;
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-muted/40">
+    <div className="flex flex-col h-screen w-full bg-muted/40">
       <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
           <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
@@ -691,8 +691,8 @@ function CreativeProjectPageDetail() {
                 </div>
             </div>
         </div>
-        <div className="flex-1 overflow-auto">
-            <div className="relative w-[4000px] h-[4000px] bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]">
+        <div className="flex-1 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] overflow-auto">
+            <div className="relative w-[4000px] h-[4000px]">
             {items.map(item => (
                 <Rnd
                 key={item.id}
