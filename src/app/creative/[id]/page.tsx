@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X, ExternalLink, Music, Type } from 'lucide-react';
+import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X, ExternalLink, Music, Type, GalleryVertical } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
@@ -871,7 +871,7 @@ function CreativeProjectPageDetail() {
                     <input type="file" ref={imageUploadRef} onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" className="hidden" />
                     
                     <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading}>
-                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}
+                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <GalleryVertical className="h-4 w-4 md:mr-2" />}
                         <span className="hidden md:inline">Storyboard</span>
                     </Button>
                     <input type="file" ref={storyboardUploadRef} onChange={(e) => handleImageUpload(e, 'storyboard')} accept="image/*" className="hidden" />
