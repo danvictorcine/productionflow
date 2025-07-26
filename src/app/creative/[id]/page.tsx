@@ -10,6 +10,8 @@ import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
+import 'react-quill/dist/quill.bubble.css';
+
 
 import type { CreativeProject, BoardItem, ChecklistItem } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -78,6 +80,22 @@ const getSpotifyEmbedUrl = (url: string) => {
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const debounceTimer = useRef<NodeJS.Timeout>();
+    const noteWrapperRef = useRef<HTMLDivElement>(null);
+
+    const [isEditingNote, setIsEditingNote] = useState(false);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (noteWrapperRef.current && !noteWrapperRef.current.contains(event.target as Node)) {
+                setIsEditingNote(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const noteModules = useMemo(() => ({
         toolbar: {
@@ -131,13 +149,19 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 );
             case 'note':
                 return (
-                    <QuillEditor
-                        theme="snow"
-                        value={item.content}
-                        onChange={(content) => onUpdate(item.id, { content })}
-                        modules={noteModules}
-                        className="h-full w-full"
-                    />
+                    <div 
+                        ref={noteWrapperRef} 
+                        className={cn("h-full w-full", isEditingNote && "bg-background")} 
+                        onClick={() => setIsEditingNote(true)}
+                    >
+                        <QuillEditor
+                            theme={isEditingNote ? "snow" : "bubble"}
+                            value={item.content}
+                            onChange={(content) => onUpdate(item.id, { content })}
+                            modules={isEditingNote ? noteModules : textModules}
+                            className="h-full w-full"
+                        />
+                    </div>
                 );
             case 'storyboard':
                 return (
@@ -268,8 +292,8 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 const locationData = JSON.parse(item.content);
                 return (
                     <div className="w-full h-full flex flex-col">
-                        <div className="bg-muted text-muted-foreground text-xs p-1 truncate">{locationData.name}</div>
                         <DisplayMap position={[locationData.lat, locationData.lng]} className="flex-1" />
+                        <div className="bg-muted text-muted-foreground text-xs p-1 truncate">{locationData.name}</div>
                     </div>
                 );
             default:

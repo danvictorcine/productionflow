@@ -121,6 +121,22 @@
   border-bottom-right-radius: var(--radius);
 }
 
+.ql-container.ql-bubble {
+    border: none;
+}
+.ql-bubble .ql-editor {
+    padding: 1rem;
+}
+.ql-bubble .ql-tooltip {
+    background-color: hsl(var(--background));
+    border-color: hsl(var(--border));
+    color: hsl(var(--foreground));
+    box-shadow: 0 2px 10px hsl(var(--foreground) / 0.1);
+}
+.ql-bubble .ql-tooltip a {
+  color: hsl(var(--primary));
+}
+
 /* Responsive iframe for video embeds */
 .ql-video {
     width: 100%;
