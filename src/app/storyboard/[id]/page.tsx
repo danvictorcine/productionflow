@@ -64,8 +64,8 @@ interface PanelCardProps {
 const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNotes, movePanel, onDropPanel, isExporting }: PanelCardProps) => {
     const [notes, setNotes] = useState(panel.notes);
     const debounceTimer = useRef<NodeJS.Timeout>();
-
-    const ref = useRef<HTMLDivElement>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
+    const handleRef = useRef<HTMLDivElement>(null);
 
     const [{ handlerId }, drop] = useDrop({
         accept: ItemType,
@@ -73,14 +73,14 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
             return { handlerId: monitor.getHandlerId() };
         },
         hover(item: { index: number, sceneId: string }, monitor) {
-            if (!ref.current) return;
+            if (!cardRef.current) return;
             if (item.sceneId !== panel.sceneId) return;
 
             const dragIndex = item.index;
             const hoverIndex = index;
             if (dragIndex === hoverIndex) return;
 
-            const hoverBoundingRect = ref.current?.getBoundingClientRect();
+            const hoverBoundingRect = cardRef.current?.getBoundingClientRect();
             const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
             const clientOffset = monitor.getClientOffset();
             const hoverClientY = clientOffset!.y - hoverBoundingRect.top;
@@ -104,7 +104,8 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
         collect: (monitor) => ({ isDragging: monitor.isDragging() }),
     });
 
-    drag(drop(ref));
+    drag(handleRef);
+    drop(cardRef);
 
     const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newNotes = e.target.value;
@@ -119,11 +120,14 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
 
     return (
         <div
-            ref={ref}
+            ref={cardRef}
             data-handler-id={handlerId}
             style={{ opacity: isDragging ? 0.3 : 1 }}
             className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm break-inside-avoid group relative"
         >
+             <div ref={handleRef} className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-move z-10 opacity-30 group-hover:opacity-100 transition-opacity">
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </div>
             <div
                 className={cn(
                     "relative w-full rounded-md overflow-hidden bg-muted",
@@ -399,6 +403,9 @@ function StoryboardPageDetail() {
 
     // Pan and Zoom handlers
     const handleWheel = (e: React.WheelEvent) => {
+        if ((e.target as HTMLElement).closest('.drag-handle')) {
+            return;
+        }
         e.preventDefault();
         const scaleAmount = 0.1;
         let newScale = scale - (e.deltaY > 0 ? scaleAmount : -scaleAmount);
@@ -407,7 +414,7 @@ function StoryboardPageDetail() {
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
-        if ((e.target as HTMLElement).closest('textarea, button, a')) {
+        if ((e.target as HTMLElement).closest('textarea, button, a, .drag-handle')) {
             return;
         }
         e.preventDefault();
@@ -434,7 +441,7 @@ function StoryboardPageDetail() {
     };
 
     const handleTouchStart = (e: React.TouchEvent) => {
-        if ((e.target as HTMLElement).closest('textarea, button, a')) {
+        if ((e.target as HTMLElement).closest('textarea, button, a, .drag-handle')) {
             return;
         }
         if (e.touches.length === 2) {
@@ -558,7 +565,7 @@ function StoryboardPageDetail() {
                         onTouchEnd={handleTouchEnd}
                     >
                          <div
-                            className="absolute w-max"
+                            className="absolute"
                             style={{
                                 transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
                                 transformOrigin: '0 0'
@@ -673,3 +680,4 @@ export default function StoryboardPage() {
         </AuthGuard>
     );
 }
+
