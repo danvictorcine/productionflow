@@ -117,7 +117,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                     aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]"
                 )}
             >
-                <Image src={panel.imageUrl} alt={`Storyboard panel ${index + 1}`} layout="fill" objectFit="cover" />
+                <Image src={panel.imageUrl} alt={`Storyboard panel ${index + 1}`} layout="fill" objectFit="cover" data-ai-hint="action sequence" />
                  <div className="absolute top-1 left-1 bg-black/30 text-white/90 text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none transition-colors opacity-0 group-hover:opacity-100">
                     {index + 1}
                 </div>
@@ -493,8 +493,8 @@ function StoryboardPageDetail() {
                                 transformOrigin: '0 0'
                             }}
                          >
-                            <div ref={exportRef} className="p-8">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div ref={exportRef} className="p-8 w-max min-w-[1200px]">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                     {panels.map((panel, index) => (
                                         <PanelCard 
                                             key={panel.id} 
