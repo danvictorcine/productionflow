@@ -792,8 +792,7 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
   const q = query(
     collection(db, 'storyboard_panels'),
     where('storyboardId', '==', storyboardId),
-    where('userId', '==', userId),
-    orderBy('order', 'asc')
+    where('userId', '==', userId)
   );
   const querySnapshot = await getDocs(q);
   const panels = querySnapshot.docs.map(doc => {
@@ -804,6 +803,8 @@ export const getStoryboardPanels = async (storyboardId: string): Promise<Storybo
       createdAt: (data.createdAt as Timestamp).toDate(),
     } as StoryboardPanel;
   });
+  // Sort in-memory to avoid composite index requirement
+  panels.sort((a, b) => a.order - b.order);
   return panels;
 }
 
