@@ -149,9 +149,8 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 );
             case 'note':
                 return (
-                    <div ref={noteWrapperRef} className={cn("h-full w-full", isEditingNote && "bg-background")} onClick={() => setIsEditingNote(true)}>
-                         {/* Bubble theme for viewing */}
-                        <div className={cn(isEditingNote && "hidden")}>
+                    <div ref={noteWrapperRef} className="h-full w-full" onClick={() => setIsEditingNote(true)}>
+                        <div className={cn(!isEditingNote ? 'block' : 'hidden', "h-full w-full")}>
                             <QuillEditor
                                 theme="bubble"
                                 value={item.content}
@@ -160,8 +159,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                                 className="h-full w-full"
                             />
                         </div>
-                        {/* Snow theme for editing */}
-                        <div className={cn(!isEditingNote && "hidden", "h-full w-full")}>
+                        <div className={cn(isEditingNote ? 'block' : 'hidden', "h-full w-full")}>
                             <QuillEditor
                                 theme="snow"
                                 value={item.content}
@@ -558,7 +556,7 @@ function CreativeProjectPageDetail() {
       await fetchProjectData();
 
       const typeDisplayNames: Record<BoardItem['type'], string> = {
-          note: 'Nota',
+          note: 'Texto',
           text: 'Texto',
           checklist: 'Checklist',
           palette: 'Paleta de cores',
@@ -594,10 +592,6 @@ function CreativeProjectPageDetail() {
     }
   };
   
-  const handleAddText = () => {
-    handleAddItem('text', '<h2>Texto</h2>', { width: 400, height: 100 });
-  }
-
   const handleAddNote = () => {
     handleAddItem('note', '<h2>Novo Título</h2><p>Comece a escrever aqui...</p>', { width: 350, height: 300 });
   }
@@ -885,11 +879,8 @@ function CreativeProjectPageDetail() {
             </div>
             <div className="p-2 md:p-4">
                 <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                    <Button variant="ghost" size="sm" onClick={handleAddText}>
-                        <Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span>
-                    </Button>
                     <Button variant="ghost" size="sm" onClick={handleAddNote}>
-                        <FileText className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Nota</span>
+                        <Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span>
                     </Button>
                     <Button variant="ghost" size="sm" onClick={handleAddChecklist}>
                         <ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span>
