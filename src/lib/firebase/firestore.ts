@@ -884,39 +884,40 @@ export const getStoryboardScenes = async (storyboardId: string): Promise<Storybo
   const scenesQuery = query(
     collection(db, 'storyboard_scenes'),
     where('storyboardId', '==', storyboardId),
-    where('userId', '==', userId),
-    orderBy('order', 'asc')
+    where('userId', '==', userId)
   );
   const scenesSnapshot = await getDocs(scenesQuery);
-
-  // If no scenes exist, check for panels that need migration
-  if (scenesSnapshot.empty) {
-    const panelsQuery = query(
-      collection(db, 'storyboard_panels'),
-      where('storyboardId', '==', storyboardId),
-      where('userId', '==', userId)
-    );
-    const panelsSnapshot = await getDocs(panelsQuery);
-    const panelsToMigrate = panelsSnapshot.docs.map(d => d.data() as StoryboardPanel);
-
-    // Only migrate if there are panels and at least one of them doesn't have a sceneId
-    if (panelsToMigrate.length > 0 && panelsToMigrate.some(p => !p.sceneId)) {
-      await migratePanelsToScene(storyboardId, panelsToMigrate);
-      // After migration, re-fetch the scenes
-      const updatedScenesSnapshot = await getDocs(scenesQuery);
-      return updatedScenesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: (doc.data().createdAt as Timestamp).toDate(),
-      }) as StoryboardScene);
-    }
-  }
-
-  return scenesSnapshot.docs.map(doc => ({
+  const scenes = scenesSnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
     createdAt: (doc.data().createdAt as Timestamp).toDate(),
   }) as StoryboardScene);
+
+  // If no scenes exist, check for panels that need migration
+  if (scenes.length === 0) {
+    const panelsToMigrateSnapshot = await getDocs(query(
+      collection(db, 'storyboard_panels'),
+      where('storyboardId', '==', storyboardId),
+      where('userId', '==', userId)
+    ));
+    
+    if (!panelsToMigrateSnapshot.empty) {
+        const panelsToMigrate = panelsToMigrateSnapshot.docs.map(d => d.data() as StoryboardPanel);
+        if (panelsToMigrate.length > 0 && panelsToMigrate.some(p => !p.sceneId)) {
+          const newSceneId = await migratePanelsToScene(storyboardId, panelsToMigrate);
+          const newSceneDoc = await getDoc(doc(db, 'storyboard_scenes', newSceneId));
+           if (newSceneDoc.exists()) {
+             const newSceneData = newSceneDoc.data();
+             const scene = { id: newSceneDoc.id, ...newSceneData, createdAt: (newSceneData.createdAt as Timestamp).toDate() } as StoryboardScene;
+             scenes.push(scene);
+           }
+        }
+    }
+  }
+
+  // Sort scenes by order property in-memory
+  scenes.sort((a, b) => a.order - b.order);
+  return scenes;
 };
 
 
@@ -979,7 +980,10 @@ export const migratePanelsToScene = async (storyboardId: string, panels: Storybo
         order: 0,
         createdAt: new Date(),
     };
-    batch.set(sceneRef, newScene);
+    batch.set(sceneRef, {
+      ...newScene,
+      createdAt: Timestamp.fromDate(newScene.createdAt) // Convert date to timestamp for Firestore
+    });
     
     // Update all panels to belong to this new scene
     panels.forEach(panel => {
