@@ -19,7 +19,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, StoryboardScene } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // Helper to get current user ID, returns null if not authenticated for public views
@@ -768,6 +768,11 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
 
   const projectRef = doc(db, 'storyboards', storyboardId);
   batch.delete(projectRef);
+  
+  const scenesQuery = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId), where('userId', '==', userId));
+  const scenesSnapshot = await getDocs(scenesQuery);
+  scenesSnapshot.forEach(sceneDoc => batch.delete(sceneDoc.ref));
+
 
   const panelsQuery = query(
     collection(db, 'storyboard_panels'),
@@ -870,6 +875,100 @@ export const uploadImageForStoryboard = async (file: File): Promise<string> => {
   
   return downloadURL;
 };
+
+// === Storyboard Scene Functions ===
+export const getStoryboardScenes = async (storyboardId: string): Promise<StoryboardScene[]> => {
+  const userId = getUserId();
+  if (!userId) return [];
+  const q = query(
+    collection(db, 'storyboard_scenes'),
+    where('storyboardId', '==', storyboardId),
+    where('userId', '==', userId),
+    orderBy('order', 'asc')
+  );
+  const querySnapshot = await getDocs(q);
+  const scenes = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+          id: doc.id,
+          ...data,
+          createdAt: (data.createdAt as Timestamp).toDate(),
+      } as StoryboardScene;
+  });
+  return scenes;
+};
+
+export const addStoryboardScene = async (data: Omit<StoryboardScene, 'id'|'createdAt'>) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+  await addDoc(collection(db, 'storyboard_scenes'), {
+    ...data,
+    userId,
+    createdAt: Timestamp.now(),
+  });
+};
+
+export const updateStoryboardScene = async (sceneId: string, data: Partial<Omit<StoryboardScene, 'id' | 'storyboardId' | 'userId' | 'createdAt'>>) => {
+    const docRef = doc(db, 'storyboard_scenes', sceneId);
+    await updateDoc(docRef, data);
+};
+
+export const deleteStoryboardScene = async (sceneId: string, storyboardId: string) => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
+    const batch = writeBatch(db);
+
+    // Delete the scene itself
+    const sceneRef = doc(db, 'storyboard_scenes', sceneId);
+    batch.delete(sceneRef);
+
+    // Find and delete all panels within that scene
+    const panelsQuery = query(
+        collection(db, 'storyboard_panels'),
+        where('storyboardId', '==', storyboardId),
+        where('sceneId', '==', sceneId),
+        where('userId', '==', userId)
+    );
+    const panelsSnapshot = await getDocs(panelsQuery);
+    for (const panelDoc of panelsSnapshot.docs) {
+      const panelData = panelDoc.data();
+      if (panelData.imageUrl && panelData.imageUrl.includes('firebasestorage.googleapis.com')) {
+          await deleteImageFromUrl(panelData.imageUrl);
+      }
+      batch.delete(panelDoc.ref);
+    }
+    
+    await batch.commit();
+};
+
+export const migratePanelsToScene = async (storyboardId: string, panels: StoryboardPanel[]): Promise<string> => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Not authenticated");
+
+    const batch = writeBatch(db);
+
+    // Create a new default scene
+    const sceneRef = doc(collection(db, 'storyboard_scenes'));
+    const newScene: Omit<StoryboardScene, 'id'> = {
+        storyboardId,
+        userId,
+        title: "Cena 1",
+        description: "Quadros importados de um projeto antigo.",
+        order: 0,
+        createdAt: new Date(),
+    };
+    batch.set(sceneRef, newScene);
+    
+    // Update all panels to belong to this new scene
+    panels.forEach(panel => {
+        const panelRef = doc(db, 'storyboard_panels', panel.id);
+        batch.update(panelRef, { sceneId: sceneRef.id });
+    });
+
+    await batch.commit();
+    return sceneRef.id;
+}
+
 
 // === Blog & Page Content Functions ===
 

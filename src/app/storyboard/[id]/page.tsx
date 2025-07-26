@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileDown, X, GripVertical } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileDown, X, GripVertical, MoreVertical } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -256,7 +256,7 @@ function StoryboardPageDetail() {
         }
     };
     
-    const handleSceneSubmit = async (data: Omit<StoryboardScene, 'id' | 'storyboardId' | 'userId' | 'order'>) => {
+    const handleSceneSubmit = async (data: Omit<StoryboardScene, 'id' | 'storyboardId' | 'userId' | 'order' | 'createdAt'>) => {
         if (!storyboard) return;
         try {
             if (editingScene) {
@@ -569,15 +569,15 @@ function StoryboardPageDetail() {
                         onTouchEnd={handleTouchEnd}
                     >
                          <div
-                            className="absolute"
+                            className="absolute w-max"
                             style={{
                                 transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
                                 transformOrigin: '0 0'
                             }}
                          >
-                            <div ref={exportRef} className="p-8 space-y-8">
-                                {scenes.map((scene, sceneIndex) => (
-                                    <div key={scene.id} className="p-6 rounded-xl bg-background/80 backdrop-blur-sm border shadow-lg space-y-4 min-w-[1200px]">
+                            <div ref={exportRef} className="p-8 space-y-8 min-w-[1200px]">
+                                {scenes.map((scene) => (
+                                    <div key={scene.id} className="p-6 rounded-xl bg-background/80 backdrop-blur-sm border shadow-lg space-y-4">
                                         <div className="flex justify-between items-center">
                                             <div>
                                                 <h2 className="text-xl font-bold">{scene.title}</h2>
@@ -597,7 +597,7 @@ function StoryboardPageDetail() {
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                             {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
                                                 <PanelCard 
                                                     key={panel.id} 
