@@ -229,9 +229,20 @@ export type Storyboard = {
   createdAt: Date;
 };
 
+export type StoryboardScene = {
+  id: string;
+  storyboardId: string;
+  userId: string;
+  title: string;
+  description: string;
+  order: number;
+  createdAt: Date;
+};
+
 export type StoryboardPanel = {
   id: string;
   storyboardId: string;
+  sceneId: string;
   userId: string;
   imageUrl: string;
   notes: string;

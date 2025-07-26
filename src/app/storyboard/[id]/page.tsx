@@ -15,7 +15,7 @@ import Image from 'next/image';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-import type { Storyboard, StoryboardPanel } from '@/lib/types';
+import type { Storyboard, StoryboardScene, StoryboardPanel } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { AppFooter } from '@/components/app-footer';
 import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
+import { CreateEditStoryboardSceneDialog } from '@/components/create-edit-storyboard-scene-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardTitle, CardDescription, CardHeader } from '@/components/ui/card';
@@ -35,6 +36,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 const ItemType = 'PANEL';
@@ -43,10 +54,10 @@ interface PanelCardProps {
   panel: StoryboardPanel;
   aspectRatio: '16:9' | '4:3';
   index: number;
-  onDelete: (panelId: string) => void;
+  onDelete: (panelId: string, sceneId: string) => void;
   onUpdateNotes: (panelId: string, notes: string) => void;
-  movePanel: (dragIndex: number, hoverIndex: number) => void;
-  onDropPanel: () => void;
+  movePanel: (sceneId: string, dragIndex: number, hoverIndex: number) => void;
+  onDropPanel: (sceneId: string) => void;
   isExporting: boolean;
 }
 
@@ -61,8 +72,10 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
         collect(monitor) {
             return { handlerId: monitor.getHandlerId() };
         },
-        hover(item: { index: number }, monitor) {
+        hover(item: { index: number, sceneId: string }, monitor) {
             if (!ref.current) return;
+            if (item.sceneId !== panel.sceneId) return;
+
             const dragIndex = item.index;
             const hoverIndex = index;
             if (dragIndex === hoverIndex) return;
@@ -75,17 +88,17 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
             if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return;
             if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return;
             
-            movePanel(dragIndex, hoverIndex);
+            movePanel(panel.sceneId, dragIndex, hoverIndex);
             item.index = hoverIndex;
         },
     });
 
     const [{ isDragging }, drag] = useDrag({
         type: ItemType,
-        item: () => ({ id: panel.id, index }),
+        item: () => ({ id: panel.id, index, sceneId: panel.sceneId }),
         end: (item, monitor) => {
             if (monitor.didDrop()) {
-                onDropPanel();
+                onDropPanel(panel.sceneId);
             }
         },
         collect: (monitor) => ({ isDragging: monitor.isDragging() }),
@@ -122,7 +135,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                     {index + 1}
                 </div>
                 {!isExporting && (
-                  <Button variant="ghost" size="icon" className="absolute top-0.5 right-1 h-7 w-7 text-white/70 hover:text-white hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDelete(panel.id)}>
+                  <Button variant="ghost" size="icon" className="absolute top-0.5 right-1 h-7 w-7 text-white/70 hover:text-white hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDelete(panel.id, panel.sceneId)}>
                       <X className="h-4 w-4" />
                   </Button>
                 )}
@@ -150,13 +163,18 @@ function StoryboardPageDetail() {
     const mainContainerRef = useRef<HTMLDivElement>(null);
 
     const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
-    const [panels, setPanels] = useState<StoryboardPanel[]>([]);
+    const [scenes, setScenes] = useState<StoryboardScene[]>([]);
+    const [panelsByScene, setPanelsByScene] = useState<Record<string, StoryboardPanel[]>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     
     // Dialog states
     const [isStoryboardInfoDialogOpen, setIsStoryboardInfoDialogOpen] = useState(false);
+    const [isSceneDialogOpen, setIsSceneDialogOpen] = useState(false);
+    const [editingScene, setEditingScene] = useState<StoryboardScene | null>(null);
+    const [sceneToDelete, setSceneToDelete] = useState<StoryboardScene | null>(null);
+    const [sceneForUpload, setSceneForUpload] = useState<string | null>(null);
     
     // Zoom and Pan state
     const [scale, setScale] = useState(1);
@@ -171,18 +189,42 @@ function StoryboardPageDetail() {
         if (!storyboardId || !user) return;
         setIsLoading(true);
         try {
-            const [storyboardData, panelsData] = await Promise.all([
-                firestoreApi.getStoryboard(storyboardId),
-                firestoreApi.getStoryboardPanels(storyboardId),
-            ]);
-
-            if (!storyboardData) {
+            const storyboardData = await firestoreApi.getStoryboard(storyboardId);
+             if (!storyboardData) {
                 toast({ variant: 'destructive', title: 'Erro', description: 'Storyboard não encontrado.' });
                 router.push('/');
                 return;
             }
             setStoryboard(storyboardData);
-            setPanels(panelsData);
+
+            const fetchedScenes = await firestoreApi.getStoryboardScenes(storyboardId);
+            setScenes(fetchedScenes);
+            
+            const fetchedPanels = await firestoreApi.getStoryboardPanels(storyboardId);
+            
+            // This handles migration for old projects
+            if (fetchedPanels.some(p => !p.sceneId) && fetchedScenes.length === 0) {
+              const migratedSceneId = await firestoreApi.migratePanelsToScene(storyboardId, fetchedPanels);
+              // Re-fetch everything after migration to ensure UI is consistent
+              toast({ title: 'Projeto migrado!', description: 'Seus quadros foram organizados em uma cena padrão.' });
+              fetchStoryboardData(); // Re-trigger fetch
+              return;
+            }
+            
+            const groupedPanels: Record<string, StoryboardPanel[]> = {};
+            fetchedScenes.forEach(scene => {
+                groupedPanels[scene.id] = [];
+            });
+            fetchedPanels.forEach(panel => {
+                if (panel.sceneId && groupedPanels[panel.sceneId]) {
+                    groupedPanels[panel.sceneId].push(panel);
+                }
+            });
+            Object.keys(groupedPanels).forEach(sceneId => {
+                groupedPanels[sceneId].sort((a, b) => a.order - b.order);
+            });
+            setPanelsByScene(groupedPanels);
+
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({
@@ -213,9 +255,43 @@ function StoryboardPageDetail() {
             });
         }
     };
+    
+    const handleSceneSubmit = async (data: Omit<StoryboardScene, 'id' | 'storyboardId' | 'userId' | 'order'>) => {
+        if (!storyboard) return;
+        try {
+            if (editingScene) {
+                await firestoreApi.updateStoryboardScene(editingScene.id, data);
+                toast({ title: 'Cena atualizada!' });
+            } else {
+                await firestoreApi.addStoryboardScene({ ...data, storyboardId: storyboard.id, order: scenes.length });
+                toast({ title: 'Cena criada!' });
+            }
+            fetchStoryboardData();
+        } catch (error) {
+             const errorTyped = error as { code?: string; message: string };
+             toast({ variant: 'destructive', title: 'Erro ao Salvar Cena', description: <CopyableError userMessage="Não foi possível salvar a cena." errorCode={errorTyped.code || errorTyped.message} /> });
+        } finally {
+            setIsSceneDialogOpen(false);
+            setEditingScene(null);
+        }
+    };
+
+    const handleSceneDelete = async () => {
+        if (!sceneToDelete) return;
+        try {
+            await firestoreApi.deleteStoryboardScene(sceneToDelete.id, sceneToDelete.storyboardId);
+            toast({ title: `Cena "${sceneToDelete.title}" excluída.` });
+            fetchStoryboardData();
+        } catch (error) {
+             const errorTyped = error as { code?: string; message: string };
+             toast({ variant: 'destructive', title: 'Erro ao Excluir Cena', description: <CopyableError userMessage="Não foi possível excluir a cena." errorCode={errorTyped.code || errorTyped.message} /> });
+        } finally {
+            setSceneToDelete(null);
+        }
+    };
 
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (!event.target.files?.length) return;
+        if (!event.target.files?.length || !sceneForUpload) return;
         
         const files = Array.from(event.target.files);
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -230,14 +306,16 @@ function StoryboardPageDetail() {
         setIsUploading(true);
 
         try {
+            const existingPanels = panelsByScene[sceneForUpload] || [];
             const newPanelsData = await Promise.all(files.map(async (file, index) => {
                 const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
                 const imageUrl = await firestoreApi.uploadImageForStoryboard(compressedFile);
                 return {
                     storyboardId,
+                    sceneId: sceneForUpload,
                     imageUrl,
                     notes: "",
-                    order: panels.length + index,
+                    order: existingPanels.length + index,
                 };
             }));
 
@@ -250,15 +328,23 @@ function StoryboardPageDetail() {
             toast({ variant: 'destructive', title: 'Erro em /storyboard/[id]/page.tsx (handleImageUpload)', description: <CopyableError userMessage="Não foi possível enviar as imagens." errorCode={errorTyped.code || errorTyped.message} /> });
         } finally {
             setIsUploading(false);
+            setSceneForUpload(null);
             if (imageUploadRef.current) imageUploadRef.current.value = "";
         }
     };
     
-    const handleDeletePanel = async (panelId: string) => {
+    const handleDeletePanel = async (panelId: string, sceneId: string) => {
         try {
             await firestoreApi.deleteStoryboardPanel(panelId);
-            await fetchStoryboardData();
+            
+            // Optimistic update of UI before re-fetch for better responsiveness
+            setPanelsByScene(prev => ({
+                ...prev,
+                [sceneId]: prev[sceneId].filter(p => p.id !== panelId)
+            }));
+
             toast({ title: 'Painel removido.' });
+            fetchStoryboardData(); // Re-fetch to ensure data consistency
         } catch (error) {
              const errorTyped = error as { code?: string; message: string };
             toast({ variant: 'destructive', title: 'Erro em /storyboard/[id]/page.tsx (handleDeletePanel)', description: <CopyableError userMessage="Não foi possível remover o painel." errorCode={errorTyped.code || errorTyped.message} /> });
@@ -271,22 +357,23 @@ function StoryboardPageDetail() {
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({ variant: 'destructive', title: 'Erro ao Salvar', description: <CopyableError userMessage="Não foi possível salvar a anotação." errorCode={errorTyped.code || errorTyped.message} /> });
-            fetchStoryboardData();
         }
-    }, [fetchStoryboardData, toast]);
+    }, [toast]);
 
-    const movePanel = useCallback((dragIndex: number, hoverIndex: number) => {
-        setPanels((prevPanels) =>
-            update(prevPanels, {
-                $splice: [[dragIndex, 1], [hoverIndex, 0, prevPanels[dragIndex]]],
-            })
-        );
+    const movePanel = useCallback((sceneId: string, dragIndex: number, hoverIndex: number) => {
+        setPanelsByScene(prev => {
+            const scenePanels = prev[sceneId];
+            const updatedPanels = update(scenePanels, {
+                $splice: [[dragIndex, 1], [hoverIndex, 0, scenePanels[dragIndex]]],
+            });
+            return { ...prev, [sceneId]: updatedPanels };
+        });
     }, []);
 
-    const handleDropPanel = async () => {
-        const updatedPanels = panels.map((panel, index) => ({ id: panel.id, order: index }));
-        await firestoreApi.updatePanelOrder(updatedPanels);
-        toast({ title: 'Ordem do storyboard salva!' });
+    const handleDropPanel = async (sceneId: string) => {
+        const panelsToUpdate = panelsByScene[sceneId].map((panel, index) => ({ id: panel.id, order: index }));
+        await firestoreApi.updatePanelOrder(panelsToUpdate);
+        toast({ title: 'Ordem da cena salva!' });
     };
     
     const handleExport = async (format: 'pdf' | 'png') => {
@@ -426,23 +513,10 @@ function StoryboardPageDetail() {
                         <h1 className="text-lg md:text-xl font-bold text-primary truncate">{storyboard.name}</h1>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
-                        <Button onClick={() => setIsStoryboardInfoDialogOpen(true)} variant="outline" size="sm">
-                          <Edit className="h-4 w-4 md:mr-2" />
-                          <span className="hidden md:inline">Editar Projeto</span>
+                        <Button onClick={() => { setEditingScene(null); setIsSceneDialogOpen(true); }} size="sm">
+                            <PlusCircle className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Adicionar Cena</span>
                         </Button>
-                        <Button onClick={() => imageUploadRef.current?.click()} size="sm" disabled={isUploading}>
-                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <PlusCircle className="h-4 w-4 md:mr-2" />}
-                            <span className="hidden md:inline">Adicionar Quadros</span>
-                        </Button>
-                         <input
-                            ref={imageUploadRef}
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="hidden"
-                            onChange={handleImageUpload}
-                            disabled={isUploading}
-                        />
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="icon" disabled={isExporting} aria-label="Exportar Storyboard">
@@ -466,10 +540,18 @@ function StoryboardPageDetail() {
                         <div className="p-4 sm:p-6 md:p-8">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>{storyboard.name}</CardTitle>
-                                    {storyboard.description && (
-                                        <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>
-                                    )}
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <CardTitle>{storyboard.name}</CardTitle>
+                                            {storyboard.description && (
+                                                <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>
+                                            )}
+                                        </div>
+                                         <Button onClick={() => setIsStoryboardInfoDialogOpen(true)} variant="outline" size="sm">
+                                            <Edit className="h-4 w-4 mr-0 md:mr-2" />
+                                            <span className="hidden md:inline">Editar</span>
+                                        </Button>
+                                    </div>
                                 </CardHeader>
                             </Card>
                         </div>
@@ -493,22 +575,59 @@ function StoryboardPageDetail() {
                                 transformOrigin: '0 0'
                             }}
                          >
-                            <div ref={exportRef} className="p-8 w-max min-w-[1200px]">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                    {panels.map((panel, index) => (
-                                        <PanelCard 
-                                            key={panel.id} 
-                                            panel={panel} 
-                                            aspectRatio={storyboard.aspectRatio}
-                                            index={index} 
-                                            onDelete={handleDeletePanel} 
-                                            onUpdateNotes={handleUpdatePanelNotes} 
-                                            movePanel={movePanel}
-                                            onDropPanel={handleDropPanel}
-                                            isExporting={isExporting}
-                                        />
-                                    ))}
-                                </div>
+                            <div ref={exportRef} className="p-8 space-y-8">
+                                {scenes.map((scene, sceneIndex) => (
+                                    <div key={scene.id} className="p-6 rounded-xl bg-background/80 backdrop-blur-sm border shadow-lg space-y-4 min-w-[1200px]">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <h2 className="text-xl font-bold">{scene.title}</h2>
+                                                <p className="text-muted-foreground">{scene.description}</p>
+                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}>
+                                                        <Edit className="mr-2 h-4 w-4" /> Editar Cena
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setSceneToDelete(scene)}>
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Excluir Cena
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                            {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
+                                                <PanelCard 
+                                                    key={panel.id} 
+                                                    panel={panel} 
+                                                    aspectRatio={storyboard.aspectRatio}
+                                                    index={panelIndex} 
+                                                    onDelete={handleDeletePanel} 
+                                                    onUpdateNotes={handleUpdatePanelNotes} 
+                                                    movePanel={movePanel}
+                                                    onDropPanel={handleDropPanel}
+                                                    isExporting={isExporting}
+                                                />
+                                            ))}
+                                            <button
+                                                className={cn(
+                                                    "flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors",
+                                                    storyboard.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]"
+                                                )}
+                                                onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }}
+                                                disabled={isUploading}
+                                            >
+                                                {isUploading && sceneForUpload === scene.id ? (
+                                                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                                                ) : (
+                                                    <PlusCircle className="h-8 w-8 text-muted-foreground/50" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                                 {isExporting && ( <div className="mt-8 text-center text-sm text-muted-foreground">Criado com ProductionFlow</div> )}
                             </div>
                         </div>
@@ -520,6 +639,37 @@ function StoryboardPageDetail() {
                     setIsOpen={setIsStoryboardInfoDialogOpen} 
                     onSubmit={handleStoryboardSubmit} 
                     storyboard={storyboard}
+                />
+                 <CreateEditStoryboardSceneDialog
+                    isOpen={isSceneDialogOpen}
+                    setIsOpen={setIsSceneDialogOpen}
+                    onSubmit={handleSceneSubmit}
+                    scene={editingScene}
+                />
+                 <AlertDialog open={!!sceneToDelete} onOpenChange={(open) => !open && setSceneToDelete(null)}>
+                    <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir Cena?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                        Tem certeza que deseja excluir a cena "{sceneToDelete?.title}"? Todos os quadros dentro dela serão perdidos. Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleSceneDelete} className="bg-destructive hover:bg-destructive/90">
+                        Excluir
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+                 <input
+                    ref={imageUploadRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
                 />
             </div>
         </DndProvider>

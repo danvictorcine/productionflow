@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -78,6 +79,11 @@ service cloud.firestore {
     }
     
     match /storyboard_panels/{panelId} {
+      allow read, write, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /storyboard_scenes/{sceneId} {
       allow read, write, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
