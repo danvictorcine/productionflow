@@ -14,7 +14,7 @@ import 'react-quill/dist/quill.snow.css';
 import 'react-quill/dist/quill.bubble.css';
 
 
-import type { CreativeProject, BoardItem, ChecklistItem, BetaLimits } from '@/lib/types';
+import type { CreativeProject, BoardItem, ChecklistItem } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -335,7 +335,6 @@ function CreativeProjectPageDetail() {
   const [items, setItems] = useState<BoardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
-  const [limits, setLimits] = useState<BetaLimits>(DEFAULT_BETA_LIMITS);
   const isMobile = useIsMobile();
 
   // Dialog states
@@ -399,16 +398,14 @@ function CreativeProjectPageDetail() {
     if (!projectId || !user) return;
     try {
       setIsLoading(true);
-      const [projData, itemsData, betaLimits] = await Promise.all([
+      const [projData, itemsData] = await Promise.all([
         firestoreApi.getCreativeProject(projectId),
         firestoreApi.getBoardItems(projectId),
-        firestoreApi.getBetaLimits(),
       ]);
 
       if (projData) {
         setProject(projData);
         setItems(itemsData);
-        setLimits(betaLimits);
       } else {
         toast({ variant: 'destructive', title: 'Erro', description: 'Moodboard não encontrado.' });
         router.push('/');
@@ -513,11 +510,11 @@ function CreativeProjectPageDetail() {
   }, []);
 
   const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, extraData?: Partial<Omit<BoardItem, 'type' | 'content' | 'size'>>) => {
-    if (!user?.isAdmin && items.length >= limits.MAX_ITEMS_PER_MOODBOARD) {
+    if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
         toast({
             variant: "destructive",
             title: "Limite de itens atingido!",
-            description: `A versão Beta permite até ${limits.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
+            description: `A versão Beta permite até ${DEFAULT_BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
         });
         return;
     }
@@ -547,6 +544,7 @@ function CreativeProjectPageDetail() {
           location: 'Localização',
           spotify: 'Spotify',
           storyboard: 'Quadro de Storyboard',
+          text: 'Texto',
       };
       toast({ title: `${typeDisplayNames[type]} adicionado(a)!` });
 
@@ -586,11 +584,11 @@ function CreativeProjectPageDetail() {
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'storyboard') => {
-    if (!user?.isAdmin && items.length >= limits.MAX_ITEMS_PER_MOODBOARD) {
+    if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
         toast({
             variant: "destructive",
             title: "Limite de itens atingido!",
-            description: `A versão Beta permite até ${limits.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
+            description: `A versão Beta permite até ${DEFAULT_BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
         });
         if (imageUploadRef.current) imageUploadRef.current.value = "";
         return;
@@ -648,11 +646,11 @@ function CreativeProjectPageDetail() {
   };
   
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user?.isAdmin && items.length >= limits.MAX_ITEMS_PER_MOODBOARD) {
+    if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
         toast({
             variant: "destructive",
             title: "Limite de itens atingido!",
-            description: `A versão Beta permite até ${limits.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
+            description: `A versão Beta permite até ${DEFAULT_BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
         });
         if (pdfUploadRef.current) pdfUploadRef.current.value = "";
         return;

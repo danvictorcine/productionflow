@@ -16,7 +16,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 
-import type { Project, Production, CreativeProject, Storyboard, BetaLimits } from '@/lib/types';
+import type { Project, Production, CreativeProject, Storyboard } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -70,8 +70,6 @@ function HomePage() {
 
   const [items, setItems] = useState<DisplayableItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [limits, setLimits] = useState<BetaLimits>(DEFAULT_BETA_LIMITS);
-
 
   // Dialog states
   const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false);
@@ -100,13 +98,11 @@ function HomePage() {
           productions,
           creativeProjects,
           storyboards,
-          betaLimits
         ] = await Promise.all([
           firestoreApi.getProjects(),
           firestoreApi.getProductions(),
           firestoreApi.getCreativeProjects(),
           firestoreApi.getStoryboards(),
-          firestoreApi.getBetaLimits()
         ]);
 
         const displayableItems: DisplayableItem[] = [
@@ -124,7 +120,6 @@ function HomePage() {
         );
 
         setItems(displayableItems);
-        setLimits(betaLimits);
 
       } catch (error) {
         const errorTyped = error as { code?: string; message: string };
@@ -150,11 +145,11 @@ function HomePage() {
   }, [user]);
 
   const handleCreateNewClick = () => {
-    if (!user?.isAdmin && items.length >= limits.MAX_PROJECTS_PER_USER) {
+    if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_USER) {
       toast({
         variant: 'destructive',
         title: "Limite de projetos atingido!",
-        description: `A versão Beta permite a criação de até ${limits.MAX_PROJECTS_PER_USER} projetos.`,
+        description: `A versão Beta permite a criação de até ${DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_USER} projetos.`,
       });
     } else {
       setIsTypeDialogOpen(true);

@@ -16,7 +16,7 @@ import Image from 'next/image';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-import type { Storyboard, StoryboardScene, StoryboardPanel, BetaLimits } from '@/lib/types';
+import type { Storyboard, StoryboardScene, StoryboardPanel } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -174,7 +174,6 @@ function StoryboardPageDetail() {
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    const [limits, setLimits] = useState<BetaLimits>(DEFAULT_BETA_LIMITS);
     
     // Dialog states
     const [isStoryboardInfoDialogOpen, setIsStoryboardInfoDialogOpen] = useState(false);
@@ -196,10 +195,7 @@ function StoryboardPageDetail() {
         if (!storyboardId || !user) return;
         setIsLoading(true);
         try {
-            const [storyboardData, betaLimits] = await Promise.all([
-                firestoreApi.getStoryboard(storyboardId),
-                firestoreApi.getBetaLimits()
-            ]);
+            const storyboardData = await firestoreApi.getStoryboard(storyboardId);
             
              if (!storyboardData) {
                 toast({ variant: 'destructive', title: 'Erro', description: 'Storyboard não encontrado.' });
@@ -207,7 +203,6 @@ function StoryboardPageDetail() {
                 return;
             }
             setStoryboard(storyboardData);
-            setLimits(betaLimits);
 
             const fetchedScenes = await firestoreApi.getStoryboardScenes(storyboardId);
             setScenes(fetchedScenes);
@@ -304,8 +299,8 @@ function StoryboardPageDetail() {
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
         const currentPanelCount = panelsByScene[sceneForUpload]?.length || 0;
 
-        if (!user.isAdmin && (currentPanelCount + files.length) > limits.MAX_PANELS_PER_STORYBOARD_SCENE) {
-             toast({ variant: 'destructive', title: 'Limite de quadros atingido!', description: `Esta cena não pode ter mais de ${limits.MAX_PANELS_PER_STORYBOARD_SCENE} quadros.` });
+        if (!user.isAdmin && (currentPanelCount + files.length) > DEFAULT_BETA_LIMITS.MAX_PANELS_PER_STORYBOARD_SCENE) {
+             toast({ variant: 'destructive', title: 'Limite de quadros atingido!', description: `Esta cena não pode ter mais de ${DEFAULT_BETA_LIMITS.MAX_PANELS_PER_STORYBOARD_SCENE} quadros.` });
              if (imageUploadRef.current) imageUploadRef.current.value = "";
              return;
         }

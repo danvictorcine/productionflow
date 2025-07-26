@@ -1236,21 +1236,3 @@ export const deleteThemeSettings = async () => {
     const docRef = doc(db, 'settings', 'theme');
     await deleteDoc(docRef);
 }
-
-
-// === Beta Limits Settings ===
-
-export const getBetaLimits = async (): Promise<BetaLimits> => {
-    const docRef = doc(db, 'settings', 'betaLimits');
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-        return docSnap.data() as BetaLimits;
-    }
-    return DEFAULT_BETA_LIMITS;
-}
-
-export const saveBetaLimits = async (limits: BetaLimits) => {
-    const docRef = doc(db, 'settings', 'betaLimits');
-    await setDoc(docRef, limits);
-}
