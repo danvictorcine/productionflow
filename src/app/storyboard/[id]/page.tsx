@@ -202,15 +202,6 @@ function StoryboardPageDetail() {
             
             const fetchedPanels = await firestoreApi.getStoryboardPanels(storyboardId);
             
-            // This handles migration for old projects
-            if (fetchedPanels.some(p => !p.sceneId) && fetchedScenes.length === 0) {
-              const migratedSceneId = await firestoreApi.migratePanelsToScene(storyboardId, fetchedPanels);
-              // Re-fetch everything after migration to ensure UI is consistent
-              toast({ title: 'Projeto migrado!', description: 'Seus quadros foram organizados em uma cena padrão.' });
-              fetchStoryboardData(); // Re-trigger fetch
-              return;
-            }
-            
             const groupedPanels: Record<string, StoryboardPanel[]> = {};
             fetchedScenes.forEach(scene => {
                 groupedPanels[scene.id] = [];
@@ -220,9 +211,7 @@ function StoryboardPageDetail() {
                     groupedPanels[panel.sceneId].push(panel);
                 }
             });
-            Object.keys(groupedPanels).forEach(sceneId => {
-                groupedPanels[sceneId].sort((a, b) => a.order - b.order);
-            });
+            
             setPanelsByScene(groupedPanels);
 
         } catch (error) {
@@ -597,7 +586,7 @@ function StoryboardPageDetail() {
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                             {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
                                                 <PanelCard 
                                                     key={panel.id} 

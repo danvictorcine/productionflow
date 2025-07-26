@@ -776,7 +776,8 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
 
   const panelsQuery = query(
     collection(db, 'storyboard_panels'),
-    where('storyboardId', '==', storyboardId)
+    where('storyboardId', '==', storyboardId),
+    where('userId', '==', userId)
   );
   const panelsSnapshot = await getDocs(panelsQuery);
   for (const panelDoc of panelsSnapshot.docs) {
