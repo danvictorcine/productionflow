@@ -1,3 +1,4 @@
+
 // @/src/app/storyboard/[id]/page.tsx
 'use client';
 
@@ -146,6 +147,7 @@ function StoryboardPageDetail() {
     const { toast } = useToast();
     const imageUploadRef = useRef<HTMLInputElement>(null);
     const exportRef = useRef<HTMLDivElement>(null);
+    const mainContainerRef = useRef<HTMLDivElement>(null);
 
     const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
     const [panels, setPanels] = useState<StoryboardPanel[]>([]);
@@ -156,6 +158,13 @@ function StoryboardPageDetail() {
     // Dialog states
     const [isStoryboardInfoDialogOpen, setIsStoryboardInfoDialogOpen] = useState(false);
     
+    // Zoom and Pan state
+    const [scale, setScale] = useState(1);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const isPanning = useRef(false);
+    const startPanPoint = useRef({ x: 0, y: 0 });
+    const pinchStartDistance = useRef(0);
+
     const dndBackend = typeof navigator !== 'undefined' && /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
 
     const fetchStoryboardData = useCallback(async () => {
@@ -312,6 +321,85 @@ function StoryboardPageDetail() {
         }, 500);
     };
 
+    // Pan and Zoom handlers
+    const handleWheel = (e: React.WheelEvent) => {
+        e.preventDefault();
+        const scaleAmount = 0.1;
+        let newScale = scale - (e.deltaY > 0 ? scaleAmount : -scaleAmount);
+        newScale = Math.min(Math.max(0.1, newScale), 2); // Clamp scale
+        setScale(newScale);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('textarea, button, a')) {
+            return;
+        }
+        e.preventDefault();
+        isPanning.current = true;
+        startPanPoint.current = {
+            x: e.clientX - position.x,
+            y: e.clientY - position.y,
+        };
+        (e.currentTarget as HTMLElement).classList.add('cursor-grabbing');
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isPanning.current) return;
+        e.preventDefault();
+        setPosition({
+            x: e.clientX - startPanPoint.current.x,
+            y: e.clientY - startPanPoint.current.y,
+        });
+    };
+
+    const handleMouseUp = (e: React.MouseEvent) => {
+        isPanning.current = false;
+        (e.currentTarget as HTMLElement).classList.remove('cursor-grabbing');
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if ((e.target as HTMLElement).closest('textarea, button, a')) {
+            return;
+        }
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            pinchStartDistance.current = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            isPanning.current = false;
+        } else if (e.touches.length === 1) {
+            e.preventDefault();
+            isPanning.current = true;
+            startPanPoint.current = {
+                x: e.touches[0].clientX - position.x,
+                y: e.touches[0].clientY - position.y,
+            };
+        }
+    };
+    
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            const currentDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            const scaleFactor = currentDistance / pinchStartDistance.current;
+            setScale(prevScale => Math.min(Math.max(0.1, prevScale * scaleFactor), 2));
+            pinchStartDistance.current = currentDistance;
+        } else if (isPanning.current && e.touches.length === 1) {
+            e.preventDefault();
+            setPosition({
+                x: e.touches[0].clientX - startPanPoint.current.x,
+                y: e.touches[0].clientY - startPanPoint.current.y,
+            });
+        }
+    };
+
+    const handleTouchEnd = () => {
+        isPanning.current = false;
+    };
+
+
     if (isLoading) {
         return (
             <div className="p-8 space-y-6">
@@ -326,7 +414,7 @@ function StoryboardPageDetail() {
 
     return (
         <DndProvider backend={dndBackend}>
-            <div className="flex flex-col min-h-screen w-full bg-muted/40">
+            <div className="flex flex-col h-screen w-full bg-muted/40 overflow-hidden">
                 <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6 shrink-0">
                     <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
                         <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
@@ -369,32 +457,61 @@ function StoryboardPageDetail() {
                         <UserNav />
                     </div>
                 </header>
-                 <main className="flex-1 overflow-y-auto">
-                    <div ref={exportRef} className="p-4 sm:p-6 md:p-8">
-                        <Card className="mb-8">
-                            <CardHeader>
-                                <CardTitle>{storyboard.name}</CardTitle>
-                                {storyboard.description && (
-                                    <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>
-                                )}
-                            </CardHeader>
-                        </Card>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                            {panels.map((panel, index) => (
-                                <PanelCard 
-                                    key={panel.id} 
-                                    panel={panel} 
-                                    aspectRatio={storyboard.aspectRatio}
-                                    index={index} 
-                                    onDelete={handleDeletePanel} 
-                                    onUpdateNotes={handleUpdatePanelNotes} 
-                                    movePanel={movePanel}
-                                    onDropPanel={handleDropPanel}
-                                    isExporting={isExporting}
-                                />
-                            ))}
+
+                <main 
+                    ref={mainContainerRef}
+                    className="flex-1 flex flex-col overflow-hidden"
+                >
+                    <div className="bg-background border-b z-30 shrink-0">
+                        <div className="p-4 sm:p-6 md:p-8">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>{storyboard.name}</CardTitle>
+                                    {storyboard.description && (
+                                        <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>
+                                    )}
+                                </CardHeader>
+                            </Card>
                         </div>
-                        {isExporting && ( <div className="mt-8 text-center text-sm text-muted-foreground">Criado com ProductionFlow</div> )}
+                    </div>
+                    
+                    <div
+                        className="flex-1 relative overflow-hidden cursor-grab bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]"
+                        onWheel={handleWheel}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                    >
+                         <div
+                            className="absolute"
+                            style={{
+                                transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                                transformOrigin: '0 0'
+                            }}
+                         >
+                            <div ref={exportRef} className="p-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                    {panels.map((panel, index) => (
+                                        <PanelCard 
+                                            key={panel.id} 
+                                            panel={panel} 
+                                            aspectRatio={storyboard.aspectRatio}
+                                            index={index} 
+                                            onDelete={handleDeletePanel} 
+                                            onUpdateNotes={handleUpdatePanelNotes} 
+                                            movePanel={movePanel}
+                                            onDropPanel={handleDropPanel}
+                                            isExporting={isExporting}
+                                        />
+                                    ))}
+                                </div>
+                                {isExporting && ( <div className="mt-8 text-center text-sm text-muted-foreground">Criado com ProductionFlow</div> )}
+                            </div>
+                        </div>
                     </div>
                 </main>
                 <AppFooter />
