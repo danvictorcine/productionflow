@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
 import { Button } from '@/components/ui/button';
-import { UserNav } from '@/components/ui/user-nav';
+import { UserNav } from '@/components/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { AppFooter } from '@/components/app-footer';
@@ -301,8 +301,8 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 const locationData = JSON.parse(item.content);
                 return (
                     <div className="w-full h-full flex flex-col">
-                        <div className="bg-muted text-muted-foreground text-xs p-1 truncate order-last">{locationData.name}</div>
                         <DisplayMap position={[locationData.lat, locationData.lng]} className="flex-1" />
+                        <div className="bg-muted text-muted-foreground text-xs p-1 truncate order-last">{locationData.name}</div>
                     </div>
                 );
             default:
