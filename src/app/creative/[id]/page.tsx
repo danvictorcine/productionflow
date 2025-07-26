@@ -25,6 +25,7 @@ import { CreateEditCreativeProjectDialog } from '@/components/create-edit-creati
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -76,6 +77,7 @@ const getSpotifyEmbedUrl = (url: string) => {
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
+    const debounceTimer = useRef<NodeJS.Timeout>();
 
     const noteModules = useMemo(() => ({
         toolbar: {
@@ -100,6 +102,16 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
 
     const handlePaletteUpdate = (updatedColors: string[]) => {
         onUpdate(item.id, { content: JSON.stringify(updatedColors) });
+    };
+
+    const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newNotes = e.target.value;
+        onUpdate(item.id, { notes: newNotes }); // Optimistic UI update
+
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+            firestoreApi.updateBoardItem(item.id, { notes: newNotes });
+        }, 500);
     };
     
     const renderContent = () => {
@@ -126,6 +138,20 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                         modules={noteModules}
                         className="h-full w-full"
                     />
+                );
+            case 'storyboard':
+                return (
+                    <div className="flex flex-col h-full bg-card">
+                        <div className="relative w-full aspect-video bg-muted flex-shrink-0">
+                           <img src={item.content} alt="Storyboard panel" className="w-full h-full object-cover" data-ai-hint="action sequence" />
+                        </div>
+                        <Textarea 
+                            placeholder="Adicione suas anotações aqui..."
+                            defaultValue={item.notes}
+                            onChange={handleNotesChange}
+                            className="text-sm bg-transparent border-none focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-ring p-2 flex-grow resize-none"
+                        />
+                    </div>
                 );
             case 'checklist': {
                 const title = item.content;
@@ -280,6 +306,7 @@ function CreativeProjectPageDetail() {
   const { toast } = useToast();
   const imageUploadRef = useRef<HTMLInputElement>(null);
   const pdfUploadRef = useRef<HTMLInputElement>(null);
+  const storyboardUploadRef = useRef<HTMLInputElement>(null);
   const itemCountRef = useRef(0);
   const initialItemsRef = useRef<BoardItem[]>([]);
   const hasUnsavedChanges = useRef(false);
@@ -451,10 +478,11 @@ function CreativeProjectPageDetail() {
     });
 
     // Save content-related changes immediately (debounced within component) or via specific API call
-    if (data.content || data.items) {
-        const contentUpdate = {
+    if (data.content || data.items || data.notes) {
+        const contentUpdate: Partial<BoardItem> = {
             ...(data.content && { content: data.content }),
-            ...(data.items && { items: data.items })
+            ...(data.items && { items: data.items }),
+            ...(data.notes && { notes: data.notes }),
         };
         
         const debounceContentTimer = setTimeout(() => {
@@ -471,7 +499,7 @@ function CreativeProjectPageDetail() {
     }
   }, []);
 
-  const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, items?: ChecklistItem[]) => {
+  const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, extraData?: Partial<Omit<BoardItem, 'type' | 'content' | 'size'>>) => {
     if (itemCountRef.current >= 20) {
         toast({
             variant: "destructive",
@@ -490,16 +518,13 @@ function CreativeProjectPageDetail() {
         content,
         size,
         position: newPosition,
+        ...extraData,
       };
-
-      if (type === 'checklist' && items) {
-        newItemData.items = items;
-      }
       
       await firestoreApi.addBoardItem(projectId, newItemData);
       await fetchProjectData();
 
-      const typeDisplayNames = {
+      const typeDisplayNames: Record<BoardItem['type'], string> = {
           note: 'Nota',
           text: 'Texto',
           checklist: 'Checklist',
@@ -509,6 +534,7 @@ function CreativeProjectPageDetail() {
           video: 'Vídeo',
           location: 'Localização',
           spotify: 'Spotify',
+          storyboard: 'Quadro de Storyboard',
       };
       toast({ title: `${typeDisplayNames[type]} adicionado(a)!` });
 
@@ -544,14 +570,14 @@ function CreativeProjectPageDetail() {
   }
 
   const handleAddChecklist = () => {
-    handleAddItem('checklist', 'Nova Lista', { width: 300, height: 250 }, [{ id: crypto.randomUUID(), text: 'Primeiro item', checked: false }]);
+    handleAddItem('checklist', 'Nova Lista', { width: 300, height: 250 }, { items: [{ id: crypto.randomUUID(), text: 'Primeiro item', checked: false }] });
   }
 
   const handleAddPalette = () => {
     handleAddItem('palette', JSON.stringify(['#f87171', '#60a5fa', '#34d399', '#a78bfa']), { width: 250, height: 80 });
   }
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'storyboard') => {
     if (itemCountRef.current >= 20) {
         toast({
             variant: "destructive",
@@ -573,6 +599,7 @@ function CreativeProjectPageDetail() {
             description: 'O tamanho máximo para upload de imagem é de 10MB.'
         });
         if (imageUploadRef.current) imageUploadRef.current.value = "";
+        if (storyboardUploadRef.current) storyboardUploadRef.current.value = "";
         return;
     }
 
@@ -583,16 +610,21 @@ function CreativeProjectPageDetail() {
       image.src = URL.createObjectURL(file);
       await new Promise(resolve => { image.onload = resolve; });
 
-      const MAX_WIDTH = 400;
       const aspectRatio = image.naturalWidth / image.naturalHeight;
-      const width = Math.min(image.naturalWidth, MAX_WIDTH);
-      const height = width / aspectRatio;
-
       URL.revokeObjectURL(image.src);
 
       const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
       const url = await firestoreApi.uploadImageForBoard(compressedFile);
-      await handleAddItem('image', url, { width, height });
+
+      if (type === 'storyboard') {
+         const width = 400;
+         const height = width / aspectRatio + 60; // +60 for notes area
+         await handleAddItem('storyboard', url, { width, height }, { notes: '' });
+      } else {
+         const width = Math.min(image.naturalWidth, 400);
+         const height = width / aspectRatio;
+         await handleAddItem('image', url, { width, height });
+      }
     } catch (error) {
        const errorTyped = error as { code?: string; message: string };
        toast({ 
@@ -603,6 +635,7 @@ function CreativeProjectPageDetail() {
     } finally {
       setIsUploading(false);
       if (imageUploadRef.current) imageUploadRef.current.value = "";
+      if (storyboardUploadRef.current) storyboardUploadRef.current.value = "";
     }
   };
   
@@ -835,7 +868,14 @@ function CreativeProjectPageDetail() {
                         {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}
                         <span className="hidden md:inline">Imagem</span>
                     </Button>
-                    <input type="file" ref={imageUploadRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                    <input type="file" ref={imageUploadRef} onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" className="hidden" />
+                    
+                    <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading}>
+                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}
+                        <span className="hidden md:inline">Storyboard</span>
+                    </Button>
+                    <input type="file" ref={storyboardUploadRef} onChange={(e) => handleImageUpload(e, 'storyboard')} accept="image/*" className="hidden" />
+                    
                     <Button variant="ghost" size="sm" onClick={() => pdfUploadRef.current?.click()} disabled={isUploading}>
                         {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <FileIcon className="h-4 w-4 md:mr-2" />}
                         <span className="hidden md:inline">PDF</span>

@@ -211,8 +211,9 @@ export type BoardItem = {
   id: string;
   projectId: string;
   userId: string;
-  type: 'note' | 'image' | 'video' | 'location' | 'checklist' | 'palette' | 'pdf' | 'spotify' | 'text';
+  type: 'note' | 'image' | 'video' | 'location' | 'checklist' | 'palette' | 'pdf' | 'spotify' | 'text' | 'storyboard';
   content: string; // HTML for note, URL for image, URL for video, JSON for location, Title for checklist, JSON for palette, URL for PDF
+  notes?: string; // For storyboard notes
   items?: ChecklistItem[]; // For checklist items
   position: { x: number; y: number };
   size: { width: number | string; height: number | string };
