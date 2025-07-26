@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
 import { Button } from '@/components/ui/button';
-import { UserNav } from '@/components/user-nav';
+import { UserNav } from '@/components/ui/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { AppFooter } from '@/components/app-footer';
@@ -149,18 +149,27 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 );
             case 'note':
                 return (
-                    <div 
-                        ref={noteWrapperRef} 
-                        className={cn("h-full w-full", isEditingNote && "bg-background")} 
-                        onClick={() => setIsEditingNote(true)}
-                    >
-                        <QuillEditor
-                            theme={isEditingNote ? "snow" : "bubble"}
-                            value={item.content}
-                            onChange={(content) => onUpdate(item.id, { content })}
-                            modules={isEditingNote ? noteModules : textModules}
-                            className="h-full w-full"
-                        />
+                    <div ref={noteWrapperRef} className={cn("h-full w-full", isEditingNote && "bg-background")} onClick={() => setIsEditingNote(true)}>
+                         {/* Bubble theme for viewing */}
+                        <div className={cn(isEditingNote && "hidden")}>
+                            <QuillEditor
+                                theme="bubble"
+                                value={item.content}
+                                readOnly={true}
+                                modules={textModules}
+                                className="h-full w-full"
+                            />
+                        </div>
+                        {/* Snow theme for editing */}
+                        <div className={cn(!isEditingNote && "hidden", "h-full w-full")}>
+                            <QuillEditor
+                                theme="snow"
+                                value={item.content}
+                                onChange={(content) => onUpdate(item.id, { content })}
+                                modules={noteModules}
+                                className="h-full w-full"
+                            />
+                        </div>
                     </div>
                 );
             case 'storyboard':
@@ -292,8 +301,8 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 const locationData = JSON.parse(item.content);
                 return (
                     <div className="w-full h-full flex flex-col">
+                        <div className="bg-muted text-muted-foreground text-xs p-1 truncate order-last">{locationData.name}</div>
                         <DisplayMap position={[locationData.lat, locationData.lng]} className="flex-1" />
-                        <div className="bg-muted text-muted-foreground text-xs p-1 truncate">{locationData.name}</div>
                     </div>
                 );
             default:
