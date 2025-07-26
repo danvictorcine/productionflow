@@ -880,23 +880,45 @@ export const uploadImageForStoryboard = async (file: File): Promise<string> => {
 export const getStoryboardScenes = async (storyboardId: string): Promise<StoryboardScene[]> => {
   const userId = getUserId();
   if (!userId) return [];
-  const q = query(
+
+  const scenesQuery = query(
     collection(db, 'storyboard_scenes'),
     where('storyboardId', '==', storyboardId),
     where('userId', '==', userId),
     orderBy('order', 'asc')
   );
-  const querySnapshot = await getDocs(q);
-  const scenes = querySnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-          id: doc.id,
-          ...data,
-          createdAt: (data.createdAt as Timestamp).toDate(),
-      } as StoryboardScene;
-  });
-  return scenes;
+  const scenesSnapshot = await getDocs(scenesQuery);
+
+  // If no scenes exist, check for panels that need migration
+  if (scenesSnapshot.empty) {
+    const panelsQuery = query(
+      collection(db, 'storyboard_panels'),
+      where('storyboardId', '==', storyboardId),
+      where('userId', '==', userId)
+    );
+    const panelsSnapshot = await getDocs(panelsQuery);
+    const panelsToMigrate = panelsSnapshot.docs.map(d => d.data() as StoryboardPanel);
+
+    // Only migrate if there are panels and at least one of them doesn't have a sceneId
+    if (panelsToMigrate.length > 0 && panelsToMigrate.some(p => !p.sceneId)) {
+      await migratePanelsToScene(storyboardId, panelsToMigrate);
+      // After migration, re-fetch the scenes
+      const updatedScenesSnapshot = await getDocs(scenesQuery);
+      return updatedScenesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: (doc.data().createdAt as Timestamp).toDate(),
+      }) as StoryboardScene);
+    }
+  }
+
+  return scenesSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    createdAt: (doc.data().createdAt as Timestamp).toDate(),
+  }) as StoryboardScene);
 };
+
 
 export const addStoryboardScene = async (data: Omit<StoryboardScene, 'id'|'createdAt'>) => {
   const userId = getUserId();
