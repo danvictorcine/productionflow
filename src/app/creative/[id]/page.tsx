@@ -1,4 +1,5 @@
 
+
 // @/src/app/creative/[id]/page.tsx
 'use client';
 
@@ -33,6 +34,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { BETA_LIMITS } from '@/lib/app-config';
 
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
@@ -134,24 +136,11 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
     
     const renderContent = () => {
         switch (item.type) {
-            case 'text':
-                return (
-                    <div className="text-item-wrapper h-full w-full flex items-center justify-center">
-                        <QuillEditor
-                            theme="bubble"
-                            value={item.content}
-                            onChange={(content) => onUpdate(item.id, { content })}
-                            modules={textModules}
-                            className="w-full text-2xl"
-                            placeholder="Escreva algo..."
-                        />
-                    </div>
-                );
             case 'note':
                 return (
                     <div ref={noteWrapperRef} className="h-full w-full" onClick={() => setIsEditingNote(true)}>
-                        <div className={cn(!isEditingNote ? 'block' : 'hidden', "h-full w-full")}>
-                            <QuillEditor
+                         <div className={cn(isEditingNote ? 'hidden' : 'block', "h-full w-full")}>
+                             <QuillEditor
                                 theme="bubble"
                                 value={item.content}
                                 readOnly={true}
@@ -160,7 +149,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                             />
                         </div>
                         <div className={cn(isEditingNote ? 'block' : 'hidden', "h-full w-full")}>
-                            <QuillEditor
+                             <QuillEditor
                                 theme="snow"
                                 value={item.content}
                                 onChange={(content) => onUpdate(item.id, { content })}
@@ -531,11 +520,11 @@ function CreativeProjectPageDetail() {
   }, []);
 
   const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, extraData?: Partial<Omit<BoardItem, 'type' | 'content' | 'size'>>) => {
-    if (itemCountRef.current >= 20) {
+    if (!user?.isAdmin && itemCountRef.current >= BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
         toast({
             variant: "destructive",
-            title: "Limite atingido!",
-            description: "A versão Beta permite até 20 itens por moodboard.",
+            title: "Limite de itens atingido!",
+            description: `A versão Beta permite até ${BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
         });
         return;
     }
@@ -557,7 +546,6 @@ function CreativeProjectPageDetail() {
 
       const typeDisplayNames: Record<BoardItem['type'], string> = {
           note: 'Texto',
-          text: 'Texto',
           checklist: 'Checklist',
           palette: 'Paleta de cores',
           image: 'Imagem',
@@ -605,11 +593,11 @@ function CreativeProjectPageDetail() {
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'storyboard') => {
-    if (itemCountRef.current >= 20) {
+    if (!user?.isAdmin && itemCountRef.current >= BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
         toast({
             variant: "destructive",
-            title: "Limite atingido!",
-            description: "A versão Beta permite até 20 itens por moodboard.",
+            title: "Limite de itens atingido!",
+            description: `A versão Beta permite até ${BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
         });
         if (imageUploadRef.current) imageUploadRef.current.value = "";
         return;
@@ -667,11 +655,11 @@ function CreativeProjectPageDetail() {
   };
   
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (itemCountRef.current >= 20) {
+    if (!user?.isAdmin && itemCountRef.current >= BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
         toast({
             variant: "destructive",
-            title: "Limite atingido!",
-            description: "A versão Beta permite até 20 itens por moodboard.",
+            title: "Limite de itens atingido!",
+            description: `A versão Beta permite até ${BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
         });
         if (pdfUploadRef.current) pdfUploadRef.current.value = "";
         return;

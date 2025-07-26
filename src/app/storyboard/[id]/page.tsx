@@ -1,4 +1,5 @@
 
+
 // @/src/app/storyboard/[id]/page.tsx
 'use client';
 
@@ -46,6 +47,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { BETA_LIMITS } from '@/lib/app-config';
 
 
 const ItemType = 'PANEL';
@@ -284,10 +286,17 @@ function StoryboardPageDetail() {
     };
 
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (!event.target.files?.length || !sceneForUpload) return;
+        if (!event.target.files?.length || !sceneForUpload || !user) return;
         
         const files = Array.from(event.target.files);
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+        const currentPanelCount = panelsByScene[sceneForUpload]?.length || 0;
+
+        if (!user.isAdmin && (currentPanelCount + files.length) > BETA_LIMITS.MAX_PANELS_PER_STORYBOARD_SCENE) {
+             toast({ variant: 'destructive', title: 'Limite de quadros atingido!', description: `Esta cena não pode ter mais de ${BETA_LIMITS.MAX_PANELS_PER_STORYBOARD_SCENE} quadros.` });
+             if (imageUploadRef.current) imageUploadRef.current.value = "";
+             return;
+        }
 
         const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
         if (oversizedFiles.length > 0) {
@@ -680,4 +689,3 @@ export default function StoryboardPage() {
         </AuthGuard>
     );
 }
-

@@ -56,6 +56,7 @@ import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
 import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
+import { BETA_LIMITS } from '@/lib/app-config';
 
 type DisplayableItem =
   | (Project & { itemType: 'financial' })
@@ -144,11 +145,11 @@ function HomePage() {
   }, [user, toast]);
 
   const handleCreateNewClick = () => {
-    if (!user?.isAdmin && items.length >= 20) {
+    if (!user?.isAdmin && items.length >= BETA_LIMITS.MAX_PROJECTS_PER_USER) {
       toast({
         variant: 'destructive',
-        title: "Limite atingido!",
-        description: "A versão Beta permite até 20 projetos.",
+        title: "Limite de projetos atingido!",
+        description: `A versão Beta permite a criação de até ${BETA_LIMITS.MAX_PROJECTS_PER_USER} projetos.`,
       });
     } else {
       setIsTypeDialogOpen(true);
