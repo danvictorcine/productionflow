@@ -1,12 +1,14 @@
+
 // @/src/lib/app-config.ts
+
+import type { BetaLimits } from './types';
 
 /**
  * Este arquivo serve como um "painel de controle" no código para definir
- * os limites para usuários na versão Beta (não-administradores).
- *
- * Para ajustar os limites, basta alterar os valores numéricos abaixo.
+ * os limites PADRÃO para usuários na versão Beta (não-administradores).
+ * Estes valores são usados como fallback se nada for encontrado no Firestore.
  */
-export const BETA_LIMITS = {
+export const DEFAULT_BETA_LIMITS: BetaLimits = {
   /** O número máximo de projetos (todos os tipos) que um usuário pode criar. */
   MAX_PROJECTS_PER_USER: 5,
 

@@ -19,8 +19,9 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, StoryboardScene } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, StoryboardScene, BetaLimits } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { DEFAULT_BETA_LIMITS } from '../app-config';
 
 // Helper to get current user ID, returns null if not authenticated for public views
 const getUserId = () => {
@@ -1234,4 +1235,22 @@ export const saveThemeSettings = async (theme: ThemeSettings) => {
 export const deleteThemeSettings = async () => {
     const docRef = doc(db, 'settings', 'theme');
     await deleteDoc(docRef);
+}
+
+
+// === Beta Limits Settings ===
+
+export const getBetaLimits = async (): Promise<BetaLimits> => {
+    const docRef = doc(db, 'settings', 'betaLimits');
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        return docSnap.data() as BetaLimits;
+    }
+    return DEFAULT_BETA_LIMITS;
+}
+
+export const saveBetaLimits = async (limits: BetaLimits) => {
+    const docRef = doc(db, 'settings', 'betaLimits');
+    await setDoc(docRef, limits);
 }

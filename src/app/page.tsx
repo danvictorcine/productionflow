@@ -16,7 +16,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 
-import type { Project, Production, CreativeProject, Storyboard } from '@/lib/types';
+import type { Project, Production, CreativeProject, Storyboard, BetaLimits } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -56,7 +56,7 @@ import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
 import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
-import { BETA_LIMITS } from '@/lib/app-config';
+import { DEFAULT_BETA_LIMITS } from '@/lib/app-config';
 
 type DisplayableItem =
   | (Project & { itemType: 'financial' })
@@ -70,6 +70,8 @@ function HomePage() {
 
   const [items, setItems] = useState<DisplayableItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [limits, setLimits] = useState<BetaLimits>(DEFAULT_BETA_LIMITS);
+
 
   // Dialog states
   const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false);
@@ -93,16 +95,18 @@ function HomePage() {
       if (!user) return;
       setIsLoading(true);
       try {
-        const projectsPromise = firestoreApi.getProjects();
-        const productionsPromise = firestoreApi.getProductions();
-        const storyboardsPromise = firestoreApi.getStoryboards();
-        const creativeProjectsPromise = firestoreApi.getCreativeProjects();
-
-        const [projects, productions, creativeProjects, storyboards] = await Promise.all([
-          projectsPromise,
-          productionsPromise,
-          creativeProjectsPromise,
-          storyboardsPromise,
+        const [
+          projects,
+          productions,
+          creativeProjects,
+          storyboards,
+          betaLimits
+        ] = await Promise.all([
+          firestoreApi.getProjects(),
+          firestoreApi.getProductions(),
+          firestoreApi.getCreativeProjects(),
+          firestoreApi.getStoryboards(),
+          firestoreApi.getBetaLimits()
         ]);
 
         const displayableItems: DisplayableItem[] = [
@@ -115,12 +119,13 @@ function HomePage() {
           })),
         ];
 
-        // Client-side sorting as firestore query was simplified
         displayableItems.sort(
           (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
         );
 
         setItems(displayableItems);
+        setLimits(betaLimits);
+
       } catch (error) {
         const errorTyped = error as { code?: string; message: string };
         toast({
@@ -142,14 +147,14 @@ function HomePage() {
     if (user) {
       fetchItems();
     }
-  }, [user, toast]);
+  }, [user]);
 
   const handleCreateNewClick = () => {
-    if (!user?.isAdmin && items.length >= BETA_LIMITS.MAX_PROJECTS_PER_USER) {
+    if (!user?.isAdmin && items.length >= limits.MAX_PROJECTS_PER_USER) {
       toast({
         variant: 'destructive',
         title: "Limite de projetos atingido!",
-        description: `A versão Beta permite a criação de até ${BETA_LIMITS.MAX_PROJECTS_PER_USER} projetos.`,
+        description: `A versão Beta permite a criação de até ${limits.MAX_PROJECTS_PER_USER} projetos.`,
       });
     } else {
       setIsTypeDialogOpen(true);

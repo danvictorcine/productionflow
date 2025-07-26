@@ -1,10 +1,11 @@
+
 'use client';
 
 import Link from 'next/link';
 import { AppFooter } from '@/components/app-footer';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Newspaper, Palette } from 'lucide-react';
+import { ArrowLeft, BookOpen, Newspaper, Palette, Settings } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export default function AdminDashboard() {
@@ -51,7 +52,7 @@ export default function AdminDashboard() {
                             </CardContent>
                         </Card>
                     </Link>
-                    <Link href="/admin/theme" className="block col-span-1 md:col-span-2">
+                    <Link href="/admin/theme" className="block">
                         <Card className="hover:bg-muted/50 transition-colors h-full">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -59,6 +60,20 @@ export default function AdminDashboard() {
                                     Gerenciar Tema do Aplicativo
                                 </CardTitle>
                                 <CardDescription>Personalize as cores de todo o aplicativo, como botões, fundos e textos.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Button>Acessar</Button>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                     <Link href="/admin/limits" className="block">
+                        <Card className="hover:bg-muted/50 transition-colors h-full">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Settings className="h-5 w-5 text-primary"/>
+                                    Gerenciar Limites (Beta)
+                                </CardTitle>
+                                <CardDescription>Defina os limites de uso para os usuários na versão Beta.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Button>Acessar</Button>

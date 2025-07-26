@@ -270,3 +270,10 @@ export type ThemeSettings = {
   brandText: string;
   brandLogin: string;
 };
+
+// === Beta Limits Settings ===
+export type BetaLimits = {
+  MAX_PROJECTS_PER_USER: number;
+  MAX_ITEMS_PER_MOODBOARD: number;
+  MAX_PANELS_PER_STORYBOARD_SCENE: number;
+};

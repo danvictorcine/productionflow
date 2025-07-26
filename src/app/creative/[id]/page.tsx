@@ -14,7 +14,7 @@ import 'react-quill/dist/quill.snow.css';
 import 'react-quill/dist/quill.bubble.css';
 
 
-import type { CreativeProject, BoardItem, ChecklistItem } from '@/lib/types';
+import type { CreativeProject, BoardItem, ChecklistItem, BetaLimits } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -34,7 +34,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { BETA_LIMITS } from '@/lib/app-config';
+import { DEFAULT_BETA_LIMITS } from '@/lib/app-config';
 
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
@@ -327,8 +327,6 @@ function CreativeProjectPageDetail() {
   const imageUploadRef = useRef<HTMLInputElement>(null);
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const storyboardUploadRef = useRef<HTMLInputElement>(null);
-  const itemCountRef = useRef(0);
-  const initialItemsRef = useRef<BoardItem[]>([]);
   const hasUnsavedChanges = useRef(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
@@ -337,6 +335,7 @@ function CreativeProjectPageDetail() {
   const [items, setItems] = useState<BoardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [limits, setLimits] = useState<BetaLimits>(DEFAULT_BETA_LIMITS);
   const isMobile = useIsMobile();
 
   // Dialog states
@@ -399,16 +398,17 @@ function CreativeProjectPageDetail() {
   const fetchProjectData = useCallback(async () => {
     if (!projectId || !user) return;
     try {
-      const [projData, itemsData] = await Promise.all([
+      setIsLoading(true);
+      const [projData, itemsData, betaLimits] = await Promise.all([
         firestoreApi.getCreativeProject(projectId),
         firestoreApi.getBoardItems(projectId),
+        firestoreApi.getBetaLimits(),
       ]);
 
       if (projData) {
         setProject(projData);
         setItems(itemsData);
-        itemCountRef.current = itemsData.length;
-        initialItemsRef.current = JSON.parse(JSON.stringify(itemsData));
+        setLimits(betaLimits);
       } else {
         toast({ variant: 'destructive', title: 'Erro', description: 'Moodboard não encontrado.' });
         router.push('/');
@@ -435,7 +435,7 @@ function CreativeProjectPageDetail() {
   
     const debounceTimer = setTimeout(() => {
       const changedItems = items.filter(item => {
-        const initialItem = initialItemsRef.current.find(i => i.id === item.id);
+        const initialItem = items.find(i => i.id === item.id);
         // Only consider position and size changes for batch update
         return !initialItem || 
                JSON.stringify(item.position) !== JSON.stringify(initialItem.position) ||
@@ -453,7 +453,6 @@ function CreativeProjectPageDetail() {
 
         firestoreApi.updateBoardItemsBatch(updates)
           .then(() => {
-            initialItemsRef.current = JSON.parse(JSON.stringify(items));
             hasUnsavedChanges.current = false;
           })
           .catch(error => {
@@ -507,12 +506,6 @@ function CreativeProjectPageDetail() {
         
         const debounceContentTimer = setTimeout(() => {
              firestoreApi.updateBoardItem(itemId, contentUpdate)
-                .then(() => {
-                    // Update initial state for content changes as well
-                    initialItemsRef.current = initialItemsRef.current.map(item => 
-                        item.id === itemId ? { ...item, ...contentUpdate } : item
-                    );
-                })
                 .catch(err => console.error("Failed to save content", err));
         }, 500); // Debounce content updates to avoid saving on every keystroke
         return () => clearTimeout(debounceContentTimer);
@@ -520,17 +513,17 @@ function CreativeProjectPageDetail() {
   }, []);
 
   const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, extraData?: Partial<Omit<BoardItem, 'type' | 'content' | 'size'>>) => {
-    if (!user?.isAdmin && itemCountRef.current >= BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
+    if (!user?.isAdmin && items.length >= limits.MAX_ITEMS_PER_MOODBOARD) {
         toast({
             variant: "destructive",
             title: "Limite de itens atingido!",
-            description: `A versão Beta permite até ${BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
+            description: `A versão Beta permite até ${limits.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
         });
         return;
     }
     
     try {
-      const offset = itemCountRef.current * 20;
+      const offset = items.length * 20;
       const newPosition = { x: 50 + offset, y: 50 + offset };
       
       const newItemData: any = {
@@ -593,11 +586,11 @@ function CreativeProjectPageDetail() {
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'storyboard') => {
-    if (!user?.isAdmin && itemCountRef.current >= BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
+    if (!user?.isAdmin && items.length >= limits.MAX_ITEMS_PER_MOODBOARD) {
         toast({
             variant: "destructive",
             title: "Limite de itens atingido!",
-            description: `A versão Beta permite até ${BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
+            description: `A versão Beta permite até ${limits.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
         });
         if (imageUploadRef.current) imageUploadRef.current.value = "";
         return;
@@ -655,11 +648,11 @@ function CreativeProjectPageDetail() {
   };
   
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user?.isAdmin && itemCountRef.current >= BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
+    if (!user?.isAdmin && items.length >= limits.MAX_ITEMS_PER_MOODBOARD) {
         toast({
             variant: "destructive",
             title: "Limite de itens atingido!",
-            description: `A versão Beta permite até ${BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
+            description: `A versão Beta permite até ${limits.MAX_ITEMS_PER_MOODBOARD} itens por moodboard.`,
         });
         if (pdfUploadRef.current) pdfUploadRef.current.value = "";
         return;
