@@ -1,77 +1,102 @@
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // User data is private
-    match /users/{userId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+
+    // Helper function to check ownership
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // Projects and their transactions are private
+    // Projects can be read/written only by the owner
     match /projects/{projectId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
+
+    // Transactions can be read/written only by the owner
     match /transactions/{transactionId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
-    // Productions (Call Sheet Parent)
+    // User profiles:
+    // - Anyone can create their own profile
+    // - Only the owner can read/update their own profile
+    match /users/{userId} {
+      allow read, update: if isOwner(userId);
+      allow create: if request.auth != null;
+    }
+    
+    // Productions (Call Sheet Projects)
     match /productions/{productionId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
-
-    // Shooting Days (Call Sheet Child)
+    
+    // Shooting Days (Call Sheets)
     match /shooting_days/{dayId} {
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
-
-    // Public, read-only version of a shooting day
+    
+    // Public Shooting Days can be read by anyone, but only written by authenticated users who own the data
     match /public_shooting_days/{dayId} {
       allow read: if true;
-      allow create, update: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow delete: if false;
+      allow write: if request.auth != null && isOwner(request.resource.data.userId);
     }
-
+    
     // Creative Projects (Moodboards)
     match /creative_projects/{projectId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-    match /board_items/{itemId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
     }
 
+    // Board Items (Moodboard Items)
+    match /board_items/{itemId} {
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
+    }
+    
     // Storyboards
     match /storyboards/{storyboardId} {
-        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
     }
+    
+    // Storyboard Scenes
     match /storyboard_scenes/{sceneId} {
-        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-    match /storyboard_panels/{panelId} {
-        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
     }
 
-    // Publicly readable content
+    // Storyboard Panels
+    match /storyboard_panels/{panelId} {
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // Posts can be read by anyone, but only written by authenticated users (admins)
     match /posts/{postId} {
       allow read: if true;
-      allow create, update, delete: if request.auth.token.isAdmin == true;
+      allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
+
+    // Static pages can be read by anyone, but only written by admins
     match /pages/{pageId} {
-       allow read: if true;
-       allow create, update, delete: if request.auth.token.isAdmin == true;
-    }
-    match /teamMembers/{memberId} {
-       allow read: if true;
-       allow create, update, delete: if request.auth.token.isAdmin == true;
-    }
-     match /settings/theme {
       allow read: if true;
-      allow write: if request.auth.token.isAdmin == true;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Team members for About page
+    match /teamMembers/{memberId} {
+      allow read: if true;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Theme settings
+    match /settings/theme {
+        allow read: if true;
+        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
   }
 }
