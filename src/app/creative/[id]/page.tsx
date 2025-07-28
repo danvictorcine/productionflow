@@ -107,25 +107,47 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
     };
 
     const quillModules = useMemo(() => ({
-      toolbar: [
-        [{ 'header': [1, 2, false] }],
-        ['bold', 'italic', 'underline'],
-        [{'list': 'ordered'}, {'list': 'bullet'}],
-        ['link', 'clean']
-      ]
-    }), []);
+      toolbar: {
+        container: `#toolbar-${item.id}`,
+      }
+    }), [item.id]);
     
     const renderContent = () => {
         switch (item.type) {
             case 'note':
                 return (
                     <div className="h-full w-full flex flex-col" onClick={() => onSelect(item.id)}>
-                        {isSelected && <div id={`toolbar-${item.id}`} />}
+                        {isSelected && (
+                          <div id={`toolbar-${item.id}`}>
+                              <span className="ql-formats">
+                                  <select className="ql-header" defaultValue="">
+                                      <option value="1">Título 1</option>
+                                      <option value="2">Título 2</option>
+                                      <option value="">Normal</option>
+                                  </select>
+                              </span>
+                              <span className="ql-formats">
+                                  <button className="ql-bold"></button>
+                                  <button className="ql-italic"></button>
+                                  <button className="ql-underline"></button>
+                              </span>
+                              <span className="ql-formats">
+                                  <button className="ql-list" value="ordered"></button>
+                                  <button className="ql-list" value="bullet"></button>
+                              </span>
+                              <span className="ql-formats">
+                                  <button className="ql-link"></button>
+                              </span>
+                              <span className="ql-formats">
+                                  <button className="ql-clean"></button>
+                              </span>
+                          </div>
+                        )}
                          <QuillEditor
                             theme="snow"
                             value={item.content}
                             onChange={(content) => onUpdate(item.id, { content })}
-                            modules={{ toolbar: isSelected ? `#toolbar-${item.id}` : false }}
+                            modules={isSelected ? quillModules : { toolbar: false }}
                             className="h-full w-full"
                         />
                     </div>
@@ -272,8 +294,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
     return (
         <div 
             className={cn(
-                "w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col transition-all duration-200",
-                isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                "w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col transition-all duration-200"
             )}
         >
             <div className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-move z-10 opacity-30 group-hover:opacity-100 transition-opacity">
@@ -969,4 +990,3 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
-
