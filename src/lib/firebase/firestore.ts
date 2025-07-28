@@ -546,14 +546,13 @@ export const deleteShootingDay = async (dayId: string) => {
 };
 
 
-export const createOrUpdatePublicShootingDay = async (day: ShootingDay, production: Production) => {
-  const userId = getUserId();
+export const createOrUpdatePublicShootingDay = async (dayWithUserId: ShootingDay, production: Production) => {
+  const { userId, ...day } = dayWithUserId;
   if (!userId) throw new Error("Usuário não autenticado para criar página pública.");
-  // Combine all necessary data into one object for the public document
+  
   const publicData = {
     ...day,
-    userId, // Add userId to the public document for rule validation
-    // Add production-level info to avoid extra reads on the public page
+    userId, // Ensure userId is part of the data being written
     productionName: production.name,
     productionType: production.type,
     director: production.director,
@@ -564,6 +563,7 @@ export const createOrUpdatePublicShootingDay = async (day: ShootingDay, producti
   const docRef = doc(db, 'public_shooting_days', day.id);
   await setDoc(docRef, publicData, { merge: true });
 };
+
 
 export const getPublicShootingDay = async (dayId: string): Promise<(ShootingDay & { productionName: string }) | null> => {
     const docRef = doc(db, "public_shooting_days", dayId);

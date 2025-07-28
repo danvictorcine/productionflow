@@ -278,10 +278,10 @@ function ProductionPageDetail() {
       }
       
       // Sync public page if it exists
-      if(dayId && production) {
+      if(dayId && production && user) {
          const publicDayExists = await firestoreApi.getPublicShootingDay(dayId);
          if (publicDayExists) {
-             const fullDayData = { id: dayId, productionId, userId: user!.uid, ...sanitizedData };
+             const fullDayData = { id: dayId, productionId, userId: user.uid, ...sanitizedData };
              await firestoreApi.createOrUpdatePublicShootingDay(fullDayData, production);
          }
       }
@@ -318,18 +318,19 @@ function ProductionPageDetail() {
   };
   
   const handleShareDay = async (day: ProcessedShootingDay) => {
-    if(!production) return;
+    if (!production || !user) return;
     try {
-        await firestoreApi.createOrUpdatePublicShootingDay(day, production);
-        setDayToShare(day);
-        toast({ title: "Link de compartilhamento criado!", description: "A página agora está pública e será atualizada automaticamente." });
+      const dayDataWithUser = { ...day, userId: user.uid };
+      await firestoreApi.createOrUpdatePublicShootingDay(dayDataWithUser, production);
+      setDayToShare(day);
+      toast({ title: "Link de compartilhamento criado!", description: "A página agora está pública e será atualizada automaticamente." });
     } catch (error) {
-        const errorTyped = error as { code?: string; message: string };
-        toast({
-            variant: 'destructive',
-            title: 'Erro ao Compartilhar',
-            description: <CopyableError userMessage="Não foi possível criar a página pública." errorCode={errorTyped.code || errorTyped.message} />,
-        });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Compartilhar',
+        description: <CopyableError userMessage="Não foi possível criar a página pública." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     }
   };
 
