@@ -45,7 +45,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -575,17 +575,17 @@ function ProductionPageDetail() {
           <h1 className="text-lg md:text-xl font-bold text-primary truncate">{production.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => handleShare('production', production.id)} variant="outline" size="sm">
-            <Share2 className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Compartilhar Produção</span>
+        <Button onClick={() => { setEditingShootingDay(null); setIsShootingDayDialogOpen(true); }} size="sm">
+            <PlusCircle className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Criar Ordem do Dia</span>
           </Button>
           <Button onClick={() => setIsProductionDialogOpen(true)} variant="outline" size="sm">
             <Edit className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Editar Produção</span>
           </Button>
-          <Button onClick={() => { setEditingShootingDay(null); setIsShootingDayDialogOpen(true); }} size="sm">
-            <PlusCircle className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Criar Ordem do Dia</span>
+          <Button onClick={() => handleShare('production', production.id)} variant="outline" size="sm">
+            <Share2 className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Compartilhar</span>
           </Button>
           <UserNav />
         </div>
@@ -725,15 +725,15 @@ function ProductionPageDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
-       <Dialog open={!!shareLink} onOpenChange={(open) => !open && setShareLink(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Compartilhar Produção</DialogTitle>
-            <DialogDescription>
+       <Sheet open={!!shareLink} onOpenChange={(open) => !open && setShareLink(null)}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Compartilhar Produção</SheetTitle>
+            <SheetDescription>
               Qualquer pessoa com este link poderá ver as informações. As atualizações feitas serão refletidas publicamente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
+            </SheetDescription>
+          </SheetHeader>
+          <div className="space-y-2 py-4">
             <Label htmlFor="share-link">Link Público</Label>
             <div className="flex gap-2">
                 <Input id="share-link" value={shareLink || ''} readOnly />
@@ -747,8 +747,8 @@ function ProductionPageDetail() {
                 </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

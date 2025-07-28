@@ -356,7 +356,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     Editar Ordem do Dia
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={onShare} disabled={isExporting}>
+                                 <DropdownMenuItem onClick={onShare} disabled={isExporting}>
                                     <Share2 className="mr-2 h-4 w-4" />
                                     Compartilhar Link do Dia
                                 </DropdownMenuItem>
