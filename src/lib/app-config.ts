@@ -10,7 +10,7 @@ import type { BetaLimits } from './types';
  */
 export const DEFAULT_BETA_LIMITS: BetaLimits = {
   /** O número máximo de projetos (todos os tipos) que um usuário pode criar. */
-  MAX_PROJECTS_PER_USER: 5,
+  MAX_PROJECTS_PER_USER: 20,
 
   /** O número máximo de itens (imagens, textos, etc.) que podem ser adicionados a um único moodboard. */
   MAX_ITEMS_PER_MOODBOARD: 25,
