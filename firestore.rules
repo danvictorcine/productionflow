@@ -1,27 +1,26 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check ownership
+    // Helper function to check ownership based on a userId field
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Projects can be read/written only by the owner
+    // Projects (Financial)
     match /projects/{projectId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
 
-    // Transactions can be read/written only by the owner
+    // Transactions (Financial)
     match /transactions/{transactionId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
     
-    // User profiles:
-    // - Anyone can create their own profile
-    // - Only the owner can read/update their own profile
+    // User profiles
     match /users/{userId} {
       allow read, update: if isOwner(userId);
       allow create: if request.auth != null;
@@ -39,10 +38,11 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.userId);
     }
     
-    // Public Shooting Days can be read by anyone, but only written by authenticated users who own the data
-    match /public_shooting_days/{dayId} {
+    // Public Productions for sharing
+    match /public_productions/{productionId} {
       allow read: if true;
-      allow write: if request.auth != null && isOwner(request.resource.data.userId);
+      allow create, update: if isOwner(request.resource.data.userId);
+      allow delete: if false; // Deletion should be handled by app logic on project deletion.
     }
     
     // Creative Projects (Moodboards)
@@ -75,28 +75,29 @@ service cloud.firestore {
        allow create: if isOwner(request.resource.data.userId);
     }
 
-    // Posts can be read by anyone, but only written by authenticated users (admins)
-    match /posts/{postId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    // Posts, Pages, Team Members, and Settings are Admin-only
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Static pages can be read by anyone, but only written by admins
+    match /posts/{postId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /pages/{pageId} {
       allow read: if true;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow write: if isAdmin();
     }
     
-    // Team members for About page
     match /teamMembers/{memberId} {
       allow read: if true;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow write: if isAdmin();
     }
     
-    // Theme settings
-    match /settings/theme {
+    match /settings/{settingId} {
         allow read: if true;
-        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+        allow write: if isAdmin();
     }
   }
 }

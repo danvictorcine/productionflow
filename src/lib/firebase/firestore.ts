@@ -2,6 +2,7 @@
 
 
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -554,36 +555,24 @@ export const deleteShootingDay = async (dayId: string) => {
         throw new Error("Permission denied to delete this shooting day.");
     }
     await deleteDoc(docRef);
-
-    const publicDocRef = doc(db, 'public_shooting_days', dayId);
-    await deleteDoc(publicDocRef).catch(e => console.warn("Could not delete public day, it might not exist.", e));
 };
 
-
-export const createOrUpdatePublicShootingDay = async (day: ShootingDay, production: Production) => {
+export const createOrUpdatePublicProduction = async (production: Production, days: ShootingDay[]) => {
   const userId = getUserId();
-  if (!userId) throw new Error("User ID is missing for public page creation.");
-  if(day.userId !== userId) throw new Error("Permission denied to share this day.");
+  if (!userId || production.userId !== userId) throw new Error("Permission denied to share this production.");
   
+  const { team, ...productionData } = production;
+
   const publicData = {
-    ...day,
-    userId: userId, 
-    productionName: production.name,
-    productionType: production.type,
-    director: production.director,
-    responsibleProducer: production.responsibleProducer || "",
-    producer: production.producer || "",
-    client: production.client || "",
-    // Explicitly convert date back to timestamp for Firestore
-    date: Timestamp.fromDate(day.date),
+    ...productionData,
+    days: days.map(d => ({...d, date: Timestamp.fromDate(d.date)})),
   };
-  const docRef = doc(db, 'public_shooting_days', day.id);
+  const docRef = doc(db, 'public_productions', production.id);
   await setDoc(docRef, publicData, { merge: true });
 };
 
-
-export const getPublicShootingDay = async (dayId: string): Promise<(ShootingDay & { productionName: string }) | null> => {
-    const docRef = doc(db, "public_shooting_days", dayId);
+export const getPublicProduction = async (productionId: string): Promise<(Production & { days: ShootingDay[] }) | null> => {
+    const docRef = doc(db, 'public_productions', productionId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -593,8 +582,12 @@ export const getPublicShootingDay = async (dayId: string): Promise<(ShootingDay 
     return {
         ...data,
         id: docSnap.id,
-        date: (data.date as Timestamp).toDate(),
-    } as (ShootingDay & { productionName: string });
+        createdAt: (data.createdAt as Timestamp).toDate(),
+        days: (data.days || []).map((day: any) => ({
+            ...day,
+            date: (day.date as Timestamp).toDate(),
+        }))
+    } as (Production & { days: ShootingDay[] });
 }
 
 

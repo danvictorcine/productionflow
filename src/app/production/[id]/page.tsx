@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Copy } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Copy, Share2 } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -115,7 +115,7 @@ function ProductionPageDetail() {
   const [isShootingDayDialogOpen, setIsShootingDayDialogOpen] = useState(false);
   const [editingShootingDay, setEditingShootingDay] = useState<ProcessedShootingDay | null>(null);
   const [dayToDelete, setDayToDelete] = useState<ProcessedShootingDay | null>(null);
-  const [dayToShare, setDayToShare] = useState<ProcessedShootingDay | null>(null);
+  const [shareProductionLink, setShareProductionLink] = useState<string | null>(null);
   
   const fetchAndUpdateWeather = useCallback(async (day: ShootingDay) => {
     if (!day.latitude || !day.longitude) return;
@@ -267,24 +267,23 @@ function ProductionPageDetail() {
     };
     
     try {
-      let dayId = editingShootingDay?.id;
       if (editingShootingDay) {
         await firestoreApi.updateShootingDay(editingShootingDay.id, sanitizedData);
         toast({ title: 'Ordem do Dia atualizada!' });
       } else {
-        dayId = await firestoreApi.addShootingDay(productionId, sanitizedData);
+        await firestoreApi.addShootingDay(productionId, sanitizedData);
         toast({ title: 'Ordem do Dia criada!' });
       }
       
-      if(dayId && production && user) {
-         const publicDayExists = await firestoreApi.getPublicShootingDay(dayId);
-         if (publicDayExists) {
-             const fullDayData = { id: dayId, productionId, userId: user.uid, ...sanitizedData };
-             await firestoreApi.createOrUpdatePublicShootingDay(fullDayData, production);
-         }
-      }
-
       await fetchProductionData();
+      
+      // After fetching new data, check if a public page needs updating
+      const publicProduction = await firestoreApi.getPublicProduction(productionId);
+      if (publicProduction && user && production) {
+          const allDays = await firestoreApi.getShootingDays(productionId);
+          await firestoreApi.createOrUpdatePublicProduction(production, allDays);
+      }
+      
       setIsShootingDayDialogOpen(false);
       setEditingShootingDay(null);
     } catch (error) {
@@ -315,13 +314,12 @@ function ProductionPageDetail() {
     }
   };
   
-  const handleShareDay = async (day: ProcessedShootingDay) => {
+  const handleShareProduction = async () => {
     if (!production || !user) return;
     try {
-      const dayDataWithUser = { ...day, userId: user.uid };
-      await firestoreApi.createOrUpdatePublicShootingDay(dayDataWithUser, production);
-      setDayToShare(day);
-      toast({ title: "Link de compartilhamento criado!", description: "A página agora está pública e será atualizada automaticamente." });
+      await firestoreApi.createOrUpdatePublicProduction(production, shootingDays);
+      setShareProductionLink(`${window.location.origin}/public/production/all/${production.id}`);
+      toast({ title: "Link de compartilhamento criado!", description: "A página pública para toda a produção está ativa." });
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
       toast({
@@ -331,7 +329,6 @@ function ProductionPageDetail() {
       });
     }
   };
-
 
   const createShootingDaySheet = (day: ProcessedShootingDay): XLSX.WorkSheet => {
     const dayInfo = [
@@ -570,6 +567,10 @@ function ProductionPageDetail() {
           <h1 className="text-lg md:text-xl font-bold text-primary truncate">{production.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <Button onClick={handleShareProduction} variant="outline" size="sm">
+            <Share2 className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Compartilhar</span>
+          </Button>
           <Button onClick={() => setIsProductionDialogOpen(true)} variant="outline" size="sm">
             <Edit className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Editar Produção</span>
@@ -578,19 +579,6 @@ function ProductionPageDetail() {
             <PlusCircle className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Criar Ordem do Dia</span>
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" disabled={isExporting} aria-label="Exportar">
-                {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExportToExcel} disabled={isExporting}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                <span>Exportar para Excel (.xlsx)</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
           <UserNav />
         </div>
       </header>
@@ -682,7 +670,6 @@ function ProductionPageDetail() {
                     isFetchingWeather={isFetchingWeather[day.id] ?? false}
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
-                    onShare={() => handleShareDay(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
                     onExportPdf={() => handleExportDayToPdf(day)}
                     onUpdateNotes={handleUpdateNotes}
@@ -729,21 +716,23 @@ function ProductionPageDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={!!dayToShare} onOpenChange={(open) => !open && setDayToShare(null)}>
+       <Dialog open={!!shareProductionLink} onOpenChange={(open) => !open && setShareProductionLink(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Compartilhar Ordem do Dia</DialogTitle>
+            <DialogTitle>Compartilhar Produção</DialogTitle>
             <DialogDescription>
-              Qualquer pessoa com este link poderá ver a Ordem do Dia. As atualizações feitas no projeto serão refletidas publicamente.
+              Qualquer pessoa com este link poderá ver todas as Ordens do Dia desta produção. As atualizações feitas serão refletidas publicamente.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="share-link">Link Público</Label>
             <div className="flex gap-2">
-                <Input id="share-link" value={`${window.location.origin}/public/production/${dayToShare?.id}`} readOnly />
+                <Input id="share-link" value={shareProductionLink || ''} readOnly />
                 <Button size="icon" onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/public/production/${dayToShare?.id}`);
-                    toast({ title: "Link copiado!" });
+                    if (shareProductionLink) {
+                        navigator.clipboard.writeText(shareProductionLink);
+                        toast({ title: "Link copiado!" });
+                    }
                 }}>
                     <Copy className="h-4 w-4" />
                 </Button>
