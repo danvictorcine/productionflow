@@ -154,11 +154,33 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 };
 
 const ShootingDayCardContent = forwardRef<HTMLDivElement, Omit<ShootingDayCardProps, 'production'>>(({ day, isFetchingWeather, onEdit, onDelete, onExportExcel, onUpdateNotes, isExporting, isPublicView = false }, ref) => {
-    const [isClient, setIsClient] = useState(false);
+    const [remainingDaylight, setRemainingDaylight] = useState<string | null>(null);
   
     useEffect(() => {
-        setIsClient(true);
-    }, []);
+        if (!day.weather || !day.weather.sunset || !isToday(parseISO(day.weather.date))) {
+          setRemainingDaylight(null);
+          return;
+        }
+
+        const calculate = () => {
+          const now = new Date();
+          const sunsetTime = new Date(day.weather.sunset);
+
+          if (now > sunsetTime) {
+            setRemainingDaylight("Finalizado");
+          } else {
+            const remainingMs = sunsetTime.getTime() - now.getTime();
+            const hours = Math.floor(remainingMs / 3600000);
+            const minutes = Math.floor((remainingMs % 3600000) / 60000);
+            setRemainingDaylight(`${hours}h ${minutes}m`);
+          }
+        };
+        
+        calculate();
+        const intervalId = setInterval(calculate, 60000);
+        return () => clearInterval(intervalId);
+
+    }, [day.weather]);
 
     const totalDuration = calculateDuration(day.startTime, day.endTime);
     const topGridClass = "grid grid-cols-1 md:grid-cols-3 gap-6";
@@ -197,7 +219,7 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, Omit<ShootingDayCardPr
                                 Horários da Diária
                             </CardTitle>
                         </CardHeader>
-                        {isClient && day.startTime && day.endTime ? (
+                        {day.startTime && day.endTime ? (
                             <div className="space-y-2">
                                 <p className="text-muted-foreground text-lg">
                                     <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
