@@ -489,15 +489,16 @@ export const deleteProductionAndDays = async (productionId: string) => {
 
 // === Shooting Day Functions ===
 
-export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'productionId' | 'userId'>) => {
+export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'productionId' | 'userId'>): Promise<string> => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-  await addDoc(collection(db, 'shooting_days'), {
+  const docRef = await addDoc(collection(db, 'shooting_days'), {
     ...data,
     userId,
     productionId,
     date: Timestamp.fromDate(data.date),
   });
+  return docRef.id;
 };
 
 export const getShootingDays = async (productionId: string): Promise<ShootingDay[]> => {
@@ -538,7 +539,44 @@ export const updateShootingDay = async (dayId: string, data: Partial<Omit<Shooti
 export const deleteShootingDay = async (dayId: string) => {
   const docRef = doc(db, 'shooting_days', dayId);
   await deleteDoc(docRef);
+  
+  // Also delete the public version if it exists
+  const publicDocRef = doc(db, 'public_shooting_days', dayId);
+  await deleteDoc(publicDocRef);
 };
+
+
+export const createOrUpdatePublicShootingDay = async (day: ShootingDay, production: Production) => {
+  // Combine all necessary data into one object for the public document
+  const publicData = {
+    ...day,
+    // Add production-level info to avoid extra reads on the public page
+    productionName: production.name,
+    productionType: production.type,
+    director: production.director,
+    responsibleProducer: production.responsibleProducer,
+    producer: production.producer,
+    client: production.client,
+  };
+  const docRef = doc(db, 'public_shooting_days', day.id);
+  await setDoc(docRef, publicData, { merge: true });
+};
+
+export const getPublicShootingDay = async (dayId: string): Promise<(ShootingDay & { productionName: string }) | null> => {
+    const docRef = doc(db, "public_shooting_days", dayId);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+        return null;
+    }
+    const data = docSnap.data();
+    return {
+        ...data,
+        id: docSnap.id,
+        date: (data.date as Timestamp).toDate(),
+    } as (ShootingDay & { productionName: string });
+}
+
 
 // === Creative Project (Moodboard) Functions ===
 export const addCreativeProject = async (data: Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>) => {
@@ -1234,4 +1272,21 @@ export const saveThemeSettings = async (theme: ThemeSettings) => {
 export const deleteThemeSettings = async () => {
     const docRef = doc(db, 'settings', 'theme');
     await deleteDoc(docRef);
+}
+
+
+// Beta Limits
+export const getBetaLimits = async (): Promise<BetaLimits> => {
+    const docRef = doc(db, 'settings', 'betaLimits');
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        return docSnap.data() as BetaLimits;
+    }
+    return DEFAULT_BETA_LIMITS; // Return defaults if not set in Firestore
+}
+
+export const saveBetaLimits = async (limits: BetaLimits) => {
+    const docRef = doc(db, 'settings', 'betaLimits');
+    await setDoc(docRef, limits, { merge: true });
 }
