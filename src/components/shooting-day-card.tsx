@@ -358,7 +358,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 <DropdownMenuSeparator />
                                  <DropdownMenuItem onClick={onShare} disabled={isExporting}>
                                     <Share2 className="mr-2 h-4 w-4" />
-                                    Compartilhar Link do Dia
+                                    Compartilhar Link
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
                                     <FileSpreadsheet className="mr-2 h-4 w-4" />
