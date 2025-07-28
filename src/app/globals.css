@@ -121,6 +121,12 @@
   border-bottom-right-radius: var(--radius);
 }
 
+/* Fix for Quill toolbar spacing */
+.ql-toolbar.ql-snow .ql-formats {
+    margin-right: 8px !important;
+}
+
+
 /* Styling for Quill in Moodboard */
 .note-editor-container .ql-container.ql-snow {
     border: none;
@@ -146,13 +152,17 @@
     border-right: none;
     border-top: none;
     border-bottom: 1px solid hsl(var(--border));
-    display: none; /* Hidden by default */
 }
 
 /* Show toolbar only when the container has data-selected="true" */
-.note-editor-container[data-selected="true"] .ql-toolbar.ql-snow {
-    display: block;
+.note-editor-container[data-selected="false"] .ql-toolbar.ql-snow {
+    display: none;
 }
+.note-editor-container[data-selected="true"] .ql-editor {
+    /* Make space for the toolbar when selected */
+    padding-top: 4px; 
+}
+
 
 .note-editor-container .ql-snow .ql-picker-label {
     font-size: 12px;
