@@ -138,6 +138,7 @@
     padding: 12px;
     flex-grow: 1;
     overflow-y: auto;
+    font-size: 1rem; /* Ensure content font size is consistent */
 }
 .note-editor-container .ql-editor.ql-blank::before {
     left: 12px;
@@ -154,8 +155,8 @@
     border-bottom: 1px solid hsl(var(--border));
 }
 
-/* Show toolbar only when the container has data-selected="true" */
-.note-editor-container[data-selected="false"] .ql-toolbar.ql-snow {
+/* Hide toolbar when the container is not selected */
+.note-editor-container:not([data-selected="true"]) .ql-toolbar.ql-snow {
     display: none;
 }
 .note-editor-container[data-selected="true"] .ql-editor {
@@ -163,14 +164,14 @@
     padding-top: 4px; 
 }
 
+/* Specificity fix for toolbar header picker */
+.note-editor-container .ql-snow .ql-picker.ql-header {
+    width: 90px; /* Adjust width to fit content */
+}
 
 .note-editor-container .ql-snow .ql-picker-label {
-    font-size: 12px;
+    padding-left: 4px; /* Add padding to prevent text overlap */
 }
-.note-editor-container .ql-snow .ql-picker.ql-header .ql-picker-label {
-    width: 60px;
-}
-
 
 /* Responsive iframe for video embeds */
 .ql-video {
