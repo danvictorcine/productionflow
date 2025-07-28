@@ -3,89 +3,112 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check ownership
+  
+    // Funções de Helper
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
     
-    // Checks if the user has the 'isAdmin' flag in their profile
     function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Users can read their own profile. Admins can read any profile.
+    // Regras de Usuários
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow write: if isOwner(userId);
-    }
-    
-    // Public content (Pages, Blog Posts, Team Members, Theme) is readable by anyone
-    // Only admins can write/edit public content
-    match /pages/{pageId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      // Qualquer usuário autenticado pode criar seu próprio perfil.
+      allow create: if request.auth != null;
+      // O proprietário do perfil ou um admin podem ler e atualizar. Ninguém pode deletar.
+      allow read, update: if isOwner(userId) || isAdmin();
+      allow delete: if false; 
     }
 
-    match /posts/{postId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /teamMembers/{memberId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /settings/theme {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // User-specific data can only be accessed by the owner
+    // Regras de Projetos (Financeiro)
     match /projects/{projectId} {
-      allow read, write, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if request.auth != null;
+      allow read, update, delete: if isOwner(resource.data.userId);
     }
 
+    // Regras de Transações
     match /transactions/{transactionId} {
-      allow read, write, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if request.auth != null;
+      allow read, update, delete: if isOwner(resource.data.userId);
     }
     
+    // Regras de Produções (Módulo de Ordem do Dia)
     match /productions/{productionId} {
-      allow read, write, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+       allow create: if request.auth != null;
+       allow read, update, delete: if isOwner(resource.data.userId);
     }
-    
+
+    // Regras de Dias de Filmagem (Ordem do Dia)
     match /shooting_days/{dayId} {
-      allow read, write, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if request.auth != null;
+      allow read, update, delete: if isOwner(resource.data.userId);
     }
 
+    // Regras de Publicações do Blog
+    match /posts/{postId} {
+        // Qualquer um pode ler.
+        allow read: if true;
+        // Apenas admins podem criar, atualizar e deletar.
+        allow create, update, delete: if isAdmin();
+    }
+    
+    // Regras de Conteúdo das Páginas
+    match /pages/{pageId} {
+        // Qualquer um pode ler (ex: /about, /contact).
+        allow read: if true;
+        // Apenas admins podem criar e atualizar.
+        allow create, update: if isAdmin();
+    }
+    
+    // Regras de Membros da Equipe (Página Sobre)
+    match /teamMembers/{memberId} {
+        // Qualquer um pode ler.
+        allow read: if true;
+        // Apenas admins podem criar, atualizar e deletar.
+        allow create, update, delete: if isAdmin();
+    }
+
+    // Regras de Configurações (Tema, Limites, etc.)
+    match /settings/{docId} {
+        // Qualquer um pode ler as configurações de tema.
+        allow read: if docId == 'theme';
+        // Apenas admins podem alterar as configurações.
+        allow write: if isAdmin();
+    }
+    
+    // Regras para Moodboards (Creative Projects)
     match /creative_projects/{projectId} {
-      allow read, write, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if request.auth != null;
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+    
+    match /board_items/{itemId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isOwner(resource.data.userId);
     }
 
-    match /board_items/{itemId} {
-      allow read, write, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-    
+    // Regras para Storyboards
     match /storyboards/{storyboardId} {
-      allow read, write, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-    
-    match /storyboard_panels/{panelId} {
-      allow read, write, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if request.auth != null;
+      allow read, update, delete: if isOwner(resource.data.userId);
     }
 
     match /storyboard_scenes/{sceneId} {
-      allow read, write, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if request.auth != null;
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /storyboard_panels/{panelId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+    
+    // Regras para a Coleção Pública de Ordens do Dia
+    match /public_shooting_days/{dayId} {
+        allow read: if true; // Permite leitura pública
+        allow write: if false; // Nega qualquer escrita direta do cliente
     }
   }
 }

@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Image as ImageIcon, Share2, Copy } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -45,6 +45,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
     equipment: ChecklistItem[];
@@ -108,13 +111,13 @@ function ProductionPageDetail() {
   const [dayToExportPng, setDayToExportPng] = useState<ProcessedShootingDay | null>(null);
   const [dayToExportPdf, setDayToExportPdf] = useState<ProcessedShootingDay | null>(null);
 
-
   // Dialog states
   const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
   const [isShootingDayDialogOpen, setIsShootingDayDialogOpen] = useState(false);
   const [editingShootingDay, setEditingShootingDay] = useState<ProcessedShootingDay | null>(null);
   const [dayToDelete, setDayToDelete] = useState<ProcessedShootingDay | null>(null);
-
+  const [dayToShare, setDayToShare] = useState<ProcessedShootingDay | null>(null);
+  
   const fetchAndUpdateWeather = useCallback(async (day: ShootingDay) => {
     if (!day.latitude || !day.longitude) return;
 
@@ -265,13 +268,24 @@ function ProductionPageDetail() {
     };
     
     try {
+      let dayId = editingShootingDay?.id;
       if (editingShootingDay) {
         await firestoreApi.updateShootingDay(editingShootingDay.id, sanitizedData);
         toast({ title: 'Ordem do Dia atualizada!' });
       } else {
-        await firestoreApi.addShootingDay(productionId, sanitizedData);
+        dayId = await firestoreApi.addShootingDay(productionId, sanitizedData);
         toast({ title: 'Ordem do Dia criada!' });
       }
+      
+      // Sync public page if it exists
+      if(dayId && production) {
+         const publicDayExists = await firestoreApi.getPublicShootingDay(dayId);
+         if (publicDayExists) {
+             const fullDayData = { id: dayId, productionId, userId: user!.uid, ...sanitizedData };
+             await firestoreApi.createOrUpdatePublicShootingDay(fullDayData, production);
+         }
+      }
+
       await fetchProductionData();
       setIsShootingDayDialogOpen(false);
       setEditingShootingDay(null);
@@ -302,6 +316,23 @@ function ProductionPageDetail() {
       setDayToDelete(null);
     }
   };
+  
+  const handleShareDay = async (day: ProcessedShootingDay) => {
+    if(!production) return;
+    try {
+        await firestoreApi.createOrUpdatePublicShootingDay(day, production);
+        setDayToShare(day);
+        toast({ title: "Link de compartilhamento criado!", description: "A página agora está pública e será atualizada automaticamente." });
+    } catch (error) {
+        const errorTyped = error as { code?: string; message: string };
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao Compartilhar',
+            description: <CopyableError userMessage="Não foi possível criar a página pública." errorCode={errorTyped.code || errorTyped.message} />,
+        });
+    }
+  };
+
 
   const createShootingDaySheet = (day: ProcessedShootingDay): XLSX.WorkSheet => {
     const dayInfo = [
@@ -698,6 +729,7 @@ function ProductionPageDetail() {
                     isFetchingWeather={isFetchingWeather[day.id] ?? false}
                     onEdit={() => openEditShootingDayDialog(day)}
                     onDelete={() => setDayToDelete(day)}
+                    onShare={() => handleShareDay(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
                     onExportPdf={() => handleExportDayToPdf(day)}
                     onExportPng={() => handleExportDayToPng(day)}
@@ -744,6 +776,29 @@ function ProductionPageDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!dayToShare} onOpenChange={(open) => !open && setDayToShare(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Compartilhar Ordem do Dia</DialogTitle>
+            <DialogDescription>
+              Qualquer pessoa com este link poderá ver a Ordem do Dia. As atualizações feitas no projeto serão refletidas publicamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="share-link">Link Público</Label>
+            <div className="flex gap-2">
+                <Input id="share-link" value={`${window.location.origin}/public/production/${dayToShare?.id}`} readOnly />
+                <Button size="icon" onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/public/production/${dayToShare?.id}`);
+                    toast({ title: "Link copiado!" });
+                }}>
+                    <Copy className="h-4 w-4" />
+                </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
