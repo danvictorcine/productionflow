@@ -78,24 +78,17 @@ const getSpotifyEmbedUrl = (url: string) => {
     return null;
 }
 
-const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, getQuillInstance, onSelect }: { 
+const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onSelect, getQuillEditor }: { 
     item: BoardItem; 
     onDelete: (id: string) => void; 
     onUpdate: (id: string, data: Partial<BoardItem>) => void;
     isSelected: boolean;
-    getQuillInstance?: (id: string, quill: any) => void;
     onSelect: (itemId: string | null) => void;
+    getQuillEditor: (editor: any | null) => void;
 }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const debounceTimer = useRef<NodeJS.Timeout>();
     const quillRef = useRef<any>(null);
-
-    useEffect(() => {
-        if (item.type === 'note' && quillRef.current && getQuillInstance) {
-            getQuillInstance(item.id, quillRef.current.getEditor());
-        }
-    }, [item.id, item.type, getQuillInstance]);
-
 
     const handleChecklistUpdate = (updatedItems: ChecklistItem[]) => {
         onUpdate(item.id, { items: updatedItems });
@@ -115,6 +108,14 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, get
         }, 500);
     };
     
+    useEffect(() => {
+        if (isSelected && item.type === 'note') {
+            getQuillEditor(quillRef.current?.getEditor());
+        } else {
+            getQuillEditor(null);
+        }
+    }, [isSelected, item.type, getQuillEditor]);
+    
     const renderContent = () => {
         switch (item.type) {
             case 'note':
@@ -125,7 +126,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, get
                             theme="snow"
                             value={item.content}
                             onChange={(content) => onUpdate(item.id, { content })}
-                            modules={{ toolbar: `#note-toolbar-${item.id}` }} // Point to a unique non-existent toolbar
+                            modules={{ toolbar: false }}
                             className="h-full w-full"
                         />
                     </div>
@@ -314,7 +315,8 @@ function CreativeProjectPageDetail() {
   const [isUploading, setIsUploading] = useState(false);
   const isMobile = useIsMobile();
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const quillInstances = useRef<Map<string, any>>(new Map());
+  const [quillEditor, setQuillEditor] = useState<any | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Dialog states
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -338,10 +340,10 @@ function CreativeProjectPageDetail() {
     return item?.type === 'note';
   }, [selectedItemId, items]);
   
-  const getQuillInstance = useCallback((id: string, quill: any) => {
-    if (quill && !quillInstances.current.has(id)) {
-        quillInstances.current.set(id, quill);
-    }
+  useEffect(() => setIsMounted(true), []);
+
+  const getQuillEditor = useCallback((editor: any | null) => {
+    setQuillEditor(editor);
   }, []);
 
   const setInitialView = useCallback(() => {
@@ -895,9 +897,10 @@ function CreativeProjectPageDetail() {
                     </Button>
                 </div>
             </div>
-            {selectedItemIsNote && (
+             <div id="note-toolbar-container" className={cn("transition-all duration-200", selectedItemIsNote ? "h-auto opacity-100" : "h-0 opacity-0 overflow-hidden")}>
+                {isMounted && <QuillEditor modules={{ toolbar: '#note-toolbar' }} style={{ display: 'none' }} />}
                 <div id="note-toolbar" className="px-4 py-1 border-b bg-background z-20"></div>
-            )}
+            </div>
         </div>
         <div 
             ref={mainContainerRef}
@@ -940,7 +943,7 @@ function CreativeProjectPageDetail() {
                         onUpdate={handleItemUpdate}
                         isSelected={selectedItemId === item.id}
                         onSelect={setSelectedItemId}
-                        getQuillInstance={getQuillInstance}
+                        getQuillEditor={getQuillEditor}
                     />
                     </Rnd>
                 ))}
@@ -996,3 +999,4 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
+
