@@ -277,7 +277,6 @@ function ProductionPageDetail() {
         toast({ title: 'Ordem do Dia criada!' });
       }
       
-      // Sync public page if it exists
       if(dayId && production && user) {
          const publicDayExists = await firestoreApi.getPublicShootingDay(dayId);
          if (publicDayExists) {

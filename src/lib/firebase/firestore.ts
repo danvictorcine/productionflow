@@ -1,5 +1,6 @@
 
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -377,11 +378,10 @@ export const getProductions = async (): Promise<Production[]> => {
 
 export const getProduction = async (productionId: string): Promise<Production | null> => {
   const userId = getUserId();
-  if (!userId) return null;
   const productionRef = doc(db, 'productions', productionId);
   const docSnap = await getDoc(productionRef);
 
-  if (!docSnap.exists() || docSnap.data().userId !== userId) {
+  if (!docSnap.exists() || (userId && docSnap.data().userId !== userId)) {
     return null;
   }
   const data = docSnap.data();
@@ -396,67 +396,39 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
 
-  const batch = writeBatch(db);
   const productionRef = doc(db, 'productions', productionId);
-
-  // Update the main production document
+  const productionDoc = await getDoc(productionRef);
+  if (!productionDoc.exists() || productionDoc.data().userId !== userId) {
+    throw new Error("Permission denied to update this production.");
+  }
+  
+  const batch = writeBatch(db);
   batch.update(productionRef, data);
 
-  // If the team data was updated, sync it with all associated shooting days
   if (data.team) {
     const updatedTeamMap = new Map(data.team.map(member => [member.id, member]));
-    
-    const daysQuery = query(
-      collection(db, 'shooting_days'),
-      where('productionId', '==', productionId),
-      where('userId', '==', userId)
-    );
+    const daysQuery = query(collection(db, 'shooting_days'), where('productionId', '==', productionId), where('userId', '==', userId));
     const daysSnapshot = await getDocs(daysQuery);
 
     daysSnapshot.forEach(dayDoc => {
       const dayData = dayDoc.data() as ShootingDay;
-      
       let dayNeedsUpdate = false;
-      let newPresentTeam = dayData.presentTeam || [];
-      if (Array.isArray(newPresentTeam)) {
-          newPresentTeam = newPresentTeam.map(member => {
-            if (updatedTeamMap.has(member.id)) {
-                const updatedMember = updatedTeamMap.get(member.id)!;
-                if (JSON.stringify(member) !== JSON.stringify(updatedMember)) {
-                    dayNeedsUpdate = true;
-                    return updatedMember;
-                }
-            }
-            return member;
-          }).filter(member => updatedTeamMap.has(member.id)); // Remove deleted members
-      }
-
-      // Sync scenes.presentInScene
-      let newScenes = dayData.scenes || [];
-      if(Array.isArray(newScenes)) {
-        newScenes = newScenes.map(scene => {
-            let sceneNeedsUpdate = false;
-            const newPresentInScene = (scene.presentInScene || []).map(member => {
-            if (updatedTeamMap.has(member.id)) {
-                const updatedMember = updatedTeamMap.get(member.id)!;
-                if (JSON.stringify(member) !== JSON.stringify(updatedMember)) {
-                    sceneNeedsUpdate = true;
-                    return updatedMember;
-                }
-            }
-            return member;
-            }).filter(member => updatedTeamMap.has(member.id)); // Remove deleted members
-
-            if(sceneNeedsUpdate) {
-                dayNeedsUpdate = true;
-                return { ...scene, presentInScene: newPresentInScene };
-            }
-            return scene;
-        });
+      const updatedPresentTeam = (dayData.presentTeam || []).map(member => updatedTeamMap.get(member.id)).filter(Boolean) as TeamMember[];
+      if (JSON.stringify(updatedPresentTeam) !== JSON.stringify(dayData.presentTeam || [])) {
+        dayNeedsUpdate = true;
       }
       
+      const updatedScenes = (dayData.scenes || []).map(scene => {
+          const updatedPresentInScene = (scene.presentInScene || []).map(member => updatedTeamMap.get(member.id)).filter(Boolean) as TeamMember[];
+          if (JSON.stringify(updatedPresentInScene) !== JSON.stringify(scene.presentInScene || [])) {
+              dayNeedsUpdate = true;
+              return {...scene, presentInScene: updatedPresentInScene};
+          }
+          return scene;
+      });
+
       if (dayNeedsUpdate) {
-        batch.update(dayDoc.ref, { presentTeam: newPresentTeam, scenes: newScenes });
+        batch.update(dayDoc.ref, { presentTeam: updatedPresentTeam, scenes: updatedScenes });
       }
     });
   }
@@ -468,16 +440,17 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
 export const deleteProductionAndDays = async (productionId: string) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-  const batch = writeBatch(db);
 
   const productionRef = doc(db, 'productions', productionId);
+  const productionDoc = await getDoc(productionRef);
+  if (!productionDoc.exists() || productionDoc.data().userId !== userId) {
+    throw new Error("Permission denied to delete this production.");
+  }
+  
+  const batch = writeBatch(db);
   batch.delete(productionRef);
 
-  const daysQuery = query(
-    collection(db, 'shooting_days'),
-    where('productionId', '==', productionId),
-    where('userId', '==', userId)
-  );
+  const daysQuery = query(collection(db, 'shooting_days'), where('productionId', '==', productionId), where('userId', '==', userId));
   const daysSnapshot = await getDocs(daysQuery);
   daysSnapshot.forEach(doc => batch.delete(doc.ref));
 
@@ -521,7 +494,15 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
 };
 
 export const updateShootingDay = async (dayId: string, data: Partial<Omit<ShootingDay, 'id' | 'userId' | 'productionId'>>) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const docRef = doc(db, 'shooting_days', dayId);
+  
+  const dayDoc = await getDoc(docRef);
+  if (!dayDoc.exists() || dayDoc.data().userId !== userId) {
+      throw new Error("Permission denied to update this shooting day.");
+  }
+
   const dataToUpdate: Record<string, any> = { ...data };
    if (data.date) {
         dataToUpdate.date = Timestamp.fromDate(data.date);
@@ -535,12 +516,18 @@ export const updateShootingDay = async (dayId: string, data: Partial<Omit<Shooti
 };
 
 export const deleteShootingDay = async (dayId: string) => {
-  const docRef = doc(db, 'shooting_days', dayId);
-  await deleteDoc(docRef);
-  
-  // Also delete the public version if it exists
-  const publicDocRef = doc(db, 'public_shooting_days', dayId);
-  await deleteDoc(publicDocRef);
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
+
+    const docRef = doc(db, 'shooting_days', dayId);
+    const dayDoc = await getDoc(docRef);
+    if (!dayDoc.exists() || dayDoc.data().userId !== userId) {
+        throw new Error("Permission denied to delete this shooting day.");
+    }
+    await deleteDoc(docRef);
+
+    const publicDocRef = doc(db, 'public_shooting_days', dayId);
+    await deleteDoc(publicDocRef).catch(e => console.warn("Could not delete public day, it might not exist.", e));
 };
 
 
@@ -554,9 +541,11 @@ export const createOrUpdatePublicShootingDay = async (dayWithUserId: ShootingDay
     productionName: production.name,
     productionType: production.type,
     director: production.director,
-    responsibleProducer: production.responsibleProducer,
-    producer: production.producer,
-    client: production.client,
+    responsibleProducer: production.responsibleProducer || "",
+    producer: production.producer || "",
+    client: production.client || "",
+    // Explicitly convert date back to timestamp for Firestore
+    date: Timestamp.fromDate(day.date),
   };
   const docRef = doc(db, 'public_shooting_days', day.id);
   await setDoc(docRef, publicData, { merge: true });

@@ -3,82 +3,75 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
     // User data is private
     match /users/{userId} {
-      allow read, update, delete: if request.auth.uid == userId;
-      allow create: if request.auth.uid != null;
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
     }
 
-    // Projects and their transactions are private to the user
+    // Projects and their transactions are private
     match /projects/{projectId} {
-      allow read, update, delete: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid != null;
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     match /transactions/{transactionId} {
-      allow read, create, update, delete: if request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-
-    // Production (call sheet) data is private to the user
+    
+    // Productions (Call Sheet Parent)
     match /productions/{productionId} {
-        allow read, update, delete: if request.auth.uid == resource.data.userId;
-        allow create: if request.auth.uid != null;
-    }
-    match /shooting_days/{dayId} {
-        allow read, create, update, delete: if request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    // Creative (moodboard) data is private to the user
+    // Shooting Days (Call Sheet Child)
+    match /shooting_days/{dayId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Public, read-only version of a shooting day
+    match /public_shooting_days/{dayId} {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow delete: if false;
+    }
+
+    // Creative Projects (Moodboards)
     match /creative_projects/{projectId} {
-        allow read, update, delete: if request.auth.uid == resource.data.userId;
-        allow create: if request.auth.uid != null;
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     match /board_items/{itemId} {
-        allow read, create, update, delete: if request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
-    // Storyboard data is private to the user
+
+    // Storyboards
     match /storyboards/{storyboardId} {
-        allow read, update, delete: if request.auth.uid == resource.data.userId;
-        allow create: if request.auth.uid != null;
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     match /storyboard_scenes/{sceneId} {
-        allow read, create, update, delete: if request.auth.uid == resource.data.userId;
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     match /storyboard_panels/{panelId} {
-        allow read, create, update, delete: if request.auth.uid == resource.data.userId;
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    // Public pages are readable by anyone, but writable only by authenticated users (admins) for now.
-    match /pages/{pageId} {
-        allow read: if true;
-        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    // Team members are readable by anyone, but writable only by admins
-    match /teamMembers/{memberId} {
-      allow read: if true;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    // Settings are only writable by admins, not readable by clients.
-    match /settings/{settingId} {
-        allow read: if false;
-        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    // Blog posts are readable by anyone, but writable only by the post author or an admin
+    // Publicly readable content
     match /posts/{postId} {
-        allow read: if true;
-        allow create: if request.auth != null;
-        allow update, delete: if request.auth.uid == resource.data.authorId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow read: if true;
+      allow create, update, delete: if request.auth.token.isAdmin == true;
     }
-    
-    // Public call sheets are readable by anyone, but only writable by the owner.
-    match /public_shooting_days/{dayId} {
-        allow read: if true;
-        allow create, update: if request.auth.uid == request.resource.data.userId;
-        allow delete: if request.auth.uid == resource.data.userId;
+    match /pages/{pageId} {
+       allow read: if true;
+       allow create, update, delete: if request.auth.token.isAdmin == true;
+    }
+    match /teamMembers/{memberId} {
+       allow read: if true;
+       allow create, update, delete: if request.auth.token.isAdmin == true;
+    }
+     match /settings/theme {
+      allow read: if true;
+      allow write: if request.auth.token.isAdmin == true;
     }
   }
 }
