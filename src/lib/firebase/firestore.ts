@@ -356,11 +356,8 @@ export const importData = async (data: { projects: Project[], transactions: Tran
 export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-  await addDoc(collection(db, 'productions'), {
-    ...data,
-    userId,
-    createdAt: Timestamp.now(),
-  });
+  const dataWithUser = { ...data, userId, createdAt: Timestamp.now() };
+  await addDoc(collection(db, 'productions'), dataWithUser);
 };
 
 export const getProductions = async (): Promise<Production[]> => {
@@ -492,12 +489,13 @@ export const deleteProductionAndDays = async (productionId: string) => {
 export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'productionId' | 'userId'>): Promise<string> => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-  const docRef = await addDoc(collection(db, 'shooting_days'), {
+  const dataWithUser = {
     ...data,
     userId,
     productionId,
     date: Timestamp.fromDate(data.date),
-  });
+  };
+  const docRef = await addDoc(collection(db, 'shooting_days'), dataWithUser);
   return docRef.id;
 };
 
@@ -548,11 +546,11 @@ export const deleteShootingDay = async (dayId: string) => {
 
 export const createOrUpdatePublicShootingDay = async (dayWithUserId: ShootingDay, production: Production) => {
   const { userId, ...day } = dayWithUserId;
-  if (!userId) throw new Error("Usuário não autenticado para criar página pública.");
+  if (!userId) throw new Error("User ID is missing for public page creation.");
   
   const publicData = {
     ...day,
-    userId, // Ensure userId is part of the data being written
+    userId: userId, 
     productionName: production.name,
     productionType: production.type,
     director: production.director,
@@ -647,7 +645,7 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
   
   for (const itemDoc of itemsSnapshot.docs) {
     const itemData = itemDoc.data();
-    if ((itemData.type === 'image' || itemData.type === 'pdf') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
+    if ((itemData.type === 'image' || itemData.type === 'pdf' || itemData.type === 'storyboard') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
       await deleteImageFromUrl(itemData.content);
     }
     batch.delete(itemDoc.ref);
@@ -711,7 +709,7 @@ export const deleteBoardItem = async (itemId: string) => {
 
   if (itemSnap.exists()) {
     const itemData = itemSnap.data();
-    if ((itemData.type === 'image' || itemData.type === 'pdf') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
+    if ((itemData.type === 'image' || itemData.type === 'pdf' || itemData.type === 'storyboard') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
       await deleteImageFromUrl(itemData.content);
     }
   }
@@ -1292,4 +1290,3 @@ export const saveBetaLimits = async (limits: BetaLimits) => {
     const docRef = doc(db, 'settings', 'betaLimits');
     await setDoc(docRef, limits, { merge: true });
 }
-
