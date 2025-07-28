@@ -312,7 +312,7 @@ function HomePage() {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro em /page.tsx (handleConfirmDelete)',
+        title: 'Erro ao Excluir',
         description: (
           <CopyableError
             userMessage="Não foi possível excluir o item."

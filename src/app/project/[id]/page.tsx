@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -66,7 +67,7 @@ function ProjectPageDetail() {
                 const errorTyped = error as { code?: string; message: string };
                 toast({ 
                     variant: "destructive", 
-                    title: "Erro em /project/[id]/page.tsx (fetchData)", 
+                    title: "Erro ao carregar dados", 
                     description: <CopyableError userMessage="Não foi possível carregar os dados do projeto." errorCode={errorTyped.code || errorTyped.message} />,
                 });
                 router.push('/');
@@ -81,28 +82,14 @@ function ProjectPageDetail() {
     const handleUpdateProject = async (updatedProjectData: Partial<Project>) => {
         if (!project) return;
         try {
-            const batch = writeBatch(db);
-
-            const projectRef = doc(db, 'projects', project.id);
-            const dataToUpdate: Record<string, any> = { ...updatedProjectData };
-             if (updatedProjectData.installments) {
-                dataToUpdate.installments = updatedProjectData.installments.map(inst => ({
-                    ...inst,
-                    date: new Date(inst.date),
-                }));
-            }
-            batch.update(projectRef, dataToUpdate);
-            
-            await batch.commit();
-            
-            await fetchProject(); // Re-fetch to get latest data
-            await fetchTransactions(); // Re-fetch transactions to update UI
+            await api.updateProject(project.id, updatedProjectData);
+            await fetchProject();
             toast({ title: "Projeto atualizado!" });
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
-                title: 'Erro em /project/[id]/page.tsx (handleUpdateProject)', 
+                title: 'Erro ao atualizar projeto', 
                 description: <CopyableError userMessage="Não foi possível atualizar o projeto." errorCode={errorTyped.code || errorTyped.message} /> 
             });
         }
@@ -122,7 +109,7 @@ function ProjectPageDetail() {
             const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
-                title: 'Erro em /project/[id]/page.tsx (handleAddTransaction)', 
+                title: 'Erro ao adicionar despesa', 
                 description: <CopyableError userMessage="Não foi possível adicionar a despesa." errorCode={errorTyped.code || errorTyped.message} /> 
             });
         }
@@ -141,7 +128,7 @@ function ProjectPageDetail() {
              const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
-                title: 'Erro em /project/[id]/page.tsx (handleAddTransactionsBatch)', 
+                title: 'Erro ao importar', 
                 description: <CopyableError userMessage="Não foi possível importar as transações." errorCode={errorTyped.code || errorTyped.message} /> 
             });
         }
@@ -162,7 +149,7 @@ function ProjectPageDetail() {
             const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
-                title: 'Erro em /project/[id]/page.tsx (handleUpdateTransaction)', 
+                title: 'Erro ao atualizar despesa', 
                 description: <CopyableError userMessage="Não foi possível atualizar a despesa." errorCode={errorTyped.code || errorTyped.message} /> 
             });
         }
@@ -177,7 +164,7 @@ function ProjectPageDetail() {
             const errorTyped = error as { code?: string; message: string };
             toast({ 
                 variant: 'destructive', 
-                title: 'Erro em /project/[id]/page.tsx (handleDeleteTransaction)', 
+                title: 'Erro ao excluir despesa', 
                 description: <CopyableError userMessage="Não foi possível excluir a despesa." errorCode={errorTyped.code || errorTyped.message} /> 
             });
         }

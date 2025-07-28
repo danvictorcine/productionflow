@@ -414,7 +414,7 @@ function CreativeProjectPageDetail() {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro em /creative/[id]/page.tsx (fetchProjectData)',
+        title: 'Erro ao carregar',
         description: <CopyableError userMessage="Não foi possível carregar os dados do moodboard." errorCode={errorTyped.code || errorTyped.message} />,
       });
     } finally {
@@ -477,7 +477,7 @@ function CreativeProjectPageDetail() {
        const errorTyped = error as { code?: string; message: string };
         toast({
             variant: 'destructive',
-            title: 'Erro em /creative/[id]/page.tsx (handleProjectSubmit)',
+            title: 'Erro ao atualizar',
             description: <CopyableError userMessage="Não foi possível atualizar o moodboard." errorCode={errorTyped.code || errorTyped.message} />,
         });
     }
@@ -565,7 +565,7 @@ function CreativeProjectPageDetail() {
       const errorTyped = error as { code?: string; message: string };
       toast({ 
           variant: 'destructive', 
-          title: `Erro em /creative/[id]/page.tsx (handleAddItem, tipo: ${type})`,
+          title: 'Erro ao adicionar item',
           description: <CopyableError userMessage="Não foi possível adicionar o item ao quadro." errorCode={errorTyped.code || errorTyped.message} />,
       });
     }
@@ -635,7 +635,7 @@ function CreativeProjectPageDetail() {
        const errorTyped = error as { code?: string; message: string };
        toast({ 
           variant: 'destructive', 
-          title: 'Erro em /creative/[id]/page.tsx (handleImageUpload)',
+          title: 'Erro de Upload',
           description: <CopyableError userMessage="Não foi possível fazer o upload da imagem." errorCode={errorTyped.code || errorTyped.message} />
        });
     } finally {
@@ -679,7 +679,7 @@ function CreativeProjectPageDetail() {
        const errorTyped = error as { code?: string; message: string };
        toast({ 
           variant: 'destructive', 
-          title: 'Erro em /creative/[id]/page.tsx (handlePdfUpload)',
+          title: 'Erro de Upload',
           description: <CopyableError userMessage="Não foi possível fazer o upload do PDF." errorCode={errorTyped.code || errorTyped.message} />
        });
     } finally {
@@ -697,7 +697,7 @@ function CreativeProjectPageDetail() {
       const errorTyped = error as { code?: string; message: string };
        toast({ 
           variant: 'destructive', 
-          title: 'Erro em /creative/[id]/page.tsx (handleDeleteItem)',
+          title: 'Erro ao remover',
           description: <CopyableError userMessage="Não foi possível remover o item." errorCode={errorTyped.code || errorTyped.message} />
        });
     }

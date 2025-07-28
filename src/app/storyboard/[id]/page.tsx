@@ -231,7 +231,7 @@ function StoryboardPageDetail() {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro em /storyboard/[id]/page.tsx (fetchData)',
+                title: 'Erro ao carregar',
                 description: <CopyableError userMessage="Não foi possível carregar os dados do storyboard." errorCode={errorTyped.code || errorTyped.message} />,
             });
         } finally {
@@ -252,7 +252,7 @@ function StoryboardPageDetail() {
             const errorTyped = error as { code?: string; message: string };
             toast({
                 variant: 'destructive',
-                title: 'Erro em /storyboard/[id]/page.tsx (handleStoryboardSubmit)',
+                title: 'Erro ao atualizar',
                 description: <CopyableError userMessage="Não foi possível atualizar o storyboard." errorCode={errorTyped.code || errorTyped.message} />,
             });
         }
@@ -334,7 +334,7 @@ function StoryboardPageDetail() {
 
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
-            toast({ variant: 'destructive', title: 'Erro em /storyboard/[id]/page.tsx (handleImageUpload)', description: <CopyableError userMessage="Não foi possível enviar as imagens." errorCode={errorTyped.code || errorTyped.message} /> });
+            toast({ variant: 'destructive', title: 'Erro de Upload', description: <CopyableError userMessage="Não foi possível enviar as imagens." errorCode={errorTyped.code || errorTyped.message} /> });
         } finally {
             setIsUploading(false);
             setSceneForUpload(null);
@@ -356,7 +356,7 @@ function StoryboardPageDetail() {
             fetchStoryboardData(); // Re-fetch to ensure data consistency
         } catch (error) {
              const errorTyped = error as { code?: string; message: string };
-            toast({ variant: 'destructive', title: 'Erro em /storyboard/[id]/page.tsx (handleDeletePanel)', description: <CopyableError userMessage="Não foi possível remover o painel." errorCode={errorTyped.code || errorTyped.message} /> });
+            toast({ variant: 'destructive', title: 'Erro ao remover', description: <CopyableError userMessage="Não foi possível remover o painel." errorCode={errorTyped.code || errorTyped.message} /> });
         }
     };
 

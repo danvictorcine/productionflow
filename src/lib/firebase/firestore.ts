@@ -1,6 +1,7 @@
 
 
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -20,7 +21,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, StoryboardScene } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { DEFAULT_BETA_LIMITS } from '../app-config';
 
@@ -91,7 +92,15 @@ export const getProject = async (projectId: string): Promise<Project | null> => 
 }
 
 export const updateProject = async (projectId: string, projectData: Partial<Omit<Project, 'id' | 'userId' | 'createdAt'>>) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const projectRef = doc(db, 'projects', projectId);
+  
+  const docSnap = await getDoc(projectRef);
+  if (!docSnap.exists() || docSnap.data().userId !== userId) {
+      throw new Error("Permission denied to update this project.");
+  }
+  
   const dataToUpdate: Record<string, any> = { ...projectData };
   if (projectData.installments) {
     dataToUpdate.installments = projectData.installments.map(inst => ({
@@ -108,6 +117,10 @@ export const deleteProject = async (projectId: string) => {
     const batch = writeBatch(db);
 
     const projectRef = doc(db, 'projects', projectId);
+    const docSnap = await getDoc(projectRef);
+    if (!docSnap.exists() || docSnap.data().userId !== userId) {
+        throw new Error("Permission denied to delete this project.");
+    }
     batch.delete(projectRef);
 
     const transQuery = query(
@@ -244,8 +257,15 @@ export const getTransactions = async (projectId: string): Promise<Transaction[]>
 };
 
 export const updateTransaction = async (transactionId: string, transactionData: Partial<Transaction>) => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
     const transRef = doc(db, 'transactions', transactionId);
 
+    const docSnap = await getDoc(transRef);
+    if (!docSnap.exists() || docSnap.data().userId !== userId) {
+        throw new Error("Permission denied to update this transaction.");
+    }
+    
     const dataToUpdate: Record<string, any> = { ...transactionData };
     if (transactionData.date) {
         dataToUpdate.date = Timestamp.fromDate(transactionData.date);
@@ -255,7 +275,15 @@ export const updateTransaction = async (transactionId: string, transactionData: 
 };
 
 export const deleteTransaction = async (transactionId: string) => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
     const transRef = doc(db, 'transactions', transactionId);
+    
+    const docSnap = await getDoc(transRef);
+    if (!docSnap.exists() || docSnap.data().userId !== userId) {
+        throw new Error("Permission denied to delete this transaction.");
+    }
+
     await deleteDoc(transRef);
 };
 
@@ -265,6 +293,12 @@ export const renameTransactionCategory = async (projectId: string, oldCategory: 
     const userId = getUserId();
     if (!userId) throw new Error("Usuário não autenticado.");
     const batch = writeBatch(db);
+
+    const projectRef = doc(db, 'projects', projectId);
+    const projectSnap = await getDoc(projectRef);
+    if (!projectSnap.exists() || projectSnap.data().userId !== userId) {
+        throw new Error("Permission denied to modify this project's categories.");
+    }
 
     const transQuery = query(
         collection(db, 'transactions'),
@@ -277,15 +311,10 @@ export const renameTransactionCategory = async (projectId: string, oldCategory: 
         batch.update(doc.ref, { category: newCategory });
     });
 
-    const projectRef = doc(db, 'projects', projectId);
-    const projectSnap = await getDoc(projectRef);
-    if (projectSnap.exists()) {
-        const projectData = projectSnap.data() as Project;
-        if (projectData.userId === userId) {
-            const updatedCategories = (projectData.customCategories || []).map(c => c === oldCategory ? newCategory : c);
-            batch.update(projectRef, { customCategories: updatedCategories });
-        }
-    }
+    
+    const projectData = projectSnap.data() as Project;
+    const updatedCategories = (projectData.customCategories || []).map(c => c === oldCategory ? newCategory : c);
+    batch.update(projectRef, { customCategories: updatedCategories });
 
     await batch.commit();
 };
@@ -531,9 +560,10 @@ export const deleteShootingDay = async (dayId: string) => {
 };
 
 
-export const createOrUpdatePublicShootingDay = async (dayWithUserId: ShootingDay, production: Production) => {
-  const { userId, ...day } = dayWithUserId;
+export const createOrUpdatePublicShootingDay = async (day: ShootingDay, production: Production) => {
+  const userId = getUserId();
   if (!userId) throw new Error("User ID is missing for public page creation.");
+  if(day.userId !== userId) throw new Error("Permission denied to share this day.");
   
   const publicData = {
     ...day,
@@ -612,7 +642,15 @@ export const getCreativeProject = async (projectId: string): Promise<CreativePro
 }
 
 export const updateCreativeProject = async (projectId: string, data: Partial<Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>>) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const docRef = doc(db, 'creative_projects', projectId);
+  
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists() || docSnap.data().userId !== userId) {
+    throw new Error("Permission denied to update this creative project.");
+  }
+  
   await updateDoc(docRef, data);
 };
 
@@ -620,9 +658,13 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
 
-  const batch = writeBatch(db);
-
   const projectRef = doc(db, 'creative_projects', projectId);
+  const docSnap = await getDoc(projectRef);
+  if (!docSnap.exists() || docSnap.data().userId !== userId) {
+    throw new Error("Permission denied to delete this creative project.");
+  }
+
+  const batch = writeBatch(db);
   batch.delete(projectRef);
 
   const itemsQuery = query(
@@ -678,29 +720,43 @@ export const addBoardItem = async (projectId: string, itemData: Omit<BoardItem, 
 }
 
 export const updateBoardItem = async (itemId: string, data: Partial<Omit<BoardItem, 'id' | 'userId' | 'projectId' | 'createdAt'>>) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const itemRef = doc(db, 'board_items', itemId);
+  
+  const docSnap = await getDoc(itemRef);
+  if (!docSnap.exists() || docSnap.data().userId !== userId) {
+    throw new Error("Permission denied to update this board item.");
+  }
+  
   await updateDoc(itemRef, data);
 }
 
 export const updateBoardItemsBatch = async (items: { id: string; data: Partial<BoardItem> }[]) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   if (items.length === 0) return;
+  
   const batch = writeBatch(db);
-  items.forEach(item => {
+  for (const item of items) {
     const itemRef = doc(db, 'board_items', item.id);
     batch.update(itemRef, item.data);
-  });
+  }
   await batch.commit();
 };
 
 export const deleteBoardItem = async (itemId: string) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const itemRef = doc(db, 'board_items', itemId);
+  
   const itemSnap = await getDoc(itemRef);
+  if (!itemSnap.exists() || itemSnap.data().userId !== userId) {
+    throw new Error("Permission denied to delete this board item.");
+  }
 
-  if (itemSnap.exists()) {
-    const itemData = itemSnap.data();
-    if ((itemData.type === 'image' || itemData.type === 'pdf' || itemData.type === 'storyboard') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
-      await deleteImageFromUrl(itemData.content);
-    }
+  if ((itemSnap.data().type === 'image' || itemSnap.data().type === 'pdf' || itemSnap.data().type === 'storyboard') && itemSnap.data().content.includes('firebasestorage.googleapis.com')) {
+    await deleteImageFromUrl(itemSnap.data().content);
   }
 
   await deleteDoc(itemRef);
@@ -785,7 +841,15 @@ export const getStoryboard = async (storyboardId: string): Promise<Storyboard | 
 }
 
 export const updateStoryboard = async (storyboardId: string, data: Partial<Omit<Storyboard, 'id' | 'userId' | 'createdAt'>>) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const docRef = doc(db, 'storyboards', storyboardId);
+  
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists() || docSnap.data().userId !== userId) {
+    throw new Error("Permission denied to update this storyboard.");
+  }
+  
   await updateDoc(docRef, data);
 };
 
@@ -793,9 +857,13 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
 
-  const batch = writeBatch(db);
-
   const projectRef = doc(db, 'storyboards', storyboardId);
+  const docSnap = await getDoc(projectRef);
+  if (!docSnap.exists() || docSnap.data().userId !== userId) {
+    throw new Error("Permission denied to delete this storyboard.");
+  }
+
+  const batch = writeBatch(db);
   batch.delete(projectRef);
   
   const scenesQuery = query(collection(db, 'storyboard_scenes'), where('storyboardId', '==', storyboardId), where('userId', '==', userId));
@@ -862,29 +930,43 @@ export const addStoryboardPanelsBatch = async (panelsData: Omit<StoryboardPanel,
 };
 
 export const updateStoryboardPanel = async (panelId: string, data: Partial<Omit<StoryboardPanel, 'id' | 'userId' | 'storyboardId' | 'createdAt'>>) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const panelRef = doc(db, 'storyboard_panels', panelId);
+
+  const docSnap = await getDoc(panelRef);
+  if (!docSnap.exists() || docSnap.data().userId !== userId) {
+    throw new Error("Permission denied to update this panel.");
+  }
+  
   await updateDoc(panelRef, data);
 }
 
 export const updatePanelOrder = async (panels: {id: string; order: number}[]) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+  
   const batch = writeBatch(db);
-  panels.forEach(panel => {
+  for (const panel of panels) {
     const docRef = doc(db, 'storyboard_panels', panel.id);
     batch.update(docRef, { order: panel.order });
-  });
+  }
   await batch.commit();
 }
 
 
 export const deleteStoryboardPanel = async (panelId: string) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
   const panelRef = doc(db, 'storyboard_panels', panelId);
+  
   const panelSnap = await getDoc(panelRef);
+  if (!panelSnap.exists() || panelSnap.data().userId !== userId) {
+    throw new Error("Permission denied to delete this panel.");
+  }
 
-  if (panelSnap.exists()) {
-    const panelData = panelSnap.data();
-    if (panelData.imageUrl && panelData.imageUrl.includes('firebasestorage.googleapis.com')) {
-      await deleteImageFromUrl(panelData.imageUrl);
-    }
+  if (panelSnap.data().imageUrl && panelSnap.data().imageUrl.includes('firebasestorage.googleapis.com')) {
+    await deleteImageFromUrl(panelSnap.data().imageUrl);
   }
 
   await deleteDoc(panelRef);
@@ -961,17 +1043,28 @@ export const addStoryboardScene = async (data: Omit<StoryboardScene, 'id'|'creat
 };
 
 export const updateStoryboardScene = async (sceneId: string, data: Partial<Omit<StoryboardScene, 'id' | 'storyboardId' | 'userId' | 'createdAt'>>) => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
     const docRef = doc(db, 'storyboard_scenes', sceneId);
+
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists() || docSnap.data().userId !== userId) {
+        throw new Error("Permission denied to update this scene.");
+    }
     await updateDoc(docRef, data);
 };
 
 export const deleteStoryboardScene = async (sceneId: string, storyboardId: string) => {
     const userId = getUserId();
     if (!userId) throw new Error("Usuário não autenticado.");
-    const batch = writeBatch(db);
-
-    // Delete the scene itself
+    
     const sceneRef = doc(db, 'storyboard_scenes', sceneId);
+    const sceneDoc = await getDoc(sceneRef);
+    if (!sceneDoc.exists() || sceneDoc.data().userId !== userId) {
+        throw new Error("Permission denied to delete this scene.");
+    }
+    
+    const batch = writeBatch(db);
     batch.delete(sceneRef);
 
     // Find and delete all panels within that scene
