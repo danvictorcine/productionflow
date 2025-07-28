@@ -128,17 +128,30 @@
 }
 .rnd-item .ql-editor {
     height: 100%;
-    padding: 1rem;
+    padding: 12px;
     overflow-y: auto;
 }
 .rnd-item .ql-editor.ql-blank::before {
-    left: 1rem;
+    left: 12px;
     font-style: normal;
     color: hsl(var(--muted-foreground));
 }
-/* Hide the default toolbar inside the RND item */
-.rnd-item .ql-toolbar {
-    display: none;
+
+/* Specific toolbar for moodboard notes */
+.rnd-item .ql-toolbar.ql-snow {
+    padding: 4px 8px;
+    border-top: none;
+    border-bottom: 1px solid hsl(var(--border));
+    border-radius: 0;
+}
+.rnd-item .ql-toolbar.ql-snow .ql-formats {
+    margin-right: 8px;
+}
+.rnd-item .ql-snow .ql-picker-label {
+    font-size: 12px;
+}
+.rnd-item .ql-snow .ql-picker.ql-header .ql-picker-label {
+    width: 60px;
 }
 
 

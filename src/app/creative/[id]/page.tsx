@@ -78,17 +78,15 @@ const getSpotifyEmbedUrl = (url: string) => {
     return null;
 }
 
-const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onSelect, getQuillEditor }: { 
+const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onSelect }: { 
     item: BoardItem; 
     onDelete: (id: string) => void; 
     onUpdate: (id: string, data: Partial<BoardItem>) => void;
     isSelected: boolean;
     onSelect: (itemId: string | null) => void;
-    getQuillEditor: (editor: any | null) => void;
 }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const debounceTimer = useRef<NodeJS.Timeout>();
-    const quillRef = useRef<any>(null);
 
     const handleChecklistUpdate = (updatedItems: ChecklistItem[]) => {
         onUpdate(item.id, { items: updatedItems });
@@ -107,26 +105,27 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
             firestoreApi.updateBoardItem(item.id, { notes: newNotes });
         }, 500);
     };
-    
-    useEffect(() => {
-        if (isSelected && item.type === 'note') {
-            getQuillEditor(quillRef.current?.getEditor());
-        } else {
-            getQuillEditor(null);
-        }
-    }, [isSelected, item.type, getQuillEditor]);
+
+    const quillModules = useMemo(() => ({
+      toolbar: [
+        [{ 'header': [1, 2, false] }],
+        ['bold', 'italic', 'underline'],
+        [{'list': 'ordered'}, {'list': 'bullet'}],
+        ['link', 'clean']
+      ]
+    }), []);
     
     const renderContent = () => {
         switch (item.type) {
             case 'note':
                 return (
-                    <div className="h-full w-full" onClick={(e) => { e.stopPropagation(); onSelect(item.id); }}>
+                    <div className="h-full w-full flex flex-col" onClick={() => onSelect(item.id)}>
+                        {isSelected && <div id={`toolbar-${item.id}`} />}
                          <QuillEditor
-                            ref={quillRef}
                             theme="snow"
                             value={item.content}
                             onChange={(content) => onUpdate(item.id, { content })}
-                            modules={{ toolbar: '#note-toolbar' }}
+                            modules={{ toolbar: isSelected ? `#toolbar-${item.id}` : false }}
                             className="h-full w-full"
                         />
                     </div>
@@ -315,9 +314,7 @@ function CreativeProjectPageDetail() {
   const [isUploading, setIsUploading] = useState(false);
   const isMobile = useIsMobile();
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [quillEditor, setQuillEditor] = useState<any | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
-
+  
   // Dialog states
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
@@ -333,19 +330,7 @@ function CreativeProjectPageDetail() {
   const isPanning = useRef(false);
   const startPanPoint = useRef({ x: 0, y: 0 });
   const pinchStartDistance = useRef(0);
-
-  const selectedItemIsNote = useMemo(() => {
-    if (!selectedItemId) return false;
-    const item = items.find(i => i.id === selectedItemId);
-    return item?.type === 'note';
-  }, [selectedItemId, items]);
   
-  useEffect(() => setIsMounted(true), []);
-
-  const getQuillEditor = useCallback((editor: any | null) => {
-    setQuillEditor(editor);
-  }, []);
-
   const setInitialView = useCallback(() => {
     if (!isMobile || items.length === 0 || !mainContainerRef.current) return;
     
@@ -424,16 +409,7 @@ function CreativeProjectPageDetail() {
     if (isLoading || !hasUnsavedChanges.current) return;
   
     const debounceTimer = setTimeout(() => {
-      const changedItems = items.filter(item => {
-        const initialItem = items.find(i => i.id === item.id);
-        // Only consider position and size changes for batch update
-        return !initialItem || 
-               JSON.stringify(item.position) !== JSON.stringify(initialItem.position) ||
-               JSON.stringify(item.size) !== JSON.stringify(initialItem.size);
-      });
-  
-      if (changedItems.length > 0) {
-        const updates = changedItems.map(item => ({
+        const updates = items.map(item => ({
             id: item.id,
             data: {
                 position: item.position,
@@ -441,19 +417,18 @@ function CreativeProjectPageDetail() {
             }
         }));
 
-        firestoreApi.updateBoardItemsBatch(updates)
-          .then(() => {
-            hasUnsavedChanges.current = false;
-          })
-          .catch(error => {
-            const errorTyped = error as { code?: string; message: string };
-            toast({
-              variant: 'destructive',
-              title: 'Erro de Sincronização',
-              description: <CopyableError userMessage="Não foi possível salvar as últimas alterações." errorCode={errorTyped.code || 'BATCH_UPDATE_FAILED'} />,
-            });
-          });
-      }
+        if (updates.length > 0) {
+            firestoreApi.updateBoardItemsBatch(updates)
+                .then(() => { hasUnsavedChanges.current = false; })
+                .catch(error => {
+                    const errorTyped = error as { code?: string; message: string };
+                    toast({
+                        variant: 'destructive',
+                        title: 'Erro de Sincronização',
+                        description: <CopyableError userMessage="Não foi possível salvar as últimas alterações." errorCode={errorTyped.code || 'BATCH_UPDATE_FAILED'} />,
+                    });
+                });
+        }
     }, 2000); // 2-second debounce time
   
     return () => clearTimeout(debounceTimer);
@@ -479,21 +454,19 @@ function CreativeProjectPageDetail() {
   const handleItemUpdate = useCallback((itemId: string, data: Partial<BoardItem>) => {
     setItems(prevItems => {
         const newItems = prevItems.map(item => (item.id === itemId ? { ...item, ...data } : item));
-        // Check for actual changes before setting the flag
-        if (JSON.stringify(newItems) !== JSON.stringify(prevItems)) {
-            hasUnsavedChanges.current = true;
+        // Only flag for batch update if position or size changed
+        if(data.position || data.size) {
+          hasUnsavedChanges.current = true;
         }
         return newItems;
     });
 
-    // Save content-related changes immediately (debounced within component) or via specific API call
-    if (data.content || data.items || data.notes) {
-        const contentUpdate: Partial<BoardItem> = {
-            ...(data.content && { content: data.content }),
-            ...(data.items && { items: data.items }),
-            ...(data.notes && { notes: data.notes }),
-        };
-        
+    // Save content-related changes immediately or debounced within component
+    if (data.content || data.items) {
+        const contentUpdate: Partial<BoardItem> = {};
+        if(data.content) contentUpdate.content = data.content;
+        if(data.items) contentUpdate.items = data.items;
+
         const debounceContentTimer = setTimeout(() => {
              firestoreApi.updateBoardItem(itemId, contentUpdate)
                 .catch(err => console.error("Failed to save content", err));
@@ -897,33 +870,6 @@ function CreativeProjectPageDetail() {
                     </Button>
                 </div>
             </div>
-            <div id="note-toolbar-container" className={cn("transition-all duration-200", selectedItemIsNote ? "h-auto opacity-100" : "h-0 opacity-0 overflow-hidden")}>
-                {isMounted && (
-                    <>
-                        <QuillEditor modules={{ toolbar: '#note-toolbar' }} style={{ display: 'none' }} />
-                        <div id="note-toolbar" className="px-4 py-1 border-b bg-background z-20">
-                             <div className="flex flex-wrap items-center gap-x-2">
-                                <select className="ql-header" defaultValue="">
-                                    <option value="1">Título 1</option>
-                                    <option value="2">Título 2</option>
-                                    <option value="">Texto Normal</option>
-                                </select>
-                                <span className="ql-formats">
-                                    <button className="ql-bold"></button>
-                                    <button className="ql-italic"></button>
-                                    <button className="ql-underline"></button>
-                                </span>
-                                <span className="ql-formats">
-                                    <button className="ql-list" value="ordered"></button>
-                                    <button className="ql-list" value="bullet"></button>
-                                </span>
-                                <button className="ql-link"></button>
-                                <button className="ql-clean"></button>
-                            </div>
-                        </div>
-                    </>
-                )}
-            </div>
         </div>
         <div 
             ref={mainContainerRef}
@@ -941,6 +887,7 @@ function CreativeProjectPageDetail() {
               ref={canvasRef}
               className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75"
               style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}}
+              onClick={() => setSelectedItemId(null)}
             >
               <div className="relative min-w-full min-h-full">
                 {items.map(item => (
@@ -955,6 +902,7 @@ function CreativeProjectPageDetail() {
                         position,
                         });
                     }}
+                    onClick={(e) => e.stopPropagation()}
                     minWidth={150}
                     minHeight={80}
                     className="z-20 rnd-item"
@@ -966,7 +914,6 @@ function CreativeProjectPageDetail() {
                         onUpdate={handleItemUpdate}
                         isSelected={selectedItemId === item.id}
                         onSelect={setSelectedItemId}
-                        getQuillEditor={getQuillEditor}
                     />
                     </Rnd>
                 ))}
@@ -1022,3 +969,4 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
+
