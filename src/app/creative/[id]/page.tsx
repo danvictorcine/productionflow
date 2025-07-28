@@ -126,7 +126,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                             theme="snow"
                             value={item.content}
                             onChange={(content) => onUpdate(item.id, { content })}
-                            modules={{ toolbar: false }}
+                            modules={{ toolbar: '#note-toolbar' }}
                             className="h-full w-full"
                         />
                     </div>
@@ -897,9 +897,32 @@ function CreativeProjectPageDetail() {
                     </Button>
                 </div>
             </div>
-             <div id="note-toolbar-container" className={cn("transition-all duration-200", selectedItemIsNote ? "h-auto opacity-100" : "h-0 opacity-0 overflow-hidden")}>
-                {isMounted && <QuillEditor modules={{ toolbar: '#note-toolbar' }} style={{ display: 'none' }} />}
-                <div id="note-toolbar" className="px-4 py-1 border-b bg-background z-20"></div>
+            <div id="note-toolbar-container" className={cn("transition-all duration-200", selectedItemIsNote ? "h-auto opacity-100" : "h-0 opacity-0 overflow-hidden")}>
+                {isMounted && (
+                    <>
+                        <QuillEditor modules={{ toolbar: '#note-toolbar' }} style={{ display: 'none' }} />
+                        <div id="note-toolbar" className="px-4 py-1 border-b bg-background z-20">
+                             <div className="flex flex-wrap items-center gap-x-2">
+                                <select className="ql-header" defaultValue="">
+                                    <option value="1">Título 1</option>
+                                    <option value="2">Título 2</option>
+                                    <option value="">Texto Normal</option>
+                                </select>
+                                <span className="ql-formats">
+                                    <button className="ql-bold"></button>
+                                    <button className="ql-italic"></button>
+                                    <button className="ql-underline"></button>
+                                </span>
+                                <span className="ql-formats">
+                                    <button className="ql-list" value="ordered"></button>
+                                    <button className="ql-list" value="bullet"></button>
+                                </span>
+                                <button className="ql-link"></button>
+                                <button className="ql-clean"></button>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
         <div 
@@ -999,4 +1022,3 @@ export default function CreativeProjectPage() {
     </AuthGuard>
   );
 }
-

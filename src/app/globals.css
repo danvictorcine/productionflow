@@ -136,6 +136,11 @@
     font-style: normal;
     color: hsl(var(--muted-foreground));
 }
+/* Hide the default toolbar inside the RND item */
+.rnd-item .ql-toolbar {
+    display: none;
+}
+
 
 /* Responsive iframe for video embeds */
 .ql-video {
