@@ -118,7 +118,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                 return (
                     <div className="h-full w-full flex flex-col" onClick={() => onSelect(item.id)}>
                         {isSelected && (
-                          <div id={`toolbar-${item.id}`}>
+                           <div id={`toolbar-${item.id}`} className="ql-toolbar ql-snow">
                               <span className="ql-formats">
                                   <select className="ql-header" defaultValue="">
                                       <option value="1">Título 1</option>
