@@ -8,7 +8,7 @@ import { format, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clapperboard, Clock, Hourglass,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Image as ImageIcon
+  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -48,7 +48,6 @@ interface ShootingDayCardProps {
   onShare?: () => void;
   onExportExcel?: () => void;
   onExportPdf?: () => void;
-  onExportPng?: () => void;
   onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
 }
 
@@ -320,7 +319,7 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, Omit<ShootingDayCardPr
 });
 ShootingDayCardContent.displayName = 'ShootingDayCardContent';
 
-export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onExportPng, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
+export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     
     return (
         <AccordionItem value={day.id} className="border-none">
@@ -355,11 +354,11 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     <Edit className="mr-2 h-4 w-4" />
                                     Editar Ordem do Dia
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={onShare} disabled={isExporting}>
                                     <Share2 className="mr-2 h-4 w-4" />
-                                    Compartilhar
+                                    Compartilhar Link
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
                                     <FileSpreadsheet className="mr-2 h-4 w-4" />
                                     Exportar para Excel
@@ -367,10 +366,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
                                     <FileDown className="mr-2 h-4 w-4" />
                                     Exportar como PDF
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={onExportPng} disabled={isExporting}>
-                                    <ImageIcon className="mr-2 h-4 w-4" />
-                                    Exportar como PNG
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">

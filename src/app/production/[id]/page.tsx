@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Image as ImageIcon, Share2, Copy } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Copy } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -108,7 +108,6 @@ function ProductionPageDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingWeather, setIsFetchingWeather] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
-  const [dayToExportPng, setDayToExportPng] = useState<ProcessedShootingDay | null>(null);
   const [dayToExportPdf, setDayToExportPdf] = useState<ProcessedShootingDay | null>(null);
 
   // Dialog states
@@ -503,52 +502,6 @@ function ProductionPageDetail() {
       }, 500);
   };
 
-  const handleExportDayToPng = useCallback(async (dayToExport: ProcessedShootingDay) => {
-    if (!production) return;
-  
-    setIsExporting(true);
-    toast({ title: "Gerando PNG...", description: "Isso pode levar alguns segundos." });
-  
-    setDayToExportPng(dayToExport);
-  
-    // Use a short timeout to allow the DOM to update with the new state
-    setTimeout(async () => {
-      const elementToCapture = document.getElementById(`shooting-day-card-${dayToExport.id}`);
-      if (!elementToCapture) {
-        toast({ variant: 'destructive', title: 'Erro ao gerar PNG', description: 'Não foi possível encontrar o elemento da Ordem do Dia.' });
-        setIsExporting(false);
-        setDayToExportPng(null);
-        return;
-      }
-  
-      try {
-        const canvas = await html2canvas(elementToCapture, {
-          useCORS: true,
-          scale: 2,
-          logging: false,
-          backgroundColor: window.getComputedStyle(document.body).backgroundColor,
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        const dateStr = format(dayToExport.date, "dd_MM_yyyy");
-        link.download = `Ordem_do_Dia_${production.name.replace(/ /g, "_")}_${dateStr}.png`;
-        link.href = imgData;
-        link.click();
-        
-        toast({ title: "Exportação para PNG Concluída!" });
-  
-      } catch (error) {
-        console.error("Error generating PNG for single day", error);
-        toast({ variant: 'destructive', title: 'Erro em /production/[id]/page.tsx (handleExportDayToPng)', description: 'Não foi possível gerar o PNG.' });
-      } finally {
-        setIsExporting(false);
-        setDayToExportPng(null);
-      }
-    }, 500);
-  }, [production, toast]);
-
-
   const handleUpdateNotes = async (
     dayId: string,
     listName: 'equipment' | 'costumes' | 'props' | 'generalNotes',
@@ -599,7 +552,7 @@ function ProductionPageDetail() {
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
-      {/* Hidden container for PDF/PNG export rendering */}
+      {/* Hidden container for PDF export rendering */}
       {dayToExportPdf && (
         <PdfExportPortal day={dayToExportPdf} production={production} />
       )}
@@ -732,9 +685,8 @@ function ProductionPageDetail() {
                     onShare={() => handleShareDay(day)}
                     onExportExcel={() => handleExportDayToExcel(day)}
                     onExportPdf={() => handleExportDayToPdf(day)}
-                    onExportPng={() => handleExportDayToPng(day)}
                     onUpdateNotes={handleUpdateNotes}
-                    isExporting={isExporting || (day.id === dayToExportPng?.id)}
+                    isExporting={isExporting}
                   />
                 ))
             )}
