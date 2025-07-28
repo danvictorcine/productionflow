@@ -583,9 +583,8 @@ function ProductionPageDetail() {
             <Edit className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Editar Produção</span>
           </Button>
-          <Button onClick={() => handleShare('production', production.id)} variant="outline" size="sm">
-            <Share2 className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Compartilhar</span>
+          <Button onClick={() => handleShare('production', production.id)} variant="outline" size="icon" aria-label="Compartilhar Produção">
+            <Share2 className="h-4 w-4" />
           </Button>
           <UserNav />
         </div>
