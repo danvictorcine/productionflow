@@ -122,35 +122,42 @@
 }
 
 /* Styling for Quill in Moodboard */
-.rnd-item .ql-container.ql-snow {
+.note-editor-container .ql-container.ql-snow {
     border: none;
+    display: flex;
+    flex-direction: column;
     height: 100%;
 }
-.rnd-item .ql-editor {
-    height: 100%;
+.note-editor-container .ql-editor {
     padding: 12px;
+    flex-grow: 1;
     overflow-y: auto;
 }
-.rnd-item .ql-editor.ql-blank::before {
+.note-editor-container .ql-editor.ql-blank::before {
     left: 12px;
     font-style: normal;
     color: hsl(var(--muted-foreground));
 }
 
-/* Specific toolbar for moodboard notes */
-.rnd-item .ql-toolbar.ql-snow {
+.note-editor-container .ql-toolbar.ql-snow {
     padding: 4px 8px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
     border-top: none;
     border-bottom: 1px solid hsl(var(--border));
-    border-radius: 0;
+    display: none; /* Hidden by default */
 }
-.rnd-item .ql-toolbar.ql-snow .ql-formats {
-    margin-right: 8px;
+
+/* Show toolbar only when the container has data-selected="true" */
+.note-editor-container[data-selected="true"] .ql-toolbar.ql-snow {
+    display: block;
 }
-.rnd-item .ql-snow .ql-picker-label {
+
+.note-editor-container .ql-snow .ql-picker-label {
     font-size: 12px;
 }
-.rnd-item .ql-snow .ql-picker.ql-header .ql-picker-label {
+.note-editor-container .ql-snow .ql-picker.ql-header .ql-picker-label {
     width: 60px;
 }
 

@@ -87,6 +87,8 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
 }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const debounceTimer = useRef<NodeJS.Timeout>();
+    const quillRef = useRef<any>(null);
+
 
     const handleChecklistUpdate = (updatedItems: ChecklistItem[]) => {
         onUpdate(item.id, { items: updatedItems });
@@ -116,39 +118,42 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
         switch (item.type) {
             case 'note':
                 return (
-                    <div className="h-full w-full flex flex-col" onClick={() => onSelect(item.id)}>
-                        {isSelected && (
-                           <div id={`toolbar-${item.id}`} className="ql-toolbar ql-snow">
-                              <span className="ql-formats">
-                                  <select className="ql-header" defaultValue="">
-                                      <option value="1">Título 1</option>
-                                      <option value="2">Título 2</option>
-                                      <option value="">Normal</option>
-                                  </select>
-                              </span>
-                              <span className="ql-formats">
-                                  <button className="ql-bold"></button>
-                                  <button className="ql-italic"></button>
-                                  <button className="ql-underline"></button>
-                              </span>
-                              <span className="ql-formats">
-                                  <button className="ql-list" value="ordered"></button>
-                                  <button className="ql-list" value="bullet"></button>
-                              </span>
-                              <span className="ql-formats">
-                                  <button className="ql-link"></button>
-                              </span>
-                              <span className="ql-formats">
-                                  <button className="ql-clean"></button>
-                              </span>
-                          </div>
-                        )}
+                    <div 
+                        className="h-full w-full flex flex-col note-editor-container"
+                        data-selected={isSelected}
+                        onClick={() => onSelect(item.id)}
+                    >
+                        <div id={`toolbar-${item.id}`}>
+                            <span className="ql-formats">
+                                <select className="ql-header" defaultValue="">
+                                    <option value="1">Título 1</option>
+                                    <option value="2">Título 2</option>
+                                    <option value="">Normal</option>
+                                </select>
+                            </span>
+                            <span className="ql-formats">
+                                <button className="ql-bold"></button>
+                                <button className="ql-italic"></button>
+                                <button className="ql-underline"></button>
+                            </span>
+                            <span className="ql-formats">
+                                <button className="ql-list" value="ordered"></button>
+                                <button className="ql-list" value="bullet"></button>
+                            </span>
+                            <span className="ql-formats">
+                                <button className="ql-link"></button>
+                            </span>
+                             <span className="ql-formats">
+                                <button className="ql-clean"></button>
+                            </span>
+                        </div>
                          <QuillEditor
+                            ref={quillRef}
                             theme="snow"
                             value={item.content}
                             onChange={(content) => onUpdate(item.id, { content })}
-                            modules={isSelected ? quillModules : { toolbar: false }}
-                            className="h-full w-full"
+                            modules={quillModules}
+                            className="h-full w-full flex-grow"
                         />
                     </div>
                 );
