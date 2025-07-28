@@ -3,6 +3,7 @@
 
 
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -588,6 +589,41 @@ export const getPublicProduction = async (productionId: string): Promise<(Produc
             date: (day.date as Timestamp).toDate(),
         }))
     } as (Production & { days: ShootingDay[] });
+}
+
+export const createOrUpdatePublicShootingDay = async (production: Production, day: ShootingDay) => {
+  const userId = getUserId();
+  if (!userId || production.userId !== userId) throw new Error("Permission denied to share this day.");
+  
+  const { team, ...productionData } = production;
+
+  const publicData = {
+    production: productionData,
+    day: {...day, date: Timestamp.fromDate(day.date)},
+  };
+  const docRef = doc(db, 'public_shooting_days', day.id);
+  await setDoc(docRef, publicData, { merge: true });
+};
+
+
+export const getPublicShootingDay = async (dayId: string): Promise<{ production: Production, day: ShootingDay } | null> => {
+    const docRef = doc(db, 'public_shooting_days', dayId);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+        return null;
+    }
+    const data = docSnap.data();
+    return {
+      production: {
+        ...data.production,
+        createdAt: (data.production.createdAt as Timestamp).toDate(),
+      } as Production,
+      day: {
+        ...data.day,
+        date: (data.day.date as Timestamp).toDate(),
+      } as ShootingDay,
+    };
 }
 
 

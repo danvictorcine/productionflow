@@ -1,4 +1,5 @@
 
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -45,6 +46,7 @@ interface ShootingDayCardProps {
   isPublicView?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
+  onShare?: () => void;
   onExportExcel?: () => void;
   onExportPdf?: () => void;
   onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
@@ -318,7 +320,7 @@ const ShootingDayCardContent = forwardRef<HTMLDivElement, Omit<ShootingDayCardPr
 });
 ShootingDayCardContent.displayName = 'ShootingDayCardContent';
 
-export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
+export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     
     return (
         <AccordionItem value={day.id} className="border-none">
@@ -354,6 +356,10 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     Editar Ordem do Dia
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={onShare} disabled={isExporting}>
+                                    <Share2 className="mr-2 h-4 w-4" />
+                                    Compartilhar Link do Dia
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
                                     <FileSpreadsheet className="mr-2 h-4 w-4" />
                                     Exportar para Excel

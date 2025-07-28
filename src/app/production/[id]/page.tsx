@@ -115,7 +115,7 @@ function ProductionPageDetail() {
   const [isShootingDayDialogOpen, setIsShootingDayDialogOpen] = useState(false);
   const [editingShootingDay, setEditingShootingDay] = useState<ProcessedShootingDay | null>(null);
   const [dayToDelete, setDayToDelete] = useState<ProcessedShootingDay | null>(null);
-  const [shareProductionLink, setShareProductionLink] = useState<string | null>(null);
+  const [shareLink, setShareLink] = useState<string | null>(null);
   
   const fetchAndUpdateWeather = useCallback(async (day: ShootingDay) => {
     if (!day.latitude || !day.longitude) return;
@@ -277,7 +277,6 @@ function ProductionPageDetail() {
       
       await fetchProductionData();
       
-      // After fetching new data, check if a public page needs updating
       const publicProduction = await firestoreApi.getPublicProduction(productionId);
       if (publicProduction && user && production) {
           const allDays = await firestoreApi.getShootingDays(productionId);
@@ -314,12 +313,20 @@ function ProductionPageDetail() {
     }
   };
   
-  const handleShareProduction = async () => {
+  const handleShare = async (dayOrProduction: 'production' | 'day', id: string, dayObject?: ProcessedShootingDay) => {
     if (!production || !user) return;
     try {
-      await firestoreApi.createOrUpdatePublicProduction(production, shootingDays);
-      setShareProductionLink(`${window.location.origin}/public/production/all/${production.id}`);
-      toast({ title: "Link de compartilhamento criado!", description: "A página pública para toda a produção está ativa." });
+        let link = '';
+        if (dayOrProduction === 'production') {
+            await firestoreApi.createOrUpdatePublicProduction(production, shootingDays);
+            link = `${window.location.origin}/public/production/all/${id}`;
+            toast({ title: "Link de compartilhamento para produção criado!", description: "A página pública está ativa." });
+        } else if (dayObject) {
+            await firestoreApi.createOrUpdatePublicShootingDay(production, dayObject);
+            link = `${window.location.origin}/public/production/${id}`;
+            toast({ title: "Link de compartilhamento para o dia criado!", description: "A página pública está ativa." });
+        }
+        setShareLink(link);
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
       toast({
@@ -329,6 +336,7 @@ function ProductionPageDetail() {
       });
     }
   };
+
 
   const createShootingDaySheet = (day: ProcessedShootingDay): XLSX.WorkSheet => {
     const dayInfo = [
@@ -567,9 +575,9 @@ function ProductionPageDetail() {
           <h1 className="text-lg md:text-xl font-bold text-primary truncate">{production.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={handleShareProduction} variant="outline" size="sm">
+          <Button onClick={() => handleShare('production', production.id)} variant="outline" size="sm">
             <Share2 className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Compartilhar</span>
+            <span className="hidden md:inline">Compartilhar Produção</span>
           </Button>
           <Button onClick={() => setIsProductionDialogOpen(true)} variant="outline" size="sm">
             <Edit className="h-4 w-4 md:mr-2" />
@@ -674,6 +682,7 @@ function ProductionPageDetail() {
                     onExportPdf={() => handleExportDayToPdf(day)}
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting}
+                    onShare={() => handleShare('day', day.id, day)}
                   />
                 ))
             )}
@@ -716,21 +725,21 @@ function ProductionPageDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
-       <Dialog open={!!shareProductionLink} onOpenChange={(open) => !open && setShareProductionLink(null)}>
+       <Dialog open={!!shareLink} onOpenChange={(open) => !open && setShareLink(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Compartilhar Produção</DialogTitle>
             <DialogDescription>
-              Qualquer pessoa com este link poderá ver todas as Ordens do Dia desta produção. As atualizações feitas serão refletidas publicamente.
+              Qualquer pessoa com este link poderá ver as informações. As atualizações feitas serão refletidas publicamente.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="share-link">Link Público</Label>
             <div className="flex gap-2">
-                <Input id="share-link" value={shareProductionLink || ''} readOnly />
+                <Input id="share-link" value={shareLink || ''} readOnly />
                 <Button size="icon" onClick={() => {
-                    if (shareProductionLink) {
-                        navigator.clipboard.writeText(shareProductionLink);
+                    if (shareLink) {
+                        navigator.clipboard.writeText(shareLink);
                         toast({ title: "Link copiado!" });
                     }
                 }}>

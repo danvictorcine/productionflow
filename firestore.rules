@@ -42,7 +42,14 @@ service cloud.firestore {
     match /public_productions/{productionId} {
       allow read: if true;
       allow create, update: if isOwner(request.resource.data.userId);
-      allow delete: if false; // Deletion should be handled by app logic on project deletion.
+      allow delete: if false; // No public delete
+    }
+    
+    // Public Shooting Days for sharing
+    match /public_shooting_days/{dayId} {
+      allow read: if true;
+      allow create, update: if isOwner(request.resource.data.production.userId);
+      allow delete: if false; // No public delete
     }
     
     // Creative Projects (Moodboards)
