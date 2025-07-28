@@ -11,7 +11,6 @@ import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
-import 'react-quill/dist/quill.bubble.css';
 
 
 import type { CreativeProject, BoardItem, ChecklistItem } from '@/lib/types';
@@ -79,42 +78,24 @@ const getSpotifyEmbedUrl = (url: string) => {
     return null;
 }
 
-const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: BoardItem; onDelete: (id: string) => void; onUpdate: (id: string, data: Partial<BoardItem>) => void }) => {
+const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, getQuillInstance, onSelect }: { 
+    item: BoardItem; 
+    onDelete: (id: string) => void; 
+    onUpdate: (id: string, data: Partial<BoardItem>) => void;
+    isSelected: boolean;
+    getQuillInstance?: (id: string, quill: any) => void;
+    onSelect: (itemId: string | null) => void;
+}) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
     const debounceTimer = useRef<NodeJS.Timeout>();
-    const noteWrapperRef = useRef<HTMLDivElement>(null);
-
-    const [isEditingNote, setIsEditingNote] = useState(false);
+    const quillRef = useRef<any>(null);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (noteWrapperRef.current && !noteWrapperRef.current.contains(event.target as Node)) {
-                setIsEditingNote(false);
-            }
-        };
+        if (item.type === 'note' && quillRef.current && getQuillInstance) {
+            getQuillInstance(item.id, quillRef.current.getEditor());
+        }
+    }, [item.id, item.type, getQuillInstance]);
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-    const noteModules = useMemo(() => ({
-        toolbar: {
-            container: [
-                [{ 'header': [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'list': 'ordered'}, {'list': 'bullet'}],
-                [{ 'align': [] }],
-                [{ 'color': [] }, { 'background': [] }],
-                ['clean']
-            ],
-        },
-    }), []);
-
-    const textModules = useMemo(() => ({
-        toolbar: false
-    }), []);
 
     const handleChecklistUpdate = (updatedItems: ChecklistItem[]) => {
         onUpdate(item.id, { items: updatedItems });
@@ -138,30 +119,20 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
         switch (item.type) {
             case 'note':
                 return (
-                    <div ref={noteWrapperRef} className="h-full w-full" onClick={() => setIsEditingNote(true)}>
-                         <div className={cn(isEditingNote ? 'hidden' : 'block', "h-full w-full")}>
-                             <QuillEditor
-                                theme="bubble"
-                                value={item.content}
-                                readOnly={true}
-                                modules={textModules}
-                                className="h-full w-full"
-                            />
-                        </div>
-                        <div className={cn(isEditingNote ? 'block' : 'hidden', "h-full w-full")}>
-                             <QuillEditor
-                                theme="snow"
-                                value={item.content}
-                                onChange={(content) => onUpdate(item.id, { content })}
-                                modules={noteModules}
-                                className="h-full w-full"
-                            />
-                        </div>
+                    <div className="h-full w-full" onClick={(e) => { e.stopPropagation(); onSelect(item.id); }}>
+                         <QuillEditor
+                            ref={quillRef}
+                            theme="snow"
+                            value={item.content}
+                            onChange={(content) => onUpdate(item.id, { content })}
+                            modules={{ toolbar: `#note-toolbar-${item.id}` }} // Point to a unique non-existent toolbar
+                            className="h-full w-full"
+                        />
                     </div>
                 );
             case 'storyboard':
                 return (
-                    <div className="flex flex-col h-full bg-card">
+                    <div className="flex flex-col h-full bg-card" onClick={() => onSelect(null)}>
                         <div className="relative w-full aspect-video bg-muted flex-shrink-0">
                            <img src={item.content} alt="Storyboard panel" className="w-full h-full object-cover" data-ai-hint="action sequence" />
                         </div>
@@ -177,7 +148,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 const title = item.content;
                 const items = item.items || [];
                 return (
-                    <div className="p-3 flex flex-col h-full bg-background">
+                    <div className="p-3 flex flex-col h-full bg-background" onClick={() => onSelect(null)}>
                        <Input 
                          defaultValue={title}
                          onBlur={(e) => onUpdate(item.id, { content: e.target.value })}
@@ -237,7 +208,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 }
 
                 return (
-                    <div className="p-2 flex flex-col h-full bg-background">
+                    <div className="p-2 flex flex-col h-full bg-background" onClick={() => onSelect(null)}>
                        <div className="flex-1 grid grid-cols-4 gap-2">
                            {colors.map((color, index) => (
                                <div key={index} className="relative group rounded flex items-center justify-center" style={{ backgroundColor: color }}>
@@ -260,7 +231,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                 );
             }
             case 'image':
-                return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture"/>;
+                return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture" onClick={() => onSelect(null)}/>;
             case 'pdf':
                 return (
                     <iframe
@@ -268,6 +239,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                         className="w-full h-full"
                         style={{ border: 'none' }}
                         title="PDF Viewer"
+                        onClick={() => onSelect(null)}
                     ></iframe>
                 );
             case 'video':
@@ -275,19 +247,19 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
                  const vimeoUrl = getVimeoEmbedUrl(item.content);
                  const embedUrl = youtubeUrl || vimeoUrl;
                  if (embedUrl) {
-                     return <iframe src={embedUrl} className="w-full h-full" frameBorder="0" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen></iframe>;
+                     return <iframe src={embedUrl} className="w-full h-full" frameBorder="0" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen onClick={() => onSelect(null)}></iframe>;
                  }
-                 return <div className="p-2 text-red-500 text-xs">Link de vídeo inválido ou não suportado. Use links do YouTube ou Vimeo.</div>;
+                 return <div className="p-2 text-red-500 text-xs" onClick={() => onSelect(null)}>Link de vídeo inválido ou não suportado. Use links do YouTube ou Vimeo.</div>;
             case 'spotify':
                  const spotifyEmbedUrl = getSpotifyEmbedUrl(item.content);
                  if (spotifyEmbedUrl) {
-                     return <iframe src={spotifyEmbedUrl} className="w-full h-full" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowFullScreen></iframe>;
+                     return <iframe src={spotifyEmbedUrl} className="w-full h-full" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowFullScreen onClick={() => onSelect(null)}></iframe>;
                  }
-                 return <div className="p-2 text-red-500 text-xs">Link do Spotify inválido. Use um link de música, álbum ou playlist.</div>;
+                 return <div className="p-2 text-red-500 text-xs" onClick={() => onSelect(null)}>Link do Spotify inválido. Use um link de música, álbum ou playlist.</div>;
             case 'location':
                 const locationData = JSON.parse(item.content);
                 return (
-                    <div className="w-full h-full flex flex-col">
+                    <div className="w-full h-full flex flex-col" onClick={() => onSelect(null)}>
                         <DisplayMap position={[locationData.lat, locationData.lng]} className="flex-1" />
                         <div className="bg-muted text-muted-foreground text-xs p-1 truncate order-last">{locationData.name}</div>
                     </div>
@@ -298,7 +270,12 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate }: { item: Board
     };
 
     return (
-        <div className="w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col">
+        <div 
+            className={cn(
+                "w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col transition-all duration-200",
+                isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+            )}
+        >
             <div className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-move z-10 opacity-30 group-hover:opacity-100 transition-opacity">
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -336,6 +313,8 @@ function CreativeProjectPageDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const isMobile = useIsMobile();
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const quillInstances = useRef<Map<string, any>>(new Map());
 
   // Dialog states
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -352,6 +331,18 @@ function CreativeProjectPageDetail() {
   const isPanning = useRef(false);
   const startPanPoint = useRef({ x: 0, y: 0 });
   const pinchStartDistance = useRef(0);
+
+  const selectedItemIsNote = useMemo(() => {
+    if (!selectedItemId) return false;
+    const item = items.find(i => i.id === selectedItemId);
+    return item?.type === 'note';
+  }, [selectedItemId, items]);
+  
+  const getQuillInstance = useCallback((id: string, quill: any) => {
+    if (quill && !quillInstances.current.has(id)) {
+        quillInstances.current.set(id, quill);
+    }
+  }, []);
 
   const setInitialView = useCallback(() => {
     if (!isMobile || items.length === 0 || !mainContainerRef.current) return;
@@ -531,8 +522,12 @@ function CreativeProjectPageDetail() {
         ...extraData,
       };
       
-      await firestoreApi.addBoardItem(projectId, newItemData);
+      const newItemId = await firestoreApi.addBoardItem(projectId, newItemData);
       await fetchProjectData();
+      
+      if (type === 'note') {
+          setSelectedItemId(newItemId);
+      }
 
       const typeDisplayNames: Record<BoardItem['type'], string> = {
           note: 'Texto',
@@ -692,6 +687,9 @@ function CreativeProjectPageDetail() {
     try {
       await firestoreApi.deleteBoardItem(itemId);
       setItems(prev => prev.filter(item => item.id !== itemId));
+      if (selectedItemId === itemId) {
+        setSelectedItemId(null);
+      }
       toast({ title: 'Item removido.' });
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
@@ -738,10 +736,11 @@ function CreativeProjectPageDetail() {
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
-        if ((e.target as HTMLElement).closest('input, textarea, button, .drag-handle, a, .ql-editor')) {
+        if ((e.target as HTMLElement).closest('.rnd-item, .tool-button')) {
             return;
         }
         e.preventDefault();
+        setSelectedItemId(null);
         isPanning.current = true;
         startPanPoint.current = {
             x: e.clientX - position.x,
@@ -765,7 +764,7 @@ function CreativeProjectPageDetail() {
     };
 
     const handleTouchStart = (e: React.TouchEvent) => {
-      if ((e.target as HTMLElement).closest('input, textarea, button, .drag-handle, a, .ql-editor')) {
+      if ((e.target as HTMLElement).closest('.rnd-item, .tool-button')) {
         return;
       }
       if (e.touches.length === 2) { // Pinch zoom
@@ -776,6 +775,7 @@ function CreativeProjectPageDetail() {
         isPanning.current = false;
       } else if (e.touches.length === 1) { // Panning
         e.preventDefault();
+        setSelectedItemId(null);
         isPanning.current = true;
         startPanPoint.current = {
           x: e.touches[0].clientX - position.x,
@@ -858,43 +858,46 @@ function CreativeProjectPageDetail() {
             </div>
             <div className="p-2 md:p-4">
                 <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                    <Button variant="ghost" size="sm" onClick={handleAddNote}>
+                    <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button">
                         <Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span>
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={handleAddChecklist}>
+                    <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button">
                         <ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span>
                     </Button>
-                     <Button variant="ghost" size="sm" onClick={handleAddPalette}>
+                     <Button variant="ghost" size="sm" onClick={handleAddPalette} className="tool-button">
                         <Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Paleta</span>
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading}>
+                    <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading} className="tool-button">
                         {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}
                         <span className="hidden md:inline">Imagem</span>
                     </Button>
                     <input type="file" ref={imageUploadRef} onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" className="hidden" />
                     
-                    <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading}>
+                    <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading} className="tool-button">
                         {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <GalleryVertical className="h-4 w-4 md:mr-2" />}
                         <span className="hidden md:inline">Storyboard</span>
                     </Button>
                     <input type="file" ref={storyboardUploadRef} onChange={(e) => handleImageUpload(e, 'storyboard')} accept="image/*" className="hidden" />
                     
-                    <Button variant="ghost" size="sm" onClick={() => pdfUploadRef.current?.click()} disabled={isUploading}>
+                    <Button variant="ghost" size="sm" onClick={() => pdfUploadRef.current?.click()} disabled={isUploading} className="tool-button">
                         {isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <FileIcon className="h-4 w-4 md:mr-2" />}
                         <span className="hidden md:inline">PDF</span>
                     </Button>
                     <input type="file" ref={pdfUploadRef} onChange={handlePdfUpload} accept="application/pdf" className="hidden" />
-                    <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)}>
+                    <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)} className="tool-button">
                         <Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Vídeo</span>
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)}>
+                    <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)} className="tool-button">
                         <Music className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Música</span>
                     </Button>
-                     <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)}>
+                     <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)} className="tool-button">
                         <MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span>
                     </Button>
                 </div>
             </div>
+            {selectedItemIsNote && (
+                <div id="note-toolbar" className="px-4 py-1 border-b bg-background z-20"></div>
+            )}
         </div>
         <div 
             ref={mainContainerRef}
@@ -928,10 +931,17 @@ function CreativeProjectPageDetail() {
                     }}
                     minWidth={150}
                     minHeight={80}
-                    className="z-20"
+                    className="z-20 rnd-item"
                     dragHandleClassName="drag-handle"
                     >
-                    <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} />
+                    <BoardItemDisplay 
+                        item={item} 
+                        onDelete={handleDeleteItem} 
+                        onUpdate={handleItemUpdate}
+                        isSelected={selectedItemId === item.id}
+                        onSelect={setSelectedItemId}
+                        getQuillInstance={getQuillInstance}
+                    />
                     </Rnd>
                 ))}
               </div>
