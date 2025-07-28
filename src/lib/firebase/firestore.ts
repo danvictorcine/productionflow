@@ -599,12 +599,12 @@ export const deleteCreativeProjectAndItems = async (projectId: string) => {
 
   const itemsQuery = query(
     collection(db, 'board_items'),
-    where('projectId', '==', projectId)
+    where('projectId', '==', projectId),
+    where('userId', '==', userId)
   );
   const itemsSnapshot = await getDocs(itemsQuery);
   
   for (const itemDoc of itemsSnapshot.docs) {
-    if (itemDoc.data().userId !== userId) continue;
     const itemData = itemDoc.data();
     if ((itemData.type === 'image' || itemData.type === 'pdf') && itemData.content && itemData.content.includes('firebasestorage.googleapis.com')) {
       await deleteImageFromUrl(itemData.content);
@@ -782,7 +782,6 @@ export const deleteStoryboardAndPanels = async (storyboardId: string) => {
   );
   const panelsSnapshot = await getDocs(panelsQuery);
   for (const panelDoc of panelsSnapshot.docs) {
-      if (panelDoc.data().userId !== userId) continue;
       const panelData = panelDoc.data();
       if (panelData.imageUrl && panelData.imageUrl.includes('firebasestorage.googleapis.com')) {
           await deleteImageFromUrl(panelData.imageUrl);
@@ -904,7 +903,7 @@ export const getStoryboardScenes = async (storyboardId: string): Promise<Storybo
     ));
     
     if (!panelsToMigrateSnapshot.empty) {
-        const panelsToMigrate = panelsToMigrateSnapshot.docs.map(d => d.data() as StoryboardPanel);
+        const panelsToMigrate = panelsToMigrateSnapshot.docs.map(d => ({id: d.id, ...d.data()}) as StoryboardPanel);
         if (panelsToMigrate.length > 0 && panelsToMigrate.some(p => !p.sceneId)) {
           const newSceneId = await migratePanelsToScene(storyboardId, panelsToMigrate);
           const newSceneDoc = await getDoc(doc(db, 'storyboard_scenes', newSceneId));
