@@ -19,7 +19,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, StoryboardScene, BetaLimits } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardPanel, StoryboardScene } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { DEFAULT_BETA_LIMITS } from '../app-config';
 
@@ -547,9 +547,12 @@ export const deleteShootingDay = async (dayId: string) => {
 
 
 export const createOrUpdatePublicShootingDay = async (day: ShootingDay, production: Production) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado para criar página pública.");
   // Combine all necessary data into one object for the public document
   const publicData = {
     ...day,
+    userId, // Add userId to the public document for rule validation
     // Add production-level info to avoid extra reads on the public page
     productionName: production.name,
     productionType: production.type,
@@ -1227,13 +1230,12 @@ export const saveTeamMembers = async (members: Omit<TeamMemberAbout, 'createdAt'
     // Set/Update members
     members.forEach((member, index) => {
         const { file, ...data } = member as Partial<TeamMemberAbout> & { id: string }; // Type assertion
-        const docRef = doc(collectionRef, member.id);
         const dataToSave = {
             ...data,
             order: index, // Update order based on array position
             createdAt: Timestamp.now(), // Always set/update timestamp on save
         };
-        batch.set(docRef, dataToSave, { merge: true });
+        batch.set(doc(collectionRef, member.id), dataToSave, { merge: true });
     });
 
     await batch.commit();
@@ -1290,3 +1292,4 @@ export const saveBetaLimits = async (limits: BetaLimits) => {
     const docRef = doc(db, 'settings', 'betaLimits');
     await setDoc(docRef, limits, { merge: true });
 }
+
