@@ -4,111 +4,84 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Funções de Helper
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    // Regras de Usuário:
+    // Permite que um usuário leia seu próprio perfil.
+    // Permite que um usuário crie seu perfil (no cadastro).
+    // Permite que um usuário atualize seu próprio perfil.
+    match /users/{userId} {
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
+    }
+
+    // Regras de Projetos e Transações:
+    // Apenas o dono do projeto pode ler, criar, atualizar ou deletar.
+    match /projects/{projectId} {
+      allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    match /transactions/{transactionId} {
+      allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     
+    // Regras de Produção e Ordens do Dia:
+    // Apenas o dono pode gerenciar.
+    match /productions/{productionId} {
+       allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    match /shooting_days/{dayId} {
+       allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // Regras para Moodboards (Creative Projects) e seus Itens:
+    match /creative_projects/{projectId} {
+       allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    match /board_items/{itemId} {
+       allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // Regras para Storyboards, Cenas e Quadros:
+    match /storyboards/{storyboardId} {
+       allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    match /storyboard_scenes/{sceneId} {
+       allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    match /storyboard_panels/{panelId} {
+       allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Regras de Conteúdo Público (Blog, Páginas):
+    // Qualquer um pode ler posts e páginas. Apenas admins podem escrever.
     function isAdmin() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
-
-    // Regras de Usuários
-    match /users/{userId} {
-      // Qualquer usuário autenticado pode criar seu próprio perfil.
-      allow create: if request.auth != null;
-      // O proprietário do perfil ou um admin podem ler e atualizar. Ninguém pode deletar.
-      allow read, update: if isOwner(userId) || isAdmin();
-      allow delete: if false; 
-    }
-
-    // Regras de Projetos (Financeiro)
-    match /projects/{projectId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isOwner(resource.data.userId);
-    }
-
-    // Regras de Transações
-    match /transactions/{transactionId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isOwner(resource.data.userId);
-    }
-    
-    // Regras de Produções (Módulo de Ordem do Dia)
-    match /productions/{productionId} {
-       allow create: if request.auth != null;
-       allow read, update, delete: if isOwner(resource.data.userId);
-    }
-
-    // Regras de Dias de Filmagem (Ordem do Dia)
-    match /shooting_days/{dayId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isOwner(resource.data.userId);
-    }
-
-    // Regras de Publicações do Blog
     match /posts/{postId} {
-        // Qualquer um pode ler.
-        allow read: if true;
-        // Apenas admins podem criar, atualizar e deletar.
-        allow create, update, delete: if isAdmin();
+      allow read: if true;
+      allow create, update, delete: if request.auth != null && isAdmin();
     }
-    
-    // Regras de Conteúdo das Páginas
     match /pages/{pageId} {
-        // Qualquer um pode ler (ex: /about, /contact).
-        allow read: if true;
-        // Apenas admins podem criar e atualizar.
-        allow create, update: if isAdmin();
+      allow read: if true;
+      allow create, update, delete: if request.auth != null && isAdmin();
     }
     
-    // Regras de Membros da Equipe (Página Sobre)
+    // Regras para Membros da Equipe (página "Quem Somos"):
+    // Leitura pública, escrita apenas para admins.
     match /teamMembers/{memberId} {
-        // Qualquer um pode ler.
         allow read: if true;
-        // Apenas admins podem criar, atualizar e deletar.
-        allow create, update, delete: if isAdmin();
-    }
-
-    // Regras de Configurações (Tema, Limites, etc.)
-    match /settings/{docId} {
-        // Qualquer um pode ler as configurações de tema.
-        allow read: if docId == 'theme';
-        // Apenas admins podem alterar as configurações.
-        allow write: if isAdmin();
+        allow create, update, delete: if request.auth != null && isAdmin();
     }
     
-    // Regras para Moodboards (Creative Projects)
-    match /creative_projects/{projectId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isOwner(resource.data.userId);
+    // Regras para Configurações do Tema e Limites Beta
+    // Apenas admins podem ler e escrever.
+    match /settings/{settingId} {
+        allow read, write: if request.auth != null && isAdmin();
     }
     
-    match /board_items/{itemId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isOwner(resource.data.userId);
-    }
-
-    // Regras para Storyboards
-    match /storyboards/{storyboardId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isOwner(resource.data.userId);
-    }
-
-    match /storyboard_scenes/{sceneId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isOwner(resource.data.userId);
-    }
-
-    match /storyboard_panels/{panelId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isOwner(resource.data.userId);
-    }
-    
-    // Regras para a Coleção Pública de Ordens do Dia
+    // Regra para Ordens do Dia Públicas:
+    // Leitura é pública, mas a escrita só pode ser feita por usuários autenticados (ou seja, pelo app).
     match /public_shooting_days/{dayId} {
-        allow read: if true; // Permite leitura pública
-        allow write: if false; // Nega qualquer escrita direta do cliente
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
