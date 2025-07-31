@@ -1,3 +1,4 @@
+
 // @/src/components/weather-card.tsx
 "use client";
 
@@ -53,6 +54,7 @@ export function WeatherCard({ weather }: WeatherCardProps) {
   const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
 
   useEffect(() => {
+    // This effect should only run for the current day's weather
     if (!isToday(new Date(weather.date))) {
       setDaylightStatus(null); // No timer for past or future dates
       return;
