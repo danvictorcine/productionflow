@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import type { WeatherInfo } from "@/lib/types";
-import { format, isToday } from "date-fns";
+import { format, isToday, isPast, parseISO } from "date-fns";
 import {
   Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, CloudSnow,
   Wind, Sunrise, Sunset, Haze, CloudFog, CloudSun
@@ -54,36 +54,39 @@ export function WeatherCard({ weather }: WeatherCardProps) {
   const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    // Only run the timer if the weather date is today
-    const weatherDate = new Date(weather.date + 'T00:00:00'); // Ensure we compare dates only
-    if (!isToday(weatherDate)) {
-      setDaylightStatus(null); // No timer for past or future dates
-      return;
-    }
-
-    const sunriseTime = new Date(weather.sunrise);
-    const sunsetTime = new Date(weather.sunset);
+    const sunriseTime = parseISO(weather.sunrise);
+    const sunsetTime = parseISO(weather.sunset);
+    const weatherDate = parseISO(weather.date);
 
     const calculateDaylight = () => {
-      const now = new Date();
+        const now = new Date();
 
-      if (now < sunriseTime) {
-        setDaylightStatus(`Começa às ${format(sunriseTime, "HH:mm")}`);
-      } else if (now > sunsetTime) {
-        setDaylightStatus("Fim da Luz Natural");
-        clearInterval(interval);
-      } else {
-        const diff = sunsetTime.getTime() - now.getTime();
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        setDaylightStatus(`${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`);
-      }
+        if (isPast(sunsetTime)) {
+            setDaylightStatus("Fim da Luz Natural");
+            return;
+        }
+
+        if (isToday(weatherDate)) {
+            if (now < sunriseTime) {
+                setDaylightStatus(`Começa às ${format(sunriseTime, "HH:mm")}`);
+            } else {
+                const diff = sunsetTime.getTime() - now.getTime();
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                setDaylightStatus(`${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`);
+            }
+        } else {
+             setDaylightStatus(null);
+        }
     };
 
     calculateDaylight();
-    const interval = setInterval(calculateDaylight, 60000); // Update every minute
-
-    return () => clearInterval(interval);
+    
+    // Only set up an interval if it's today and before sunset
+    if (isToday(weatherDate) && new Date() < sunsetTime) {
+        const interval = setInterval(calculateDaylight, 60000); // Update every minute
+        return () => clearInterval(interval);
+    }
 
   }, [weather.sunrise, weather.sunset, weather.date]);
 
@@ -103,10 +106,14 @@ export function WeatherCard({ weather }: WeatherCardProps) {
                 </div>
             </div>
             <div className="text-center w-1/3">
-                <p className="text-sm font-semibold text-primary">Luz do dia restante:</p>
-                <p className="text-xl font-bold text-foreground">
-                  {daylightStatus || format(new Date(weather.sunset), "HH:mm")}
-                </p>
+                 {daylightStatus && (
+                    <>
+                        <p className="text-sm font-semibold text-primary">Luz do dia restante:</p>
+                        <p className="text-xl font-bold text-foreground">
+                            {daylightStatus}
+                        </p>
+                    </>
+                )}
             </div>
         </div>
         
@@ -114,12 +121,12 @@ export function WeatherCard({ weather }: WeatherCardProps) {
           <div className="flex flex-col items-center text-center">
             <Sunrise className="h-5 w-5 text-yellow-500 mb-1" />
             <span className="font-semibold">Nascer do Sol</span>
-            <span>{format(new Date(weather.sunrise), "HH:mm")}</span>
+            <span>{format(parseISO(weather.sunrise), "HH:mm")}</span>
           </div>
           <div className="flex flex-col items-center text-center">
             <Sunset className="h-5 w-5 text-orange-500 mb-1" />
              <span className="font-semibold">Pôr do Sol</span>
-            <span>{format(new Date(weather.sunset), "HH:mm")}</span>
+            <span>{format(parseISO(weather.sunset), "HH:mm")}</span>
           </div>
         </div>
       </CardContent>
