@@ -575,8 +575,7 @@ function StoryboardPageDetail() {
                             </Card>
                         </div>
                          <div className="px-4 md:px-8 pb-4">
-                            <div className="flex items-center gap-2 rounded-lg bg-muted p-2">
-                                <span className="text-sm font-medium text-muted-foreground ml-2">Controles de Zoom:</span>
+                            <div className="flex items-center gap-1 rounded-lg bg-muted p-2">
                                 <Button variant="outline" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
                                 <Button variant="outline" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
                             </div>
