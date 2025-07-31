@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import type { LatLngExpression } from 'leaflet';
+import type { LatLng, LatLngExpression } from 'leaflet';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Search } from 'lucide-react';
@@ -18,7 +18,7 @@ interface LocationPickerProps {
   onLocationChange: (lat: number, lng: number, name: string) => void;
 }
 
-const MapClickHandler = ({ onMapClick }: { onMapClick: (latlng: { lat: number, lng: number }) => void }) => {
+const MapClickHandler = ({ onMapClick }: { onMapClick: (latlng: LatLng) => void }) => {
   useMapEvents({
     click(e) {
       onMapClick(e.latlng);
@@ -36,17 +36,16 @@ const ChangeView = ({ center, zoom }: { center: LatLngExpression, zoom: number }
 };
 
 export function LocationPicker({ initialPosition, onLocationChange }: LocationPickerProps) {
-  const [position, setPosition] = useState<[number, number]>(initialPosition as [number, number]);
+  const [position, setPosition] = useState<LatLngExpression>(initialPosition);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
   const formatAddress = (address: any, fallback: string): string => {
     if (!address) return fallback;
-    // Parts requested: nome da rua, numero, bairro, cep e estado
     const { road, house_number, suburb, postcode, state, town, village } = address;
 
     const formatted = [
-        road || town || village, // Fallback to town/village if road is not present
+        road || town || village,
         house_number,
         suburb,
         postcode,
@@ -56,7 +55,7 @@ export function LocationPicker({ initialPosition, onLocationChange }: LocationPi
     return formatted || fallback;
   }
 
-  const handleMapClick = async (latlng: { lat: number, lng: number }) => {
+  const handleMapClick = async (latlng: LatLng) => {
     setPosition([latlng.lat, latlng.lng]);
     try {
       const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&addressdetails=1`);
@@ -91,8 +90,15 @@ export function LocationPicker({ initialPosition, onLocationChange }: LocationPi
   };
   
   useEffect(() => {
-    setPosition(initialPosition as [number, number]);
+    setPosition(initialPosition);
   }, [initialPosition]);
+
+  const getZoomLevel = (pos: LatLngExpression) => {
+      const lat = Array.isArray(pos) ? pos[0] : pos.lat;
+      // Default to Brazil view if lat is near the initial center of Brazil
+      if (Math.abs(lat - (-14.235)) < 1) return 4;
+      return 13;
+  }
 
   return (
     <div className='space-y-2'>
@@ -106,8 +112,8 @@ export function LocationPicker({ initialPosition, onLocationChange }: LocationPi
             <Button type="button" onClick={handleSearch}><Search className="mr-2 h-4 w-4" /> Buscar</Button>
         </div>
         <div className="h-64 w-full rounded-md overflow-hidden border">
-            <MapContainer center={position} zoom={13} className="h-full w-full">
-                <ChangeView center={position} zoom={position[0] === -14.235 ? 4 : 13} />
+            <MapContainer center={position} zoom={getZoomLevel(position)} className="h-full w-full">
+                <ChangeView center={position} zoom={getZoomLevel(position)} />
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
