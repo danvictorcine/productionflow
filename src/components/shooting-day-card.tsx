@@ -2,8 +2,9 @@
 // @/src/components/shooting-day-card.tsx
 "use client";
 
+import { useState, useEffect } from "react";
 import type { Production, ShootingDay, Scene, ChecklistItem } from "@/lib/types";
-import { format } from "date-fns";
+import { format, isToday, isPast, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
@@ -153,65 +154,104 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 
 
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
+    const [timeLeft, setTimeLeft] = useState<string | null>(null);
+    const [isFinished, setIsFinished] = useState(false);
+
+    useEffect(() => {
+        if (!day.endTime || !isToday(day.date)) {
+            if (isPast(day.date)) {
+                setIsFinished(true);
+            }
+            return;
+        }
+
+        const calculateTimeLeft = () => {
+            const now = new Date();
+            const [endH, endM] = day.endTime!.split(':').map(Number);
+            const endDate = new Date();
+            endDate.setHours(endH, endM, 0, 0);
+
+            const diff = endDate.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setTimeLeft(null);
+                setIsFinished(true);
+                clearInterval(interval);
+            } else {
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                setTimeLeft(`${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`);
+                setIsFinished(false);
+            }
+        };
+
+        calculateTimeLeft();
+        const interval = setInterval(calculateTimeLeft, 60000); // Update every minute
+
+        return () => clearInterval(interval);
+    }, [day.date, day.endTime]);
+    
     const totalDuration = calculateDuration(day.startTime, day.endTime);
     const topGridClass = "grid grid-cols-1 md:grid-cols-3 gap-6";
 
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                <CardHeader className="p-0">
-                     <AccordionTrigger className="w-full hover:no-underline p-6 flex justify-between items-center">
-                        <div className="flex items-center gap-4 text-left">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                                <Calendar className="h-6 w-6" />
+                <AccordionTrigger className="w-full hover:no-underline p-0">
+                    <CardHeader className="flex-1 p-6">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 text-left">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                                    <Calendar className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold leading-none tracking-tight">
+                                        {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
+                                        {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
+                                    </h3>
+                                    <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
+                                    <MapPin className="h-4 w-4" /> {day.location}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-xl font-semibold leading-none tracking-tight">
-                                    {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
-                                    {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
-                                </h3>
-                                <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
-                                <MapPin className="h-4 w-4" /> {day.location}
-                                </p>
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                {!isPublicView && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Editar Ordem do Dia
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={onShare} disabled={isExporting}>
+                                                <Share2 className="mr-2 h-4 w-4" />
+                                                Compartilhar Link
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                Exportar para Excel
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
+                                                <FileDown className="mr-2 h-4 w-4" />
+                                                Exportar como PDF
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Excluir
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
                             </div>
                         </div>
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                             {!isPublicView && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            Editar Ordem do Dia
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={onShare} disabled={isExporting}>
-                                            <Share2 className="mr-2 h-4 w-4" />
-                                            Compartilhar Link
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
-                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                            Exportar para Excel
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
-                                            <FileDown className="mr-2 h-4 w-4" />
-                                            Exportar como PDF
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Excluir
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-                        </div>
-                    </AccordionTrigger>
-                </CardHeader>
+                    </CardHeader>
+                </AccordionTrigger>
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className={topGridClass}>
@@ -239,7 +279,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 )}
                             </div>
                             <div className="h-[180px]">
-                                <Card className="h-full flex flex-col justify-center items-center text-center p-4 bg-card/50">
+                                <Card className="h-full flex flex-col justify-between items-center text-center p-4 bg-card/50">
                                     <CardHeader className="p-0 mb-2">
                                         <CardTitle className="text-lg flex items-center gap-2">
                                             <Clock className="h-5 w-5 text-primary" />
@@ -259,6 +299,15 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                             {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
                                         </div>
                                     )}
+                                    <div className="h-10 mt-auto">
+                                        {isFinished && <Badge variant="destructive">Produção Finalizada</Badge>}
+                                        {timeLeft && (
+                                            <div className="text-center">
+                                                <p className="text-sm font-semibold text-primary">Tempo Restante</p>
+                                                <p className="text-xl font-bold text-foreground">{timeLeft}</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </Card>
                             </div>
                         </div>
