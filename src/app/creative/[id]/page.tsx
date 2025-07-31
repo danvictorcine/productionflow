@@ -283,14 +283,23 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                      return <iframe src={spotifyEmbedUrl} className="w-full h-full" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowFullScreen onClick={() => onSelect(null)}></iframe>;
                  }
                  return <div className="p-2 text-red-500 text-xs" onClick={() => onSelect(null)}>Link do Spotify inválido. Use um link de música, álbum ou playlist.</div>;
-            case 'location':
-                const locationData = JSON.parse(item.content);
+            case 'location': {
+                let locationData = null;
+                try {
+                    if (item.content) {
+                        locationData = JSON.parse(item.content);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse location data", e);
+                }
+                
                 return (
                     <div className="w-full h-full flex flex-col" onClick={() => onSelect(null)}>
-                        <DisplayMap position={[locationData.lat, locationData.lng]} className="flex-1" />
-                        <div className="bg-muted text-muted-foreground text-xs p-1 truncate order-last">{locationData.name}</div>
+                        <DisplayMap position={locationData ? [locationData.lat, locationData.lng] : [0,0]} className="flex-1" />
+                        {locationData?.name && <div className="bg-muted text-muted-foreground text-xs p-1 truncate order-last">{locationData.name}</div>}
                     </div>
                 );
+            }
             default:
                 return null;
         }
@@ -994,7 +1003,7 @@ function CreativeProjectPageDetail() {
             <SheetHeader><SheetTitle>Adicionar Localização</SheetTitle><SheetDescription>Pesquise ou clique no mapa para adicionar um local.</SheetDescription></SheetHeader>
             <div className="py-4">
                 <LocationPicker
-                    initialPosition={[-14.235, -51.925]}
+                    initialPosition={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [-14.235, -51.925]}
                     onLocationChange={(lat, lng, name) => setSelectedLocation({ lat, lng, name })}
                 />
             </div>

@@ -15,6 +15,16 @@ interface DisplayMapProps {
   isExporting?: boolean;
 }
 
+const isValidPosition = (pos: any): pos is LatLngExpression => {
+    if (Array.isArray(pos)) {
+        return pos.length === 2 && typeof pos[0] === 'number' && typeof pos[1] === 'number';
+    }
+    if (typeof pos === 'object' && pos !== null) {
+        return typeof pos.lat === 'number' && typeof pos.lng === 'number';
+    }
+    return false;
+}
+
 export function DisplayMap({ position, className, isExporting = false }: DisplayMapProps) {
   const [isClient, setIsClient] = useState(false);
 
@@ -22,11 +32,10 @@ export function DisplayMap({ position, className, isExporting = false }: Display
     setIsClient(true);
   }, []);
 
-  if (!isClient) {
+  if (!isClient || !isValidPosition(position)) {
     return <Skeleton className={className} />;
   }
 
-  const [lat, lng] = Array.isArray(position) ? position : [position.lat, position.lng];
   const zoom = 14;
   
   return (

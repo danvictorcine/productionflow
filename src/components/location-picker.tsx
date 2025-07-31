@@ -22,17 +22,10 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
   const [position, setPosition] = useState<LatLngExpression>(initialPosition);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
-
-  const getZoomLevel = (pos: LatLngExpression) => {
-    const lat = Array.isArray(pos) ? pos[0] : pos.lat;
-    if (Math.abs(lat - -14.235) < 1) return 4;
-    return 13;
-  };
   
   const handleMapClick = async (latlng: LatLng) => {
     const newPos: [number, number] = [latlng.lat, latlng.lng];
     setPosition(newPos);
-    map.flyTo(newPos, map.getZoom());
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&addressdetails=1`
@@ -109,13 +102,17 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
 };
 
 export function LocationPicker(props: LocationPickerProps) {
+  const safeInitialPosition = Array.isArray(props.initialPosition) && typeof props.initialPosition[0] === 'number'
+    ? props.initialPosition
+    : [-14.235, -51.925]; // Default to Brazil if invalid
+
   return (
-    <MapContainer center={props.initialPosition} zoom={4} className="h-64 w-full">
+    <MapContainer center={safeInitialPosition} zoom={4} className="h-64 w-full">
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <LocationPickerInner {...props} />
+      <LocationPickerInner {...props} initialPosition={safeInitialPosition} />
     </MapContainer>
   );
 }
