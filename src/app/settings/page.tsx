@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -417,13 +418,13 @@ function SettingsPageDetail() {
                         </AlertDescription>
                     </Alert>
                     <div className="flex gap-4">
-                        <Button type="button" variant="outline" onClick={handleExportData} disabled={isExporting}>
-                            {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                            Exportar Dados
+                        <Button type="button" variant="outline" onClick={handleExportData} disabled={isExporting} size="sm">
+                            {isExporting ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <Download className="h-4 w-4 md:mr-2" />}
+                            <span className="hidden md:inline">Exportar Dados</span>
                         </Button>
-                        <Button type="button" variant="outline" onClick={() => importFileInputRef.current?.click()} disabled={isImporting}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            Importar Dados
+                        <Button type="button" variant="outline" onClick={() => importFileInputRef.current?.click()} disabled={isImporting} size="sm">
+                            <Upload className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Importar Dados</span>
                         </Button>
                         <input
                             ref={importFileInputRef}
@@ -476,5 +477,3 @@ export default function SettingsPage() {
         </AuthGuard>
     )
 }
-
-    
