@@ -8,7 +8,7 @@ import { format, isToday, isPast, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, ChevronDown
+  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -158,10 +158,15 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     const [isFinished, setIsFinished] = useState(false);
 
     useEffect(() => {
-        if (!day.endTime || !isToday(day.date)) {
+        if (!isToday(day.date)) {
             if (isPast(day.date)) {
                 setIsFinished(true);
             }
+            return;
+        }
+
+        if (!day.endTime) {
+            setIsFinished(false);
             return;
         }
 
@@ -197,9 +202,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                <AccordionTrigger className="w-full hover:no-underline p-0">
-                    <CardHeader className="flex-1 p-6">
-                        <div className="flex justify-between items-center">
+                <CardHeader className="p-0">
+                    <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
+                        <div className="p-6 flex-1 flex justify-between items-center">
                             <div className="flex items-center gap-4 text-left">
                                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                                     <Calendar className="h-6 w-6" />
@@ -250,8 +255,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 )}
                             </div>
                         </div>
-                    </CardHeader>
-                </AccordionTrigger>
+                    </AccordionTrigger>
+                </CardHeader>
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className={topGridClass}>
@@ -303,7 +308,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                         {isFinished && <Badge variant="destructive">Produção Finalizada</Badge>}
                                         {timeLeft && (
                                             <div className="text-center">
-                                                <p className="text-sm font-semibold text-primary">Tempo Restante</p>
+                                                <p className="text-sm font-semibold text-primary">Tempo Restante da Produção</p>
                                                 <p className="text-xl font-bold text-foreground">{timeLeft}</p>
                                             </div>
                                         )}
