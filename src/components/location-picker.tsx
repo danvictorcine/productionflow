@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import type { LatLng, LatLngExpression } from 'leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import type { LatLngExpression } from 'leaflet';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Search } from 'lucide-react';
@@ -11,6 +11,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.webpack.css';
 import 'leaflet-defaulticon-compatibility';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from './ui/skeleton';
 
 interface LocationPickerProps {
   initialPosition: LatLngExpression;
@@ -19,9 +20,14 @@ interface LocationPickerProps {
 
 const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPickerProps) => {
   const map = useMap();
-  const [position, setPosition] = useState<LatLngExpression>(initialPosition);
+  const [position, setPosition] = useState<LatLngExpression | null>(initialPosition);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    map.setView(initialPosition, map.getZoom());
+    setPosition(initialPosition);
+  }, [initialPosition, map]);
 
   const formatAddress = (address: any, fallback: string): string => {
     if (!address) return fallback;
@@ -31,8 +37,8 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
     return parts.length > 0 ? parts.join(', ') : fallback;
   };
 
-  useMapEvents({
-    async click(e) {
+  useEffect(() => {
+    const mapClickHandler = async (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
       setPosition([lat, lng]);
       try {
@@ -44,8 +50,12 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
         console.error('Reverse geocoding failed', error);
         onLocationChange(lat, lng, `Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}`);
       }
-    },
-  });
+    };
+    map.on('click', mapClickHandler);
+    return () => {
+      map.off('click', mapClickHandler);
+    };
+  }, [map, onLocationChange]);
 
   const handleSearch = async () => {
     if (!searchTerm) return;
@@ -68,56 +78,60 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
   };
 
   return (
-    <div className="space-y-2 h-full flex flex-col">
-      <div className="flex gap-2">
-        <Input
-          placeholder="Pesquisar um endereço..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              handleSearch();
-            }
-          }}
-        />
-        <Button type="button" onClick={handleSearch}>
-          <Search className="mr-2 h-4 w-4" /> Buscar
-        </Button>
+    <>
+        <div className="flex gap-2 mb-2">
+            <Input
+            placeholder="Pesquisar um endereço..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearch();
+                }
+            }}
+            />
+            <Button type="button" onClick={handleSearch}>
+            <Search className="mr-2 h-4 w-4" /> Buscar
+            </Button>
       </div>
-      <div className="flex-1 h-full w-full rounded-md overflow-hidden border">
-         <MapContainer center={position as LatLngExpression} zoom={4} className="h-full w-full" whenCreated={mapInstance => {
-            // This logic runs once when the map is created.
-            // We use the inner component's map instance for subsequent updates.
-         }}>
-             <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-             />
-             <Marker position={position as LatLngExpression}></Marker>
-         </MapContainer>
-      </div>
-    </div>
+      {position && <Marker position={position}></Marker>}
+    </>
   );
 };
 
+const isValidPosition = (pos: any): pos is LatLngExpression => {
+    if (Array.isArray(pos)) {
+        return pos.length === 2 && typeof pos[0] === 'number' && typeof pos[1] === 'number';
+    }
+    if (typeof pos === 'object' && pos !== null) {
+        return typeof pos.lat === 'number' && typeof pos.lng === 'number';
+    }
+    return false;
+}
 
-export function LocationPicker(props: LocationPickerProps) {
-  const safeInitialPosition = Array.isArray(props.initialPosition) && typeof props.initialPosition[0] === 'number'
-    ? props.initialPosition
-    : [-14.235, -51.925];
+export function LocationPicker({ initialPosition, onLocationChange }: LocationPickerProps) {
+  const [isClient, setIsClient] = useState(false);
 
-  // We need a key to force re-mounting the entire component if the initial position changes drastically.
-  // This is a robust way to handle Leaflet's non-reactive nature.
-  const mapKey = `${safeInitialPosition[0]}-${safeInitialPosition[1]}`;
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return <Skeleton className="h-64 w-full" />;
+  }
+  
+  const safePosition = isValidPosition(initialPosition) ? initialPosition : [-14.235, -51.925] as LatLngExpression;
 
   return (
-    <MapContainer center={safeInitialPosition} zoom={4} className="h-64 w-full" key={mapKey}>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <LocationPickerInner {...props} initialPosition={safeInitialPosition} />
-    </MapContainer>
+    <div className="space-y-2 h-full flex flex-col">
+        <MapContainer center={safePosition} zoom={4} className="h-64 w-full rounded-md border">
+            <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <LocationPickerInner initialPosition={safePosition} onLocationChange={onLocationChange} />
+        </MapContainer>
+    </div>
   );
 }
