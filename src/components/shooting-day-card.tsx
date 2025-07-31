@@ -9,7 +9,7 @@ import { format, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clapperboard, Clock, Hourglass,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2
+  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, ChevronDown
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -189,11 +189,11 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                <AccordionTrigger className="hover:no-underline p-0 [&>svg]:mr-6">
-                    <CardHeader className="relative flex-1">
+                <AccordionTrigger className="hover:no-underline p-6">
+                    <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-4 text-left">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                            <Calendar className="h-6 w-6" />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                                <Calendar className="h-6 w-6" />
                             </div>
                             <div>
                                 <h3 className="text-xl font-semibold leading-none tracking-tight">
@@ -205,45 +205,49 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 </p>
                             </div>
                         </div>
-                        {!isPublicView && (
-                            <div className="absolute top-4 right-4" onClick={(e) => e.stopPropagation()}>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            Editar Ordem do Dia
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={onShare} disabled={isExporting}>
-                                            <Share2 className="mr-2 h-4 w-4" />
-                                            Compartilhar Link
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
-                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                            Exportar para Excel
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
-                                            <FileDown className="mr-2 h-4 w-4" />
-                                            Exportar como PDF
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Excluir
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        )}
-                    </CardHeader>
+                        <div className="flex items-center gap-2">
+                             {!isPublicView && (
+                                <div onClick={(e) => e.stopPropagation()}>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Editar Ordem do Dia
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={onShare} disabled={isExporting}>
+                                                <Share2 className="mr-2 h-4 w-4" />
+                                                Compartilhar Link
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                                Exportar para Excel
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
+                                                <FileDown className="mr-2 h-4 w-4" />
+                                                Exportar como PDF
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Excluir
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            )}
+                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                        </div>
+                    </div>
                 </AccordionTrigger>
+
                 <AccordionContent>
-                    <CardContent className="flex-grow flex flex-col justify-between space-y-6">
+                    <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className={topGridClass}>
                             <div className="h-[180px]">
                                 {isFetchingWeather ? (
