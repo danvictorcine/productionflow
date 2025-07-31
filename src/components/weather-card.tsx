@@ -56,14 +56,17 @@ export function WeatherCard({ weather }: WeatherCardProps) {
 
   useEffect(() => {
     if (!weather.sunset || !isToday(new Date(weather.date))) {
+      setDaylightLeft(null);
       return;
     }
 
     const calculateDaylight = () => {
       const now = new Date();
       const sunsetTime = new Date(weather.sunset);
+
       if (now > sunsetTime) {
-        setDaylightLeft(null);
+        setDaylightLeft("Fim da Luz Natural");
+        clearInterval(interval);
       } else {
         const diff = sunsetTime.getTime() - now.getTime();
         const hours = Math.floor(diff / (1000 * 60 * 60));
