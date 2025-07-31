@@ -7,7 +7,7 @@ import type { WeatherInfo } from "@/lib/types";
 import { format, isToday, isPast, parseISO } from "date-fns";
 import {
   Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, CloudSnow,
-  Wind, Sunrise, Sunset, Haze, CloudFog, CloudSun
+  Wind, Sunrise, Sunset, Haze, CloudFog, CloudSun, Hourglass
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,7 +61,7 @@ export function WeatherCard({ weather }: WeatherCardProps) {
     const calculateDaylight = () => {
         const now = new Date();
 
-        if (isPast(sunsetTime)) {
+        if (isPast(weatherDate) && !isToday(weatherDate)) {
             setDaylightStatus("Fim da Luz Natural");
             return;
         }
@@ -69,6 +69,8 @@ export function WeatherCard({ weather }: WeatherCardProps) {
         if (isToday(weatherDate)) {
             if (now < sunriseTime) {
                 setDaylightStatus(`Começa às ${format(sunriseTime, "HH:mm")}`);
+            } else if (now > sunsetTime) {
+                setDaylightStatus("Fim da Luz Natural");
             } else {
                 const diff = sunsetTime.getTime() - now.getTime();
                 const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -105,13 +107,12 @@ export function WeatherCard({ weather }: WeatherCardProps) {
                     <p className="text-sm">{weather.windSpeed} km/h</p>
                 </div>
             </div>
-            <div className="text-center w-1/3">
+            <div className="flex flex-col items-center justify-center text-center w-1/3">
                  {daylightStatus && (
                     <>
-                        <p className="text-sm font-semibold text-primary">Luz do dia restante:</p>
-                        <p className="text-xl font-bold text-foreground">
-                            {daylightStatus}
-                        </p>
+                        <Hourglass className="h-5 w-5 text-primary mb-1" />
+                        <span className="text-xs font-semibold">Luz do dia restante</span>
+                        <span className="text-xs">{daylightStatus}</span>
                     </>
                 )}
             </div>
