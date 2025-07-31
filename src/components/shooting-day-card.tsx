@@ -200,8 +200,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
                 <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
-                    <CardHeader className="p-6 flex-1 flex justify-between items-center flex-row">
-                        <div className="flex items-center gap-4 text-left">
+                    <CardHeader className="p-6 flex-1 flex flex-row justify-between items-center text-left">
+                         <div className="flex items-center gap-4">
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                                 <Calendar className="h-6 w-6" />
                             </div>

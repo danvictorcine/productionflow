@@ -55,19 +55,15 @@ export function WeatherCard({ weather }: WeatherCardProps) {
   const [daylightLeft, setDaylightLeft] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!weather.sunset || !weather.sunrise || !isToday(new Date(weather.date))) {
+    if (!weather.sunset || !isToday(new Date(weather.date))) {
       return;
     }
 
     const calculateDaylight = () => {
       const now = new Date();
       const sunsetTime = new Date(weather.sunset);
-      const sunriseTime = new Date(weather.sunrise);
-
-      if (now.getTime() > sunsetTime.getTime()) {
-        setDaylightLeft("Fim da Luz Natural");
-      } else if (now.getTime() < sunriseTime.getTime()) {
-        setDaylightLeft("Aguardando nascer do sol");
+      if (now > sunsetTime) {
+        setDaylightLeft(null);
       } else {
         const diff = sunsetTime.getTime() - now.getTime();
         const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -81,7 +77,7 @@ export function WeatherCard({ weather }: WeatherCardProps) {
 
     return () => clearInterval(interval);
 
-  }, [weather.sunset, weather.sunrise, weather.date]);
+  }, [weather.sunset, weather.date]);
 
   return (
     <Card className="relative bg-card/50 h-full">
