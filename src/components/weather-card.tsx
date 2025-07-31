@@ -111,7 +111,7 @@ export function WeatherCard({ weather }: WeatherCardProps) {
                  {daylightStatus && (
                     <>
                         <Hourglass className="h-5 w-5 text-primary mb-1" />
-                        <span className="text-xs font-semibold">Luz do dia restante</span>
+                        <span className="text-xs font-semibold">Luz do dia restante:</span>
                         <span className="text-xs">{daylightStatus}</span>
                     </>
                 )}
