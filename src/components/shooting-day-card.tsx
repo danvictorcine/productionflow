@@ -16,7 +16,7 @@ import dynamic from 'next/dynamic';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -205,43 +205,40 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                              {!isPublicView && (
-                                <div onClick={(e) => e.stopPropagation()}>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                                <MoreVertical className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Editar Ordem do Dia
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={onShare} disabled={isExporting}>
-                                                <Share2 className="mr-2 h-4 w-4" />
-                                                Compartilhar Link
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
-                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                                Exportar para Excel
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
-                                                <FileDown className="mr-2 h-4 w-4" />
-                                                Exportar como PDF
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Excluir
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            Editar Ordem do Dia
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={onShare} disabled={isExporting}>
+                                            <Share2 className="mr-2 h-4 w-4" />
+                                            Compartilhar Link
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Exportar para Excel
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
+                                            <FileDown className="mr-2 h-4 w-4" />
+                                            Exportar como PDF
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Excluir
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             )}
-                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
                         </div>
                     </div>
                 </AccordionTrigger>
