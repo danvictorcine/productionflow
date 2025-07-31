@@ -67,7 +67,7 @@ export function WeatherCard({ weather }: WeatherCardProps) {
                 </div>
             </div>
             <div className="text-center w-1/3">
-                <p className="text-sm font-semibold text-primary">Luz do dia</p>
+                <p className="text-sm font-semibold text-primary">Luz do Dia Restante</p>
                 <p className="text-xl font-bold text-foreground">
                   {format(new Date(weather.sunset), "HH:mm")}
                 </p>

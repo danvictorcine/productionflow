@@ -560,7 +560,7 @@ function StoryboardPageDetail() {
                     className="flex-1 flex flex-col overflow-hidden"
                 >
                     <div className="bg-background border-b z-30 shrink-0">
-                        <div className="p-4 sm:p-6 md:p-8">
+                        <div className="p-4 sm:p-6 md:p-6 pb-2">
                             <Card>
                                 <CardHeader>
                                     <div className="flex justify-between items-start">
