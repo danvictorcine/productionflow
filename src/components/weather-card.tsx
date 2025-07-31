@@ -54,8 +54,9 @@ export function WeatherCard({ weather }: WeatherCardProps) {
   const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    // This effect should only run for the current day's weather
-    if (!isToday(new Date(weather.date))) {
+    // Only run the timer if the weather date is today
+    const weatherDate = new Date(weather.date + 'T00:00:00'); // Ensure we compare dates only
+    if (!isToday(weatherDate)) {
       setDaylightStatus(null); // No timer for past or future dates
       return;
     }
