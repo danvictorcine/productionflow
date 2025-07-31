@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Code } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 import imageCompression from 'browser-image-compression';
@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { getYoutubeEmbedUrl, getVimeoEmbedUrl } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,6 +70,7 @@ export default function EditPostPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
     const [videoUrlInput, setVideoUrlInput] = useState("");
+    const [isHtmlMode, setIsHtmlMode] = useState(false);
 
     const form = useForm<z.infer<typeof postSchema>>({
         resolver: zodResolver(postSchema),
@@ -297,15 +299,35 @@ export default function EditPostPage() {
                             name="content"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Conteúdo</FormLabel>
+                                    <div className="flex justify-between items-center">
+                                        <FormLabel>Conteúdo</FormLabel>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setIsHtmlMode(!isHtmlMode)}
+                                        >
+                                            <Code className="mr-2 h-4 w-4"/>
+                                            {isHtmlMode ? "Ver Editor Visual" : "Ver Código HTML"}
+                                        </Button>
+                                    </div>
                                 <FormControl>
-                                    <QuillEditor
-                                        ref={quillRef}
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        modules={modules}
-                                        theme="snow"
-                                    />
+                                    {isHtmlMode ? (
+                                        <Textarea 
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            className="font-mono min-h-[400px]"
+                                            placeholder="Edite o código HTML aqui..."
+                                        />
+                                    ) : (
+                                        <QuillEditor
+                                            ref={quillRef}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            modules={modules}
+                                            theme="snow"
+                                        />
+                                    )}
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
