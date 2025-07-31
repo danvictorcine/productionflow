@@ -1,4 +1,3 @@
-
 // @/src/components/weather-card.tsx
 "use client";
 
@@ -27,7 +26,6 @@ const getWeatherIcon = (code: number) => {
     case 61: case 63: case 65: return <CloudRain className="h-10 w-10 text-blue-500" />;
     case 66: case 67: return <CloudRain className="h-10 w-10 text-blue-500" />; // Freezing Rain
     case 71: case 73: case 75: case 77: return <CloudSnow className="h-10 w-10 text-blue-300" />;
-    case 80: case 81: case 82: return <CloudRain className="h-10 w-10 text-blue-600" />; // Rain showers
     case 85: case 86: return <CloudSnow className="h-10 w-10 text-blue-400" />; // Snow showers
     case 95: case 96: case 99: return <CloudLightning className="h-10 w-10 text-yellow-600" />;
     default: return <Haze className="h-10 w-10 text-gray-500" />;
@@ -52,26 +50,30 @@ const getWeatherDescription = (code: number): string => {
 
 
 export function WeatherCard({ weather }: WeatherCardProps) {
-  const [daylightLeft, setDaylightLeft] = useState<string | null>(null);
+  const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!weather.sunset || !isToday(new Date(weather.date))) {
-      setDaylightLeft(null);
+    if (!isToday(new Date(weather.date))) {
+      setDaylightStatus(null); // No timer for past or future dates
       return;
     }
 
+    const sunriseTime = new Date(weather.sunrise);
+    const sunsetTime = new Date(weather.sunset);
+
     const calculateDaylight = () => {
       const now = new Date();
-      const sunsetTime = new Date(weather.sunset);
 
-      if (now > sunsetTime) {
-        setDaylightLeft("Fim da Luz Natural");
+      if (now < sunriseTime) {
+        setDaylightStatus(`Começa às ${format(sunriseTime, "HH:mm")}`);
+      } else if (now > sunsetTime) {
+        setDaylightStatus("Fim da Luz Natural");
         clearInterval(interval);
       } else {
         const diff = sunsetTime.getTime() - now.getTime();
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        setDaylightLeft(`${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`);
+        setDaylightStatus(`${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`);
       }
     };
 
@@ -80,7 +82,7 @@ export function WeatherCard({ weather }: WeatherCardProps) {
 
     return () => clearInterval(interval);
 
-  }, [weather.sunset, weather.date]);
+  }, [weather.sunrise, weather.sunset, weather.date]);
 
   return (
     <Card className="relative bg-card/50 h-full">
@@ -100,7 +102,7 @@ export function WeatherCard({ weather }: WeatherCardProps) {
             <div className="text-center w-1/3">
                 <p className="text-sm font-semibold text-primary">Luz do dia restante:</p>
                 <p className="text-xl font-bold text-foreground">
-                  {daylightLeft || format(new Date(weather.sunset), "HH:mm")}
+                  {daylightStatus || format(new Date(weather.sunset), "HH:mm")}
                 </p>
             </div>
         </div>
