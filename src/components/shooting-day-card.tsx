@@ -2,12 +2,11 @@
 // @/src/components/shooting-day-card.tsx
 "use client";
 
-import { useState, useEffect } from "react";
 import type { Production, ShootingDay, Scene, ChecklistItem } from "@/lib/types";
-import { format, isToday, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  MoreVertical, Edit, Trash2, Calendar, MapPin, Clapperboard, Clock, Hourglass,
+  MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
   Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, ChevronDown
 } from "lucide-react";
 import dynamic from 'next/dynamic';
@@ -154,58 +153,14 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 
 
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
-  const [remainingDaylight, setRemainingDaylight] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!day.weather || !day.weather.sunset) {
-            setRemainingDaylight(null);
-            return;
-        }
-
-        const shootDate = new Date(day.date);
-        const today = new Date();
-        shootDate.setHours(0,0,0,0);
-        today.setHours(0,0,0,0);
-
-        if (today.getTime() > shootDate.getTime()) {
-            setRemainingDaylight("Produção Finalizada");
-            return;
-        }
-
-        if (today.getTime() < shootDate.getTime()) {
-            setRemainingDaylight(null);
-            return;
-        }
-
-        // Only runs if it is today
-        const calculate = () => {
-          const now = new Date();
-          const sunsetTime = new Date(day.weather!.sunset);
-
-          if (now > sunsetTime) {
-            setRemainingDaylight("Finalizado");
-          } else {
-            const remainingMs = sunsetTime.getTime() - now.getTime();
-            const hours = Math.floor(remainingMs / 3600000);
-            const minutes = Math.floor((remainingMs % 3600000) / 60000);
-            setRemainingDaylight(`${hours}h ${minutes}m`);
-          }
-        };
-        
-        calculate();
-        const intervalId = setInterval(calculate, 60000);
-        return () => clearInterval(intervalId);
-
-    }, [day.weather, day.date]);
-
     const totalDuration = calculateDuration(day.startTime, day.endTime);
     const topGridClass = "grid grid-cols-1 md:grid-cols-3 gap-6";
 
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                 <AccordionTrigger className="hover:no-underline p-0">
-                    <div className="p-6 flex justify-between items-center w-full">
+                <CardHeader className="p-0">
+                     <AccordionTrigger className="w-full hover:no-underline p-6 flex justify-between items-center">
                         <div className="flex items-center gap-4 text-left">
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                                 <Calendar className="h-6 w-6" />
@@ -255,8 +210,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 </DropdownMenu>
                             )}
                         </div>
-                    </div>
-                </AccordionTrigger>
+                    </AccordionTrigger>
+                </CardHeader>
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className={topGridClass}>
@@ -297,12 +252,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                                 <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
                                             </p>
                                             {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
-                                            {remainingDaylight && (
-                                                <div className="pt-2">
-                                                    <p className="text-xs font-semibold text-primary">Tempo Restante</p>
-                                                    <p className="text-base font-bold text-foreground">{remainingDaylight}</p>
-                                                </div>
-                                            )}
                                         </div>
                                     ) : (
                                         <div className="text-center text-sm text-muted-foreground">

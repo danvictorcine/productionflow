@@ -2,12 +2,11 @@
 // @/src/components/weather-card.tsx
 "use client";
 
-import { useState, useEffect } from "react";
 import type { WeatherInfo } from "@/lib/types";
-import { format, isToday, parseISO } from "date-fns";
+import { format } from "date-fns";
 import {
   Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, CloudSnow,
-  Wind, Sunrise, Sunset, Haze, CloudFog, CloudSun, Hourglass
+  Wind, Sunrise, Sunset, Haze, CloudFog, CloudSun
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,34 +51,6 @@ const getWeatherDescription = (code: number): string => {
 
 
 export function WeatherCard({ weather }: WeatherCardProps) {
-  const [remainingDaylight, setRemainingDaylight] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!weather.sunset || !isToday(parseISO(weather.date))) {
-      setRemainingDaylight(null);
-      return;
-    }
-
-    const calculate = () => {
-      const now = new Date();
-      const sunsetTime = new Date(weather.sunset);
-
-      if (now > sunsetTime) {
-        setRemainingDaylight("Finalizado");
-      } else {
-        const remainingMs = sunsetTime.getTime() - now.getTime();
-        const hours = Math.floor(remainingMs / 3600000);
-        const minutes = Math.floor((remainingMs % 3600000) / 60000);
-        setRemainingDaylight(`${hours}h ${minutes}m`);
-      }
-    };
-    
-    calculate();
-    const intervalId = setInterval(calculate, 60000);
-    return () => clearInterval(intervalId);
-
-  }, [weather.sunset, weather.date]);
-
   return (
     <Card className="relative bg-card/50 h-full">
       <CardContent className="flex flex-col justify-between p-4 h-full">
@@ -95,17 +66,12 @@ export function WeatherCard({ weather }: WeatherCardProps) {
                     <p className="text-sm">{weather.windSpeed} km/h</p>
                 </div>
             </div>
-            {remainingDaylight ? (
-                 <div className="text-center w-1/3">
-                    <p className="text-sm font-semibold flex items-center justify-center gap-1.5 text-primary">
-                      <Hourglass className="h-4 w-4" />
-                      Luz do dia restante:
-                    </p>
-                    <p className="text-xl font-bold text-foreground">{remainingDaylight}</p>
-                </div>
-            ) : (
-                 <div className="w-1/3" />
-            )}
+            <div className="text-center w-1/3">
+                <p className="text-sm font-semibold text-primary">Luz do dia</p>
+                <p className="text-xl font-bold text-foreground">
+                  {format(new Date(weather.sunset), "HH:mm")}
+                </p>
+            </div>
         </div>
         
         <div className="mt-2 grid grid-cols-2 gap-2 w-full text-xs text-muted-foreground">
