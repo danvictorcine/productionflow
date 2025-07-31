@@ -23,11 +23,6 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
-  useEffect(() => {
-    setPosition(initialPosition);
-    map.flyTo(initialPosition, getZoomLevel(initialPosition));
-  }, [initialPosition, map]);
-
   const getZoomLevel = (pos: LatLngExpression) => {
     const lat = Array.isArray(pos) ? pos[0] : pos.lat;
     if (Math.abs(lat - -14.235) < 1) return 4;

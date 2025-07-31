@@ -83,8 +83,8 @@ const shootingDaySchema = z.object({
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   location: z.string().min(1, "A localização é obrigatória. Clique no mapa ou pesquise."),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  latitude: z.number(), // Tornando obrigatório para evitar undefined
+  longitude: z.number(), // Tornando obrigatório para evitar undefined
   callTimes: z.array(callTimeSchema),
   scenes: z.array(sceneSchema),
   presentTeam: z.array(teamMemberSchema).optional(),
@@ -342,7 +342,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                     <FormMessage />
                                 </FormItem>
                             )} />
-                            <LocationPicker initialPosition={[lat || defaultPosition[0], lng || defaultPosition[1]]} onLocationChange={handleLocationChange} />
+                            <LocationPicker initialPosition={[lat, lng]} onLocationChange={handleLocationChange} />
                             <FormField control={form.control} name="parkingInfo" render={({ field }) => (
                                 <FormItem><FormLabel>Informações de Estacionamento</FormLabel><FormControl><Textarea placeholder="Ex: Estacionamento disponível na rua lateral..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>
                             )}/>
