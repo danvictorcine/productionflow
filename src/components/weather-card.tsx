@@ -99,7 +99,7 @@ export function WeatherCard({ weather }: WeatherCardProps) {
                  <div className="text-center w-1/3">
                     <p className="text-sm font-semibold flex items-center justify-center gap-1.5 text-primary">
                       <Hourglass className="h-4 w-4" />
-                      Luz do dia
+                      Luz do dia restante:
                     </p>
                     <p className="text-xl font-bold text-foreground">{remainingDaylight}</p>
                 </div>

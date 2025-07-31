@@ -1,5 +1,4 @@
 
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -155,17 +154,33 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 
 
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
-    const [remainingDaylight, setRemainingDaylight] = useState<string | null>(null);
+  const [remainingDaylight, setRemainingDaylight] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!day.weather || !day.weather.sunset || !isToday(parseISO(day.weather.date))) {
-          setRemainingDaylight(null);
-          return;
+        if (!day.weather || !day.weather.sunset) {
+            setRemainingDaylight(null);
+            return;
         }
 
+        const shootDate = new Date(day.date);
+        const today = new Date();
+        shootDate.setHours(0,0,0,0);
+        today.setHours(0,0,0,0);
+
+        if (today.getTime() > shootDate.getTime()) {
+            setRemainingDaylight("Produção Finalizada");
+            return;
+        }
+
+        if (today.getTime() < shootDate.getTime()) {
+            setRemainingDaylight(null);
+            return;
+        }
+
+        // Only runs if it is today
         const calculate = () => {
           const now = new Date();
-          const sunsetTime = new Date(day.weather.sunset);
+          const sunsetTime = new Date(day.weather!.sunset);
 
           if (now > sunsetTime) {
             setRemainingDaylight("Finalizado");
@@ -181,7 +196,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         const intervalId = setInterval(calculate, 60000);
         return () => clearInterval(intervalId);
 
-    }, [day.weather]);
+    }, [day.weather, day.date]);
 
     const totalDuration = calculateDuration(day.startTime, day.endTime);
     const topGridClass = "grid grid-cols-1 md:grid-cols-3 gap-6";
@@ -189,8 +204,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                <AccordionTrigger className="hover:no-underline p-6">
-                    <div className="flex justify-between items-center w-full">
+                 <AccordionTrigger className="hover:no-underline p-0">
+                    <div className="p-6 flex justify-between items-center w-full">
                         <div className="flex items-center gap-4 text-left">
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                                 <Calendar className="h-6 w-6" />
@@ -242,7 +257,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                         </div>
                     </div>
                 </AccordionTrigger>
-
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className={topGridClass}>
@@ -283,6 +297,12 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                                 <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
                                             </p>
                                             {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
+                                            {remainingDaylight && (
+                                                <div className="pt-2">
+                                                    <p className="text-xs font-semibold text-primary">Tempo Restante</p>
+                                                    <p className="text-base font-bold text-foreground">{remainingDaylight}</p>
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="text-center text-sm text-muted-foreground">
