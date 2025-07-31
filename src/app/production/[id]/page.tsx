@@ -1,4 +1,5 @@
 
+
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -600,15 +601,15 @@ function ProductionPageDetail() {
             <AccordionItem value="team" className="border-none">
                 <Card>
                     <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
-                    <CardHeader className="flex-1">
-                        <CardTitle className="flex items-center text-left">
-                            <Users className="h-6 w-6 mr-3 text-primary" />
-                            Equipe e Elenco
-                        </CardTitle>
-                        <CardDescription className="text-left">
-                            Informações detalhadas sobre todos os envolvidos na produção.
-                        </CardDescription>
-                    </CardHeader>
+                        <CardHeader className="flex-1">
+                            <CardTitle className="flex items-center text-left">
+                                <Users className="h-6 w-6 mr-3 text-primary" />
+                                Equipe e Elenco
+                            </CardTitle>
+                            <CardDescription className="text-left">
+                                Informações detalhadas sobre todos os envolvidos na produção.
+                            </CardDescription>
+                        </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent className="p-6 pt-0">
                         <div className="space-y-4">

@@ -16,7 +16,7 @@ import dynamic from 'next/dynamic';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -187,192 +187,194 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     const topGridClass = "grid grid-cols-1 md:grid-cols-3 gap-6";
 
     return (
-        <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-            <AccordionTrigger className="hover:no-underline p-0 [&>svg]:mr-6">
-                <CardHeader className="relative flex-1">
-                    <div className="flex items-center gap-4 text-left">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                        <Calendar className="h-6 w-6" />
+        <AccordionItem value={day.id} className="border-none">
+            <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
+                <AccordionTrigger className="hover:no-underline p-0 [&>svg]:mr-6">
+                    <CardHeader className="relative flex-1">
+                        <div className="flex items-center gap-4 text-left">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                            <Calendar className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-semibold leading-none tracking-tight">
+                                    {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
+                                    {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
+                                </h3>
+                                <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
+                                <MapPin className="h-4 w-4" /> {day.location}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-xl font-semibold leading-none tracking-tight">
-                                {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
-                                {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
-                            </h3>
-                            <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
-                            <MapPin className="h-4 w-4" /> {day.location}
-                            </p>
-                        </div>
-                    </div>
-                    {!isPublicView && (
-                        <div className="absolute top-4 right-4" onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Editar Ordem do Dia
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={onShare} disabled={isExporting}>
-                                        <Share2 className="mr-2 h-4 w-4" />
-                                        Compartilhar Link
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
-                                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                        Exportar para Excel
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
-                                        <FileDown className="mr-2 h-4 w-4" />
-                                        Exportar como PDF
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Excluir
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    )}
-                </CardHeader>
-            </AccordionTrigger>
-            <AccordionContent>
-                <CardContent className="flex-grow flex flex-col justify-between space-y-6">
-                    <div className={topGridClass}>
-                        <div className="h-[180px]">
-                            {isFetchingWeather ? (
-                                <Skeleton className="h-full w-full" />
-                            ) : day.weather ? (
-                                <WeatherCard weather={day.weather} />
-                            ) : (
-                                <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
-                                    <p className="text-sm font-semibold">Sem dados de clima</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
-                                    {!isPublicView && <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>}
-                                </div>
-                            )}
-                        </div>
-                        <div className="h-[180px]">
-                            {day.latitude && day.longitude ? (
-                                <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" isExporting={isExporting} />
-                            ) : (
-                                <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
-                                <p className="text-sm font-semibold">Sem mapa</p>
-                                <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
-                                </div>
-                            )}
-                        </div>
-                        <div className="h-[180px]">
-                            <Card className="h-full flex flex-col justify-center items-center text-center p-4 bg-card/50">
-                                <CardHeader className="p-0 mb-2">
-                                    <CardTitle className="text-lg flex items-center gap-2">
-                                        <Clock className="h-5 w-5 text-primary" />
-                                        Horários da Diária
-                                    </CardTitle>
-                                </CardHeader>
-                                {day.startTime && day.endTime ? (
-                                    <div className="space-y-2">
-                                        <p className="text-muted-foreground text-lg">
-                                            <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
-                                        </p>
-                                        {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
-                                    </div>
+                        {!isPublicView && (
+                            <div className="absolute top-4 right-4" onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            Editar Ordem do Dia
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={onShare} disabled={isExporting}>
+                                            <Share2 className="mr-2 h-4 w-4" />
+                                            Compartilhar Link
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Exportar para Excel
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
+                                            <FileDown className="mr-2 h-4 w-4" />
+                                            Exportar como PDF
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Excluir
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        )}
+                    </CardHeader>
+                </AccordionTrigger>
+                <AccordionContent>
+                    <CardContent className="flex-grow flex flex-col justify-between space-y-6">
+                        <div className={topGridClass}>
+                            <div className="h-[180px]">
+                                {isFetchingWeather ? (
+                                    <Skeleton className="h-full w-full" />
+                                ) : day.weather ? (
+                                    <WeatherCard weather={day.weather} />
                                 ) : (
-                                    <div className="text-center text-sm text-muted-foreground">
-                                        <p>Horários não definidos.</p>
-                                        {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
+                                    <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+                                        <p className="text-sm font-semibold">Sem dados de clima</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
+                                        {!isPublicView && <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>}
                                     </div>
                                 )}
-                            </Card>
-                        </div>
-                    </div>
-
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                        {/* Logistics Section */}
-                        <div className="p-4 border rounded-lg space-y-2">
-                            <h4 className="font-semibold text-xl flex items-center"><Hash className="h-6 w-6 mr-2 text-primary" />Logística e Segurança</h4>
-                            <StaticDetailSection icon={ParkingCircle} title="Estacionamento" content={day.parkingInfo} />
-                            <StaticDetailSection icon={Utensils} title="Refeição" content={day.mealTime} />
-                            <StaticDetailSection icon={Radio} title="Rádios" content={day.radioChannels} />
-                            {day.nearestHospital && day.nearestHospital.name && (
-                                <StaticDetailSection icon={Hospital} title="Hospital Mais Próximo" content={
-                                    <div className="space-y-1 text-base">
-                                        <p><span className="font-semibold text-foreground">Nome:</span> {day.nearestHospital.name}</p>
-                                        <p><span className="font-semibold text-foreground">Endereço:</span> {day.nearestHospital.address}</p>
-                                        <p><span className="font-semibold text-foreground">Telefone:</span> {day.nearestHospital.phone}</p>
-                                    </div>
-                                }/>
-                            )}
-                        </div>
-
-                        {/* Call Times */}
-                        <div>
-                            <h4 className="flex items-center text-xl font-semibold mb-2">
-                                <Clock className="h-6 w-6 mr-2 text-primary" />
-                                Horários de Chamada
-                            </h4>
-                            {Array.isArray(day.callTimes) && day.callTimes.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow><TableHead className="text-base">Departamento/Pessoa</TableHead><TableHead className="text-right text-base">Horário</TableHead></TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {day.callTimes.map(ct => (
-                                            <TableRow key={ct.id}><TableCell className="text-base">{ct.department}</TableCell><TableCell className="text-right text-base">{ct.time}</TableCell></TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            ) : (
-                                <p className="text-base text-muted-foreground pl-6">Nenhum horário de chamada definido.</p>
-                            )}
-                        </div>
-
-                        {/* Scenes */}
-                        <div>
-                            <h4 className="flex items-center text-xl font-semibold mb-2">
-                                <Film className="h-6 w-6 mr-2 text-primary" />
-                                Cenas a Gravar
-                            </h4>
-                            <div className="space-y-3">
-                                {Array.isArray(day.scenes) && day.scenes.length > 0 ? (
-                                    day.scenes.map(scene => <SceneCard key={scene.id} scene={scene} />)
+                            </div>
+                            <div className="h-[180px]">
+                                {day.latitude && day.longitude ? (
+                                    <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" isExporting={isExporting} />
                                 ) : (
-                                    <p className="text-base text-muted-foreground pl-6">Nenhuma cena definida para hoje.</p>
+                                    <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+                                    <p className="text-sm font-semibold">Sem mapa</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
+                                    </div>
                                 )}
+                            </div>
+                            <div className="h-[180px]">
+                                <Card className="h-full flex flex-col justify-center items-center text-center p-4 bg-card/50">
+                                    <CardHeader className="p-0 mb-2">
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <Clock className="h-5 w-5 text-primary" />
+                                            Horários da Diária
+                                        </CardTitle>
+                                    </CardHeader>
+                                    {day.startTime && day.endTime ? (
+                                        <div className="space-y-2">
+                                            <p className="text-muted-foreground text-lg">
+                                                <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
+                                            </p>
+                                            {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center text-sm text-muted-foreground">
+                                            <p>Horários não definidos.</p>
+                                            {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
+                                        </div>
+                                    )}
+                                </Card>
                             </div>
                         </div>
 
-                        {/* Department Notes */}
-                        <div className="p-4 border rounded-lg space-y-2">
-                            <h4 className="font-semibold text-xl flex items-center"><Users className="h-6 w-6 mr-2 text-primary"/>Notas dos Departamentos</h4>
-                            <ChecklistSection icon={Truck} title="Equipamentos" items={day.equipment} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'equipment', list) : undefined} isPublicView={isPublicView} />
-                            <ChecklistSection icon={Shirt} title="Figurino" items={day.costumes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'costumes', list) : undefined} isPublicView={isPublicView} />
-                            <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={day.props} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'props', list) : undefined} isPublicView={isPublicView} />
-                        </div>
+                        <Separator />
                         
-                        {/* Present Team & General Notes */}
-                        <div className="p-4 border rounded-lg space-y-2">
-                            <ChecklistSection icon={FileText} title="Observações Gerais" items={day.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
-                            <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
-                                day.presentTeam && day.presentTeam.length > 0 ? (
-                                    <div className="flex flex-wrap gap-2">
-                                        {day.presentTeam.map(member => (
-                                            <Badge key={member.id} variant="secondary" className="font-normal text-base">{member.name} <span className="text-muted-foreground ml-1.5">({member.role})</span></Badge>
-                                        ))}
-                                    </div>
-                                ) : <p className="text-base text-muted-foreground">Nenhuma equipe selecionada para este dia.</p>
-                            }/>
+                        <div className="space-y-4">
+                            {/* Logistics Section */}
+                            <div className="p-4 border rounded-lg space-y-2">
+                                <h4 className="font-semibold text-xl flex items-center"><Hash className="h-6 w-6 mr-2 text-primary" />Logística e Segurança</h4>
+                                <StaticDetailSection icon={ParkingCircle} title="Estacionamento" content={day.parkingInfo} />
+                                <StaticDetailSection icon={Utensils} title="Refeição" content={day.mealTime} />
+                                <StaticDetailSection icon={Radio} title="Rádios" content={day.radioChannels} />
+                                {day.nearestHospital && day.nearestHospital.name && (
+                                    <StaticDetailSection icon={Hospital} title="Hospital Mais Próximo" content={
+                                        <div className="space-y-1 text-base">
+                                            <p><span className="font-semibold text-foreground">Nome:</span> {day.nearestHospital.name}</p>
+                                            <p><span className="font-semibold text-foreground">Endereço:</span> {day.nearestHospital.address}</p>
+                                            <p><span className="font-semibold text-foreground">Telefone:</span> {day.nearestHospital.phone}</p>
+                                        </div>
+                                    }/>
+                                )}
+                            </div>
+
+                            {/* Call Times */}
+                            <div>
+                                <h4 className="flex items-center text-xl font-semibold mb-2">
+                                    <Clock className="h-6 w-6 mr-2 text-primary" />
+                                    Horários de Chamada
+                                </h4>
+                                {Array.isArray(day.callTimes) && day.callTimes.length > 0 ? (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow><TableHead className="text-base">Departamento/Pessoa</TableHead><TableHead className="text-right text-base">Horário</TableHead></TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {day.callTimes.map(ct => (
+                                                <TableRow key={ct.id}><TableCell className="text-base">{ct.department}</TableCell><TableCell className="text-right text-base">{ct.time}</TableCell></TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                ) : (
+                                    <p className="text-base text-muted-foreground pl-6">Nenhum horário de chamada definido.</p>
+                                )}
+                            </div>
+
+                            {/* Scenes */}
+                            <div>
+                                <h4 className="flex items-center text-xl font-semibold mb-2">
+                                    <Film className="h-6 w-6 mr-2 text-primary" />
+                                    Cenas a Gravar
+                                </h4>
+                                <div className="space-y-3">
+                                    {Array.isArray(day.scenes) && day.scenes.length > 0 ? (
+                                        day.scenes.map(scene => <SceneCard key={scene.id} scene={scene} />)
+                                    ) : (
+                                        <p className="text-base text-muted-foreground pl-6">Nenhuma cena definida para hoje.</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Department Notes */}
+                            <div className="p-4 border rounded-lg space-y-2">
+                                <h4 className="font-semibold text-xl flex items-center"><Users className="h-6 w-6 mr-2 text-primary"/>Notas dos Departamentos</h4>
+                                <ChecklistSection icon={Truck} title="Equipamentos" items={day.equipment} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'equipment', list) : undefined} isPublicView={isPublicView} />
+                                <ChecklistSection icon={Shirt} title="Figurino" items={day.costumes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'costumes', list) : undefined} isPublicView={isPublicView} />
+                                <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={day.props} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'props', list) : undefined} isPublicView={isPublicView} />
+                            </div>
+                            
+                            {/* Present Team & General Notes */}
+                            <div className="p-4 border rounded-lg space-y-2">
+                                <ChecklistSection icon={FileText} title="Observações Gerais" items={day.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
+                                <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
+                                    day.presentTeam && day.presentTeam.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {day.presentTeam.map(member => (
+                                                <Badge key={member.id} variant="secondary" className="font-normal text-base">{member.name} <span className="text-muted-foreground ml-1.5">({member.role})</span></Badge>
+                                            ))}
+                                        </div>
+                                    ) : <p className="text-base text-muted-foreground">Nenhuma equipe selecionada para este dia.</p>
+                                }/>
+                            </div>
                         </div>
-                    </div>
-                </CardContent>
-            </AccordionContent>
-        </Card>
+                    </CardContent>
+                </AccordionContent>
+            </Card>
+        </AccordionItem>
     );
 };
