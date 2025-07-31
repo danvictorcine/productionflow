@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileDown, X, GripVertical, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Image as ImageIcon, Trash2, Loader2, FileDown, X, GripVertical, MoreVertical, ZoomIn, ZoomOut } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -150,7 +150,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                 placeholder="Adicione suas anotações aqui..."
                 value={notes}
                 onChange={handleNotesChange}
-                className="text-sm bg-transparent border-none focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-ring p-1"
+                className="text-sm md:text-base bg-transparent border-none focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-ring p-1"
             />
         </div>
     );
@@ -429,6 +429,13 @@ function StoryboardPageDetail() {
         setScale(newScale);
     };
 
+    const handleZoom = (direction: 'in' | 'out') => {
+        const scaleAmount = 0.15;
+        let newScale = scale + (direction === 'in' ? scaleAmount : -scaleAmount);
+        newScale = Math.min(Math.max(0.1, newScale), 2); // Clamp scale
+        setScale(newScale);
+    }
+
     const handleMouseDown = (e: React.MouseEvent) => {
         if ((e.target as HTMLElement).closest('textarea, button, a, .drag-handle')) {
             return;
@@ -525,6 +532,10 @@ function StoryboardPageDetail() {
                         <h1 className="text-lg md:text-xl font-bold text-primary truncate">{storyboard.name}</h1>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
+                        <Button onClick={() => setIsStoryboardInfoDialogOpen(true)} variant="outline" size="sm">
+                            <Edit className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Editar Detalhes</span>
+                        </Button>
                         <Button onClick={() => { setEditingScene(null); setIsSceneDialogOpen(true); }} size="sm">
                             <PlusCircle className="h-4 w-4 md:mr-2" />
                             <span className="hidden md:inline">Adicionar Cena</span>
@@ -559,13 +570,16 @@ function StoryboardPageDetail() {
                                                 <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>
                                             )}
                                         </div>
-                                         <Button onClick={() => setIsStoryboardInfoDialogOpen(true)} variant="outline" size="sm">
-                                            <Edit className="h-4 w-4 mr-0 md:mr-2" />
-                                            <span className="hidden md:inline">Editar</span>
-                                        </Button>
                                     </div>
                                 </CardHeader>
                             </Card>
+                        </div>
+                         <div className="px-4 md:px-8 pb-4">
+                            <div className="flex items-center gap-2 rounded-lg bg-muted p-2">
+                                <span className="text-sm font-medium text-muted-foreground ml-2">Controles de Zoom:</span>
+                                <Button variant="outline" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
+                                <Button variant="outline" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
+                            </div>
                         </div>
                     </div>
                     

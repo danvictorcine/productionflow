@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X, ExternalLink, Music, Type, GalleryVertical } from 'lucide-react';
+import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X, ExternalLink, Music, Type, GalleryVertical, ZoomIn, ZoomOut } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
@@ -123,7 +123,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                         data-selected={isSelected}
                         onClick={() => onSelect(item.id)}
                     >
-                        <div id={`toolbar-${item.id}`}>
+                        <div id={`toolbar-${item.id}`} className="ql-toolbar ql-snow">
                             <span className="ql-formats">
                                 <select className="ql-header" defaultValue="">
                                     <option value="1">Título 1</option>
@@ -338,7 +338,6 @@ function CreativeProjectPageDetail() {
   const [items, setItems] = useState<BoardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
-  const isMobile = useIsMobile();
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   
   // Dialog states
@@ -358,7 +357,15 @@ function CreativeProjectPageDetail() {
   const pinchStartDistance = useRef(0);
   
   const setInitialView = useCallback(() => {
-    if (!isMobile || items.length === 0 || !mainContainerRef.current) return;
+    if (items.length === 0 || !mainContainerRef.current) {
+        // Center view if canvas is empty
+        const container = mainContainerRef.current;
+        if(container) {
+            setPosition({ x: container.offsetWidth / 2, y: container.offsetHeight / 3 });
+            setScale(1);
+        }
+        return;
+    };
     
     const container = mainContainerRef.current;
     const padding = 50;
@@ -389,7 +396,7 @@ function CreativeProjectPageDetail() {
     setScale(newScale);
     setPosition({ x: newX, y: newY });
 
-  }, [isMobile, items]);
+  }, [items]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -736,6 +743,13 @@ function CreativeProjectPageDetail() {
         setScale(newScale);
     };
 
+    const handleZoom = (direction: 'in' | 'out') => {
+        const scaleAmount = 0.15;
+        let newScale = scale + (direction === 'in' ? scaleAmount : -scaleAmount);
+        newScale = Math.min(Math.max(0.1, newScale), 2); // Clamp scale
+        setScale(newScale);
+    }
+
     const handleMouseDown = (e: React.MouseEvent) => {
         if ((e.target as HTMLElement).closest('.rnd-item, .tool-button')) {
             return;
@@ -894,6 +908,10 @@ function CreativeProjectPageDetail() {
                      <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)} className="tool-button">
                         <MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span>
                     </Button>
+                    <div className="flex items-center gap-1 ml-auto">
+                        <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
+                    </div>
                 </div>
             </div>
         </div>
