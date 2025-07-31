@@ -158,21 +158,18 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     const [isFinished, setIsFinished] = useState(false);
 
     useEffect(() => {
-        if (!isToday(day.date)) {
+        if (!day.endTime || !isToday(day.date)) {
             if (isPast(day.date)) {
                 setIsFinished(true);
             }
             return;
         }
 
-        if (!day.endTime) {
-            setIsFinished(false);
-            return;
-        }
-
         const calculateTimeLeft = () => {
             const now = new Date();
             const [endH, endM] = day.endTime!.split(':').map(Number);
+            
+            // Create end date object for today
             const endDate = new Date();
             endDate.setHours(endH, endM, 0, 0);
 
@@ -202,61 +199,59 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                <CardHeader className="p-0">
-                    <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
-                        <div className="p-6 flex-1 flex justify-between items-center">
-                            <div className="flex items-center gap-4 text-left">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                                    <Calendar className="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-semibold leading-none tracking-tight">
-                                        {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
-                                        {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
-                                    </h3>
-                                    <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
-                                    <MapPin className="h-4 w-4" /> {day.location}
-                                    </p>
-                                </div>
+                <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
+                    <CardHeader className="p-6 flex-1 flex justify-between items-center flex-row">
+                        <div className="flex items-center gap-4 text-left">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                                <Calendar className="h-6 w-6" />
                             </div>
-                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                {!isPublicView && (
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                                <MoreVertical className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Editar Ordem do Dia
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={onShare} disabled={isExporting}>
-                                                <Share2 className="mr-2 h-4 w-4" />
-                                                Compartilhar Link
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
-                                                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                                Exportar para Excel
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
-                                                <FileDown className="mr-2 h-4 w-4" />
-                                                Exportar como PDF
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Excluir
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                )}
+                            <div>
+                                <h3 className="text-xl font-semibold leading-none tracking-tight">
+                                    {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
+                                    {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
+                                </h3>
+                                <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
+                                <MapPin className="h-4 w-4" /> {day.location}
+                                </p>
                             </div>
                         </div>
-                    </AccordionTrigger>
-                </CardHeader>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            {!isPublicView && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            Editar Ordem do Dia
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={onShare} disabled={isExporting}>
+                                            <Share2 className="mr-2 h-4 w-4" />
+                                            Compartilhar Link
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Exportar para Excel
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
+                                            <FileDown className="mr-2 h-4 w-4" />
+                                            Exportar como PDF
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Excluir
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                        </div>
+                    </CardHeader>
+                </AccordionTrigger>
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className={topGridClass}>

@@ -2,8 +2,9 @@
 // @/src/components/weather-card.tsx
 "use client";
 
+import { useEffect, useState } from "react";
 import type { WeatherInfo } from "@/lib/types";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import {
   Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, CloudSnow,
   Wind, Sunrise, Sunset, Haze, CloudFog, CloudSun
@@ -51,6 +52,37 @@ const getWeatherDescription = (code: number): string => {
 
 
 export function WeatherCard({ weather }: WeatherCardProps) {
+  const [daylightLeft, setDaylightLeft] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!weather.sunset || !weather.sunrise || !isToday(new Date(weather.date))) {
+      return;
+    }
+
+    const calculateDaylight = () => {
+      const now = new Date();
+      const sunsetTime = new Date(weather.sunset);
+      const sunriseTime = new Date(weather.sunrise);
+
+      if (now.getTime() > sunsetTime.getTime()) {
+        setDaylightLeft("Fim da Luz Natural");
+      } else if (now.getTime() < sunriseTime.getTime()) {
+        setDaylightLeft("Aguardando nascer do sol");
+      } else {
+        const diff = sunsetTime.getTime() - now.getTime();
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        setDaylightLeft(`${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`);
+      }
+    };
+
+    calculateDaylight();
+    const interval = setInterval(calculateDaylight, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+
+  }, [weather.sunset, weather.sunrise, weather.date]);
+
   return (
     <Card className="relative bg-card/50 h-full">
       <CardContent className="flex flex-col justify-between p-4 h-full">
@@ -67,9 +99,9 @@ export function WeatherCard({ weather }: WeatherCardProps) {
                 </div>
             </div>
             <div className="text-center w-1/3">
-                <p className="text-sm font-semibold text-primary">Luz do Dia Restante</p>
+                <p className="text-sm font-semibold text-primary">Luz do dia restante:</p>
                 <p className="text-xl font-bold text-foreground">
-                  {format(new Date(weather.sunset), "HH:mm")}
+                  {daylightLeft || format(new Date(weather.sunset), "HH:mm")}
                 </p>
             </div>
         </div>
