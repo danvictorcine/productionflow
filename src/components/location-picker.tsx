@@ -21,21 +21,12 @@ interface LocationPickerProps {
 const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPickerProps) => {
   const map = useMap();
   const [position, setPosition] = useState<LatLngExpression | null>(initialPosition);
-  const [searchTerm, setSearchTerm] = useState('');
-  const { toast } = useToast();
 
+  // This effect handles map updates when the initialPosition prop changes (e.g., from a search)
   useEffect(() => {
-    map.setView(initialPosition, map.getZoom());
     setPosition(initialPosition);
+    map.flyTo(initialPosition, 14);
   }, [initialPosition, map]);
-
-  const formatAddress = (address: any, fallback: string): string => {
-    if (!address) return fallback;
-    const { road, house_number, suburb, postcode, state, town, village, city } = address;
-    const mainStreet = road || town || village || city;
-    const parts = [mainStreet, house_number, suburb, postcode, state].filter(Boolean);
-    return parts.length > 0 ? parts.join(', ') : fallback;
-  };
 
   useEffect(() => {
     const mapClickHandler = async (e: L.LeafletMouseEvent) => {
@@ -44,7 +35,7 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
       try {
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`);
         const data = await response.json();
-        const displayName = formatAddress(data.address, data.display_name || `Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}`);
+        const displayName = data.display_name || `Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}`;
         onLocationChange(lat, lng, displayName);
       } catch (error) {
         console.error('Reverse geocoding failed', error);
@@ -57,18 +48,30 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
     };
   }, [map, onLocationChange]);
 
+
+  return position ? <Marker position={position}></Marker> : null;
+};
+
+export function LocationPicker({ initialPosition, onLocationChange }: LocationPickerProps) {
+  const [isClient, setIsClient] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPosition, setCurrentPosition] = useState(initialPosition);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const handleSearch = async () => {
     if (!searchTerm) return;
     try {
       const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchTerm)}&format=json&limit=1&addressdetails=1`);
       const data = await response.json();
       if (data && data.length > 0) {
-        const { lat, lon, address, display_name } = data[0];
+        const { lat, lon, display_name } = data[0];
         const newPos: [number, number] = [parseFloat(lat), parseFloat(lon)];
-        setPosition(newPos);
-        map.flyTo(newPos, 14);
-        const displayName = formatAddress(address, display_name);
-        onLocationChange(newPos[0], newPos[1], displayName);
+        setCurrentPosition(newPos);
+        onLocationChange(newPos[0], newPos[1], display_name);
       } else {
         toast({ variant: 'destructive', title: 'Localização não encontrada.' });
       }
@@ -77,9 +80,13 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
     }
   };
 
+  if (!isClient) {
+    return <Skeleton className="h-64 w-full" />;
+  }
+
   return (
-    <>
-        <div className="flex gap-2 mb-2">
+    <div className="space-y-2 h-full flex flex-col">
+       <div className="flex gap-2 mb-2">
             <Input
             placeholder="Pesquisar um endereço..."
             value={searchTerm}
@@ -95,43 +102,13 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
             <Search className="mr-2 h-4 w-4" /> Buscar
             </Button>
       </div>
-      {position && <Marker position={position}></Marker>}
-    </>
-  );
-};
-
-const isValidPosition = (pos: any): pos is LatLngExpression => {
-    if (Array.isArray(pos)) {
-        return pos.length === 2 && typeof pos[0] === 'number' && typeof pos[1] === 'number';
-    }
-    if (typeof pos === 'object' && pos !== null) {
-        return typeof pos.lat === 'number' && typeof pos.lng === 'number';
-    }
-    return false;
-}
-
-export function LocationPicker({ initialPosition, onLocationChange }: LocationPickerProps) {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return <Skeleton className="h-64 w-full" />;
-  }
-  
-  const safePosition = isValidPosition(initialPosition) ? initialPosition : [-14.235, -51.925] as LatLngExpression;
-
-  return (
-    <div className="space-y-2 h-full flex flex-col">
-        <MapContainer center={safePosition} zoom={4} className="h-64 w-full rounded-md border">
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <LocationPickerInner initialPosition={safePosition} onLocationChange={onLocationChange} />
-        </MapContainer>
+      <MapContainer center={currentPosition} zoom={13} className="h-64 w-full rounded-md border">
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <LocationPickerInner initialPosition={currentPosition} onLocationChange={onLocationChange} />
+      </MapContainer>
     </div>
   );
 }
