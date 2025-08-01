@@ -1,3 +1,4 @@
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -58,6 +59,7 @@ export const getProjects = async (): Promise<Project[]> => {
         return {
             ...data,
             id: doc.id,
+            createdAt: (data.createdAt as Timestamp).toDate(),
             installments: (data.installments || []).map((inst: any) => ({ ...inst, date: (inst.date as Timestamp).toDate() }))
         } as Project;
     });
@@ -391,7 +393,7 @@ export const getProductions = async (): Promise<Production[]> => {
     if (!userId) return [];
     const q = query(collection(db, 'productions'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Production);
+    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as Production);
 };
 
 export const getProduction = async (productionId: string): Promise<Production | null> => {
@@ -630,7 +632,7 @@ export const getCreativeProjects = async (): Promise<CreativeProject[]> => {
     if (!userId) return [];
     const q = query(collection(db, 'creative_projects'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as CreativeProject);
+    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as CreativeProject);
 };
 
 export const getCreativeProject = async (projectId: string): Promise<CreativeProject | null> => {
@@ -820,7 +822,7 @@ export const getStoryboards = async (): Promise<Storyboard[]> => {
     if (!userId) return [];
     const q = query(collection(db, 'storyboards'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Storyboard);
+    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as Storyboard);
 };
 
 export const getStoryboard = async (storyboardId: string): Promise<Storyboard | null> => {
