@@ -2,30 +2,63 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check ownership based on a userId field
+    
+    // Helper function to check ownership
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Allow users to manage their own profile
+    // Default-deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User can manage their own profile
     match /users/{userId} {
       allow read, write: if isOwner(userId);
     }
     
-    // Generic rule for all user-owned collections
-    // A user can create/read/update/delete their own documents.
-    // They can list documents as long as they filter by their own userId in the query.
-    match /projects/{docId} { allow read, write: if isOwner(resource.data.userId); }
-    match /transactions/{docId} { allow read, write: if isOwner(resource.data.userId); }
-    match /productions/{docId} { allow read, write: if isOwner(resource.data.userId); }
-    match /shooting_days/{docId} { allow read, write: if isOwner(resource.data.userId); }
-    match /creative_projects/{docId} { allow read, write: if isOwner(resource.data.userId); }
-    match /board_items/{docId} { allow read, write: if isOwner(resource.data.userId); }
-    match /storyboards/{docId} { allow read, write: if isOwner(resource.data.userId); }
-    match /storyboard_scenes/{docId} { allow read, write: if isOwner(resource.data.userId); }
-    match /storyboard_panels/{docId} { allow read, write: if isOwner(resource.data.userId); }
-    match /projectGroups/{docId} { allow read, write: if isOwner(resource.data.userId); }
+    // Rules for user-owned collections
+    match /projects/{docId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow get, list, update, delete: if isOwner(resource.data.userId);
+    }
+    match /transactions/{docId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow get, list, update, delete: if isOwner(resource.data.userId);
+    }
+    match /productions/{docId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow get, list, update, delete: if isOwner(resource.data.userId);
+    }
+    match /shooting_days/{docId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow get, list, update, delete: if isOwner(resource.data.userId);
+    }
+    match /creative_projects/{docId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow get, list, update, delete: if isOwner(resource.data.userId);
+    }
+    match /board_items/{docId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow get, list, update, delete: if isOwner(resource.data.userId);
+    }
+    match /storyboards/{docId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow get, list, update, delete: if isOwner(resource.data.userId);
+    }
+    match /storyboard_scenes/{docId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow get, list, update, delete: if isOwner(resource.data.userId);
+    }
+    match /storyboard_panels/{docId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow get, list, update, delete: if isOwner(resource.data.userId);
+    }
+    match /projectGroups/{docId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow get, list, update, delete: if isOwner(resource.data.userId);
+    }
 
     // Public collections (anyone can read, only admins can write)
     function isAdmin() {
@@ -46,8 +79,8 @@ service cloud.firestore {
       allow list, write: if isAdmin();
     }
     match /settings/{settingId} {
-      allow get: if true; // Allow anyone to read settings like theme
-      allow list, write: if isAdmin();
+      allow read: if true; // Allow anyone to read settings like theme
+      allow write: if isAdmin();
     }
     
     // Publicly readable documents for sharing
