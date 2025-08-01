@@ -138,35 +138,66 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
   return docRef.id;
 };
 
-export const getProjects = async (groupId?: string): Promise<Project[]> => {
+// Generic function to fetch projects from a collection
+async function getProjectsFromCollection<T>(collectionName: string, idField: string, createdAtField: string, groupId?: string): Promise<T[]> {
   const userId = getUserId();
   if (!userId) return [];
-  
-  const constraints = [where('userId', '==', userId)];
+
+  const collRef = collection(db, collectionName);
+  const results: T[] = [];
+
   if (groupId) {
-    constraints.push(where('groupId', '==', groupId));
+    // Fetch only projects within the specified group
+    const q = query(collRef, where('userId', '==', userId), where('groupId', '==', groupId));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        results.push({
+            ...data,
+            [idField]: doc.id,
+            [createdAtField]: (data.createdAt as Timestamp).toDate(),
+        } as T);
+    });
   } else {
-    // Correctly query for projects where groupId does NOT exist for the home page.
-    constraints.push(where('groupId', '==', null));
+    // Fetch only projects *without* a group
+    const q = query(collRef, where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (!data.groupId) { // Filter client-side
+        results.push({
+          ...data,
+          [idField]: doc.id,
+          [createdAtField]: (data.createdAt as Timestamp).toDate(),
+        } as T);
+      }
+    });
   }
-  
-  const q = query(collection(db, 'projects'), ...constraints);
-  const querySnapshot = await getDocs(q);
-  const projects: Project[] = [];
-  querySnapshot.forEach((doc) => {
-    const data = doc.data();
-    projects.push({
-      ...data,
-      id: doc.id,
-      installments: (data.installments || []).map((inst: any) => ({
-        ...inst,
-        date: (inst.date as Timestamp).toDate()
-      })),
-      createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-    } as Project);
-  });
-  return projects;
+  return results;
+}
+
+
+export const getProjects = async (groupId?: string): Promise<Project[]> => {
+    return getProjectsFromCollection<Project>('projects', 'id', 'createdAt', groupId).then(projects => 
+        projects.map(p => ({
+            ...p,
+            installments: (p.installments || []).map(inst => ({...inst, date: (inst.date as any).toDate ? (inst.date as any).toDate() : new Date(inst.date)}))
+        }))
+    );
 };
+
+export const getProductions = async (groupId?: string): Promise<Production[]> => {
+    return getProjectsFromCollection<Production>('productions', 'id', 'createdAt', groupId);
+};
+
+export const getCreativeProjects = async (groupId?: string): Promise<CreativeProject[]> => {
+    return getProjectsFromCollection<CreativeProject>('creative_projects', 'id', 'createdAt', groupId);
+};
+
+export const getStoryboards = async (groupId?: string): Promise<Storyboard[]> => {
+    return getProjectsFromCollection<Storyboard>('storyboards', 'id', 'createdAt', groupId);
+};
+
 
 export const getProject = async (projectId: string): Promise<Project | null> => {
     const userId = getUserId();
@@ -491,25 +522,6 @@ export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'cr
   await addDoc(collection(db, 'productions'), dataWithUser);
 };
 
-export const getProductions = async (groupId?: string): Promise<Production[]> => {
-  const userId = getUserId();
-  if (!userId) return [];
-  const constraints = [
-    where('userId', '==', userId),
-    groupId ? where('groupId', '==', groupId) : where('groupId', '==', null)
-  ];
-  const q = query(collection(db, 'productions'), ...constraints);
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-    } as Production;
-  });
-};
-
 export const getProduction = async (productionId: string): Promise<Production | null> => {
   const userId = getUserId();
   const productionRef = doc(db, 'productions', productionId);
@@ -741,25 +753,6 @@ export const addCreativeProject = async (data: Omit<CreativeProject, 'id' | 'use
   });
 };
 
-export const getCreativeProjects = async (groupId?: string): Promise<CreativeProject[]> => {
-  const userId = getUserId();
-  if (!userId) return [];
-  const constraints = [
-    where('userId', '==', userId),
-    groupId ? where('groupId', '==', groupId) : where('groupId', '==', null)
-  ];
-  const q = query(collection(db, 'creative_projects'), ...constraints);
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-    } as CreativeProject;
-  });
-};
-
 export const getCreativeProject = async (projectId: string): Promise<CreativeProject | null> => {
     const userId = getUserId();
     if (!userId) return null;
@@ -939,25 +932,6 @@ export const addStoryboard = async (data: Omit<Storyboard, 'id' | 'userId' | 'cr
     aspectRatio: data.aspectRatio || '16:9',
     userId,
     createdAt: Timestamp.now(),
-  });
-};
-
-export const getStoryboards = async (groupId?: string): Promise<Storyboard[]> => {
-  const userId = getUserId();
-  if (!userId) return [];
-  const constraints = [
-    where('userId', '==', userId),
-    groupId ? where('groupId', '==', groupId) : where('groupId', '==', null)
-  ];
-  const q = query(collection(db, 'storyboards'), ...constraints);
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
-    } as Storyboard;
   });
 };
 

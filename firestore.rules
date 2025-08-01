@@ -1,39 +1,28 @@
 
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Default-deny all reads and writes
-    match /{document=**} {
-      allow read, write: if false;
+    // Helper function to determine ownership
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
-
-    // Allow users to manage their own profile
+    
+    // User can only read/write their own data
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
-    // Generic rule for user-owned content
-    function isOwner() {
-      return request.auth.uid == resource.data.userId;
+    // Generic rule for all user-owned collections
+    match /{collection}/{docId} {
+      allow read, write: if request.auth != null && isOwner(resource.data.userId);
     }
-
-    // Project collections
-    match /projects/{docId} { allow read, write: if isOwner(); }
-    match /transactions/{docId} { allow read, write: if isOwner(); }
-    match /productions/{docId} { allow read, write: if isOwner(); }
-    match /shooting_days/{docId} { allow read, write: if isOwner(); }
-    match /creative_projects/{docId} { allow read, write: if isOwner(); }
-    match /board_items/{docId} { allow read, write: if isOwner(); }
-    match /storyboards/{docId} { allow read, write: if isOwner(); }
-    match /storyboard_scenes/{docId} { allow read, write: if isOwner(); }
-    match /storyboard_panels/{docId} { allow read, write: if isOwner(); }
-    match /projectGroups/{docId} { allow read, write: if isOwner(); }
-
+    
     // Public collections (anyone can read, only admins can write)
     function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      // Check for the existence of the user document and the isAdmin field
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
     
     match /posts/{docId} {
@@ -49,8 +38,8 @@ service cloud.firestore {
       allow list, write: if isAdmin();
     }
     match /settings/{docId} {
-      allow get: if true;
-      allow list, write: if isAdmin();
+      allow read: if true; // Allow reading settings like theme
+      allow write: if isAdmin();
     }
     
     // Publicly readable documents for sharing
@@ -62,3 +51,4 @@ service cloud.firestore {
     }
   }
 }
+
