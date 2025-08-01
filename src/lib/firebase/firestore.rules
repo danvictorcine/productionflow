@@ -1,80 +1,108 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check ownership
+    // ========= Helper Functions =========
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
+    
+    function isAdmin() {
+      // Use exists() to prevent errors if the user document doesn't exist yet during signup.
+      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
 
-    // Users can read and update their own profile.
-    // Creation is handled by a backend function (or Cloud Function), so we don't need a public create rule.
+    // ========= User Profiles =========
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
-    }
-    
-    // Projects (Financial)
-    match /projects/{projectId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-    
-    // Transactions for Financial Projects
-    match /transactions/{transactionId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
-    }
-    
-    // Productions (Call Sheet)
-    match /productions/{productionId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-    }
-    
-    // Shooting Days for Productions
-    match /shooting_days/{dayId} {
-       allow read, update, delete: if isOwner(resource.data.userId);
-       allow create: if isOwner(request.resource.data.userId);
-    }
-    
-    // Creative Projects (Moodboards)
-    match /creative_projects/{creativeProjectId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if request.auth != null;
+      allow update: if isOwner(userId);
     }
 
-    // Board Items for Creative Projects
-    match /board_items/{itemId} {
-        allow read, update, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(request.resource.data.userId);
+    // ========= Generic Rules for User-Owned Data (Projects, etc.) =========
+    function canRead(userId) {
+      return isOwner(userId);
+    }
+    
+    function canList(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // --- Public Content Collections ---
+    function canWrite(userId) {
+      return isOwner(userId);
+    }
     
-    // Blog Posts - anyone can read
+    function defaultSecurityRules(collectionName) {
+      return {
+        // GET requests
+        "allow get": if canRead(resource.data.userId),
+        // LIST requests (queries)
+        "allow list": if canList(request.query.resource.data.userId),
+        // WRITE requests (create, update, delete)
+        "allow write": if canWrite(request.resource.data.userId),
+      }
+    }
+
+    // ========= Project-related Collections =========
+    match /projects/{docId} {
+      rules { include defaultSecurityRules("projects"); }
+    }
+    match /transactions/{docId} {
+      rules { include defaultSecurityRules("transactions"); }
+    }
+    match /productions/{docId} {
+      rules { include defaultSecurityRules("productions"); }
+    }
+     match /shooting_days/{docId} {
+      rules { include defaultSecurityRules("shooting_days"); }
+    }
+    match /creative_projects/{docId} {
+      rules { include defaultSecurityRules("creative_projects"); }
+    }
+    match /board_items/{docId} {
+      rules { include defaultSecurityRules("board_items"); }
+    }
+    match /storyboards/{docId} {
+      rules { include defaultSecurityRules("storyboards"); }
+    }
+    match /storyboard_scenes/{docId} {
+      rules { include defaultSecurityRules("storyboard_scenes"); }
+    }
+    match /storyboard_panels/{docId} {
+      rules { include defaultSecurityRules("storyboard_panels"); }
+    }
+    match /projectGroups/{docId} {
+      rules { include defaultSecurityRules("projectGroups"); }
+    }
+
+    // ========= Public and Admin Collections =========
+    match /public_productions/{productionId} {
+      allow get: if true;
+    }
+    match /public_shooting_days/{dayId} {
+      allow get: if true;
+    }
+
+    function publicReadAdminWrite() {
+      return {
+        "allow read": if true,
+        "allow write": if isAdmin(),
+      };
+    }
+    
     match /posts/{postId} {
-      allow get, list: if true;
-      allow create, update, delete: if request.auth != null; // Write requires auth
+      rules { include publicReadAdminWrite(); }
     }
-    
-    // Page Content (About, Contact, etc.) - anyone can read
     match /pages/{pageId} {
-      allow get, list: if true;
-      allow create, update, delete: if request.auth != null; // Write requires auth
+      rules { include publicReadAdminWrite(); }
     }
-    
-    // Team Members (for About page) - anyone can read
     match /teamMembers/{memberId} {
-      allow get, list: if true;
-      allow create, update, delete: if request.auth != null; // Write requires auth
+      rules { include publicReadAdminWrite(); }
     }
-    
-    // Theme Settings - anyone can read
-    match /settings/theme {
-      allow get: if true; // Only single doc, so get is sufficient for public read
-      allow create, update, delete: if request.auth != null; // Write requires auth
+    match /settings/{settingId} {
+      rules { include publicReadAdminWrite(); }
     }
   }
 }
