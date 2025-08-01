@@ -1,4 +1,5 @@
 
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -59,12 +60,11 @@ export const getProjects = async (): Promise<Project[]> => {
         return {
             ...data,
             id: doc.id,
-            createdAt: (data.createdAt as Timestamp).toDate(),
+            createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0),
             installments: (data.installments || []).map((inst: any) => ({ ...inst, date: (inst.date as Timestamp).toDate() }))
         } as Project;
     });
 
-    // Sort in-memory after fetching
     projects.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return projects;
 };
@@ -397,7 +397,10 @@ export const getProductions = async (): Promise<Production[]> => {
     if (!userId) return [];
     const q = query(collection(db, 'productions'), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
-    const productions = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as Production);
+    const productions = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return ({ ...data, id: doc.id, createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0) }) as Production
+    });
     productions.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
     return productions;
 };
@@ -638,7 +641,10 @@ export const getCreativeProjects = async (): Promise<CreativeProject[]> => {
     if (!userId) return [];
     const q = query(collection(db, 'creative_projects'), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
-    const projects = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as CreativeProject);
+    const projects = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return ({ ...data, id: doc.id, createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0) }) as CreativeProject
+    });
     projects.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
     return projects;
 };
@@ -830,7 +836,10 @@ export const getStoryboards = async (): Promise<Storyboard[]> => {
     if (!userId) return [];
     const q = query(collection(db, 'storyboards'), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
-    const storyboards = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as Storyboard);
+    const storyboards = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return ({ ...doc.data(), id: doc.id, createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(0) }) as Storyboard
+    });
     storyboards.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
     return storyboards;
 };
