@@ -8,71 +8,86 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Function to check project-level read access
-    function canReadProject() {
-      return request.auth != null && resource.data.userId == request.auth.uid;
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Function to check project-level list/query access
-    function canListProjects() {
-      // This is intentionally broad for the query logic.
-      // The queries in the code MUST include `where('userId', '==', request.auth.uid)`
-      return request.auth != null;
-    }
-
-    // Function to check project-level write access
-    function canWriteProject() {
-      return request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
-    
-    function canUpdateProject() {
-       return request.auth != null && resource.data.userId == request.auth.uid;
-    }
-
-    // Users can read their own profile and admins can read any profile
+    // Rules for user profiles
     match /users/{userId} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
       allow create: if request.auth != null;
       allow update: if isOwner(userId);
     }
     
-    // Generic rules for user-owned collections
-    match /{collection}/{docId} {
-      allow list: if canListProjects();
-      allow get: if canReadProject();
-      allow create: if canWriteProject();
-      allow update, delete: if canUpdateProject();
-    }
-    
-    // Public read for specific collections used for sharing
-    match /public_productions/{productionId} {
-        allow get: if true;
-        allow write: if false; // No one can write
-    }
-    match /public_shooting_days/{dayId} {
-        allow get: if true;
-        allow write: if false; // No one can write
+    // Rules for project-like collections
+    function projectAccessRules() {
+      return {
+        allow get: if isOwner(resource.data.userId),
+        allow list: if request.auth.uid == request.query.resource.data.userId,
+        allow create: if isOwner(request.resource.data.userId),
+        allow update, delete: if isOwner(resource.data.userId)
+      };
     }
 
-    // Rules for public content and settings, writable only by admins
+    match /projects/{docId} {
+      include projectAccessRules();
+    }
+    match /transactions/{docId} {
+      include projectAccessRules();
+    }
+    match /productions/{docId} {
+      include projectAccessRules();
+    }
+    match /shooting_days/{docId} {
+      include projectAccessRules();
+    }
+    match /creative_projects/{docId} {
+      include projectAccessRules();
+    }
+    match /board_items/{docId} {
+      include projectAccessRules();
+    }
+    match /storyboards/{docId} {
+      include projectAccessRules();
+    }
+    match /storyboard_scenes/{docId} {
+      include projectAccessRules();
+    }
+    match /storyboard_panels/{docId} {
+      include projectAccessRules();
+    }
+    match /projectGroups/{docId} {
+      include projectAccessRules();
+    }
+
+    // Public read for specific collections
+    match /public_productions/{productionId} {
+      allow get: if true;
+    }
+    match /public_shooting_days/{dayId} {
+      allow get: if true;
+    }
+
+    // Rules for CMS-like content (Pages, Posts, Team Members)
     function publicReadAdminWrite() {
       return {
         allow read: if true,
-        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+        allow write: if isAdmin()
       };
     }
     
     match /posts/{postId} {
-        include publicReadAdminWrite();
+      include publicReadAdminWrite();
     }
     match /pages/{pageId} {
-        include publicReadAdminWrite();
+      include publicReadAdminWrite();
     }
     match /teamMembers/{memberId} {
-        include publicReadAdminWrite();
+      include publicReadAdminWrite();
     }
     match /settings/{settingId} {
-        include publicReadAdminWrite();
+      include publicReadAdminWrite();
     }
   }
 }
