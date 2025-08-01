@@ -1,4 +1,5 @@
 
+
 import { db, auth, storage } from './config';
 import {
   collection,
@@ -143,7 +144,7 @@ export const getProjects = async (groupId?: string): Promise<Project[]> => {
   if (!userId) return [];
   const constraints = [
     where('userId', '==', userId),
-    where('groupId', groupId ? '==' : '==', groupId || null)
+    groupId ? where('groupId', '==', groupId) : or(where('groupId', '==', null), where('groupId', '==', ''))
   ];
   
   const q = query(collection(db, 'projects'), ...constraints);
@@ -492,7 +493,7 @@ export const getProductions = async (groupId?: string): Promise<Production[]> =>
   if (!userId) return [];
   const constraints = [
     where('userId', '==', userId),
-    where('groupId', groupId ? '==' : '==', groupId || null)
+    groupId ? where('groupId', '==', groupId) : or(where('groupId', '==', null), where('groupId', '==', ''))
   ];
   const q = query(collection(db, 'productions'), ...constraints);
   const querySnapshot = await getDocs(q);
@@ -742,7 +743,7 @@ export const getCreativeProjects = async (groupId?: string): Promise<CreativePro
   if (!userId) return [];
    const constraints = [
     where('userId', '==', userId),
-    where('groupId', groupId ? '==' : '==', groupId || null)
+    groupId ? where('groupId', '==', groupId) : or(where('groupId', '==', null), where('groupId', '==', ''))
   ];
   const q = query(collection(db, 'creative_projects'), ...constraints);
   const querySnapshot = await getDocs(q);
@@ -943,7 +944,7 @@ export const getStoryboards = async (groupId?: string): Promise<Storyboard[]> =>
   if (!userId) return [];
    const constraints = [
     where('userId', '==', userId),
-    where('groupId', groupId ? '==' : '==', groupId || null)
+    groupId ? where('groupId', '==', groupId) : or(where('groupId', '==', null), where('groupId', '==', ''))
   ];
   const q = query(collection(db, 'storyboards'), ...constraints);
   const querySnapshot = await getDocs(q);
