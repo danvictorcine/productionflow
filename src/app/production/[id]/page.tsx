@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Copy, Share2 } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Copy, Share2, Hourglass } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -591,7 +591,7 @@ function ProductionPageDetail() {
         </div>
       </header>
 
-      <main ref={mainRef} className="flex-1 p-4 sm:p-6 md:p-8">
+      <main ref={mainRef} className="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-6xl mx-auto">
         <ProductionInfoCard production={production} />
 
         <Accordion 
