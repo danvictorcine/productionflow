@@ -17,7 +17,6 @@ import {
   setDoc,
   deleteField,
   limit,
-  or,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
 import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, ProjectGroup, BetaLimits } from '@/lib/types';
@@ -142,10 +141,14 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
 export const getProjects = async (groupId?: string): Promise<Project[]> => {
   const userId = getUserId();
   if (!userId) return [];
-  const constraints = [
-    where('userId', '==', userId),
-    groupId ? where('groupId', '==', groupId) : or(where('groupId', '==', null), where('groupId', '==', ''))
-  ];
+  
+  const constraints = [where('userId', '==', userId)];
+  if (groupId) {
+    constraints.push(where('groupId', '==', groupId));
+  } else {
+    // Correctly query for projects where groupId does NOT exist for the home page.
+    constraints.push(where('groupId', '==', null));
+  }
   
   const q = query(collection(db, 'projects'), ...constraints);
   const querySnapshot = await getDocs(q);
@@ -493,7 +496,7 @@ export const getProductions = async (groupId?: string): Promise<Production[]> =>
   if (!userId) return [];
   const constraints = [
     where('userId', '==', userId),
-    groupId ? where('groupId', '==', groupId) : or(where('groupId', '==', null), where('groupId', '==', ''))
+    groupId ? where('groupId', '==', groupId) : where('groupId', '==', null)
   ];
   const q = query(collection(db, 'productions'), ...constraints);
   const querySnapshot = await getDocs(q);
@@ -741,9 +744,9 @@ export const addCreativeProject = async (data: Omit<CreativeProject, 'id' | 'use
 export const getCreativeProjects = async (groupId?: string): Promise<CreativeProject[]> => {
   const userId = getUserId();
   if (!userId) return [];
-   const constraints = [
+  const constraints = [
     where('userId', '==', userId),
-    groupId ? where('groupId', '==', groupId) : or(where('groupId', '==', null), where('groupId', '==', ''))
+    groupId ? where('groupId', '==', groupId) : where('groupId', '==', null)
   ];
   const q = query(collection(db, 'creative_projects'), ...constraints);
   const querySnapshot = await getDocs(q);
@@ -942,9 +945,9 @@ export const addStoryboard = async (data: Omit<Storyboard, 'id' | 'userId' | 'cr
 export const getStoryboards = async (groupId?: string): Promise<Storyboard[]> => {
   const userId = getUserId();
   if (!userId) return [];
-   const constraints = [
+  const constraints = [
     where('userId', '==', userId),
-    groupId ? where('groupId', '==', groupId) : or(where('groupId', '==', null), where('groupId', '==', ''))
+    groupId ? where('groupId', '==', groupId) : where('groupId', '==', null)
   ];
   const q = query(collection(db, 'storyboards'), ...constraints);
   const querySnapshot = await getDocs(q);
