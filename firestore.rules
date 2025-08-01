@@ -1,57 +1,82 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check ownership
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Default security rules for user-specific collections
-    // The user can read and write their own documents.
-    // Listing documents is allowed only when querying by the user's own ID.
-    match /{collection}/{docId} 
-      where collection in ['projects', 'transactions', 'productions', 'shooting_days', 'creative_projects', 'board_items', 'storyboards', 'storyboard_scenes', 'storyboard_panels', 'projectGroups'] {
-        allow read: if isOwner(resource.data.userId);
-        allow write: if isOwner(request.resource.data.userId);
+  
+    // Default-deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    // Users can create and manage their own profile
+    // Allow users to manage their own profile
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if isOwner(userId);
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Public read for specific collections, write access only for admins
-    function publicReadAdminWrite() {
-      return {
-        allow read: true,
-        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
-      };
+    // Rules for all user-owned collections
+    // A user can create/read/update/delete their own documents.
+    // They can list documents as long as they filter by their own userId in the query.
+    match /projects/{docId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /transactions/{docId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /productions/{docId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /shooting_days/{docId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /creative_projects/{docId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /board_items/{docId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /storyboards/{docId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /storyboard_scenes/{docId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /storyboard_panels/{docId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /projectGroups/{docId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
-    match /posts/{postId} {
-        rules { include publicReadAdminWrite(); }
-    }
-    match /pages/{pageId} {
-        rules { include publicReadAdminWrite(); }
-    }
-    match /teamMembers/{memberId} {
-        rules { include publicReadAdminWrite(); }
-    }
-    match /settings/{settingId} {
-        rules { include publicReadAdminWrite(); }
+    // Public collections (anyone can read, only admins can write)
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
     
-    // Public read for sharing functionality
+    match /posts/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && isAdmin();
+    }
+    match /pages/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && isAdmin();
+    }
+    match /teamMembers/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && isAdmin();
+    }
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && isAdmin();
+    }
+    
+    // Publicly readable documents for sharing
     match /public_productions/{productionId} {
-      allow get: if true;
+        allow get: if true;
     }
     match /public_shooting_days/{dayId} {
-      allow get: if true;
+        allow get: if true;
     }
   }
 }
