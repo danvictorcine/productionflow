@@ -158,14 +158,11 @@ function GroupPageDetail() {
   }, [user, groupId]);
 
   const handleCreateNewClick = async () => {
-    const limits = await firestoreApi.getBetaLimits();
-    const maxProjects = limits.MAX_PROJECTS_PER_GROUP;
-
-    if (!user?.isAdmin && items.length >= maxProjects) {
+    if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_GROUP) {
       toast({
         variant: 'destructive',
         title: "Limite de projetos atingido!",
-        description: `Este grupo não pode ter mais de ${maxProjects} projetos.`,
+        description: `Este grupo não pode ter mais de ${DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_GROUP} projetos.`,
       });
     } else {
       setIsTypeDialogOpen(true);

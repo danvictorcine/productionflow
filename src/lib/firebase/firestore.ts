@@ -144,78 +144,45 @@ async function getProjectsFromCollection<T extends { id: string }>(collectionNam
   if (!userId) return [];
 
   const collRef = collection(db, collectionName);
-  let q;
+  const queries = [];
 
   if (groupId) {
     // Fetch only projects within the specified group
-    q = query(collRef, where('userId', '==', userId), where('groupId', '==', groupId), orderBy('createdAt', 'desc'));
+    queries.push(query(collRef, where('userId', '==', userId), where('groupId', '==', groupId), orderBy('createdAt', 'desc')));
   } else {
-    // Fetch only projects NOT in any group
-    q = query(collRef, where('userId', '==', userId), where('groupId', '==', null), orderBy('createdAt', 'desc'));
+    // Fetch projects NOT in any group. This requires two queries because Firestore doesn't support "not equal" or "or" on different fields well.
+    // 1. Query for documents where 'groupId' does not exist (for old data).
+    // This is done by just querying for the user's projects and filtering in the client.
+    queries.push(query(collRef, where('userId', '==', userId), orderBy('createdAt', 'desc')));
   }
   
-  const snapshot = await getDocs(q);
-  const results: T[] = [];
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    results.push({
-      ...data,
-      [idField]: doc.id,
-      [createdAtField]: (data.createdAt as Timestamp).toDate(),
-    } as T);
+  const allResults = await Promise.all(queries.map(q => getDocs(q)));
+  
+  const resultsMap = new Map<string, T>();
+  allResults.forEach(snapshot => {
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (!groupId && data.groupId) {
+        // Skip projects that have a group when fetching ungrouped projects
+      } else {
+        resultsMap.set(doc.id, {
+          ...data,
+          [idField]: doc.id,
+          [createdAtField]: (data.createdAt as Timestamp).toDate(),
+        } as T);
+      }
+    });
   });
   
-  return results;
-}
-
-// Fetch ungrouped projects, including legacy ones without the 'groupId' field
-async function getUngroupedProjects<T extends { id: string, createdAt: Date }>(collectionName: string, idField: string): Promise<T[]> {
-    const userId = getUserId();
-    if (!userId) return [];
-    
-    // Query for projects where groupId is explicitly null
-    const qNull = query(collection(db, collectionName), where('userId', '==', userId), where('groupId', '==', null));
-    // Query for projects where groupId does not exist (for backward compatibility)
-    const qExists = query(collection(db, collectionName), where('userId', '==', userId));
-
-    const [snapshotNull, snapshotAll] = await Promise.all([
-        getDocs(qNull),
-        getDocs(qExists)
-    ]);
-    
-    const resultsMap = new Map<string, T>();
-
-    snapshotNull.forEach(doc => {
-        const data = doc.data();
-        resultsMap.set(doc.id, {
-            ...data,
-            [idField]: doc.id,
-            createdAt: (data.createdAt as Timestamp).toDate(),
-        } as T);
-    });
-
-    snapshotAll.forEach(doc => {
-        const data = doc.data();
-        if (!data.hasOwnProperty('groupId')) {
-            resultsMap.set(doc.id, {
-                ...data,
-                [idField]: doc.id,
-                createdAt: (data.createdAt as Timestamp).toDate(),
-            } as T);
-        }
-    });
-    
-    const results = Array.from(resultsMap.values());
-    results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    return results;
+  const finalResults = Array.from(resultsMap.values());
+  finalResults.sort((a, b) => (b as any).createdAt.getTime() - (a as any).createdAt.getTime());
+  
+  return finalResults;
 }
 
 
 export const getProjects = async (groupId?: string): Promise<Project[]> => {
-    const projects = groupId
-        ? await getProjectsFromCollection<Project>('projects', 'id', 'createdAt', groupId)
-        : await getUngroupedProjects<Project & { createdAt: Date }>('projects', 'id');
-    
+    const projects = await getProjectsFromCollection<Project>('projects', 'id', 'createdAt', groupId);
     return projects.map(p => ({
         ...p,
         installments: (p.installments || []).map(inst => ({...inst, date: (inst.date as any).toDate ? (inst.date as any).toDate() : new Date(inst.date)}))
@@ -223,21 +190,15 @@ export const getProjects = async (groupId?: string): Promise<Project[]> => {
 };
 
 export const getProductions = async (groupId?: string): Promise<Production[]> => {
-    return groupId
-        ? getProjectsFromCollection<Production>('productions', 'id', 'createdAt', groupId)
-        : getUngroupedProjects<Production & { createdAt: Date }>('productions', 'id');
+    return getProjectsFromCollection<Production>('productions', 'id', 'createdAt', groupId);
 };
 
 export const getCreativeProjects = async (groupId?: string): Promise<CreativeProject[]> => {
-    return groupId
-        ? getProjectsFromCollection<CreativeProject>('creative_projects', 'id', 'createdAt', groupId)
-        : getUngroupedProjects<CreativeProject & { createdAt: Date }>('creative_projects', 'id');
+    return getProjectsFromCollection<CreativeProject>('creative_projects', 'id', 'createdAt', groupId);
 };
 
 export const getStoryboards = async (groupId?: string): Promise<Storyboard[]> => {
-    return groupId
-        ? getProjectsFromCollection<Storyboard>('storyboards', 'id', 'createdAt', groupId)
-        : getUngroupedProjects<Storyboard & { createdAt: Date }>('storyboards', 'id');
+    return getProjectsFromCollection<Storyboard>('storyboards', 'id', 'createdAt', groupId);
 };
 
 

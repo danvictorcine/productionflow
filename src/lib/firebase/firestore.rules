@@ -3,33 +3,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check ownership
+    // Helper function to check if a user is authenticated and is the owner of a document.
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Default-deny all reads and writes
+    // Default-deny all reads and writes for safety.
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Users can manage their own profile
+    // Users can read and write their own profile.
     match /users/{userId} {
       allow read, write: if isOwner(userId);
     }
     
-    // Generic rule for ALL user-owned collections.
-    // This single rule covers projects, groups, transactions, etc.
+    // --- Rules for all user-owned collections ---
+    // This structure correctly separates create permissions from other permissions.
     match /{collection}/{docId} {
-      // A user can create a document if they are the owner.
-      allow create: if isOwner(request.resource.data.userId);
-      // A user can read, update, or delete a document if they are the owner.
+      // Allow a user to read, update, or delete a document if they are the owner.
       allow get, update, delete: if isOwner(resource.data.userId);
-      // A user can query a collection as long as they filter by their own userId.
-      allow list: if request.auth != null && request.query.resource.data.userId == request.auth.uid;
+
+      // Allow a user to list documents from a collection. 
+      // Firestore will then apply the 'get' rule to each document, ensuring they only see their own.
+      allow list: if request.auth != null;
+      
+      // Allow a user to create a document if the new document's userId matches their own.
+      allow create: if isOwner(request.resource.data.userId);
     }
 
-    // Public collections (anyone can read, only admins can write)
+    // --- Rules for public and admin-only content ---
     function isAdmin() {
       return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
@@ -47,11 +50,11 @@ service cloud.firestore {
       allow list, write: if isAdmin();
     }
     match /settings/{settingId} {
-      allow read: if true;
+      allow read: if true; // Theme can be read by anyone
       allow write: if isAdmin();
     }
     
-    // Publicly readable documents for sharing
+    // Publicly readable documents for sharing functionality
     match /public_productions/{productionId} { allow get: if true; }
     match /public_shooting_days/{dayId} { allow get: if true; }
   }

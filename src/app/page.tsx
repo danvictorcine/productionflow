@@ -100,29 +100,23 @@ function HomePage() {
       if (!user) return;
       setIsLoading(true);
       try {
-        const [
-          projects,
-          productions,
-          creativeProjects,
-          storyboards,
-          groups,
-        ] = await Promise.all([
-          firestoreApi.getProjects(),
-          firestoreApi.getProductions(),
-          firestoreApi.getCreativeProjects(),
-          firestoreApi.getStoryboards(),
-          firestoreApi.getProjectGroups(),
-        ]);
+        const groups = await firestoreApi.getProjectGroups();
+        
+        // Fetch all projects of all types that are NOT in a group.
+        const ungroupedProjects = await firestoreApi.getProjects();
+        const ungroupedProductions = await firestoreApi.getProductions();
+        const ungroupedCreative = await firestoreApi.getCreativeProjects();
+        const ungroupedStoryboards = await firestoreApi.getStoryboards();
 
         const displayableItems: DisplayableItem[] = [
-          ...projects.map((p) => ({ ...p, itemType: 'financial' as const })),
-          ...productions.map((p) => ({ ...p, itemType: 'production' as const })),
-          ...storyboards.map((p) => ({ ...p, itemType: 'storyboard' as const })),
-          ...creativeProjects.map((p) => ({
+          ...groups.map((g) => ({ ...g, itemType: 'group' as const })),
+          ...ungroupedProjects.map((p) => ({ ...p, itemType: 'financial' as const })),
+          ...ungroupedProductions.map((p) => ({ ...p, itemType: 'production' as const })),
+          ...ungroupedStoryboards.map((p) => ({ ...p, itemType: 'storyboard' as const })),
+          ...ungroupedCreative.map((p) => ({
             ...p,
             itemType: 'creative' as const,
           })),
-          ...groups.map((g) => ({ ...g, itemType: 'group' as const })),
         ];
 
         displayableItems.sort(

@@ -1,4 +1,3 @@
-
 // @/src/lib/app-config.ts
 
 import type { BetaLimits } from './types';
@@ -13,7 +12,7 @@ export const DEFAULT_BETA_LIMITS: BetaLimits = {
   MAX_PROJECTS_PER_USER: 20,
 
   /** O número máximo de projetos que podem ser adicionados a um único grupo. */
-  MAX_PROJECTS_PER_GROUP: 5,
+  MAX_PROJECTS_PER_GROUP: 10,
 
   /** O número máximo de itens (imagens, textos, etc.) que podem ser adicionados a um único moodboard. */
   MAX_ITEMS_PER_MOODBOARD: 25,
