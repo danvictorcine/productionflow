@@ -8,7 +8,7 @@ import { format, isToday, isPast, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2
+  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -165,11 +165,12 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
             return;
         }
 
+        let interval: NodeJS.Timeout | undefined;
+
         const calculateTimeLeft = () => {
             const now = new Date();
             const [endH, endM] = day.endTime!.split(':').map(Number);
             
-            // Create end date object for today
             const endDate = new Date();
             endDate.setHours(endH, endM, 0, 0);
 
@@ -178,7 +179,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
             if (diff <= 0) {
                 setTimeLeft(null);
                 setIsFinished(true);
-                clearInterval(interval);
+                if (interval) {
+                    clearInterval(interval);
+                }
             } else {
                 const hours = Math.floor(diff / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -188,7 +191,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         };
 
         calculateTimeLeft();
-        const interval = setInterval(calculateTimeLeft, 60000); // Update every minute
+        interval = setInterval(calculateTimeLeft, 60000); // Update every minute
 
         return () => clearInterval(interval);
     }, [day.date, day.endTime]);
