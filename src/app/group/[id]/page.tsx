@@ -1,7 +1,7 @@
-
+// @/src/app/group/[id]/page.tsx
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -57,7 +57,6 @@ import { CopyableError } from '@/components/copyable-error';
 import { AppFooter } from '@/components/app-footer';
 import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
 import { DEFAULT_BETA_LIMITS } from '@/lib/app-config';
-import { CreateEditProjectGroupDialog } from '@/components/create-edit-project-group-dialog';
 
 
 type DisplayableItem =

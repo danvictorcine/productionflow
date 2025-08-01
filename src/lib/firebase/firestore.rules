@@ -2,107 +2,72 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ========= Helper Functions =========
+  
+    // Helper function to check ownership
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
-    
-    function isAdmin() {
-      // Use exists() to prevent errors if the user document doesn't exist yet during signup.
-      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+
+    // Default-deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    // ========= User Profiles =========
+    // Allow users to manage their own profile
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if request.auth != null;
-      allow update: if isOwner(userId);
-    }
-
-    // ========= Generic Rules for User-Owned Data (Projects, etc.) =========
-    function canRead(userId) {
-      return isOwner(userId);
+      allow read, write: if isOwner(userId);
     }
     
-    function canList(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    function canWrite(userId) {
-      return isOwner(userId);
-    }
-    
-    function defaultSecurityRules(collectionName) {
+    // Generic function for user-owned collections
+    function userOwnedRules(collectionName) {
       return {
-        // GET requests
-        "allow get": if canRead(resource.data.userId),
-        // LIST requests (queries)
-        "allow list": if canList(request.query.resource.data.userId),
-        // WRITE requests (create, update, delete)
-        "allow write": if canWrite(request.resource.data.userId),
-      }
-    }
-
-    // ========= Project-related Collections =========
-    match /projects/{docId} {
-      rules { include defaultSecurityRules("projects"); }
-    }
-    match /transactions/{docId} {
-      rules { include defaultSecurityRules("transactions"); }
-    }
-    match /productions/{docId} {
-      rules { include defaultSecurityRules("productions"); }
-    }
-     match /shooting_days/{docId} {
-      rules { include defaultSecurityRules("shooting_days"); }
-    }
-    match /creative_projects/{docId} {
-      rules { include defaultSecurityRules("creative_projects"); }
-    }
-    match /board_items/{docId} {
-      rules { include defaultSecurityRules("board_items"); }
-    }
-    match /storyboards/{docId} {
-      rules { include defaultSecurityRules("storyboards"); }
-    }
-    match /storyboard_scenes/{docId} {
-      rules { include defaultSecurityRules("storyboard_scenes"); }
-    }
-    match /storyboard_panels/{docId} {
-      rules { include defaultSecurityRules("storyboard_panels"); }
-    }
-    match /projectGroups/{docId} {
-      rules { include defaultSecurityRules("projectGroups"); }
-    }
-
-    // ========= Public and Admin Collections =========
-    match /public_productions/{productionId} {
-      allow get: if true;
-    }
-    match /public_shooting_days/{dayId} {
-      allow get: if true;
-    }
-
-    function publicReadAdminWrite() {
-      return {
-        "allow read": if true,
-        "allow write": if isAdmin(),
+        match /$(collectionName)/{docId} {
+          // Allow read/update/delete if the user owns the document
+          allow get, update, delete: if isOwner(resource.data.userId),
+          // Allow list if the user is making the query
+          allow list: if request.auth != null,
+          // Allow create if the user is setting themselves as the owner
+          allow create: if isOwner(request.resource.data.userId)
+        }
       };
     }
     
+    // Apply rules to all project-related collections
+    include userOwnedRules("projects");
+    include userOwnedRules("transactions");
+    include userOwnedRules("productions");
+    include userOwnedRules("shooting_days");
+    include userOwnedRules("creative_projects");
+    include userOwnedRules("board_items");
+    include userOwnedRules("storyboards");
+    include userOwnedRules("storyboard_scenes");
+    include userOwnedRules("storyboard_panels");
+    include userOwnedRules("projectGroups");
+
+    // Public collections (anyone can read, only admins can write)
+    function isAdmin() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
     match /posts/{postId} {
-      rules { include publicReadAdminWrite(); }
+      allow get: if true;
+      allow list, write: if isAdmin();
     }
     match /pages/{pageId} {
-      rules { include publicReadAdminWrite(); }
+      allow get: if true;
+      allow list, write: if isAdmin();
     }
     match /teamMembers/{memberId} {
-      rules { include publicReadAdminWrite(); }
+      allow get: if true;
+      allow list, write: if isAdmin();
     }
     match /settings/{settingId} {
-      rules { include publicReadAdminWrite(); }
+      allow read: if true;
+      allow write: if isAdmin();
     }
+    
+    // Publicly readable documents for sharing
+    match /public_productions/{productionId} { allow get: if true; }
+    match /public_shooting_days/{dayId} { allow get: if true; }
   }
 }
