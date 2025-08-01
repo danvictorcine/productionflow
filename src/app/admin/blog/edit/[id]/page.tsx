@@ -38,7 +38,7 @@ import {
 
 
 // Import Quill dynamically to ensure it runs only on the client-side
-const QuillEditor = dynamic(() => import('react-quill'), { 
+const QuillEditor = dynamic(() => import('react-quill').then((mod) => mod.default), { 
     ssr: false,
     loading: () => <Skeleton className="h-[200px] w-full rounded-b-md" />
 });

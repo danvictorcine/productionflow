@@ -46,7 +46,7 @@ const LocationPicker = dynamic(() => import('@/components/location-picker').then
   loading: () => <Skeleton className="h-64 w-full" />,
 });
 
-const QuillEditor = dynamic(() => import('react-quill'), { 
+const QuillEditor = dynamic(() => import('react-quill').then((mod) => mod.default), { 
     ssr: false,
     loading: () => <Skeleton className="h-full w-full rounded-b-md" />
 });

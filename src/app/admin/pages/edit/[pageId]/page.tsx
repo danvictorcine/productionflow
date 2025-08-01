@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -27,7 +28,7 @@ const pageContentSchema = z.object({
     content: z.string().min(10, { message: 'O conteúdo deve ter pelo menos 10 caracteres.' }),
 });
 
-const QuillEditor = dynamic(() => import('react-quill'), { 
+const QuillEditor = dynamic(() => import('react-quill').then((mod) => mod.default), { 
     ssr: false,
     loading: () => <Skeleton className="h-[400px] w-full rounded-b-md" />
 });
