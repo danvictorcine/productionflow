@@ -51,10 +51,10 @@ export const getProjects = async (): Promise<Project[]> => {
     if (!userId) return [];
 
     const collRef = collection(db, 'projects');
-    const q = query(collRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const q = query(collRef, where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map(doc => {
+    const projects = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
             ...data,
@@ -63,6 +63,10 @@ export const getProjects = async (): Promise<Project[]> => {
             installments: (data.installments || []).map((inst: any) => ({ ...inst, date: (inst.date as Timestamp).toDate() }))
         } as Project;
     });
+
+    // Sort in-memory after fetching
+    projects.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return projects;
 };
 
 export const getProject = async (projectId: string): Promise<Project | null> => {
@@ -391,9 +395,11 @@ export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'cr
 export const getProductions = async (): Promise<Production[]> => {
     const userId = getUserId();
     if (!userId) return [];
-    const q = query(collection(db, 'productions'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'productions'), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as Production);
+    const productions = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as Production);
+    productions.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return productions;
 };
 
 export const getProduction = async (productionId: string): Promise<Production | null> => {
@@ -630,9 +636,11 @@ export const addCreativeProject = async (data: Omit<CreativeProject, 'id' | 'use
 export const getCreativeProjects = async (): Promise<CreativeProject[]> => {
     const userId = getUserId();
     if (!userId) return [];
-    const q = query(collection(db, 'creative_projects'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'creative_projects'), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as CreativeProject);
+    const projects = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as CreativeProject);
+    projects.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return projects;
 };
 
 export const getCreativeProject = async (projectId: string): Promise<CreativeProject | null> => {
@@ -820,9 +828,11 @@ export const addStoryboard = async (data: Omit<Storyboard, 'id' | 'userId' | 'cr
 export const getStoryboards = async (): Promise<Storyboard[]> => {
     const userId = getUserId();
     if (!userId) return [];
-    const q = query(collection(db, 'storyboards'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'storyboards'), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as Storyboard);
+    const storyboards = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, createdAt: (doc.data().createdAt as Timestamp).toDate() }) as Storyboard);
+    storyboards.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return storyboards;
 };
 
 export const getStoryboard = async (storyboardId: string): Promise<Storyboard | null> => {
