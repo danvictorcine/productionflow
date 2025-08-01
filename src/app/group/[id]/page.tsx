@@ -1,9 +1,9 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import {
   PlusCircle,
   Film,
@@ -14,8 +14,8 @@ import {
   DollarSign,
   Brush,
   Image as ImageIcon,
-  Folder,
-  FolderPlus,
+  FolderOpen,
+  ArrowLeft,
 } from 'lucide-react';
 
 import type { Project, Production, CreativeProject, Storyboard, ProjectGroup } from '@/lib/types';
@@ -50,12 +50,10 @@ import * as firestoreApi from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { UserNav } from '@/components/user-nav';
-import { formatCurrency } from '@/lib/utils';
 import { ProjectTypeDialog } from '@/components/project-type-dialog';
 import { CreateEditProductionDialog } from '@/components/create-edit-production-dialog';
 import { CreateEditCreativeProjectDialog } from '@/components/create-edit-creative-project-dialog';
 import { CopyableError } from '@/components/copyable-error';
-import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
 import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
 import { DEFAULT_BETA_LIMITS } from '@/lib/app-config';
@@ -66,13 +64,16 @@ type DisplayableItem =
   | (Project & { itemType: 'financial' })
   | (Production & { itemType: 'production' })
   | (CreativeProject & { itemType: 'creative' })
-  | (Storyboard & { itemType: 'storyboard'})
-  | (ProjectGroup & { itemType: 'group' });
+  | (Storyboard & { itemType: 'storyboard'});
 
-function HomePage() {
+function GroupPageDetail() {
+  const router = useRouter();
+  const params = useParams();
+  const groupId = params.id as string;
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const [group, setGroup] = useState<ProjectGroup | null>(null);
   const [items, setItems] = useState<DisplayableItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -82,36 +83,40 @@ function HomePage() {
   const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
   const [isCreativeProjectDialogOpen, setIsCreativeProjectDialogOpen] = useState(false);
   const [isStoryboardDialogOpen, setIsStoryboardDialogOpen] = useState(false);
-  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
 
   // Editing states
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editingProduction, setEditingProduction] = useState<Production | null>(null);
   const [editingCreativeProject, setEditingCreativeProject] = useState<CreativeProject | null>(null);
   const [editingStoryboard, setEditingStoryboard] = useState<Storyboard | null>(null);
-  const [editingGroup, setEditingGroup] = useState<ProjectGroup | null>(null);
 
   // Deleting state
   const [itemToDelete, setItemToDelete] = useState<DisplayableItem | null>(
     null
   );
 
-  const fetchItems = async () => {
-      if (!user) return;
+  const fetchGroupData = async () => {
+      if (!user || !groupId) return;
       setIsLoading(true);
       try {
+        const groupData = await firestoreApi.getProjectGroup(groupId);
+        if (!groupData) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Grupo não encontrado.' });
+            router.push('/');
+            return;
+        }
+        setGroup(groupData);
+
         const [
           projects,
           productions,
           creativeProjects,
           storyboards,
-          groups,
         ] = await Promise.all([
-          firestoreApi.getProjects(),
-          firestoreApi.getProductions(),
-          firestoreApi.getCreativeProjects(),
-          firestoreApi.getStoryboards(),
-          firestoreApi.getProjectGroups(),
+          firestoreApi.getProjects(groupId),
+          firestoreApi.getProductions(groupId),
+          firestoreApi.getCreativeProjects(groupId),
+          firestoreApi.getStoryboards(groupId),
         ]);
 
         const displayableItems: DisplayableItem[] = [
@@ -122,7 +127,6 @@ function HomePage() {
             ...p,
             itemType: 'creative' as const,
           })),
-          ...groups.map((g) => ({ ...g, itemType: 'group' as const })),
         ];
 
         displayableItems.sort(
@@ -135,10 +139,10 @@ function HomePage() {
         const errorTyped = error as { code?: string; message: string };
         toast({
           variant: 'destructive',
-          title: 'Erro em /page.tsx (fetchItems)',
+          title: 'Erro ao carregar o grupo',
           description: (
             <CopyableError
-              userMessage="Não foi possível carregar seus projetos."
+              userMessage="Não foi possível carregar os projetos deste grupo."
               errorCode={errorTyped.code || errorTyped.message}
             />
           ),
@@ -149,35 +153,23 @@ function HomePage() {
     };
     
   useEffect(() => {
-    if (user) {
-      fetchItems();
+    if (user && groupId) {
+      fetchGroupData();
     }
-  }, [user]);
+  }, [user, groupId]);
 
   const handleCreateNewClick = () => {
-    if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_USER) {
+    if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_GROUP) {
       toast({
         variant: 'destructive',
         title: "Limite de projetos atingido!",
-        description: `A versão Beta permite a criação de até ${DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_USER} projetos e grupos.`,
+        description: `Este grupo não pode ter mais de ${DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_GROUP} projetos.`,
       });
     } else {
       setIsTypeDialogOpen(true);
     }
   };
 
-  const handleCreateNewGroupClick = () => {
-     if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_USER) {
-      toast({
-        variant: 'destructive',
-        title: "Limite de projetos atingido!",
-        description: `A versão Beta permite a criação de até ${DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_USER} projetos e grupos.`,
-      });
-    } else {
-      setEditingGroup(null);
-      setIsGroupDialogOpen(true);
-    }
-  }
 
   const handleSelectProjectType = (
     type: 'financial' | 'production' | 'creative' | 'storyboard'
@@ -198,35 +190,6 @@ function HomePage() {
     }
   };
 
-  const handleGroupSubmit = async (
-    groupData: Omit<ProjectGroup, 'id' | 'userId' | 'createdAt'>
-  ) => {
-     try {
-      if (editingGroup) {
-        await firestoreApi.updateProjectGroup(editingGroup.id, groupData);
-        toast({ title: 'Grupo atualizado!' });
-      } else {
-        await firestoreApi.addProjectGroup(groupData);
-        toast({ title: 'Grupo criado!' });
-      }
-      await fetchItems();
-    } catch (error) {
-      const errorTyped = error as { code?: string; message: string };
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Salvar Grupo',
-        description: (
-          <CopyableError
-            userMessage="Não foi possível salvar o grupo."
-            errorCode={errorTyped.code || errorTyped.message}
-          />
-        ),
-      });
-    }
-    setIsGroupDialogOpen(false);
-    setEditingGroup(null);
-  };
-
   const handleProjectSubmit = async (
     projectData: Omit<Project, 'id' | 'userId' | 'createdAt'>
   ) => {
@@ -235,15 +198,15 @@ function HomePage() {
         await firestoreApi.updateProject(editingProject.id, projectData);
         toast({ title: 'Projeto financeiro atualizado!' });
       } else {
-        await firestoreApi.addProject(projectData);
+        await firestoreApi.addProject({...projectData, groupId});
         toast({ title: 'Projeto financeiro criado!' });
       }
-      await fetchItems();
+      await fetchGroupData();
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro em /page.tsx (handleProjectSubmit)',
+        title: 'Erro ao salvar projeto',
         description: (
           <CopyableError
             userMessage="Não foi possível salvar o projeto."
@@ -267,15 +230,15 @@ function HomePage() {
         );
         toast({ title: 'Produção atualizada!' });
       } else {
-        await firestoreApi.addProduction(productionData);
+        await firestoreApi.addProduction({...productionData, groupId});
         toast({ title: 'Produção criada!' });
       }
-      await fetchItems();
+      await fetchGroupData();
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro em /page.tsx (handleProductionSubmit)',
+        title: 'Erro ao salvar produção',
         description: (
           <CopyableError
             userMessage="Não foi possível salvar a produção."
@@ -296,15 +259,15 @@ function HomePage() {
         await firestoreApi.updateCreativeProject(editingCreativeProject.id, data);
         toast({ title: 'Moodboard atualizado!' });
       } else {
-        await firestoreApi.addCreativeProject(data);
+        await firestoreApi.addCreativeProject({...data, groupId});
         toast({ title: 'Moodboard criado!' });
       }
-      await fetchItems();
+      await fetchGroupData();
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro em /page.tsx (handleCreativeProjectSubmit)',
+        title: 'Erro ao salvar moodboard',
         description: (
           <CopyableError
             userMessage="Não foi possível salvar o moodboard."
@@ -325,15 +288,15 @@ function HomePage() {
         await firestoreApi.updateStoryboard(editingStoryboard.id, data);
         toast({ title: 'Storyboard atualizado!' });
       } else {
-        await firestoreApi.addStoryboard(data);
+        await firestoreApi.addStoryboard({...data, groupId});
         toast({ title: 'Storyboard criado!' });
       }
-      await fetchItems();
+      await fetchGroupData();
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
       toast({
         variant: 'destructive',
-        title: 'Erro em /page.tsx (handleStoryboardSubmit)',
+        title: 'Erro ao salvar storyboard',
         description: (
           <CopyableError
             userMessage="Não foi possível salvar o storyboard."
@@ -357,11 +320,9 @@ function HomePage() {
         await firestoreApi.deleteCreativeProjectAndItems(itemToDelete.id);
       } else if (itemToDelete.itemType === 'storyboard') {
         await firestoreApi.deleteStoryboardAndPanels(itemToDelete.id);
-      } else if (itemToDelete.itemType === 'group') {
-        await firestoreApi.deleteProjectGroup(itemToDelete.id);
       }
       toast({ title: `"${itemToDelete.name}" excluído(a).` });
-      await fetchItems();
+      await fetchGroupData();
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
       toast({
@@ -391,9 +352,6 @@ function HomePage() {
     } else if (item.itemType === 'storyboard') {
       setEditingStoryboard(item);
       setIsStoryboardDialogOpen(true);
-    } else if (item.itemType === 'group') {
-      setEditingGroup(item);
-      setIsGroupDialogOpen(true);
     }
   };
 
@@ -413,14 +371,14 @@ function HomePage() {
         <div className="flex flex-col items-center justify-center text-center border-2 border-dashed rounded-lg p-12 min-h-[400px]">
           <Clapperboard className="mx-auto h-10 w-10 text-primary" />
           <h3 className="mt-4 text-lg font-semibold">
-            Nenhum projeto encontrado
+            Nenhum projeto neste grupo
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Comece criando seu primeiro projeto ou grupo de projetos.
+            Comece criando o primeiro projeto para este grupo.
           </p>
           <Button className="mt-6" onClick={handleCreateNewClick}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Criar Projeto Individual
+            Criar Projeto
           </Button>
         </div>
       );
@@ -429,38 +387,28 @@ function HomePage() {
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => {
-          let link, Icon, projectType, buttonText;
+          let link, Icon, projectType;
 
           switch (item.itemType) {
             case 'financial':
               link = `/project/${item.id}`;
               Icon = DollarSign;
               projectType = 'Gerenciamento Financeiro';
-              buttonText = 'Gerenciar';
               break;
             case 'production':
               link = `/production/${item.id}`;
               Icon = Clapperboard;
               projectType = 'Ordem do Dia';
-              buttonText = 'Gerenciar';
               break;
             case 'creative':
               link = `/creative/${item.id}`;
               Icon = Brush;
               projectType = 'Moodboard';
-              buttonText = 'Gerenciar';
               break;
             case 'storyboard':
               link = `/storyboard/${item.id}`;
               Icon = ImageIcon;
               projectType = 'Storyboard';
-              buttonText = 'Gerenciar';
-              break;
-            case 'group':
-              link = `/group/${item.id}`;
-              Icon = Folder;
-              projectType = 'Grupo de Projetos';
-              buttonText = 'Gerenciar Grupo';
               break;
           }
 
@@ -502,7 +450,7 @@ function HomePage() {
                   </div>
                 </CardHeader>
                 <CardContent className="mt-auto">
-                  <Button className="w-full">{buttonText}</Button>
+                  <Button className="w-full">Gerenciar</Button>
                 </CardContent>
               </Link>
             </Card>
@@ -512,41 +460,36 @@ function HomePage() {
     );
   };
 
+  if (isLoading || !group) {
+    return (
+        <div className="p-8 space-y-6">
+            <Skeleton className="h-[60px] w-full" />
+            <Skeleton className="h-[100px] w-full" />
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {[...Array(4)].map((_, i) => ( <Skeleton key={i} className="h-[220px] w-full" /> ))}
+            </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
-        <div className="flex items-center gap-2">
-          <svg
-            width="32"
-            height="32"
-            viewBox="0 0 32 32"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-8 w-8"
-          >
-            <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))" />
-            <path
-              d="M22 16L12 22V10L22 16Z"
-              fill="hsl(var(--primary-foreground))"
-            />
-          </svg>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg md:text-2xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>
-              ProductionFlow
-            </h1>
-            <Badge variant="outline" className="text-xs font-normal">
-              BETA
-            </Badge>
+        <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
+            <Button variant="outline" size="icon" className="h-8 w-8">
+                <ArrowLeft className="h-4 w-4" />
+            </Button>
+        </Link>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="p-3 rounded-full bg-primary/10 flex-shrink-0">
+            <FolderOpen className="h-5 w-5 text-primary" />
           </div>
+          <h1 className="text-lg md:text-xl font-bold text-primary truncate">{group.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={handleCreateNewGroupClick} size="sm" variant="outline">
-            <FolderPlus className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Criar Grupo</span>
-          </Button>
           <Button onClick={handleCreateNewClick} size="sm">
             <PlusCircle className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Criar Novo</span>
+            <span className="hidden md:inline">Criar Projeto</span>
           </Button>
           <UserNav />
         </div>
@@ -554,9 +497,9 @@ function HomePage() {
 
       <main className="flex-1 p-4 sm:p-6 md:p-8">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold tracking-tight">Meus Projetos</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Projetos em "{group.name}"</h2>
           <p className="text-muted-foreground">
-            Selecione um projeto para gerenciar ou crie um novo.
+            {group.description || 'Gerencie os projetos associados a este grupo.'}
           </p>
         </div>
         {renderCards()}
@@ -566,13 +509,6 @@ function HomePage() {
         isOpen={isTypeDialogOpen}
         setIsOpen={setIsTypeDialogOpen}
         onSelect={handleSelectProjectType}
-      />
-
-       <CreateEditProjectGroupDialog
-        isOpen={isGroupDialogOpen}
-        setIsOpen={setIsGroupDialogOpen}
-        onSubmit={handleGroupSubmit}
-        group={editingGroup}
       />
 
       <CreateEditProjectDialog
@@ -625,7 +561,7 @@ function HomePage() {
             <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta ação não pode ser desfeita. Isso excluirá permanentemente o
-              item e todos os seus dados associados. Grupos de projetos terão seus projetos desassociados, mas não excluídos.
+              projeto e todos os seus dados associados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -644,10 +580,10 @@ function HomePage() {
   );
 }
 
-export default function Home() {
+export default function GroupPage() {
   return (
     <AuthGuard>
-      <HomePage />
+      <GroupPageDetail />
     </AuthGuard>
   );
 }

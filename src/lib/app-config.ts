@@ -9,8 +9,11 @@ import type { BetaLimits } from './types';
  * Estes valores são usados como fallback se nada for encontrado no Firestore.
  */
 export const DEFAULT_BETA_LIMITS: BetaLimits = {
-  /** O número máximo de projetos (todos os tipos) que um usuário pode criar. */
+  /** O número máximo de projetos (todos os tipos, incluindo grupos) que um usuário pode criar. */
   MAX_PROJECTS_PER_USER: 20,
+
+  /** O número máximo de projetos que podem ser adicionados a um único grupo. */
+  MAX_PROJECTS_PER_GROUP: 5,
 
   /** O número máximo de itens (imagens, textos, etc.) que podem ser adicionados a um único moodboard. */
   MAX_ITEMS_PER_MOODBOARD: 25,
