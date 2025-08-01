@@ -1,23 +1,50 @@
-
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to determine ownership
+    // Helper function to check ownership based on a userId field
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
-    
-    // User can only read/write their own data
+
+    // Default-deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Allow users to manage their own profile
     match /users/{userId} {
       allow read, write: if isOwner(userId);
     }
 
-    // Generic rule for all user-owned collections
-    match /{collection}/{docId} {
-      allow read, write: if request.auth != null && isOwner(resource.data.userId);
+    // Generic rules for user-owned collections
+    function userOwnedRules() {
+      return {
+        // A user can list documents as long as their query filters by their own userId.
+        // This is crucial for security.
+        allow list: if request.auth != null && request.query.resource.data.userId == request.auth.uid,
+        // Allow reading a single document if the user is the owner
+        allow get: if isOwner(resource.data.userId),
+        // Allow creating a document if the new document's userId matches the user's ID
+        allow create: if isOwner(request.resource.data.userId),
+        // Allow updating/deleting if the user is the owner of the existing document
+        allow update, delete: if isOwner(resource.data.userId)
+      };
     }
-    
+
+    // Apply generic rules to all project-related collections
+    match /projects/{docId} { include userOwnedRules(); }
+    match /transactions/{docId} { include userOwnedRules(); }
+    match /productions/{docId} { include userOwnedRules(); }
+    match /shooting_days/{docId} { include userOwnedRules(); }
+    match /creative_projects/{docId} { include userOwnedRules(); }
+    match /board_items/{docId} { include userOwnedRules(); }
+    match /storyboards/{docId} { include userOwnedRules(); }
+    match /storyboard_scenes/{docId} { include userOwnedRules(); }
+    match /storyboard_panels/{docId} { include userOwnedRules(); }
+    match /projectGroups/{docId} { include userOwnedRules(); }
+
     // Public collections (anyone can read, only admins can write)
     function isAdmin() {
       // Check for the existence of the user document and the isAdmin field
@@ -27,28 +54,23 @@ service cloud.firestore {
     
     match /posts/{docId} {
       allow get: if true;
-      allow list, write: if isAdmin();
+      allow list, write: if request.auth != null && isAdmin();
     }
     match /pages/{docId} {
       allow get: if true;
-      allow list, write: if isAdmin();
+      allow list, write: if request.auth != null && isAdmin();
     }
     match /teamMembers/{docId} {
       allow get: if true;
-      allow list, write: if isAdmin();
+      allow list, write: if request.auth != null && isAdmin();
     }
     match /settings/{docId} {
-      allow read: if true; // Allow reading settings like theme
-      allow write: if isAdmin();
+      allow read: if true;
+      allow write: if request.auth != null && isAdmin();
     }
     
     // Publicly readable documents for sharing
-    match /public_productions/{productionId} {
-        allow get: if true;
-    }
-    match /public_shooting_days/{dayId} {
-        allow get: if true;
-    }
+    match /public_productions/{productionId} { allow get: if true; }
+    match /public_shooting_days/{dayId} { allow get: if true; }
   }
 }
-

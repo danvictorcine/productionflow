@@ -49,6 +49,7 @@ const productionFormSchema = z.object({
   client: z.string().optional(),
   producer: z.string().optional(),
   team: z.array(teamMemberSchema),
+  groupId: z.string().optional(),
 });
 
 type ProductionFormValues = z.infer<typeof productionFormSchema>;
@@ -58,9 +59,10 @@ interface CreateEditProductionDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => void;
   production?: Production;
+  groupId?: string;
 }
 
-export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, production }: CreateEditProductionDialogProps) {
+export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, production, groupId }: CreateEditProductionDialogProps) {
   const isEditMode = !!production;
 
   const form = useForm<ProductionFormValues>({
@@ -73,6 +75,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
       client: "",
       producer: "",
       team: [],
+      groupId: groupId,
     },
   });
 
@@ -94,6 +97,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
             client: production.client || "",
             producer: production.producer || "",
             team: production.team || [],
+            groupId: production.groupId || groupId,
           }
         : {
             name: "",
@@ -103,10 +107,11 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
             client: "",
             producer: "",
             team: [],
+            groupId: groupId,
           };
       form.reset(defaultValues);
     }
-  }, [isOpen, isEditMode, production, form]);
+  }, [isOpen, isEditMode, production, groupId, form]);
 
   const handleSubmit = (values: ProductionFormValues) => {
     const sanitizedTeam = values.team.map((member) => ({
@@ -125,6 +130,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
       client: values.client || "",
       producer: values.producer || "",
       team: sanitizedTeam.map(({ id, ...rest }) => ({...rest, id: id || crypto.randomUUID() })),
+      groupId: values.groupId,
     };
     
     onSubmit(dataToSubmit);

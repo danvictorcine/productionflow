@@ -158,12 +158,15 @@ function GroupPageDetail() {
     }
   }, [user, groupId]);
 
-  const handleCreateNewClick = () => {
-    if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_GROUP) {
+  const handleCreateNewClick = async () => {
+    const limits = await firestoreApi.getBetaLimits();
+    const maxProjects = limits.MAX_PROJECTS_PER_GROUP;
+
+    if (!user?.isAdmin && items.length >= maxProjects) {
       toast({
         variant: 'destructive',
         title: "Limite de projetos atingido!",
-        description: `Este grupo não pode ter mais de ${DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_GROUP} projetos.`,
+        description: `Este grupo não pode ter mais de ${maxProjects} projetos.`,
       });
     } else {
       setIsTypeDialogOpen(true);
@@ -519,6 +522,7 @@ function GroupPageDetail() {
         }}
         onSubmit={handleProjectSubmit}
         project={editingProject || undefined}
+        groupId={groupId}
       />
 
       <CreateEditProductionDialog
@@ -529,6 +533,7 @@ function GroupPageDetail() {
         }}
         onSubmit={handleProductionSubmit}
         production={editingProduction || undefined}
+        groupId={groupId}
       />
 
       <CreateEditCreativeProjectDialog
@@ -539,6 +544,7 @@ function GroupPageDetail() {
         }}
         onSubmit={handleCreativeProjectSubmit}
         project={editingCreativeProject || undefined}
+        groupId={groupId}
       />
 
       <CreateEditStoryboardDialog
@@ -549,6 +555,7 @@ function GroupPageDetail() {
         }}
         onSubmit={handleStoryboardSubmit}
         storyboard={editingStoryboard || undefined}
+        groupId={groupId}
       />
 
 

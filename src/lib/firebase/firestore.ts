@@ -138,47 +138,81 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
   return docRef.id;
 };
 
-// Generic function to fetch projects from a collection
+// Generic function to fetch projects from a collection based on groupId or lack thereof
 async function getProjectsFromCollection<T>(collectionName: string, idField: string, createdAtField: string, groupId?: string): Promise<T[]> {
   const userId = getUserId();
   if (!userId) return [];
 
   const collRef = collection(db, collectionName);
   const results: T[] = [];
+  let q;
 
   if (groupId) {
     // Fetch only projects within the specified group
-    const q = query(collRef, where('userId', '==', userId), where('groupId', '==', groupId));
+    q = query(collRef, where('userId', '==', userId), where('groupId', '==', groupId));
+  } else {
+    // Fetch only projects *without* a group
+    q = query(collRef, where('userId', '==', userId), where('groupId', '==', null));
+  }
+  
+  const snapshot = await getDocs(q);
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    results.push({
+      ...data,
+      [idField]: doc.id,
+      [createdAtField]: (data.createdAt as Timestamp).toDate(),
+    } as T);
+  });
+  
+  return results;
+}
+
+async function getProjectsFromCollectionWithFallback<T>(collectionName: string, idField: string, createdAtField: string, groupId?: string): Promise<T[]> {
+    const userId = getUserId();
+    if (!userId) return [];
+
+    let q;
+    if (groupId) {
+        // Fetch only projects for a specific group
+        q = query(collection(db, collectionName), where('userId', '==', userId), where('groupId', '==', groupId));
+    } else {
+        // Fetch only ungrouped projects
+        q = query(collection(db, collectionName), where('userId', '==', userId), where('groupId', '==', null));
+    }
+
     const snapshot = await getDocs(q);
-    snapshot.forEach(doc => {
+    const results = snapshot.docs.map(doc => {
         const data = doc.data();
-        results.push({
+        return {
             ...data,
             [idField]: doc.id,
             [createdAtField]: (data.createdAt as Timestamp).toDate(),
-        } as T);
+        } as T;
     });
-  } else {
-    // Fetch only projects *without* a group
-    const q = query(collRef, where('userId', '==', userId));
-    const snapshot = await getDocs(q);
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      if (!data.groupId) { // Filter client-side
-        results.push({
-          ...data,
-          [idField]: doc.id,
-          [createdAtField]: (data.createdAt as Timestamp).toDate(),
-        } as T);
-      }
-    });
-  }
-  return results;
+
+    // If we're on the main page (no groupId), also fetch projects where groupId doesn't exist (legacy)
+    if (!groupId) {
+        const legacyQuery = query(collection(db, collectionName), where('userId', '==', userId));
+        const legacySnapshot = await getDocs(legacyQuery);
+        legacySnapshot.forEach(doc => {
+            const data = doc.data();
+            if (!data.groupId && !results.some(p => (p as any).id === doc.id)) {
+                results.push({
+                    ...data,
+                    [idField]: doc.id,
+                    [createdAtField]: (data.createdAt as Timestamp).toDate(),
+                } as T);
+            }
+        });
+    }
+
+    return results;
 }
 
 
 export const getProjects = async (groupId?: string): Promise<Project[]> => {
-    return getProjectsFromCollection<Project>('projects', 'id', 'createdAt', groupId).then(projects => 
+    return getProjectsFromCollectionWithFallback<Project>('projects', 'id', 'createdAt', groupId).then(projects => 
         projects.map(p => ({
             ...p,
             installments: (p.installments || []).map(inst => ({...inst, date: (inst.date as any).toDate ? (inst.date as any).toDate() : new Date(inst.date)}))
@@ -187,15 +221,15 @@ export const getProjects = async (groupId?: string): Promise<Project[]> => {
 };
 
 export const getProductions = async (groupId?: string): Promise<Production[]> => {
-    return getProjectsFromCollection<Production>('productions', 'id', 'createdAt', groupId);
+    return getProjectsFromCollectionWithFallback<Production>('productions', 'id', 'createdAt', groupId);
 };
 
 export const getCreativeProjects = async (groupId?: string): Promise<CreativeProject[]> => {
-    return getProjectsFromCollection<CreativeProject>('creative_projects', 'id', 'createdAt', groupId);
+    return getProjectsFromCollectionWithFallback<CreativeProject>('creative_projects', 'id', 'createdAt', groupId);
 };
 
 export const getStoryboards = async (groupId?: string): Promise<Storyboard[]> => {
-    return getProjectsFromCollection<Storyboard>('storyboards', 'id', 'createdAt', groupId);
+    return getProjectsFromCollectionWithFallback<Storyboard>('storyboards', 'id', 'createdAt', groupId);
 };
 
 

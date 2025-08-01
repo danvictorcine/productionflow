@@ -32,6 +32,7 @@ const formSchema = z.object({
   name: z.string().min(2, "O nome do storyboard deve ter pelo menos 2 caracteres."),
   description: z.string().optional(),
   aspectRatio: z.enum(['16:9', '4:3']),
+  groupId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -41,9 +42,10 @@ interface CreateEditStoryboardDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<Storyboard, 'id' | 'userId' | 'createdAt'>) => void;
   storyboard?: Storyboard;
+  groupId?: string;
 }
 
-export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyboard }: CreateEditStoryboardDialogProps) {
+export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyboard, groupId }: CreateEditStoryboardDialogProps) {
   const isEditMode = !!storyboard;
 
   const form = useForm<FormValues>({
@@ -52,6 +54,7 @@ export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyb
       name: "",
       description: "",
       aspectRatio: '16:9',
+      groupId: groupId,
     },
   });
 
@@ -62,21 +65,24 @@ export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyb
             name: storyboard.name,
             description: storyboard.description || "",
             aspectRatio: storyboard.aspectRatio || '16:9',
+            groupId: storyboard.groupId || groupId,
           }
         : {
             name: "",
             description: "",
             aspectRatio: '16:9' as const,
+            groupId: groupId,
           };
       form.reset(defaultValues);
     }
-  }, [isOpen, isEditMode, storyboard, form]);
+  }, [isOpen, isEditMode, storyboard, groupId, form]);
 
   const handleSubmit = (values: FormValues) => {
     onSubmit({
         name: values.name,
         description: values.description || "",
         aspectRatio: values.aspectRatio,
+        groupId: values.groupId,
     });
   };
 
