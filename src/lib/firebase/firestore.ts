@@ -139,17 +139,23 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
 };
 
 // Generic function to fetch projects from a collection based on groupId or lack thereof
-async function getProjectsFromCollection<T extends { id: string }>(collectionName: string, idField: string, createdAtField: string, groupId: string): Promise<T[]> {
+async function getProjectsFromCollection<T extends { id: string }>(collectionName: string, idField: string, createdAtField: string, groupId?: string): Promise<T[]> {
   const userId = getUserId();
   if (!userId) return [];
 
   const collRef = collection(db, collectionName);
-  const results: T[] = [];
-  
-  // Fetch only projects within the specified group
-  const q = query(collRef, where('userId', '==', userId), where('groupId', '==', groupId), orderBy('createdAt', 'desc'));
+  let q;
+
+  if (groupId) {
+    // Fetch only projects within the specified group
+    q = query(collRef, where('userId', '==', userId), where('groupId', '==', groupId), orderBy('createdAt', 'desc'));
+  } else {
+    // Fetch only projects NOT in any group
+    q = query(collRef, where('userId', '==', userId), where('groupId', '==', null), orderBy('createdAt', 'desc'));
+  }
   
   const snapshot = await getDocs(q);
+  const results: T[] = [];
   snapshot.forEach(doc => {
     const data = doc.data();
     results.push({
@@ -162,47 +168,53 @@ async function getProjectsFromCollection<T extends { id: string }>(collectionNam
   return results;
 }
 
-// Separate function for ungrouped projects to avoid complex queries
-async function getUngroupedProjects<T extends { id: string }>(collectionName: string, idField: string, createdAtField: string): Promise<T[]> {
-  const userId = getUserId();
-  if (!userId) return [];
-  const results: T[] = [];
+// Fetch ungrouped projects, including legacy ones without the 'groupId' field
+async function getUngroupedProjects<T extends { id: string, createdAt: Date }>(collectionName: string, idField: string): Promise<T[]> {
+    const userId = getUserId();
+    if (!userId) return [];
+    
+    // Query for projects where groupId is explicitly null
+    const qNull = query(collection(db, collectionName), where('userId', '==', userId), where('groupId', '==', null));
+    // Query for projects where groupId does not exist (for backward compatibility)
+    const qExists = query(collection(db, collectionName), where('userId', '==', userId));
 
-  // Query 1: For projects explicitly marked with groupId: null
-  const qNull = query(collection(db, collectionName), where('userId', '==', userId), where('groupId', '==', null), orderBy('createdAt', 'desc'));
-  const snapshotNull = await getDocs(qNull);
-  snapshotNull.forEach(doc => {
-      const data = doc.data();
-      results.push({ ...data, [idField]: doc.id, [createdAtField]: (data.createdAt as Timestamp).toDate() } as T);
-  });
+    const [snapshotNull, snapshotAll] = await Promise.all([
+        getDocs(qNull),
+        getDocs(qExists)
+    ]);
+    
+    const resultsMap = new Map<string, T>();
 
-  // Query 2: For legacy projects where groupId field does not exist
-  // We can't query for "field not exists" directly with orderBy, so we fetch all and filter in code.
-  // This is less efficient but necessary for backward compatibility without complex indexes.
-  const allUserProjectsQuery = query(collection(db, collectionName), where('userId', '==', userId), orderBy('createdAt', 'desc'));
-  const allUserProjectsSnapshot = await getDocs(allUserProjectsQuery);
-  allUserProjectsSnapshot.forEach(doc => {
-      const data = doc.data();
-      if (!data.hasOwnProperty('groupId')) {
-          const alreadyAdded = results.some(p => p.id === doc.id);
-          if (!alreadyAdded) {
-              results.push({ ...data, [idField]: doc.id, [createdAtField]: (data.createdAt as Timestamp).toDate() } as T);
-          }
-      }
-  });
+    snapshotNull.forEach(doc => {
+        const data = doc.data();
+        resultsMap.set(doc.id, {
+            ...data,
+            [idField]: doc.id,
+            createdAt: (data.createdAt as Timestamp).toDate(),
+        } as T);
+    });
 
-  // Remove duplicates and sort again, as we combined two queries
-  const uniqueResults = Array.from(new Map(results.map(item => [item.id, item])).values());
-  uniqueResults.sort((a: any, b: any) => b[createdAtField].getTime() - a[createdAtField].getTime());
-  
-  return uniqueResults;
+    snapshotAll.forEach(doc => {
+        const data = doc.data();
+        if (!data.hasOwnProperty('groupId')) {
+            resultsMap.set(doc.id, {
+                ...data,
+                [idField]: doc.id,
+                createdAt: (data.createdAt as Timestamp).toDate(),
+            } as T);
+        }
+    });
+    
+    const results = Array.from(resultsMap.values());
+    results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return results;
 }
 
 
 export const getProjects = async (groupId?: string): Promise<Project[]> => {
     const projects = groupId
         ? await getProjectsFromCollection<Project>('projects', 'id', 'createdAt', groupId)
-        : await getUngroupedProjects<Project>('projects', 'id', 'createdAt');
+        : await getUngroupedProjects<Project & { createdAt: Date }>('projects', 'id');
     
     return projects.map(p => ({
         ...p,
@@ -213,19 +225,19 @@ export const getProjects = async (groupId?: string): Promise<Project[]> => {
 export const getProductions = async (groupId?: string): Promise<Production[]> => {
     return groupId
         ? getProjectsFromCollection<Production>('productions', 'id', 'createdAt', groupId)
-        : getUngroupedProjects<Production>('productions', 'id', 'createdAt');
+        : getUngroupedProjects<Production & { createdAt: Date }>('productions', 'id');
 };
 
 export const getCreativeProjects = async (groupId?: string): Promise<CreativeProject[]> => {
     return groupId
         ? getProjectsFromCollection<CreativeProject>('creative_projects', 'id', 'createdAt', groupId)
-        : getUngroupedProjects<CreativeProject>('creative_projects', 'id', 'createdAt');
+        : getUngroupedProjects<CreativeProject & { createdAt: Date }>('creative_projects', 'id');
 };
 
 export const getStoryboards = async (groupId?: string): Promise<Storyboard[]> => {
     return groupId
         ? getProjectsFromCollection<Storyboard>('storyboards', 'id', 'createdAt', groupId)
-        : getUngroupedProjects<Storyboard>('storyboards', 'id', 'createdAt');
+        : getUngroupedProjects<Storyboard & { createdAt: Date }>('storyboards', 'id');
 };
 
 

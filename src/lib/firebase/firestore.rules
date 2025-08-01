@@ -2,7 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
+    
     // Helper function to check ownership
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
@@ -13,36 +13,21 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Allow users to manage their own profile
+    // Users can manage their own profile
     match /users/{userId} {
       allow read, write: if isOwner(userId);
     }
     
-    // Generic function for user-owned collections
-    function userOwnedRules(collectionName) {
-      return {
-        match /$(collectionName)/{docId} {
-          // Allow read/update/delete if the user owns the document
-          allow get, update, delete: if isOwner(resource.data.userId),
-          // Allow list if the user is making the query
-          allow list: if request.auth != null,
-          // Allow create if the user is setting themselves as the owner
-          allow create: if isOwner(request.resource.data.userId)
-        }
-      };
+    // Generic rule for ALL user-owned collections.
+    // This single rule covers projects, groups, transactions, etc.
+    match /{collection}/{docId} {
+      // A user can create a document if they are the owner.
+      allow create: if isOwner(request.resource.data.userId);
+      // A user can read, update, or delete a document if they are the owner.
+      allow get, update, delete: if isOwner(resource.data.userId);
+      // A user can query a collection as long as they filter by their own userId.
+      allow list: if request.auth != null && request.query.resource.data.userId == request.auth.uid;
     }
-    
-    // Apply rules to all project-related collections
-    include userOwnedRules("projects");
-    include userOwnedRules("transactions");
-    include userOwnedRules("productions");
-    include userOwnedRules("shooting_days");
-    include userOwnedRules("creative_projects");
-    include userOwnedRules("board_items");
-    include userOwnedRules("storyboards");
-    include userOwnedRules("storyboard_scenes");
-    include userOwnedRules("storyboard_panels");
-    include userOwnedRules("projectGroups");
 
     // Public collections (anyone can read, only admins can write)
     function isAdmin() {

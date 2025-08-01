@@ -343,16 +343,16 @@ function GroupPageDetail() {
 
   const openEditDialog = (item: DisplayableItem) => {
     if (item.itemType === 'financial') {
-      setEditingProject(item);
+      setEditingProject(item as Project);
       setIsProjectDialogOpen(true);
     } else if (item.itemType === 'production') {
-      setEditingProduction(item);
+      setEditingProduction(item as Production);
       setIsProductionDialogOpen(true);
     } else if (item.itemType === 'creative') {
-      setEditingCreativeProject(item);
+      setEditingCreativeProject(item as CreativeProject);
       setIsCreativeProjectDialogOpen(true);
     } else if (item.itemType === 'storyboard') {
-      setEditingStoryboard(item);
+      setEditingStoryboard(item as Storyboard);
       setIsStoryboardDialogOpen(true);
     }
   };
