@@ -91,7 +91,6 @@ const projectFormSchema = z.object({
   talents: z.array(talentSchema),
   isBudgetParcelado: z.boolean().default(false),
   installments: z.array(installmentSchema),
-  groupId: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.isBudgetParcelado) {
     const totalInstallments = data.installments.reduce((sum, inst) => sum + inst.amount, 0);
@@ -111,12 +110,11 @@ type ProjectFormValues = z.infer<typeof projectFormSchema>;
 interface CreateEditProjectDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onSubmit: (projectData: Omit<Project, 'id' | 'userId'>) => void;
+  onSubmit: (projectData: Omit<Project, 'id' | 'userId' | 'createdAt'>) => void;
   project?: Project;
-  groupId?: string;
 }
 
-export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project, groupId }: CreateEditProjectDialogProps) {
+export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }: CreateEditProjectDialogProps) {
   const isEditMode = !!project;
 
   const form = useForm<ProjectFormValues>({
@@ -130,7 +128,6 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project, 
       talents: [],
       isBudgetParcelado: false,
       installments: [],
-      groupId: groupId,
     },
   });
   
@@ -148,7 +145,6 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project, 
             talents: project.talents?.map(t => ({...t, paymentType: t.paymentType || 'fixed'})) ?? [],
             isBudgetParcelado: project.isBudgetParcelado ?? false,
             installments: project.installments?.map(i => ({ ...i, date: new Date(i.date) })) ?? [],
-            groupId: project.groupId || groupId,
           }
         : {
             name: "",
@@ -159,11 +155,10 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project, 
             talents: [],
             isBudgetParcelado: false,
             installments: [],
-            groupId: groupId,
           };
       form.reset(defaultValues);
     }
-  }, [isOpen, isEditMode, project, groupId, form]);
+  }, [isOpen, isEditMode, project, form]);
   
   const { fields: talentFields, append: appendTalent, remove: removeTalent } = useFieldArray({
     control: form.control,

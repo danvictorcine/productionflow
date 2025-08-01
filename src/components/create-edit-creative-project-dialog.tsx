@@ -29,7 +29,6 @@ import { Textarea } from "./ui/textarea";
 const formSchema = z.object({
   name: z.string().min(2, "O nome do projeto deve ter pelo menos 2 caracteres."),
   description: z.string().optional(),
-  groupId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -39,10 +38,9 @@ interface CreateEditCreativeProjectDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>) => void;
   project?: CreativeProject;
-  groupId?: string;
 }
 
-export function CreateEditCreativeProjectDialog({ isOpen, setIsOpen, onSubmit, project, groupId }: CreateEditCreativeProjectDialogProps) {
+export function CreateEditCreativeProjectDialog({ isOpen, setIsOpen, onSubmit, project }: CreateEditCreativeProjectDialogProps) {
   const isEditMode = !!project;
 
   const form = useForm<FormValues>({
@@ -50,7 +48,6 @@ export function CreateEditCreativeProjectDialog({ isOpen, setIsOpen, onSubmit, p
     defaultValues: {
       name: "",
       description: "",
-      groupId: groupId,
     },
   });
 
@@ -60,22 +57,19 @@ export function CreateEditCreativeProjectDialog({ isOpen, setIsOpen, onSubmit, p
         ? {
             name: project.name,
             description: project.description || "",
-            groupId: project.groupId || groupId,
           }
         : {
             name: "",
             description: "",
-            groupId: groupId,
           };
       form.reset(defaultValues);
     }
-  }, [isOpen, isEditMode, project, groupId, form]);
+  }, [isOpen, isEditMode, project, form]);
 
   const handleSubmit = (values: FormValues) => {
     onSubmit({
         name: values.name,
         description: values.description || "",
-        groupId: values.groupId,
     });
   };
 

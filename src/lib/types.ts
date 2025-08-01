@@ -40,7 +40,6 @@ export type Project = {
   isBudgetParcelado: boolean;
   installments: Installment[];
   createdAt: Date;
-  groupId?: string;
 };
 
 export type Transaction = {
@@ -132,7 +131,6 @@ export type Production = {
   producer?: string;
   createdAt: Date;
   team: TeamMember[];
-  groupId?: string;
 };
 
 export type WeatherInfo = {
@@ -206,7 +204,6 @@ export type CreativeProject = {
   name: string;
   description: string;
   createdAt: Date;
-  groupId?: string;
 };
 
 export type BoardItem = {
@@ -230,7 +227,6 @@ export type Storyboard = {
   description?: string;
   aspectRatio: '16:9' | '4:3';
   createdAt: Date;
-  groupId?: string;
 };
 
 export type StoryboardScene = {
@@ -280,13 +276,4 @@ export type BetaLimits = {
   MAX_PROJECTS_PER_GROUP: number;
   MAX_ITEMS_PER_MOODBOARD: number;
   MAX_PANELS_PER_STORYBOARD_SCENE: number;
-};
-
-// === Project Group ===
-export type ProjectGroup = {
-  id: string;
-  userId: string;
-  name: string;
-  description: string;
-  createdAt: Date;
 };

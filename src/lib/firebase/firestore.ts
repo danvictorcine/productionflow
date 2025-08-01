@@ -19,106 +19,13 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, ProjectGroup, BetaLimits, TeamMember } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, BetaLimits, TeamMember } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { DEFAULT_BETA_LIMITS } from '../app-config';
 
 // Helper to get current user ID, returns null if not authenticated for public views
 const getUserId = () => {
   return auth?.currentUser?.uid || null;
-};
-
-// === Project Group Functions ===
-
-export const addProjectGroup = async (groupData: Omit<ProjectGroup, 'id' | 'userId' | 'createdAt'>) => {
-  const userId = getUserId();
-  if (!userId) throw new Error("Usuário não autenticado.");
-  const docRef = await addDoc(collection(db, 'projectGroups'), {
-    ...groupData,
-    userId,
-    createdAt: Timestamp.now(),
-  });
-  return docRef.id;
-};
-
-export const getProjectGroups = async (): Promise<ProjectGroup[]> => {
-  const userId = getUserId();
-  if (!userId) return [];
-  const q = query(collection(db, 'projectGroups'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
-  const querySnapshot = await getDocs(q);
-  const groups: ProjectGroup[] = [];
-  querySnapshot.forEach((doc) => {
-    const data = doc.data();
-    groups.push({
-      ...data,
-      id: doc.id,
-      createdAt: (data.createdAt as Timestamp).toDate(),
-    } as ProjectGroup);
-  });
-  return groups;
-};
-
-export const getProjectGroup = async (groupId: string): Promise<ProjectGroup | null> => {
-    const userId = getUserId();
-    if (!userId) return null;
-
-    const groupRef = doc(db, "projectGroups", groupId);
-    const groupSnap = await getDoc(groupRef);
-
-    if (!groupSnap.exists() || groupSnap.data().userId !== userId) {
-        return null;
-    }
-
-    const groupData = groupSnap.data();
-    
-    return {
-      ...groupData,
-      id: groupSnap.id,
-      createdAt: (groupData.createdAt as Timestamp).toDate(),
-    } as ProjectGroup;
-}
-
-
-export const updateProjectGroup = async (groupId: string, groupData: Partial<Omit<ProjectGroup, 'id' | 'userId' | 'createdAt'>>) => {
-  const userId = getUserId();
-  if (!userId) throw new Error("Usuário não autenticado.");
-  const groupRef = doc(db, 'projectGroups', groupId);
-  
-  const docSnap = await getDoc(groupRef);
-  if (!docSnap.exists() || docSnap.data().userId !== userId) {
-      throw new Error("Permission denied to update this group.");
-  }
-  
-  await updateDoc(groupRef, groupData);
-};
-
-export const deleteProjectGroup = async (groupId: string) => {
-    const userId = getUserId();
-    if (!userId) throw new Error("Usuário não autenticado.");
-    const batch = writeBatch(db);
-
-    const groupRef = doc(db, 'projectGroups', groupId);
-    const docSnap = await getDoc(groupRef);
-    if (!docSnap.exists() || docSnap.data().userId !== userId) {
-        throw new Error("Permission denied to delete this group.");
-    }
-    batch.delete(groupRef);
-
-    // Disassociate projects from the group
-    const projectCollections = ['projects', 'productions', 'creative_projects', 'storyboards'];
-    for (const coll of projectCollections) {
-      const q = query(
-        collection(db, coll),
-        where('userId', '==', userId),
-        where('groupId', '==', groupId)
-      );
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach(doc => {
-        batch.update(doc.ref, { groupId: deleteField() });
-      });
-    }
-
-    await batch.commit();
 };
 
 
@@ -138,69 +45,23 @@ export const addProject = async (projectData: Omit<Project, 'id' | 'userId' | 'c
   return docRef.id;
 };
 
-// Generic function to fetch projects from a collection based on groupId or lack thereof
-async function getProjectsFromCollection<T extends { id: string }>(collectionName: string, idField: string, createdAtField: string, groupId?: string): Promise<T[]> {
-  const userId = getUserId();
-  if (!userId) return [];
+export const getProjects = async (): Promise<Project[]> => {
+    const userId = getUserId();
+    if (!userId) return [];
 
-  const collRef = collection(db, collectionName);
-  const queries = [];
+    const collRef = collection(db, 'projects');
+    const q = query(collRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
 
-  if (groupId) {
-    // Fetch only projects within the specified group
-    queries.push(query(collRef, where('userId', '==', userId), where('groupId', '==', groupId), orderBy('createdAt', 'desc')));
-  } else {
-    // Fetch projects NOT in any group. This requires two queries because Firestore doesn't support "not equal" or "or" on different fields well.
-    // 1. Query for documents where 'groupId' does not exist (for old data).
-    // This is done by just querying for the user's projects and filtering in the client.
-    queries.push(query(collRef, where('userId', '==', userId), orderBy('createdAt', 'desc')));
-  }
-  
-  const allResults = await Promise.all(queries.map(q => getDocs(q)));
-  
-  const resultsMap = new Map<string, T>();
-  allResults.forEach(snapshot => {
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      if (!groupId && data.groupId) {
-        // Skip projects that have a group when fetching ungrouped projects
-      } else {
-        resultsMap.set(doc.id, {
-          ...data,
-          [idField]: doc.id,
-          [createdAtField]: (data.createdAt as Timestamp).toDate(),
-        } as T);
-      }
+    return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            ...data,
+            id: doc.id,
+            installments: (data.installments || []).map((inst: any) => ({ ...inst, date: (inst.date as Timestamp).toDate() }))
+        } as Project;
     });
-  });
-  
-  const finalResults = Array.from(resultsMap.values());
-  finalResults.sort((a, b) => (b as any).createdAt.getTime() - (a as any).createdAt.getTime());
-  
-  return finalResults;
-}
-
-
-export const getProjects = async (groupId?: string): Promise<Project[]> => {
-    const projects = await getProjectsFromCollection<Project>('projects', 'id', 'createdAt', groupId);
-    return projects.map(p => ({
-        ...p,
-        installments: (p.installments || []).map(inst => ({...inst, date: (inst.date as any).toDate ? (inst.date as any).toDate() : new Date(inst.date)}))
-    }));
 };
-
-export const getProductions = async (groupId?: string): Promise<Production[]> => {
-    return getProjectsFromCollection<Production>('productions', 'id', 'createdAt', groupId);
-};
-
-export const getCreativeProjects = async (groupId?: string): Promise<CreativeProject[]> => {
-    return getProjectsFromCollection<CreativeProject>('creative_projects', 'id', 'createdAt', groupId);
-};
-
-export const getStoryboards = async (groupId?: string): Promise<Storyboard[]> => {
-    return getProjectsFromCollection<Storyboard>('storyboards', 'id', 'createdAt', groupId);
-};
-
 
 export const getProject = async (projectId: string): Promise<Project | null> => {
     const userId = getUserId();
@@ -525,6 +386,14 @@ export const addProduction = async (data: Omit<Production, 'id' | 'userId' | 'cr
   await addDoc(collection(db, 'productions'), dataWithUser);
 };
 
+export const getProductions = async (): Promise<Production[]> => {
+    const userId = getUserId();
+    if (!userId) return [];
+    const q = query(collection(db, 'productions'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Production);
+};
+
 export const getProduction = async (productionId: string): Promise<Production | null> => {
   const userId = getUserId();
   const productionRef = doc(db, 'productions', productionId);
@@ -756,6 +625,14 @@ export const addCreativeProject = async (data: Omit<CreativeProject, 'id' | 'use
   });
 };
 
+export const getCreativeProjects = async (): Promise<CreativeProject[]> => {
+    const userId = getUserId();
+    if (!userId) return [];
+    const q = query(collection(db, 'creative_projects'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as CreativeProject);
+};
+
 export const getCreativeProject = async (projectId: string): Promise<CreativeProject | null> => {
     const userId = getUserId();
     if (!userId) return null;
@@ -936,6 +813,14 @@ export const addStoryboard = async (data: Omit<Storyboard, 'id' | 'userId' | 'cr
     userId,
     createdAt: Timestamp.now(),
   });
+};
+
+export const getStoryboards = async (): Promise<Storyboard[]> => {
+    const userId = getUserId();
+    if (!userId) return [];
+    const q = query(collection(db, 'storyboards'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Storyboard);
 };
 
 export const getStoryboard = async (storyboardId: string): Promise<Storyboard | null> => {

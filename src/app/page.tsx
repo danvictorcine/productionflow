@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -14,11 +13,9 @@ import {
   DollarSign,
   Brush,
   Image as ImageIcon,
-  Folder,
-  FolderPlus,
 } from 'lucide-react';
 
-import type { Project, Production, CreativeProject, Storyboard, ProjectGroup } from '@/lib/types';
+import type { Project, Production, CreativeProject, Storyboard } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -58,16 +55,13 @@ import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
 import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
-import { DEFAULT_BETA_LIMITS } from '@/lib/app-config';
-import { CreateEditProjectGroupDialog } from '@/components/create-edit-project-group-dialog';
 
 
 type DisplayableItem =
   | (Project & { itemType: 'financial' })
   | (Production & { itemType: 'production' })
   | (CreativeProject & { itemType: 'creative' })
-  | (Storyboard & { itemType: 'storyboard'})
-  | (ProjectGroup & { itemType: 'group' });
+  | (Storyboard & { itemType: 'storyboard'});
 
 function HomePage() {
   const { user } = useAuth();
@@ -82,14 +76,12 @@ function HomePage() {
   const [isProductionDialogOpen, setIsProductionDialogOpen] = useState(false);
   const [isCreativeProjectDialogOpen, setIsCreativeProjectDialogOpen] = useState(false);
   const [isStoryboardDialogOpen, setIsStoryboardDialogOpen] = useState(false);
-  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
 
   // Editing states
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editingProduction, setEditingProduction] = useState<Production | null>(null);
   const [editingCreativeProject, setEditingCreativeProject] = useState<CreativeProject | null>(null);
   const [editingStoryboard, setEditingStoryboard] = useState<Storyboard | null>(null);
-  const [editingGroup, setEditingGroup] = useState<ProjectGroup | null>(null);
 
   // Deleting state
   const [itemToDelete, setItemToDelete] = useState<DisplayableItem | null>(
@@ -97,51 +89,53 @@ function HomePage() {
   );
 
   const fetchItems = async () => {
-      if (!user) return;
-      setIsLoading(true);
-      try {
-        const groups = await firestoreApi.getProjectGroups();
-        
-        // Fetch all projects of all types that are NOT in a group.
-        const ungroupedProjects = await firestoreApi.getProjects();
-        const ungroupedProductions = await firestoreApi.getProductions();
-        const ungroupedCreative = await firestoreApi.getCreativeProjects();
-        const ungroupedStoryboards = await firestoreApi.getStoryboards();
+    if (!user) return;
+    setIsLoading(true);
+    try {
+      const [
+        projects,
+        productions,
+        creativeProjects,
+        storyboards,
+      ] = await Promise.all([
+        firestoreApi.getProjects(),
+        firestoreApi.getProductions(),
+        firestoreApi.getCreativeProjects(),
+        firestoreApi.getStoryboards(),
+      ]);
 
-        const displayableItems: DisplayableItem[] = [
-          ...groups.map((g) => ({ ...g, itemType: 'group' as const })),
-          ...ungroupedProjects.map((p) => ({ ...p, itemType: 'financial' as const })),
-          ...ungroupedProductions.map((p) => ({ ...p, itemType: 'production' as const })),
-          ...ungroupedStoryboards.map((p) => ({ ...p, itemType: 'storyboard' as const })),
-          ...ungroupedCreative.map((p) => ({
-            ...p,
-            itemType: 'creative' as const,
-          })),
-        ];
+      const displayableItems: DisplayableItem[] = [
+        ...projects.map((p) => ({ ...p, itemType: 'financial' as const })),
+        ...productions.map((p) => ({ ...p, itemType: 'production' as const })),
+        ...storyboards.map((p) => ({ ...p, itemType: 'storyboard' as const })),
+        ...creativeProjects.map((p) => ({
+          ...p,
+          itemType: 'creative' as const,
+        })),
+      ];
+      
+      displayableItems.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      );
 
-        displayableItems.sort(
-          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-        );
+      setItems(displayableItems);
+    } catch (error) {
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro em /page.tsx (fetchItems)',
+        description: (
+          <CopyableError
+            userMessage="Não foi possível carregar seus projetos."
+            errorCode={errorTyped.code || errorTyped.message}
+          />
+        ),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        setItems(displayableItems);
-
-      } catch (error) {
-        const errorTyped = error as { code?: string; message: string };
-        toast({
-          variant: 'destructive',
-          title: 'Erro em /page.tsx (fetchItems)',
-          description: (
-            <CopyableError
-              userMessage="Não foi possível carregar seus projetos."
-              errorCode={errorTyped.code || errorTyped.message}
-            />
-          ),
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
   useEffect(() => {
     if (user) {
       fetchItems();
@@ -149,29 +143,8 @@ function HomePage() {
   }, [user]);
 
   const handleCreateNewClick = () => {
-    if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_USER) {
-      toast({
-        variant: 'destructive',
-        title: "Limite de projetos atingido!",
-        description: `A versão Beta permite a criação de até ${DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_USER} projetos e grupos.`,
-      });
-    } else {
-      setIsTypeDialogOpen(true);
-    }
+    setIsTypeDialogOpen(true);
   };
-
-  const handleCreateNewGroupClick = () => {
-     if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_USER) {
-      toast({
-        variant: 'destructive',
-        title: "Limite de projetos atingido!",
-        description: `A versão Beta permite a criação de até ${DEFAULT_BETA_LIMITS.MAX_PROJECTS_PER_USER} projetos e grupos.`,
-      });
-    } else {
-      setEditingGroup(null);
-      setIsGroupDialogOpen(true);
-    }
-  }
 
   const handleSelectProjectType = (
     type: 'financial' | 'production' | 'creative' | 'storyboard'
@@ -190,35 +163,6 @@ function HomePage() {
       setEditingCreativeProject(null);
       setIsCreativeProjectDialogOpen(true);
     }
-  };
-
-  const handleGroupSubmit = async (
-    groupData: Omit<ProjectGroup, 'id' | 'userId' | 'createdAt'>
-  ) => {
-     try {
-      if (editingGroup) {
-        await firestoreApi.updateProjectGroup(editingGroup.id, groupData);
-        toast({ title: 'Grupo atualizado!' });
-      } else {
-        await firestoreApi.addProjectGroup(groupData);
-        toast({ title: 'Grupo criado!' });
-      }
-      await fetchItems();
-    } catch (error) {
-      const errorTyped = error as { code?: string; message: string };
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Salvar Grupo',
-        description: (
-          <CopyableError
-            userMessage="Não foi possível salvar o grupo."
-            errorCode={errorTyped.code || errorTyped.message}
-          />
-        ),
-      });
-    }
-    setIsGroupDialogOpen(false);
-    setEditingGroup(null);
   };
 
   const handleProjectSubmit = async (
@@ -351,8 +295,6 @@ function HomePage() {
         await firestoreApi.deleteCreativeProjectAndItems(itemToDelete.id);
       } else if (itemToDelete.itemType === 'storyboard') {
         await firestoreApi.deleteStoryboardAndPanels(itemToDelete.id);
-      } else if (itemToDelete.itemType === 'group') {
-        await firestoreApi.deleteProjectGroup(itemToDelete.id);
       }
       toast({ title: `"${itemToDelete.name}" excluído(a).` });
       await fetchItems();
@@ -385,9 +327,6 @@ function HomePage() {
     } else if (item.itemType === 'storyboard') {
       setEditingStoryboard(item);
       setIsStoryboardDialogOpen(true);
-    } else if (item.itemType === 'group') {
-      setEditingGroup(item);
-      setIsGroupDialogOpen(true);
     }
   };
 
@@ -410,11 +349,11 @@ function HomePage() {
             Nenhum projeto encontrado
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Comece criando seu primeiro projeto ou grupo de projetos.
+            Comece criando seu primeiro projeto.
           </p>
           <Button className="mt-6" onClick={handleCreateNewClick}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Criar Projeto Individual
+            Criar Projeto
           </Button>
         </div>
       );
@@ -423,38 +362,28 @@ function HomePage() {
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => {
-          let link, Icon, projectType, buttonText;
+          let link, Icon, projectType;
 
           switch (item.itemType) {
             case 'financial':
               link = `/project/${item.id}`;
               Icon = DollarSign;
               projectType = 'Gerenciamento Financeiro';
-              buttonText = 'Gerenciar';
               break;
             case 'production':
               link = `/production/${item.id}`;
               Icon = Clapperboard;
               projectType = 'Ordem do Dia';
-              buttonText = 'Gerenciar';
               break;
             case 'creative':
               link = `/creative/${item.id}`;
               Icon = Brush;
               projectType = 'Moodboard';
-              buttonText = 'Gerenciar';
               break;
             case 'storyboard':
               link = `/storyboard/${item.id}`;
               Icon = ImageIcon;
               projectType = 'Storyboard';
-              buttonText = 'Gerenciar';
-              break;
-            case 'group':
-              link = `/group/${item.id}`;
-              Icon = Folder;
-              projectType = 'Grupo de Projetos';
-              buttonText = 'Gerenciar Grupo';
               break;
           }
 
@@ -496,7 +425,7 @@ function HomePage() {
                   </div>
                 </CardHeader>
                 <CardContent className="mt-auto">
-                  <Button className="w-full">{buttonText}</Button>
+                  <Button className="w-full">Gerenciar</Button>
                 </CardContent>
               </Link>
             </Card>
@@ -534,10 +463,6 @@ function HomePage() {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={handleCreateNewGroupClick} size="sm" variant="outline">
-            <FolderPlus className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Criar Grupo</span>
-          </Button>
           <Button onClick={handleCreateNewClick} size="sm">
             <PlusCircle className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Criar Novo</span>
@@ -560,13 +485,6 @@ function HomePage() {
         isOpen={isTypeDialogOpen}
         setIsOpen={setIsTypeDialogOpen}
         onSelect={handleSelectProjectType}
-      />
-
-       <CreateEditProjectGroupDialog
-        isOpen={isGroupDialogOpen}
-        setIsOpen={setIsGroupDialogOpen}
-        onSubmit={handleGroupSubmit}
-        group={editingGroup}
       />
 
       <CreateEditProjectDialog
@@ -619,7 +537,7 @@ function HomePage() {
             <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta ação não pode ser desfeita. Isso excluirá permanentemente o
-              item e todos os seus dados associados. Grupos de projetos terão seus projetos desassociados, mas não excluídos.
+              projeto e todos os seus dados associados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
