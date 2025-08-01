@@ -1,92 +1,102 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
+    // Helper function to check ownership
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
+    // Users can read their own profile and admins can read any profile
     match /users/{userId} {
-      // Users can only read/write their own profile.
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if request.auth != null;
+      allow update: if isOwner(userId);
     }
     
-    match /projects/{projectId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    // Generic rules for collections owned by a user
+    // This now allows querying on 'groupId'
+    rules projectReadRules {
+       allow list: if request.auth != null && request.auth.uid == request.query.resource.data.userId;
+       allow get: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
-    match /projectGroups/{groupId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
-    }
-    
-    match /transactions/{transactionId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
-    }
-    
-    match /productions/{productionId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
-    }
-    
-    match /shooting_days/{dayId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    rules projectWriteRules {
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
-    match /creative_projects/{projectId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    // Apply rules to all project-related collections
+    match /projects/{docId} {
+      allow read: if projectReadRules();
+      allow write: if projectWriteRules();
     }
-    
-    match /board_items/{itemId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    match /transactions/{docId} {
+       allow read: if projectReadRules();
+       allow write: if projectWriteRules();
     }
-    
-    match /storyboards/{storyboardId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    match /productions/{docId} {
+       allow read: if projectReadRules();
+       allow write: if projectWriteRules();
     }
-    
-    match /storyboard_scenes/{sceneId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+     match /shooting_days/{docId} {
+       allow read: if projectReadRules();
+       allow write: if projectWriteRules();
     }
-    
-    match /storyboard_panels/{panelId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    match /creative_projects/{docId} {
+       allow read: if projectReadRules();
+       allow write: if projectWriteRules();
+    }
+    match /board_items/{docId} {
+       allow read: if projectReadRules();
+       allow write: if projectWriteRules();
+    }
+    match /storyboards/{docId} {
+       allow read: if projectReadRules();
+       allow write: if projectWriteRules();
+    }
+    match /storyboard_scenes/{docId} {
+       allow read: if projectReadRules();
+       allow write: if projectWriteRules();
+    }
+    match /storyboard_panels/{docId} {
+       allow read: if projectReadRules();
+       allow write: if projectWriteRules();
+    }
+    match /projectGroups/{docId} {
+       allow read: if projectReadRules();
+       allow write: if projectWriteRules();
     }
 
-    match /posts/{postId} {
-      allow read: if true; // Publicly readable
-      allow create, update, delete: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    match /pages/{pageId} {
-      allow read: if true; // Publicly readable
-      allow write: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    match /teamMembers/{memberId} {
-      allow read: if true; // Publicly readable
-      allow write: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    match /settings/{settingId} {
-        // Theme settings can be read by anyone to apply theme. Can only be written by admin.
-        allow read: if true;
-        allow write: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
+    // Public read for specific collections
     match /public_productions/{productionId} {
-        allow read: if true;
-        allow write: if isSignedIn(); // Allow writes for logged-in users to share
+        allow get: if true;
     }
-
     match /public_shooting_days/{dayId} {
-        allow read: if true;
-        allow write: if isSignedIn(); // Allow writes for logged-in users to share
+        allow get: if true;
     }
 
+    // Rules for pages, posts, team members, etc.
+    // Public read access, write access only for admins
+    function publicReadAdminWrite() {
+      return {
+        allow read: if true,
+        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+      };
+    }
+    
+    match /posts/{postId} {
+        include publicReadAdminWrite();
+    }
+     match /pages/{pageId} {
+        include publicReadAdminWrite();
+    }
+     match /teamMembers/{memberId} {
+        include publicReadAdminWrite();
+    }
+     match /settings/{settingId} {
+        include publicReadAdminWrite();
+    }
   }
 }
