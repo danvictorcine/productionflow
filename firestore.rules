@@ -18,15 +18,14 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
     
-    // Generic rules for ALL user-owned collections
+    // Generic rule for ALL user-owned collections
     match /{collection}/{docId} {
       // A user can create a document if they are the owner.
       allow create: if isOwner(request.resource.data.userId);
-      // A user can read, update, or delete their own documents.
+      // A user can read, update, or delete a document if they are the owner.
       allow get, update, delete: if isOwner(resource.data.userId);
-      // A user can query a collection. Firestore will then apply the 'get' rule to each document,
-      // ensuring they can only read documents they own. This prevents needing complex list rules.
-      allow list: if request.auth != null;
+      // A user can query a collection as long as they filter by their own userId.
+      allow list: if request.auth != null && request.query.resource.data.userId == request.auth.uid;
     }
 
     // Public collections (anyone can read, only admins can write)
