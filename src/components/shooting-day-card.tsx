@@ -165,7 +165,6 @@ const formatLocation = (location?: LocationAddress): string => {
         return location.displayName || "Localização não definida";
     }
     
-    // Remove duplicates, e.g. city and state might be the same in some countries
     const uniqueParts = [...new Set(parts)];
 
     return uniqueParts.join(', ');
@@ -176,6 +175,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     
     const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
     const isFinished = isPast(parse(day.endTime || "00:00", "HH:mm", day.date));
+    const formattedLocation = formatLocation(day.location);
+
 
     useEffect(() => {
         if (!day.startTime || !day.endTime || !isToday(day.date)) {
@@ -208,7 +209,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
 
 
     const totalDuration = calculateDuration(day.startTime, day.endTime);
-    const formattedLocation = formatLocation(day.location);
     const topGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
 
     return (
@@ -294,7 +294,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 )}
                             </div>
                             <div className="h-[235px]">
-                                <Card className="h-full flex flex-col justify-between p-4 bg-card/50">
+                                <Card className="h-full flex flex-col justify-center items-center p-4 bg-card/50">
                                     <CardHeader className="p-0 mb-2 text-center">
                                         <CardTitle className="text-lg flex items-center justify-center gap-2">
                                             <Clock className="h-5 w-5 text-primary" />
@@ -308,23 +308,20 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                                 <p className="text-muted-foreground text-lg">
                                                     <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
                                                 </p>
-                                                {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
+                                                <div className="flex flex-col items-center gap-1.5 mt-1">
+                                                    {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
+                                                    {remainingProductionTime ? (
+                                                        <Badge variant="secondary" className="text-sm bg-primary/10 text-primary">{remainingProductionTime}</Badge>
+                                                    ) : isFinished ? (
+                                                        <Badge variant="destructive" className="text-sm">{`Produção Finalizada`}</Badge>
+                                                    ) : null}
+                                                </div>
                                             </>
                                         ) : (
                                             <div className="text-center text-sm text-muted-foreground">
                                                 <p>Horários não definidos.</p>
                                                 {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
                                             </div>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-auto pt-4 text-center">
-                                        {remainingProductionTime ? (
-                                            <Badge variant="secondary" className="text-sm bg-primary/10 text-primary">{remainingProductionTime}</Badge>
-                                        ) : isFinished ? (
-                                            <Badge variant="destructive" className="text-sm">{`Produção Finalizada`}</Badge>
-                                        ) : (
-                                            <div className="h-6"></div>
                                         )}
                                     </div>
                                 </Card>
