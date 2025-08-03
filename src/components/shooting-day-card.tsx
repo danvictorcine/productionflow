@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import type { Production, ShootingDay, Scene, ChecklistItem, LocationAddress } from "@/lib/types";
-import { format, isToday, isPast, parse } from "date-fns";
+import { format, isToday, isPast, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
@@ -174,6 +174,39 @@ const formatLocation = (location?: LocationAddress): string => {
 
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     
+    const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
+    const isFinished = isPast(parse(day.endTime || "00:00", "HH:mm", day.date));
+
+    useEffect(() => {
+        if (!day.startTime || !day.endTime || !isToday(day.date)) {
+            setRemainingProductionTime(null);
+            return;
+        }
+
+        const calculateRemaining = () => {
+            const now = new Date();
+            const startTime = parse(day.startTime!, "HH:mm", day.date);
+            const endTime = parse(day.endTime!, "HH:mm", day.date);
+
+            if (now < startTime) {
+                setRemainingProductionTime("A produção ainda não começou.");
+            } else if (now > endTime) {
+                setRemainingProductionTime(null);
+            } else {
+                const diff = endTime.getTime() - now.getTime();
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                setRemainingProductionTime(`${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m restantes`);
+            }
+        };
+
+        calculateRemaining();
+        const interval = setInterval(calculateRemaining, 60000); // Update every minute
+        return () => clearInterval(interval);
+
+    }, [day.startTime, day.endTime, day.date]);
+
+
     const totalDuration = calculateDuration(day.startTime, day.endTime);
     const formattedLocation = formatLocation(day.location);
     const topGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
@@ -261,26 +294,43 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 )}
                             </div>
                             <div className="h-[235px]">
-                                <Card className="h-full flex flex-col justify-between items-center text-center p-4 bg-card/50">
-                                    <CardHeader className="p-0 mb-2">
-                                        <CardTitle className="text-lg flex items-center gap-2">
+                                <Card className="h-full flex flex-col justify-between p-4 bg-card/50">
+                                    <CardHeader className="p-0 mb-2 text-center">
+                                        <CardTitle className="text-lg flex items-center justify-center gap-2">
                                             <Clock className="h-5 w-5 text-primary" />
                                             Horários da Diária
                                         </CardTitle>
                                     </CardHeader>
-                                    {day.startTime && day.endTime ? (
-                                        <div className="space-y-2">
-                                            <p className="text-muted-foreground text-lg">
-                                                <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
-                                            </p>
-                                            {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center text-sm text-muted-foreground">
-                                            <p>Horários não definidos.</p>
-                                            {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
-                                        </div>
-                                    )}
+                                    
+                                    <div className="text-center space-y-2">
+                                        {day.startTime && day.endTime ? (
+                                            <>
+                                                <p className="text-muted-foreground text-lg">
+                                                    <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
+                                                </p>
+                                                {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
+                                            </>
+                                        ) : (
+                                            <div className="text-center text-sm text-muted-foreground">
+                                                <p>Horários não definidos.</p>
+                                                {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-auto pt-4 text-center">
+                                        {remainingProductionTime ? (
+                                            <div className="bg-primary/10 text-primary font-semibold text-sm p-2 rounded-md">
+                                                {remainingProductionTime}
+                                            </div>
+                                        ) : isFinished ? (
+                                            <div className="bg-destructive/10 text-destructive font-semibold text-sm p-2 rounded-md">
+                                                Produção Finalizada
+                                            </div>
+                                        ) : (
+                                            <div className="h-9"></div> // Placeholder to keep height consistent
+                                        )}
+                                    </div>
                                 </Card>
                             </div>
                         </div>
