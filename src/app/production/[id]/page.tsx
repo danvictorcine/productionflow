@@ -621,8 +621,8 @@ function ProductionPageDetail() {
         >
             <AccordionItem value="team" className="border-none">
                 <Card>
-                    <AccordionTrigger className="w-full hover:no-underline p-0">
-                        <CardHeader className="flex-1 flex flex-row items-center justify-between text-left hover:bg-muted/50 rounded-t-lg transition-colors">
+                    <AccordionTrigger className="w-full hover:no-underline p-0 hover:bg-muted/50 rounded-t-lg transition-colors">
+                        <CardHeader className="flex-1 flex flex-row items-center justify-between text-left">
                            <div className="flex items-center">
                              <CardTitle className="flex items-center text-left">
                                 <Users className="h-6 w-6 mr-3 text-primary" />
