@@ -51,6 +51,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
     equipment: ChecklistItem[];
@@ -622,7 +623,7 @@ function ProductionPageDetail() {
         >
             <AccordionItem value="team" className="border-none">
                 <Card>
-                    <AccordionTrigger className="w-full p-0 rounded-t-lg transition-colors hover:no-underline hover:bg-muted/50">
+                    <AccordionTrigger className="w-full p-0 rounded-t-lg transition-colors hover:no-underline">
                         <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6">
                            <div className="flex items-center">
                             <Users className="h-6 w-6 mr-3 text-primary" />
@@ -639,6 +640,7 @@ function ProductionPageDetail() {
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent className="p-6 pt-0">
+                       <ScrollArea className="max-h-[500px] pr-3">
                         <div className="space-y-4">
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
@@ -656,7 +658,7 @@ function ProductionPageDetail() {
                                                       <p className="text-base text-muted-foreground">{member.role}</p>
                                                   </div>
                                               </div>
-                                               <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                                              <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
                                                 <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                                </div>
                                           </div>
@@ -701,6 +703,7 @@ function ProductionPageDetail() {
                           <p className="text-sm text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado.</p>
                         )}
                         </div>
+                       </ScrollArea>
                     </AccordionContent>
                 </Card>
             </AccordionItem>
