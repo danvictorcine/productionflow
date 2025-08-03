@@ -151,7 +151,7 @@ const calculateDuration = (start?: string, end?: string): string | null => {
     return `${hours}h ${minutes}m`;
 };
 
-const formatLocation = (location?: LocationAddress): string => {
+const formatLocationForHeader = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
     
     const parts = [
@@ -175,7 +175,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     
     const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
     const isFinished = isPast(parse(day.endTime || "00:00", "HH:mm", day.date));
-    const formattedLocation = formatLocation(day.location);
+    const formattedLocation = formatLocationForHeader(day.location);
 
 
     useEffect(() => {
@@ -209,7 +209,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
 
 
     const totalDuration = calculateDuration(day.startTime, day.endTime);
-    const topGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
 
     return (
         <AccordionItem value={day.id} className="border-none">
@@ -269,46 +268,50 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 </AccordionTrigger>
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
-                        <div className={topGridClass}>
-                            <div className="h-[235px] w-full min-w-[350px]">
-                                {isFetchingWeather ? (
-                                    <Skeleton className="h-full w-full" />
-                                ) : day.weather ? (
-                                    <WeatherCardAnimated weather={day.weather} day={day} />
-                                ) : (
-                                    <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
-                                        <p className="text-sm font-semibold">Sem dados de clima</p>
-                                        <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
-                                        {!isPublicView && <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="h-[235px] w-full lg:col-span-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                                    <div className="h-full w-full min-w-[300px]">
+                                        {isFetchingWeather ? (
+                                            <Skeleton className="h-full w-full" />
+                                        ) : day.weather ? (
+                                            <WeatherCardAnimated weather={day.weather} day={day} />
+                                        ) : (
+                                            <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+                                                <p className="text-sm font-semibold">Sem dados de clima</p>
+                                                <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
+                                                {!isPublicView && <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>}
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                            <div className="h-[235px]">
-                                {day.latitude && day.longitude ? (
-                                    <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" isExporting={isExporting} />
-                                ) : (
-                                    <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
-                                    <p className="text-sm font-semibold">Sem mapa</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
+                                    <div className="h-full">
+                                        {day.latitude && day.longitude ? (
+                                            <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" isExporting={isExporting} />
+                                        ) : (
+                                            <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+                                            <p className="text-sm font-semibold">Sem mapa</p>
+                                            <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
                             <div className="h-[235px]">
                                 <Card className="h-full flex flex-col justify-center items-center p-4 bg-card/50">
-                                    <CardHeader className="p-0 mb-2 text-center">
+                                    <CardHeader className="p-0 text-center">
                                         <CardTitle className="text-lg flex items-center justify-center gap-2">
                                             <Clock className="h-5 w-5 text-primary" />
                                             Horários da Diária
                                         </CardTitle>
                                     </CardHeader>
                                     
-                                    <div className="text-center space-y-2">
+                                    <div className="text-center space-y-2 mt-4">
                                         {day.startTime && day.endTime ? (
                                             <>
                                                 <p className="text-muted-foreground text-lg">
                                                     <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
                                                 </p>
-                                                <div className="flex flex-col items-center gap-1.5 mt-1">
+                                                <div className="flex flex-col items-center gap-1.5 mt-2">
                                                     {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
                                                     {remainingProductionTime ? (
                                                         <Badge variant="secondary" className="text-sm bg-primary/10 text-primary">{remainingProductionTime}</Badge>
