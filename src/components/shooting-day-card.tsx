@@ -7,7 +7,7 @@ import { format, isToday, isPast, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown
+  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -185,7 +185,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     
     const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
     const isFinished = isPast(parse(day.endTime || "00:00", "HH:mm", day.date));
-    const formattedLocation = formatLocationForHeader(day.location);
 
 
     useEffect(() => {
@@ -236,7 +235,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
                                 </h3>
                                 <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
-                                <MapPin className="h-4 w-4" /> {formattedLocation}
+                                <MapPin className="h-4 w-4" /> {formatLocationForHeader(day.location)}
                                 </p>
                             </div>
                         </div>
@@ -274,13 +273,12 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             )}
-                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 mr-2 data-[state=open]:rotate-180" />
                         </div>
                     </CardHeader>
                 </AccordionTrigger>
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
-                        <div className={topGridClass}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                              <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full" />
