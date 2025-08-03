@@ -640,53 +640,57 @@ function ProductionPageDetail() {
                         <div className="space-y-4">
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
-                                <Collapsible key={member.id} className="p-3 rounded-md border bg-muted/50">
-                                    <CollapsibleTrigger className='w-full'>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4 text-left">
-                                                <Avatar className="h-12 w-12">
-                                                    <AvatarImage src={member.photoURL} />
-                                                    <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="font-semibold text-base">{member.name}</p>
-                                                    <p className="text-base text-muted-foreground">{member.role}</p>
+                                <Collapsible key={member.id}>
+                                    <div className="rounded-md border bg-muted/50">
+                                        <CollapsibleTrigger className="w-full p-3 group">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4 text-left">
+                                                    <Avatar className="h-12 w-12">
+                                                        <AvatarImage src={member.photoURL} />
+                                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-semibold text-base">{member.name}</p>
+                                                        <p className="text-base text-muted-foreground">{member.role}</p>
+                                                    </div>
+                                                </div>
+                                                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                            </div>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent>
+                                            <div className="p-3 pt-0">
+                                                <div className="mt-2 pt-2 border-t space-y-2">
+                                                    {member.contact && (
+                                                        <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                            <Phone className="h-4 w-4 mt-1 text-sky-600 flex-shrink-0" />
+                                                            <div>
+                                                                <span className="font-semibold">Contato: </span>
+                                                                <a href={`tel:${member.contact.replace(/\D/g, '')}`} className="text-muted-foreground hover:underline">{member.contact}</a>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {member.hasDietaryRestriction && (
+                                                        <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                            <Utensils className="h-4 w-4 mt-1 text-amber-600 flex-shrink-0" />
+                                                            <div>
+                                                                <span className="font-semibold">Restrição Alimentar: </span>
+                                                                <span className="text-muted-foreground">{member.dietaryRestriction || 'Não especificada'}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {member.extraNotes && (
+                                                        <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                            <Info className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
+                                                            <div>
+                                                                <span className="font-semibold">Observação: </span>
+                                                                <span className="text-muted-foreground">{member.extraNotes}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <ChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
-                                        </div>
-                                    </CollapsibleTrigger>
-                                    <CollapsibleContent>
-                                        <div className="mt-4 pt-4 border-t space-y-2">
-                                            {member.contact && (
-                                                <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
-                                                    <Phone className="h-4 w-4 mt-1 text-sky-600 flex-shrink-0" />
-                                                    <div>
-                                                        <span className="font-semibold">Contato: </span>
-                                                        <a href={`tel:${member.contact.replace(/\D/g, '')}`} className="text-muted-foreground hover:underline">{member.contact}</a>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {member.hasDietaryRestriction && (
-                                                <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
-                                                    <Utensils className="h-4 w-4 mt-1 text-amber-600 flex-shrink-0" />
-                                                    <div>
-                                                        <span className="font-semibold">Restrição Alimentar: </span>
-                                                        <span className="text-muted-foreground">{member.dietaryRestriction || 'Não especificada'}</span>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {member.extraNotes && (
-                                                <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
-                                                    <Info className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
-                                                    <div>
-                                                        <span className="font-semibold">Observação: </span>
-                                                        <span className="text-muted-foreground">{member.extraNotes}</span>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CollapsibleContent>
+                                        </CollapsibleContent>
+                                    </div>
                                 </Collapsible>
                             ))
                         ) : (
@@ -798,5 +802,3 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
-
-    
