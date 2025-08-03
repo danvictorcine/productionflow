@@ -648,7 +648,7 @@ function ProductionPageDetail() {
                             </div>
                          </CardHeader>
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 pt-0 max-h-[500px] overflow-y-auto">
+                    <AccordionContent className="p-6 pt-0 overflow-y-auto max-h-[500px]">
                         <div className="space-y-4">
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
@@ -699,7 +699,7 @@ function ProductionPageDetail() {
                                         <div className="p-3 pt-0">
                                             <div className="mt-2 pt-2 border-t space-y-2">
                                                 {member.contact && (
-                                                    <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                    <div className="flex items-start gap-2 text-base p-2 rounded">
                                                         <Phone className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
                                                         <div>
                                                             <span className="font-semibold">Contato: </span>
@@ -708,7 +708,7 @@ function ProductionPageDetail() {
                                                     </div>
                                                 )}
                                                 {member.hasDietaryRestriction && (
-                                                    <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                    <div className="flex items-start gap-2 text-base p-2 rounded">
                                                         <Utensils className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
                                                         <div>
                                                             <span className="font-semibold">Restrição Alimentar: </span>
@@ -717,7 +717,7 @@ function ProductionPageDetail() {
                                                     </div>
                                                 )}
                                                 {member.extraNotes && (
-                                                    <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                    <div className="flex items-start gap-2 text-base p-2 rounded">
                                                         <Info className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
                                                         <div>
                                                             <span className="font-semibold">Observação: </span>
