@@ -298,14 +298,16 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                                   <input id={`photo-upload-${index}`} type="file" className="hidden" accept="image/png, image/jpeg" onChange={(e) => handlePhotoUpload(index, e)} disabled={isUploading[index]} />
                                 </div>
                                <div className="grid grid-cols-1 items-end gap-3 flex-1">
-                                <FormField control={form.control} name={`team.${index}.name`} render={({ field }) => (
-                                  <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do membro" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
+                                <div className="flex items-end gap-2">
+                                  <FormField control={form.control} name={`team.${index}.name`} render={({ field }) => (
+                                    <FormItem className="flex-1"><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do membro" {...field} /></FormControl><FormMessage /></FormItem>
+                                  )}/>
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeTeam(index)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                                </div>
                                 <FormField control={form.control} name={`team.${index}.role`} render={({ field }) => (
                                   <FormItem><FormLabel className="text-xs">Função</FormLabel><FormControl><Input placeholder="ex: Ator, Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                               </div>
-                              <Button type="button" variant="destructive" size="icon" onClick={() => removeTeam(index)} className="self-start"><Trash2 className="h-4 w-4" /></Button>
                             </div>
                              <div className="space-y-4">
                                 <FormField
