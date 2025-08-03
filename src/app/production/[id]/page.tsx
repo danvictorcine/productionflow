@@ -623,7 +623,7 @@ function ProductionPageDetail() {
         >
             <AccordionItem value="team" className="border-none">
                 <Card>
-                    <AccordionTrigger className="w-full p-0 rounded-t-lg transition-colors group">
+                    <AccordionTrigger className="w-full p-0 rounded-t-lg transition-colors group hover:no-underline">
                         <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6">
                            <div className="flex flex-col text-left">
                              <div className="flex items-center">
@@ -646,8 +646,8 @@ function ProductionPageDetail() {
                             production.team.map(member => (
                                 <Collapsible key={member.id} className="group">
                                     <div className="rounded-md border bg-muted/50">
-                                        <CollapsibleTrigger className="w-full">
-                                          <div className="flex items-center justify-between p-3 cursor-pointer">
+                                        <CollapsibleTrigger className="w-full p-3 text-left">
+                                          <div className="flex items-center justify-between">
                                               <div className="flex items-center gap-4 text-left">
                                                   <Avatar className="h-12 w-12">
                                                       <AvatarImage src={member.photoURL} />
@@ -658,7 +658,7 @@ function ProductionPageDetail() {
                                                       <p className="text-base text-muted-foreground">{member.role}</p>
                                                   </div>
                                               </div>
-                                              <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                                               <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
                                                 <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                                </div>
                                           </div>
