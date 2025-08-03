@@ -622,16 +622,18 @@ function ProductionPageDetail() {
         >
             <AccordionItem value="team" className="border-none">
                 <Card>
-                    <AccordionTrigger className="w-full p-0 rounded-t-lg">
+                    <AccordionTrigger className="w-full p-0 rounded-t-lg hover:bg-muted/50 hover:no-underline transition-colors">
                         <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6">
                            <div className="flex items-center">
-                             <CardTitle className="flex items-center text-left">
-                                <Users className="h-6 w-6 mr-3 text-primary" />
-                                Equipe e Elenco
-                            </CardTitle>
-                            <CardDescription className="text-left ml-4 hidden md:block">
-                                Informações detalhadas sobre todos os envolvidos na produção.
-                            </CardDescription>
+                            <Users className="h-6 w-6 mr-3 text-primary" />
+                             <div>
+                                <CardTitle className="flex items-center text-left">
+                                    Equipe e Elenco
+                                </CardTitle>
+                                <CardDescription className="text-left mt-1">
+                                    Informações detalhadas sobre todos os envolvidos na produção.
+                                </CardDescription>
+                             </div>
                            </div>
                            <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                         </CardHeader>
@@ -642,20 +644,20 @@ function ProductionPageDetail() {
                             production.team.map(member => (
                                 <Collapsible key={member.id}>
                                     <div className="rounded-md border bg-muted/50">
-                                        <CollapsibleTrigger className="w-full p-3 group">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-4 text-left">
-                                                    <Avatar className="h-12 w-12">
-                                                        <AvatarImage src={member.photoURL} />
-                                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <p className="font-semibold text-base">{member.name}</p>
-                                                        <p className="text-base text-muted-foreground">{member.role}</p>
-                                                    </div>
-                                                </div>
-                                                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                            </div>
+                                        <CollapsibleTrigger asChild>
+                                          <div className="flex items-center justify-between p-3 cursor-pointer group">
+                                              <div className="flex items-center gap-4 text-left">
+                                                  <Avatar className="h-12 w-12">
+                                                      <AvatarImage src={member.photoURL} />
+                                                      <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                                  </Avatar>
+                                                  <div>
+                                                      <p className="font-semibold text-base">{member.name}</p>
+                                                      <p className="text-base text-muted-foreground">{member.role}</p>
+                                                  </div>
+                                              </div>
+                                              <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                          </div>
                                         </CollapsibleTrigger>
                                         <CollapsibleContent>
                                             <div className="p-3 pt-0">
