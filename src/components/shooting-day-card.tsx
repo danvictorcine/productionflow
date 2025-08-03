@@ -1,4 +1,3 @@
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -8,7 +7,7 @@ import { format, isToday, isPast, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass
+  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -225,7 +224,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6 hover:bg-muted/50 rounded-t-lg transition-colors">
+                <AccordionTrigger className="w-full hover:no-underline p-0 hover:bg-muted/50 rounded-t-lg transition-colors">
                     <CardHeader className="p-6 flex-1 flex flex-row justify-between items-center text-left">
                          <div className="flex items-center gap-4">
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
@@ -241,7 +240,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                             {!isPublicView && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -275,6 +274,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             )}
+                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 mr-2 data-[state=open]:rotate-180" />
                         </div>
                     </CardHeader>
                 </AccordionTrigger>
