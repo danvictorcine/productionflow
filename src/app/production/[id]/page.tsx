@@ -654,20 +654,22 @@ function ProductionPageDetail() {
                             production.team.map(member => (
                                 <Collapsible key={member.id} className="group">
                                     <div className="rounded-md border bg-muted/50 flex items-center pr-2">
-                                        <CollapsibleTrigger className="w-full p-3 text-left flex items-center justify-between cursor-pointer">
-                                          <div className="flex items-center gap-4 text-left">
-                                              <Avatar className="h-12 w-12">
-                                                  <AvatarImage src={member.photoURL} />
-                                                  <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                              </Avatar>
-                                              <div>
-                                                  <p className="font-semibold text-base">{member.name}</p>
-                                                  <p className="text-base text-muted-foreground">{member.role}</p>
-                                              </div>
-                                          </div>
-                                           <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
-                                            <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                           </div>
+                                        <CollapsibleTrigger asChild>
+                                            <div className="flex-1 p-3 text-left flex items-center justify-between cursor-pointer">
+                                                <div className="flex items-center gap-4 text-left">
+                                                    <Avatar className="h-12 w-12">
+                                                        <AvatarImage src={member.photoURL} />
+                                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-semibold text-base">{member.name}</p>
+                                                        <p className="text-base text-muted-foreground">{member.role}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                                                    <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                                </div>
+                                            </div>
                                         </CollapsibleTrigger>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
