@@ -10,7 +10,7 @@ import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
-import type { ShootingDay, TeamMember, ChecklistItem } from "@/lib/types";
+import type { ShootingDay, TeamMember, ChecklistItem, LocationAddress } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -76,15 +76,25 @@ const checklistItemSchema = z.object({
   checked: z.boolean(),
 });
 
+const locationAddressSchema = z.object({
+  displayName: z.string().min(1, "A localização é obrigatória. Clique no mapa ou pesquise."),
+  road: z.string().optional(),
+  house_number: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postcode: z.string().optional(),
+  country: z.string().optional(),
+});
+
 const shootingDaySchema = z.object({
   date: z.date({ required_error: "A data da filmagem é obrigatória." }),
   dayNumber: z.coerce.number().optional(),
   totalDays: z.coerce.number().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
-  location: z.string().min(1, "A localização é obrigatória. Clique no mapa ou pesquise."),
-  latitude: z.number(), // Tornando obrigatório para evitar undefined
-  longitude: z.number(), // Tornando obrigatório para evitar undefined
+  location: locationAddressSchema,
+  latitude: z.number(),
+  longitude: z.number(),
   callTimes: z.array(callTimeSchema),
   scenes: z.array(sceneSchema),
   presentTeam: z.array(teamMemberSchema).optional(),
@@ -157,7 +167,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     resolver: zodResolver(shootingDaySchema),
     defaultValues: {
       date: undefined,
-      location: "",
+      location: { displayName: "" },
       latitude: defaultPosition[0],
       longitude: defaultPosition[1],
       scenes: [],
@@ -201,7 +211,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           totalDays: shootingDay.totalDays,
           startTime: shootingDay.startTime || "",
           endTime: shootingDay.endTime || "",
-          location: shootingDay.location,
+          location: shootingDay.location || { displayName: "Localização não definida" },
           latitude: shootingDay.latitude || defaultPosition[0],
           longitude: shootingDay.longitude || defaultPosition[1],
           callTimes: Array.isArray(shootingDay.callTimes) ? shootingDay.callTimes : [],
@@ -219,7 +229,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       } else {
         form.reset({
             date: undefined,
-            location: "",
+            location: { displayName: "" },
             latitude: defaultPosition[0],
             longitude: defaultPosition[1],
             scenes: [],
@@ -246,10 +256,10 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     onSubmit(values);
   };
   
-  const handleLocationChange = (lat: number, lng: number, name: string) => {
+  const handleLocationChange = (lat: number, lng: number, address: LocationAddress) => {
     form.setValue('latitude', lat);
     form.setValue('longitude', lng);
-    form.setValue('location', name, { shouldValidate: true });
+    form.setValue('location', address, { shouldValidate: true });
   };
 
   return (
@@ -334,7 +344,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <div>
                         <h3 className="text-lg font-semibold mb-2">Localização e Logística</h3>
                         <div className="border p-4 rounded-lg space-y-4">
-                            <FormField control={form.control} name="location" render={({ field }) => (
+                            <FormField control={form.control} name="location.displayName" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Localização</FormLabel>
                                     <FormControl><Input readOnly placeholder="Selecione no mapa ou pesquise" {...field} /></FormControl>

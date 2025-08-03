@@ -1,4 +1,5 @@
 
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -171,12 +172,22 @@ export type ChecklistItem = {
   checked: boolean;
 };
 
+export type LocationAddress = {
+    displayName: string;
+    road?: string;
+    house_number?: string;
+    city?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+}
+
 export type ShootingDay = {
   id: string;
   productionId: string;
   userId: string;
   date: Date;
-  location: string;
+  location: LocationAddress;
   scenes: Scene[];
   callTimes: CallTime[];
   dayNumber?: number;

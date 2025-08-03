@@ -1,9 +1,10 @@
 
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Production, ShootingDay, Scene, ChecklistItem } from "@/lib/types";
+import type { Production, ShootingDay, Scene, ChecklistItem, LocationAddress } from "@/lib/types";
 import { format, isToday, isPast, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -152,6 +153,26 @@ const calculateDuration = (start?: string, end?: string): string | null => {
     return `${hours}h ${minutes}m`;
 };
 
+const formatLocation = (location?: LocationAddress): string => {
+    if (!location) return "Localização não definida";
+    
+    const parts = [
+        location.road,
+        location.house_number,
+        location.city,
+        location.state,
+        location.country
+    ];
+    
+    const validParts = parts.filter(p => typeof p === 'string' && p.trim() !== '');
+
+    if (validParts.length === 0) {
+        return location.displayName || "Localização não definida";
+    }
+
+    return validParts.join(', ');
+}
+
 
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     const [timeLeft, setTimeLeft] = useState<string | null>(null);
@@ -198,6 +219,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     
     const totalDuration = calculateDuration(day.startTime, day.endTime);
     const topGridClass = "grid grid-cols-1 md:grid-cols-3 gap-6";
+    const formattedLocation = formatLocation(day.location);
 
     return (
         <AccordionItem value={day.id} className="border-none">
@@ -214,7 +236,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
                                 </h3>
                                 <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
-                                <MapPin className="h-4 w-4" /> {day.location}
+                                <MapPin className="h-4 w-4" /> {formattedLocation}
                                 </p>
                             </div>
                         </div>

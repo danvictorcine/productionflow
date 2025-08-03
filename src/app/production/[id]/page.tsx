@@ -142,7 +142,7 @@ function ProductionPageDetail() {
         sunset: weatherData.daily.sunset[0],
         weatherCode: weatherData.daily.weather_code[0],
         lastUpdated: new Date().toISOString(),
-        locationName: day.location,
+        locationName: day.location.displayName,
         date: formattedDate,
       };
   
@@ -199,7 +199,7 @@ function ProductionPageDetail() {
         // Fetch weather for days that need it
         processedDays.forEach(day => {
             const weather = day.weather;
-            const locationMismatch = weather && weather.locationName !== day.location;
+            const locationMismatch = weather && weather.locationName !== day.location.displayName;
             const dateMismatch = weather && !isToday(new Date(weather.date));
             const shouldUpdateWeather = !weather || locationMismatch || dateMismatch;
 
@@ -344,7 +344,7 @@ function ProductionPageDetail() {
         ["Data", format(day.date, "PPP", { locale: ptBR })],
         ["Diária", `${day.dayNumber || 'N/A'} de ${day.totalDays || 'N/A'}`],
         ["Horários", `${day.startTime || 'N/A'} - ${day.endTime || 'N/A'}`],
-        ["Localização", day.location],
+        ["Localização", day.location.displayName],
     ];
     const logisticsInfo = [
         [], ["Logística e Segurança"],

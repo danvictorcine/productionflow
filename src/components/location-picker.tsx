@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
+import type { LocationAddress } from '@/lib/types';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Search } from 'lucide-react';
@@ -15,17 +16,16 @@ import { Skeleton } from './ui/skeleton';
 
 interface LocationPickerProps {
   initialPosition: LatLngExpression;
-  onLocationChange: (lat: number, lng: number, name: string) => void;
+  onLocationChange: (lat: number, lng: number, address: LocationAddress) => void;
 }
 
-const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPickerProps) => {
+const LocationPickerInner = ({ initialPosition, onLocationChange }: Omit<LocationPickerProps, 'location'>) => {
   const map = useMap();
   const [position, setPosition] = useState<LatLngExpression | null>(initialPosition);
 
-  // This effect handles map updates when the initialPosition prop changes (e.g., from a search)
   useEffect(() => {
     setPosition(initialPosition);
-    map.flyTo(initialPosition, 14);
+    map.flyTo(initialPosition, map.getZoom());
   }, [initialPosition, map]);
 
   useEffect(() => {
@@ -35,11 +35,14 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
       try {
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`);
         const data = await response.json();
-        const displayName = data.display_name || `Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}`;
-        onLocationChange(lat, lng, displayName);
+        const address: LocationAddress = {
+            displayName: data.display_name || `Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}`,
+            ...data.address
+        };
+        onLocationChange(lat, lng, address);
       } catch (error) {
         console.error('Reverse geocoding failed', error);
-        onLocationChange(lat, lng, `Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}`);
+        onLocationChange(lat, lng, { displayName: `Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}` });
       }
     };
     map.on('click', mapClickHandler);
@@ -47,7 +50,6 @@ const LocationPickerInner = ({ initialPosition, onLocationChange }: LocationPick
       map.off('click', mapClickHandler);
     };
   }, [map, onLocationChange]);
-
 
   return position ? <Marker position={position}></Marker> : null;
 };
@@ -68,10 +70,10 @@ export function LocationPicker({ initialPosition, onLocationChange }: LocationPi
       const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchTerm)}&format=json&limit=1&addressdetails=1`);
       const data = await response.json();
       if (data && data.length > 0) {
-        const { lat, lon, display_name } = data[0];
+        const { lat, lon, display_name, address } = data[0];
         const newPos: [number, number] = [parseFloat(lat), parseFloat(lon)];
         setCurrentPosition(newPos);
-        onLocationChange(newPos[0], newPos[1], display_name);
+        onLocationChange(newPos[0], newPos[1], { displayName: display_name, ...address });
       } else {
         toast({ variant: 'destructive', title: 'Localização não encontrada.' });
       }
