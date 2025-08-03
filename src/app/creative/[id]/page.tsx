@@ -12,7 +12,7 @@ import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 
 
-import type { CreativeProject, BoardItem, ChecklistItem } from '@/lib/types';
+import type { CreativeProject, BoardItem, ChecklistItem, LocationAddress } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -45,7 +45,7 @@ const LocationPicker = dynamic(() => import('@/components/location-picker').then
   loading: () => <Skeleton className="h-64 w-full" />,
 });
 
-const QuillEditor = dynamic(() => import('react-quill').then(mod => mod.default), { 
+const QuillEditor = dynamic(() => import('react-quill'), { 
     ssr: false,
     loading: () => <Skeleton className="h-full w-full rounded-b-md" />
 });
@@ -76,6 +76,27 @@ const getSpotifyEmbedUrl = (url: string) => {
     }
     return null;
 }
+
+const formatLocation = (location?: LocationAddress): string => {
+    if (!location) return "Localização não definida";
+    
+    const parts = [
+        location.road,
+        location.house_number,
+        location.city,
+        location.state,
+        location.country
+    ];
+    
+    const validParts = parts.filter(p => typeof p === 'string' && p.trim() !== '');
+
+    if (validParts.length === 0) {
+        return location.displayName || "Localização não definida";
+    }
+
+    return validParts.join(', ');
+}
+
 
 const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onSelect }: { 
     item: BoardItem; 
@@ -283,7 +304,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                  }
                  return <div className="p-2 text-red-500 text-xs" onClick={() => onSelect(null)}>Link do Spotify inválido. Use um link de música, álbum ou playlist.</div>;
             case 'location': {
-                let locationData = null;
+                let locationData: LocationAddress | null = null;
                 try {
                     if (item.content) {
                         locationData = JSON.parse(item.content);
@@ -291,11 +312,12 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                 } catch (e) {
                     console.error("Failed to parse location data", e);
                 }
-                
+                const formattedLocation = locationData ? formatLocation(locationData) : "Localização inválida";
+
                 return (
                     <div className="w-full h-full flex flex-col" onClick={() => onSelect(null)}>
                         <DisplayMap position={locationData ? [locationData.lat, locationData.lng] : [0,0]} className="flex-1" />
-                        {locationData?.name && <div className="bg-muted text-muted-foreground text-xs p-1 truncate order-last">{locationData.name}</div>}
+                        <div className="bg-muted text-muted-foreground text-xs p-1 truncate order-last">{formattedLocation}</div>
                     </div>
                 );
             }
@@ -355,7 +377,7 @@ function CreativeProjectPageDetail() {
   const [isSpotifyDialogOpen, setIsSpotifyDialogOpen] = useState(false);
   const [spotifyUrl, setSpotifyUrl] = useState("");
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number, name: string} | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<LocationAddress & {lat: number, lng: number} | null>(null);
   
   // Zoom and Pan state
   const [scale, setScale] = useState(1);
@@ -405,22 +427,33 @@ function CreativeProjectPageDetail() {
     if (isLoading || !mainContainerRef.current) return;
 
     const container = mainContainerRef.current;
+    let observer: ResizeObserver | null = null;
     
     // Use ResizeObserver to handle cases where container size is not immediately available
-    const resizeObserver = new ResizeObserver(entries => {
-        for (let entry of entries) {
-            const { width, height } = entry.contentRect;
-            if (width > 0 && height > 0) {
-                setInitialView(width, height);
-                // Once we have the size, we can disconnect the observer if we only need the initial size
-                resizeObserver.disconnect();
+    const setupObserver = () => {
+        observer = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                const { width, height } = entry.contentRect;
+                if (width > 0 && height > 0) {
+                    setInitialView(width, height);
+                    // Once we have the size, we can disconnect the observer if we only need the initial size
+                    if (observer) {
+                        observer.disconnect();
+                        observer = null; // Clean up
+                    }
+                }
             }
+        });
+        observer.observe(container);
+    };
+
+    setupObserver();
+
+    return () => {
+        if(observer) {
+            observer.disconnect();
         }
-    });
-
-    resizeObserver.observe(container);
-
-    return () => resizeObserver.disconnect();
+    }
   }, [isLoading, items, setInitialView]);
   
 
@@ -1014,7 +1047,7 @@ function CreativeProjectPageDetail() {
             <div className="py-4">
                 <LocationPicker
                     initialPosition={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [-14.235, -51.925]}
-                    onLocationChange={(lat, lng, name) => setSelectedLocation({ lat, lng, name })}
+                    onLocationChange={(lat, lng, name) => setSelectedLocation({ lat, lng, ...name })}
                 />
             </div>
             <SheetFooter><Button onClick={handleAddLocation} disabled={!selectedLocation}>Adicionar Local</Button></SheetFooter>
