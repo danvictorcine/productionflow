@@ -14,7 +14,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 
-import type { Production, ShootingDay, WeatherInfo, ChecklistItem } from '@/lib/types';
+import type { Production, ShootingDay, WeatherInfo, ChecklistItem, LocationAddress } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -117,6 +117,24 @@ function ProductionPageDetail() {
   const [editingShootingDay, setEditingShootingDay] = useState<ProcessedShootingDay | null>(null);
   const [dayToDelete, setDayToDelete] = useState<ProcessedShootingDay | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
+
+  const formatLocationForWeather = (location?: LocationAddress): string => {
+    if (!location) return "Localização não definida";
+    
+    const parts = [
+        location.road,
+        location.house_number,
+        location.city,
+        location.state,
+        location.country
+    ].filter(p => typeof p === 'string' && p.trim() !== '');
+
+    if (parts.length === 0) {
+        return location.displayName || "Localização não definida";
+    }
+
+    return parts.join(', ');
+  }
   
   const fetchAndUpdateWeather = useCallback(async (day: ShootingDay) => {
     if (!day.latitude || !day.longitude) return;
@@ -126,6 +144,7 @@ function ProductionPageDetail() {
     try {
       const { latitude, longitude, date } = day;
       const formattedDate = format(date, 'yyyy-MM-dd');
+      const locationName = formatLocationForWeather(day.location);
   
       const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weather_code,temperature_2m_max,sunrise,sunset,wind_speed_10m_max&timezone=auto&start_date=${formattedDate}&end_date=${formattedDate}`);
       if (!weatherResponse.ok) throw new Error('Weather API failed');
@@ -142,7 +161,7 @@ function ProductionPageDetail() {
         sunset: weatherData.daily.sunset[0],
         weatherCode: weatherData.daily.weather_code[0],
         lastUpdated: new Date().toISOString(),
-        locationName: day.location.displayName,
+        locationName: locationName,
         date: formattedDate,
       };
   
@@ -199,7 +218,8 @@ function ProductionPageDetail() {
         // Fetch weather for days that need it
         processedDays.forEach(day => {
             const weather = day.weather;
-            const locationMismatch = weather && weather.locationName !== day.location.displayName;
+            const locationName = formatLocationForWeather(day.location);
+            const locationMismatch = weather && weather.locationName !== locationName;
             const dateMismatch = weather && !isToday(new Date(weather.date));
             const shouldUpdateWeather = !weather || locationMismatch || dateMismatch;
 
