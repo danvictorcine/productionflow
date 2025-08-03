@@ -58,7 +58,7 @@ export function DisplayMap({ position, className, isExporting = false }: Display
 
   
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative rounded-lg overflow-hidden ${className}`}>
         <MapContainer
         center={position}
         zoom={zoom}
