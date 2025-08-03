@@ -626,11 +626,9 @@ function ProductionPageDetail() {
                         <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6">
                            <div className="flex items-center">
                             <Users className="h-6 w-6 mr-3 text-primary" />
-                             <div>
-                                <CardTitle className="flex items-center text-left">
-                                    Equipe e Elenco
-                                </CardTitle>
-                                <CardDescription className="text-left mt-1">
+                             <div className="flex flex-col text-left">
+                                <CardTitle>Equipe e Elenco</CardTitle>
+                                <CardDescription className="mt-1">
                                     Informações detalhadas sobre todos os envolvidos na produção.
                                 </CardDescription>
                              </div>
@@ -644,8 +642,8 @@ function ProductionPageDetail() {
                         <div className="space-y-4">
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
-                                <Collapsible key={member.id}>
-                                    <div className="rounded-md border bg-muted/50 group">
+                                <Collapsible key={member.id} className="group">
+                                    <div className="rounded-md border bg-muted/50">
                                         <CollapsibleTrigger asChild>
                                           <div className="flex items-center justify-between p-3 cursor-pointer">
                                               <div className="flex items-center gap-4 text-left">
