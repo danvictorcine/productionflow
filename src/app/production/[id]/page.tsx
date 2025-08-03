@@ -639,29 +639,26 @@ function ProductionPageDetail() {
                            </div>
                         </CardHeader>
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 pt-0">
-                       <ScrollArea className="max-h-[500px] pr-4 scrollbar-hidden-on-idle">
+                    <AccordionContent className="p-6 pt-0 max-h-[500px] overflow-y-auto">
                         <div className="space-y-4">
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
                                 <Collapsible key={member.id} className="group">
                                     <div className="rounded-md border bg-muted/50">
-                                        <CollapsibleTrigger className="w-full p-3 text-left">
-                                          <div className="flex items-center justify-between">
-                                              <div className="flex items-center gap-4 text-left">
-                                                  <Avatar className="h-12 w-12">
-                                                      <AvatarImage src={member.photoURL} />
-                                                      <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                                  </Avatar>
-                                                  <div>
-                                                      <p className="font-semibold text-base">{member.name}</p>
-                                                      <p className="text-base text-muted-foreground">{member.role}</p>
-                                                  </div>
+                                        <CollapsibleTrigger className="w-full p-3 text-left flex items-center justify-between cursor-pointer">
+                                          <div className="flex items-center gap-4 text-left">
+                                              <Avatar className="h-12 w-12">
+                                                  <AvatarImage src={member.photoURL} />
+                                                  <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                              </Avatar>
+                                              <div>
+                                                  <p className="font-semibold text-base">{member.name}</p>
+                                                  <p className="text-base text-muted-foreground">{member.role}</p>
                                               </div>
-                                               <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
-                                                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                               </div>
                                           </div>
+                                           <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                                            <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                           </div>
                                         </CollapsibleTrigger>
                                         <CollapsibleContent>
                                             <div className="p-3 pt-0">
@@ -703,7 +700,6 @@ function ProductionPageDetail() {
                           <p className="text-sm text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado.</p>
                         )}
                         </div>
-                      </ScrollArea>
                     </AccordionContent>
                 </Card>
             </AccordionItem>
