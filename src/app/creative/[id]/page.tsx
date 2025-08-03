@@ -1,3 +1,4 @@
+
 // @/src/app/creative/[id]/page.tsx
 'use client';
 
@@ -44,7 +45,7 @@ const LocationPicker = dynamic(() => import('@/components/location-picker').then
   loading: () => <Skeleton className="h-64 w-full" />,
 });
 
-const QuillEditor = dynamic(() => import('react-quill'), { 
+const QuillEditor = dynamic(() => import('react-quill').then(mod => mod.default), { 
     ssr: false,
     loading: () => <Skeleton className="h-full w-full rounded-b-md" />
 });
@@ -363,18 +364,13 @@ function CreativeProjectPageDetail() {
   const startPanPoint = useRef({ x: 0, y: 0 });
   const pinchStartDistance = useRef(0);
   
-  const setInitialView = useCallback(() => {
-    if (items.length === 0 || !mainContainerRef.current) {
-        const container = mainContainerRef.current;
-        if(container) {
-            setPosition({ x: container.offsetWidth / 2, y: container.offsetHeight / 3 });
-            setScale(1);
-        }
+  const setInitialView = useCallback((containerWidth: number, containerHeight: number) => {
+    if (items.length === 0) {
+        setPosition({ x: containerWidth / 2, y: containerHeight / 3 });
+        setScale(1);
         return;
     };
-    
-    const container = mainContainerRef.current;
-    if (!container) return;
+
     const padding = 50;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -393,12 +389,12 @@ function CreativeProjectPageDetail() {
     
     if (contentWidth <= 0 || contentHeight <= 0) return;
 
-    const scaleX = (container.offsetWidth - padding * 2) / contentWidth;
-    const scaleY = (container.offsetHeight - padding * 2) / contentHeight;
+    const scaleX = (containerWidth - padding * 2) / contentWidth;
+    const scaleY = (containerHeight - padding * 2) / contentHeight;
     const newScale = Math.min(scaleX, scaleY, 1);
     
-    const newX = (container.offsetWidth - contentWidth * newScale) / 2 - minX * newScale;
-    const newY = (container.offsetHeight - contentHeight * newScale) / 2 - minY * newScale;
+    const newX = (containerWidth - contentWidth * newScale) / 2 - minX * newScale;
+    const newY = (containerHeight - contentHeight * newScale) / 2 - minY * newScale;
 
     setScale(newScale);
     setPosition({ x: newX, y: newY });
@@ -406,9 +402,25 @@ function CreativeProjectPageDetail() {
   }, [items]);
 
   useEffect(() => {
-    if (!isLoading) {
-      setInitialView();
-    }
+    if (isLoading || !mainContainerRef.current) return;
+
+    const container = mainContainerRef.current;
+    
+    // Use ResizeObserver to handle cases where container size is not immediately available
+    const resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+            const { width, height } = entry.contentRect;
+            if (width > 0 && height > 0) {
+                setInitialView(width, height);
+                // Once we have the size, we can disconnect the observer if we only need the initial size
+                resizeObserver.disconnect();
+            }
+        }
+    });
+
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
   }, [isLoading, items, setInitialView]);
   
 
