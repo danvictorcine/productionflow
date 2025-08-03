@@ -131,15 +131,15 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
         </div>
 
         {/* Content */}
-        <div className="relative z-30 flex flex-col h-full pt-4">
+        <div className="relative z-30 flex flex-col h-full">
             <div className="card-header">
                 <span className="font-extrabold text-base leading-tight text-[#574d33]/80 break-words">{formattedLocation || weather.locationName}</span>
-                <p className="font-bold text-sm text-[#574d33]/50 pt-1">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
+                <p className="font-bold text-sm text-[#574d33]/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
             </div>
             
-            <span className="absolute left-6 bottom-3 font-bold text-6xl text-[#574d33]">{weather.temperature}°</span>
+            <span className="absolute left-0 bottom-4 font-bold text-6xl text-[#574d33]">{weather.temperature}°</span>
 
-            <div className="absolute right-6 bottom-4 space-y-2 text-xs font-semibold text-[#574d33]/80 text-center">
+            <div className="absolute right-0 bottom-4 space-y-2 text-xs font-semibold text-[#574d33]/80 text-center">
                 <div className="flex items-center justify-center gap-1.5 font-bold text-sm text-[#574d33]">
                     {weatherDescription.icon}
                     <span>{weatherDescription.text}</span>
@@ -148,7 +148,7 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
                     <div className="flex items-center gap-1"><Sunrise className="w-3 h-3"/> {format(parseISO(weather.sunrise), "HH:mm")}</div>
                     <div className="flex items-center gap-1"><Sunset className="w-3 h-3"/> {format(parseISO(weather.sunset), "HH:mm")}</div>
                 </div>
-                {daylightStatus && <div className="flex items-center justify-center gap-1"><Hourglass className="w-3 h-3"/> {daylightStatus}</div>}
+                {daylightStatus && <div className="flex items-center justify-center gap-1"><Hourglass className="w-3 h-3"/>Luz do dia restante: {daylightStatus}</div>}
             </div>
         </div>
     </div>
