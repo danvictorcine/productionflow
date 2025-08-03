@@ -270,9 +270,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="h-[235px] w-full lg:col-span-2">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
-                                    <div className="h-full w-full min-w-[300px]">
+                            <div className="lg:col-span-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="w-full h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
                                         {isFetchingWeather ? (
                                             <Skeleton className="h-full w-full" />
                                         ) : day.weather ? (
@@ -285,9 +285,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                             </div>
                                         )}
                                     </div>
-                                    <div className="h-full transition-all duration-500 ease-in-out hover:scale-105">
+                                    <div className="w-full h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
                                         {day.latitude && day.longitude ? (
-                                            <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" isExporting={isExporting} />
+                                            <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full" isExporting={isExporting} />
                                         ) : (
                                             <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                                             <p className="text-sm font-semibold">Sem mapa</p>
