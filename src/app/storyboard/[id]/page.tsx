@@ -638,12 +638,12 @@ function StoryboardPageDetail() {
 
     const mobileView = (
         <div ref={exportRef} className="p-4 space-y-6">
-            {isExporting && (
-               <div className="p-4 rounded-lg bg-card border mb-6">
-                    <h1 className="text-2xl font-bold">{storyboard.name}</h1>
-                    {storyboard.description && <p className="text-base text-muted-foreground mt-1">{storyboard.description}</p>}
-               </div>
-            )}
+             <div className="p-4 rounded-lg bg-card border">
+                <CardHeader className="p-0">
+                    <CardTitle>{storyboard.name}</CardTitle>
+                    {storyboard.description && <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>}
+                </CardHeader>
+             </div>
             {scenes.map((scene) => (
                 <div key={scene.id} className="p-4 rounded-lg bg-card border space-y-4">
                     <div className="flex justify-between items-center">
@@ -746,23 +746,21 @@ function StoryboardPageDetail() {
                     className="flex-1 flex flex-col overflow-auto"
                 >
                     {!isMobile && (
-                         <div className="bg-background border-b z-30 shrink-0">
-                             <div className="p-4 sm:p-6 md:p-6 pb-2">
-                                 <Card>
-                                     <CardHeader>
-                                         <div className="flex justify-between items-start">
-                                             <div>
-                                                 <CardTitle>{storyboard.name}</CardTitle>
-                                                 {storyboard.description && (
-                                                     <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>
-                                                 )}
-                                             </div>
+                         <div className="bg-background border-b z-30 shrink-0 p-4">
+                             <Card>
+                                 <CardHeader>
+                                     <div className="flex justify-between items-start">
+                                         <div>
+                                             <CardTitle>{storyboard.name}</CardTitle>
+                                             {storyboard.description && (
+                                                 <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>
+                                             )}
                                          </div>
-                                     </CardHeader>
-                                 </Card>
-                             </div>
-                            <div className="px-4 md:px-8 pb-4">
-                                <div className="flex items-center gap-1 rounded-lg bg-muted p-2">
+                                     </div>
+                                 </CardHeader>
+                             </Card>
+                            <div className="px-4 md:px-8 py-4">
+                                <div className="flex items-center gap-1 rounded-lg bg-muted p-1 w-fit">
                                     <Button variant="outline" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
                                     <Button variant="outline" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
                                 </div>
