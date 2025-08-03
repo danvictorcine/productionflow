@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import type { WeatherInfo, ShootingDay } from "@/lib/types";
 import { format, isToday, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Wind, Sunrise, Sunset, Hourglass } from "lucide-react";
+import { Wind, Sunrise, Sunset, Hourglass, Cloud, Sun, CloudRain, Snowflake } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface WeatherCardAnimatedProps {
@@ -21,10 +21,49 @@ const getWeatherState = (code: number) => {
   return "cloudy";
 };
 
+const getWeatherDescription = (code: number): { text: string; icon: React.ReactNode } => {
+    switch(code) {
+        case 0: return { text: 'Céu Limpo', icon: <Sun className="w-4 h-4" /> };
+        case 1: return { text: 'Ensolarado', icon: <Sun className="w-4 h-4" /> };
+        case 2: return { text: 'Parcialmente Nublado', icon: <Cloud className="w-4 h-4" /> };
+        case 3: return { text: 'Nublado', icon: <Cloud className="w-4 h-4" /> };
+        case 45:
+        case 48:
+            return { text: 'Nevoeiro', icon: <Cloud className="w-4 h-4" /> };
+        case 51:
+        case 53:
+        case 55:
+            return { text: 'Garoa', icon: <CloudRain className="w-4 h-4" /> };
+        case 61:
+        case 63:
+        case 65:
+            return { text: 'Chuva', icon: <CloudRain className="w-4 h-4" /> };
+        case 80:
+        case 81:
+        case 82:
+            return { text: 'Pancadas de Chuva', icon: <CloudRain className="w-4 h-4" /> };
+        case 71:
+        case 73:
+        case 75:
+        case 77:
+            return { text: 'Neve', icon: <Snowflake className="w-4 h-4" /> };
+        case 85:
+        case 86:
+            return { text: 'Nevasca', icon: <Snowflake className="w-4 h-4" /> };
+        case 95:
+        case 96:
+        case 99:
+            return { text: 'Trovoada', icon: <CloudRain className="w-4 h-4" /> };
+        default:
+            return { text: 'Clima Indefinido', icon: <Cloud className="w-4 h-4" /> };
+    }
+}
+
 
 export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) {
     const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
     const weatherState = getWeatherState(weather.weatherCode);
+    const weatherDescription = getWeatherDescription(weather.weatherCode);
 
     useEffect(() => {
         const sunriseTime = parseISO(weather.sunrise);
@@ -96,19 +135,23 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
         <div className="relative z-30 flex flex-col h-full">
             <div className="card-header">
                 <span className="font-extrabold text-base leading-tight text-[#574d33]/80 break-words">{formattedLocation || weather.locationName}</span>
-                <span className="font-bold text-sm text-[#574d33]/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</span>
+                <p className="font-bold text-sm text-[#574d33]/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
             </div>
             
             <span className="absolute left-6 bottom-3 font-bold text-6xl text-[#574d33]">{weather.temperature}°</span>
 
             <div className="absolute right-6 bottom-4 space-y-2 text-xs font-semibold text-[#574d33]/80 text-center">
-                <div className="flex items-center justify-center gap-1"><Wind className="w-3 h-3"/> {weather.windSpeed} km/h</div>
-                <div className="flex items-center justify-center gap-1"><Sunrise className="w-3 h-3"/> {format(parseISO(weather.sunrise), "HH:mm")}</div>
-                <div className="flex items-center justify-center gap-1"><Sunset className="w-3 h-3"/> {format(parseISO(weather.sunset), "HH:mm")}</div>
+                <div className="flex items-center justify-center gap-1.5 font-bold text-sm text-[#574d33]">
+                    {weatherDescription.icon}
+                    <span>{weatherDescription.text}</span>
+                </div>
+                <div className="flex items-center justify-center gap-4">
+                    <div className="flex items-center gap-1"><Sunrise className="w-3 h-3"/> {format(parseISO(weather.sunrise), "HH:mm")}</div>
+                    <div className="flex items-center gap-1"><Sunset className="w-3 h-3"/> {format(parseISO(weather.sunset), "HH:mm")}</div>
+                </div>
                 {daylightStatus && <div className="flex items-center justify-center gap-1"><Hourglass className="w-3 h-3"/> {daylightStatus}</div>}
             </div>
         </div>
     </div>
   );
 }
-    
