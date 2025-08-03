@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Copy, Share2, Hourglass, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Copy, Share2, Hourglass, ChevronDown, MoreVertical } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -119,6 +119,7 @@ function ProductionPageDetail() {
   const [isShootingDayDialogOpen, setIsShootingDayDialogOpen] = useState(false);
   const [editingShootingDay, setEditingShootingDay] = useState<ProcessedShootingDay | null>(null);
   const [dayToDelete, setDayToDelete] = useState<ProcessedShootingDay | null>(null);
+  const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
 
   const formatLocationForWeather = (location?: LocationAddress): string => {
@@ -562,6 +563,14 @@ function ProductionPageDetail() {
     setIsShootingDayDialogOpen(true);
   };
   
+  const handleDeleteMember = async () => {
+    if (!memberToDelete || !production) return;
+    const updatedTeam = production.team.filter(member => member.id !== memberToDelete.id);
+    await handleProductionSubmit({ ...production, team: updatedTeam });
+    toast({ title: "Membro da equipe removido." });
+    setMemberToDelete(null);
+  }
+  
   if (isLoading) {
     return (
       <div className="p-8 space-y-6">
@@ -639,12 +648,12 @@ function ProductionPageDetail() {
                            </div>
                         </CardHeader>
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 pt-0 max-h-[500px] overflow-y-auto">
+                    <AccordionContent className="p-6 pt-0 overflow-y-auto max-h-[500px]">
                         <div className="space-y-4">
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
                                 <Collapsible key={member.id} className="group">
-                                    <div className="rounded-md border bg-muted/50">
+                                    <div className="rounded-md border bg-muted/50 flex items-center pr-2">
                                         <CollapsibleTrigger className="w-full p-3 text-left flex items-center justify-between cursor-pointer">
                                           <div className="flex items-center gap-4 text-left">
                                               <Avatar className="h-12 w-12">
@@ -660,40 +669,57 @@ function ProductionPageDetail() {
                                             <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                            </div>
                                         </CollapsibleTrigger>
-                                        <CollapsibleContent>
-                                            <div className="p-3 pt-0">
-                                                <div className="mt-2 pt-2 border-t space-y-2">
-                                                    {member.contact && (
-                                                        <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
-                                                            <Phone className="h-4 w-4 mt-1 text-sky-600 flex-shrink-0" />
-                                                            <div>
-                                                                <span className="font-semibold">Contato: </span>
-                                                                <a href={`tel:${member.contact.replace(/\D/g, '')}`} className="text-muted-foreground hover:underline">{member.contact}</a>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {member.hasDietaryRestriction && (
-                                                        <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
-                                                            <Utensils className="h-4 w-4 mt-1 text-amber-600 flex-shrink-0" />
-                                                            <div>
-                                                                <span className="font-semibold">Restrição Alimentar: </span>
-                                                                <span className="text-muted-foreground">{member.dietaryRestriction || 'Não especificada'}</span>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {member.extraNotes && (
-                                                        <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
-                                                            <Info className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
-                                                            <div>
-                                                                <span className="font-semibold">Observação: </span>
-                                                                <span className="text-muted-foreground">{member.extraNotes}</span>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </CollapsibleContent>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                                    <MoreVertical className="h-4 w-4"/>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent>
+                                                <DropdownMenuItem onClick={() => setIsProductionDialogOpen(true)}>
+                                                    <Edit className="mr-2 h-4 w-4"/>
+                                                    Editar Produção
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setMemberToDelete(member)}>
+                                                    <Trash2 className="mr-2 h-4 w-4"/>
+                                                    Excluir Membro
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
+                                    <CollapsibleContent>
+                                        <div className="p-3 pt-0">
+                                            <div className="mt-2 pt-2 border-t space-y-2">
+                                                {member.contact && (
+                                                    <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                        <Phone className="h-4 w-4 mt-1 text-sky-600 flex-shrink-0" />
+                                                        <div>
+                                                            <span className="font-semibold">Contato: </span>
+                                                            <a href={`tel:${member.contact.replace(/\D/g, '')}`} className="text-muted-foreground hover:underline">{member.contact}</a>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {member.hasDietaryRestriction && (
+                                                    <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                        <Utensils className="h-4 w-4 mt-1 text-amber-600 flex-shrink-0" />
+                                                        <div>
+                                                            <span className="font-semibold">Restrição Alimentar: </span>
+                                                            <span className="text-muted-foreground">{member.dietaryRestriction || 'Não especificada'}</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {member.extraNotes && (
+                                                    <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                        <Info className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
+                                                        <div>
+                                                            <span className="font-semibold">Observação: </span>
+                                                            <span className="text-muted-foreground">{member.extraNotes}</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </CollapsibleContent>
                                 </Collapsible>
                             ))
                         ) : (
@@ -764,6 +790,23 @@ function ProductionPageDetail() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteDay} className="bg-destructive hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+       <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Membro da Equipe?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir "{memberToDelete?.name}" da equipe? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMember} className="bg-destructive hover:bg-destructive/90">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
