@@ -176,7 +176,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     
     const totalDuration = calculateDuration(day.startTime, day.endTime);
     const topGridClass = "grid grid-cols-1 md:grid-cols-3 gap-6";
-    const formattedLocation = formatLocation(day.location);
 
     return (
         <AccordionItem value={day.id} className="border-none">
