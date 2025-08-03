@@ -220,11 +220,12 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
 
 
     const totalDuration = calculateDuration(day.startTime, day.endTime);
+    const topGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
 
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6">
+                <AccordionTrigger className="w-full hover:no-underline p-0 [&>svg]:mr-6 hover:bg-muted/50 rounded-t-lg transition-colors">
                     <CardHeader className="p-6 flex-1 flex flex-row justify-between items-center text-left">
                          <div className="flex items-center gap-4">
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
@@ -279,8 +280,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 </AccordionTrigger>
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
+                        <div className={topGridClass}>
+                             <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full" />
                                 ) : day.weather ? (
