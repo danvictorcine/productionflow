@@ -400,7 +400,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                     <FormField control={form.control} name={`callTimes.${index}.time`} render={({ field }) => (
                                         <FormItem><FormLabel className="text-xs">Horário</FormLabel><FormControl><Input placeholder="Ex: 07:30" {...field}/></FormControl><FormMessage /></FormItem>
                                     )}/>
-                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeCallTime(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeCallTime(index)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4"/></Button>
                                 </div>
                             ))}
                             <Button type="button" variant="outline" size="sm" onClick={() => appendCallTime({id: crypto.randomUUID(), department: "", time: ""})}>
@@ -416,19 +416,17 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                          <div className="space-y-4">
                             {sceneFields.map((field, index) => (
                                 <div key={field.id} className="p-4 border rounded-lg space-y-4">
-                                    <div className="flex justify-between items-start">
-                                        <div className="grid grid-cols-[100px_1fr_120px] gap-2 items-end flex-1">
-                                            <FormField control={form.control} name={`scenes.${index}.sceneNumber`} render={({ field }) => (
-                                                <FormItem><FormLabel className="text-xs">Cena Nº</FormLabel><FormControl><Input placeholder="Ex: 01A" {...field}/></FormControl><FormMessage /></FormItem>
-                                            )}/>
-                                            <FormField control={form.control} name={`scenes.${index}.title`} render={({ field }) => (
-                                                <FormItem><FormLabel className="text-xs">Título/Local</FormLabel><FormControl><Input placeholder="Ex: EXT. PARQUE - DIA" {...field}/></FormControl><FormMessage /></FormItem>
-                                            )}/>
-                                            <FormField control={form.control} name={`scenes.${index}.pages`} render={({ field }) => (
-                                                <FormItem><FormLabel className="text-xs">Páginas</FormLabel><FormControl><Input placeholder="Ex: 1 3/8" {...field}/></FormControl><FormMessage /></FormItem>
-                                            )}/>
-                                        </div>
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeScene(index)} className="ml-2"><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                    <div className="grid grid-cols-[100px_1fr_120px_auto] gap-2 items-end">
+                                        <FormField control={form.control} name={`scenes.${index}.sceneNumber`} render={({ field }) => (
+                                            <FormItem><FormLabel className="text-xs">Cena Nº</FormLabel><FormControl><Input placeholder="Ex: 01A" {...field}/></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name={`scenes.${index}.title`} render={({ field }) => (
+                                            <FormItem><FormLabel className="text-xs">Título/Local</FormLabel><FormControl><Input placeholder="Ex: EXT. PARQUE - DIA" {...field}/></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name={`scenes.${index}.pages`} render={({ field }) => (
+                                            <FormItem><FormLabel className="text-xs">Páginas</FormLabel><FormControl><Input placeholder="Ex: 1 3/8" {...field}/></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeScene(index)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4"/></Button>
                                     </div>
                                     <FormField control={form.control} name={`scenes.${index}.description`} render={({ field }) => (
                                         <FormItem><FormLabel className="text-xs">Descrição da Ação</FormLabel><FormControl><Textarea placeholder="Breve descrição do que acontece na cena." {...field} rows={2}/></FormControl><FormMessage /></FormItem>
