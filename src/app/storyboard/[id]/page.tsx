@@ -1,5 +1,3 @@
-
-
 // @/src/app/storyboard/[id]/page.tsx
 'use client';
 
@@ -22,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
 import { Button } from '@/components/ui/button';
-import { UserNav } from '@/components/user-nav';
+import { UserNav } from '@/components/ui/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { AppFooter } from '@/components/app-footer';
@@ -48,6 +46,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DEFAULT_BETA_LIMITS } from '@/lib/app-config';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 const ItemType = 'PANEL';
@@ -188,8 +187,9 @@ function StoryboardPageDetail() {
     const isPanning = useRef(false);
     const startPanPoint = useRef({ x: 0, y: 0 });
     const pinchStartDistance = useRef(0);
+    const isMobile = useIsMobile();
 
-    const dndBackend = typeof navigator !== 'undefined' && /Mobi/i.test(navigator.userAgent) ? TouchBackend : HTML5Backend;
+    const dndBackend = isMobile ? TouchBackend : HTML5Backend;
 
     const fetchStoryboardData = useCallback(async () => {
         if (!storyboardId || !user) return;
@@ -518,6 +518,156 @@ function StoryboardPageDetail() {
     
     if (!storyboard) return null;
 
+    const desktopView = (
+        <div
+            className="flex-1 relative overflow-hidden cursor-grab bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]"
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
+            {scenes.length === 0 ? (
+                 <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center p-12 bg-background/80 rounded-lg shadow-xl">
+                        <ImageIcon className="mx-auto h-12 w-12 text-primary" />
+                        <h3 className="mt-4 text-lg font-semibold">Nenhuma cena criada</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">Adicione a primeira cena para começar a montar seu storyboard.</p>
+                        <Button className="mt-6" onClick={() => { setEditingScene(null); setIsSceneDialogOpen(true); }}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar Cena
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                 <div
+                    className="absolute"
+                    style={{
+                        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                        transformOrigin: '0 0'
+                    }}
+                 >
+                    <div ref={exportRef} className="p-8 space-y-8 min-w-[1200px]">
+                        {scenes.map((scene) => (
+                            <div key={scene.id} className="p-6 rounded-xl bg-background/80 backdrop-blur-sm border shadow-lg space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <h2 className="text-xl font-bold">{scene.title}</h2>
+                                        <p className="text-muted-foreground">{scene.description}</p>
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}>
+                                                <Edit className="mr-2 h-4 w-4" /> Editar Cena
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setSceneToDelete(scene)}>
+                                                <Trash2 className="mr-2 h-4 w-4" /> Excluir Cena
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
+                                        <PanelCard 
+                                            key={panel.id} 
+                                            panel={panel} 
+                                            aspectRatio={storyboard.aspectRatio}
+                                            index={panelIndex} 
+                                            onDelete={handleDeletePanel} 
+                                            onUpdateNotes={handleUpdatePanelNotes} 
+                                            movePanel={movePanel}
+                                            onDropPanel={handleDropPanel}
+                                            isExporting={isExporting}
+                                        />
+                                    ))}
+                                    <button
+                                        className={cn(
+                                            "flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors",
+                                            storyboard.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]"
+                                        )}
+                                        onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }}
+                                        disabled={isUploading}
+                                    >
+                                        {isUploading && sceneForUpload === scene.id ? (
+                                            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                                        ) : (
+                                            <PlusCircle className="h-8 w-8 text-muted-foreground/50" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        {isExporting && ( <div className="mt-8 text-center text-sm text-muted-foreground">Criado com ProductionFlow</div> )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+    const mobileView = (
+        <div ref={exportRef} className="p-4 space-y-6">
+            {scenes.map((scene) => (
+                <div key={scene.id} className="p-4 rounded-lg bg-card border space-y-4">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h2 className="text-xl font-bold">{scene.title}</h2>
+                            {scene.description && <p className="text-base text-muted-foreground">{scene.description}</p>}
+                        </div>
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}>
+                                    <Edit className="mr-2 h-4 w-4" /> Editar Cena
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setSceneToDelete(scene)}>
+                                    <Trash2 className="mr-2 h-4 w-4" /> Excluir Cena
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4">
+                        {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
+                            <PanelCard 
+                                key={panel.id} 
+                                panel={panel} 
+                                aspectRatio={storyboard.aspectRatio}
+                                index={panelIndex} 
+                                onDelete={handleDeletePanel} 
+                                onUpdateNotes={handleUpdatePanelNotes} 
+                                movePanel={movePanel}
+                                onDropPanel={handleDropPanel}
+                                isExporting={isExporting}
+                            />
+                        ))}
+                        <button
+                            className={cn(
+                                "flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors",
+                                storyboard.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]"
+                            )}
+                            onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }}
+                            disabled={isUploading}
+                        >
+                            {isUploading && sceneForUpload === scene.id ? (
+                                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                            ) : (
+                                <PlusCircle className="h-8 w-8 text-muted-foreground/50" />
+                            )}
+                        </button>
+                    </div>
+                </div>
+            ))}
+            {isExporting && ( <div className="mt-8 text-center text-sm text-muted-foreground">Criado com ProductionFlow</div> )}
+        </div>
+    );
+
     return (
         <DndProvider backend={dndBackend}>
             <div className="flex flex-col h-screen w-full bg-muted/40 overflow-hidden">
@@ -557,7 +707,7 @@ function StoryboardPageDetail() {
 
                 <main 
                     ref={mainContainerRef}
-                    className="flex-1 flex flex-col overflow-hidden"
+                    className="flex-1 flex flex-col overflow-auto"
                 >
                     <div className="bg-background border-b z-30 shrink-0">
                         <div className="p-4 sm:p-6 md:p-6 pb-2">
@@ -574,103 +724,16 @@ function StoryboardPageDetail() {
                                 </CardHeader>
                             </Card>
                         </div>
-                         <div className="px-4 md:px-8 pb-4">
-                            <div className="flex items-center gap-1 rounded-lg bg-muted p-2">
-                                <Button variant="outline" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
-                                <Button variant="outline" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div
-                        className="flex-1 relative overflow-hidden cursor-grab bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]"
-                        onWheel={handleWheel}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
-                    >
-                        {scenes.length === 0 ? (
-                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="text-center p-12 bg-background/80 rounded-lg shadow-xl">
-                                    <ImageIcon className="mx-auto h-12 w-12 text-primary" />
-                                    <h3 className="mt-4 text-lg font-semibold">Nenhuma cena criada</h3>
-                                    <p className="mt-1 text-sm text-muted-foreground">Adicione a primeira cena para começar a montar seu storyboard.</p>
-                                    <Button className="mt-6" onClick={() => { setEditingScene(null); setIsSceneDialogOpen(true); }}>
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Adicionar Cena
-                                    </Button>
-                                </div>
-                            </div>
-                        ) : (
-                             <div
-                                className="absolute"
-                                style={{
-                                    transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                                    transformOrigin: '0 0'
-                                }}
-                             >
-                                <div ref={exportRef} className="p-8 space-y-8 min-w-[1200px]">
-                                    {scenes.map((scene) => (
-                                        <div key={scene.id} className="p-6 rounded-xl bg-background/80 backdrop-blur-sm border shadow-lg space-y-4">
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <h2 className="text-xl font-bold">{scene.title}</h2>
-                                                    <p className="text-muted-foreground">{scene.description}</p>
-                                                </div>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}>
-                                                            <Edit className="mr-2 h-4 w-4" /> Editar Cena
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setSceneToDelete(scene)}>
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Cena
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
-                                                    <PanelCard 
-                                                        key={panel.id} 
-                                                        panel={panel} 
-                                                        aspectRatio={storyboard.aspectRatio}
-                                                        index={panelIndex} 
-                                                        onDelete={handleDeletePanel} 
-                                                        onUpdateNotes={handleUpdatePanelNotes} 
-                                                        movePanel={movePanel}
-                                                        onDropPanel={handleDropPanel}
-                                                        isExporting={isExporting}
-                                                    />
-                                                ))}
-                                                <button
-                                                    className={cn(
-                                                        "flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors",
-                                                        storyboard.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]"
-                                                    )}
-                                                    onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }}
-                                                    disabled={isUploading}
-                                                >
-                                                    {isUploading && sceneForUpload === scene.id ? (
-                                                        <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                                                    ) : (
-                                                        <PlusCircle className="h-8 w-8 text-muted-foreground/50" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {isExporting && ( <div className="mt-8 text-center text-sm text-muted-foreground">Criado com ProductionFlow</div> )}
+                        {!isMobile && (
+                            <div className="px-4 md:px-8 pb-4">
+                                <div className="flex items-center gap-1 rounded-lg bg-muted p-2">
+                                    <Button variant="outline" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
+                                    <Button variant="outline" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
                                 </div>
                             </div>
                         )}
                     </div>
+                    {isMobile ? mobileView : desktopView}
                 </main>
                 <AppFooter />
                 <CreateEditStoryboardDialog 
