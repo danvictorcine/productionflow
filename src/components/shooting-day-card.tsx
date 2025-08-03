@@ -226,8 +226,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                 <AccordionTrigger className="w-full p-0 hover:no-underline rounded-t-lg transition-colors">
-                    <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6 hover:bg-muted/50 transition-colors rounded-t-lg">
+                 <AccordionTrigger className="w-full p-6 hover:no-underline hover:bg-muted/50 rounded-t-lg transition-colors">
+                    <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-0">
                         <div className="flex items-center gap-4 flex-1">
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                                 <Calendar className="h-6 w-6" />
@@ -276,7 +276,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             )}
-                            <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                            <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                            </div>
                         </div>
                     </CardHeader>
                 </AccordionTrigger>
@@ -296,7 +298,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     </div>
                                 )}
                             </div>
-                            <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
+                            <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105 rounded-2xl shadow-lg">
                                 {day.latitude && day.longitude ? (
                                     <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full" isExporting={isExporting} />
                                 ) : (
@@ -307,7 +309,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 )}
                             </div>
                             <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
-                                <Card className="h-full flex flex-col justify-center items-center p-4 bg-card/50">
+                                <Card className="h-full flex flex-col justify-center items-center p-4 bg-card rounded-2xl shadow-lg">
                                     <CardHeader className="p-0 text-center">
                                         <CardTitle className="text-lg flex items-center justify-center gap-2">
                                             <Clock className="h-5 w-5 text-primary" />
