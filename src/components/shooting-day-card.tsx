@@ -280,7 +280,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div className="md:col-span-2 lg:col-span-1 h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
+                            <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full" />
                                 ) : day.weather ? (
@@ -295,7 +295,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                             </div>
                             <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
                                 {day.latitude && day.longitude ? (
-                                    <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" isExporting={isExporting} />
+                                    <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full" isExporting={isExporting} />
                                 ) : (
                                     <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                                     <p className="text-sm font-semibold">Sem mapa</p>
@@ -303,8 +303,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     </div>
                                 )}
                             </div>
-                            <div className="h-[235px]">
-                                <Card className="h-full flex flex-col justify-center items-center p-4 bg-card/50 transition-all duration-500 ease-in-out hover:scale-105">
+                            <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
+                                <Card className="h-full flex flex-col justify-center items-center p-4 bg-card/50">
                                     <CardHeader className="p-0 text-center">
                                         <CardTitle className="text-lg flex items-center justify-center gap-2">
                                             <Clock className="h-5 w-5 text-primary" />
@@ -408,9 +408,15 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 <ChecklistSection icon={FileText} title="Observações Gerais" items={day.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
                                 <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
                                     day.presentTeam && day.presentTeam.length > 0 ? (
-                                        <div className="flex flex-wrap gap-2">
+                                        <div className="flex flex-wrap gap-3 items-center">
                                             {day.presentTeam.map(member => (
-                                                <Badge key={member.id} variant="secondary" className="font-normal text-base">{member.name} <span className="text-muted-foreground ml-1.5">({member.role})</span></Badge>
+                                                <div key={member.id} className="flex items-center gap-2 bg-muted p-1 pr-2.5 rounded-full">
+                                                    <Avatar className="h-6 w-6">
+                                                        <AvatarImage src={member.photoURL} />
+                                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="font-medium text-sm text-foreground">{member.name} <span className="text-muted-foreground">({member.role})</span></span>
+                                                </div>
                                             ))}
                                         </div>
                                     ) : <p className="text-base text-muted-foreground">Nenhuma equipe selecionada para este dia.</p>
