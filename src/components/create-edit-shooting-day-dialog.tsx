@@ -145,8 +145,8 @@ const ChecklistFormSection = ({ name, label, control }: { name: "equipment" | "c
                                 </FormItem>
                             )}
                         />
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-4 w-4" />
                         </Button>
                     </div>
                 ))}
