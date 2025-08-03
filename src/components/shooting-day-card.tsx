@@ -1,8 +1,9 @@
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Production, ShootingDay, Scene, ChecklistItem, LocationAddress } from "@/lib/types";
+import type { Production, ShootingDay, Scene, ChecklistItem, LocationAddress, TeamMember } from "@/lib/types";
 import { format, isToday, isPast, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -30,6 +31,9 @@ import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
 import { WeatherCardAnimated } from "./weather-card-animated";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { getInitials } from "@/lib/utils";
+
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -121,9 +125,15 @@ const SceneCard = ({ scene }: { scene: Scene }) => (
              {scene.presentInScene && scene.presentInScene.length > 0 && (
                 <div className="flex items-start gap-2">
                     <Users className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-2 items-center">
                         {scene.presentInScene.map(member => (
-                            <Badge key={member.id} variant="secondary" className="font-normal text-sm">{member.name}</Badge>
+                            <div key={member.id} className="flex items-center gap-1.5">
+                                <Avatar className="h-5 w-5">
+                                    <AvatarImage src={member.photoURL} />
+                                    <AvatarFallback className="text-xs">{getInitials(member.name)}</AvatarFallback>
+                                </Avatar>
+                                <Badge variant="secondary" className="font-normal text-sm">{member.name}</Badge>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -269,33 +279,29 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 </AccordionTrigger>
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="lg:col-span-2">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="w-full h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
-                                        {isFetchingWeather ? (
-                                            <Skeleton className="h-full w-full" />
-                                        ) : day.weather ? (
-                                            <WeatherCardAnimated weather={day.weather} day={day} />
-                                        ) : (
-                                            <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
-                                                <p className="text-sm font-semibold">Sem dados de clima</p>
-                                                <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
-                                                {!isPublicView && <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>}
-                                            </div>
-                                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="md:col-span-2 lg:col-span-1 h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
+                                {isFetchingWeather ? (
+                                    <Skeleton className="h-full w-full" />
+                                ) : day.weather ? (
+                                    <WeatherCardAnimated weather={day.weather} day={day} />
+                                ) : (
+                                    <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+                                        <p className="text-sm font-semibold">Sem dados de clima</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
+                                        {!isPublicView && <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>}
                                     </div>
-                                    <div className="w-full h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
-                                        {day.latitude && day.longitude ? (
-                                            <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full" isExporting={isExporting} />
-                                        ) : (
-                                            <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
-                                            <p className="text-sm font-semibold">Sem mapa</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
-                                            </div>
-                                        )}
+                                )}
+                            </div>
+                            <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
+                                {day.latitude && day.longitude ? (
+                                    <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" isExporting={isExporting} />
+                                ) : (
+                                    <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
+                                    <p className="text-sm font-semibold">Sem mapa</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
                                     </div>
-                                </div>
+                                )}
                             </div>
                             <div className="h-[235px]">
                                 <Card className="h-full flex flex-col justify-center items-center p-4 bg-card/50 transition-all duration-500 ease-in-out hover:scale-105">
@@ -317,7 +323,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                                     {remainingProductionTime ? (
                                                         <Badge variant="secondary" className="text-sm bg-primary/10 text-primary">{remainingProductionTime}</Badge>
                                                     ) : isFinished ? (
-                                                        <Badge variant="destructive" className="text-sm">{`Produção Finalizada`}</Badge>
+                                                         <Badge variant="destructive" className="text-sm">{`Produção Finalizada`}</Badge>
                                                     ) : null}
                                                 </div>
                                             </>

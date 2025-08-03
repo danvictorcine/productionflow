@@ -1,5 +1,6 @@
 
 
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -485,6 +486,20 @@ export const deleteProductionAndDays = async (productionId: string) => {
 
   await batch.commit();
 };
+
+export const uploadProductionTeamMemberPhoto = async (file: File): Promise<string> => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+  const timestamp = new Date().getTime();
+  const randomString = Math.random().toString(36).substring(2, 8);
+  const fileName = `${timestamp}-${randomString}-${file.name}`;
+  const filePath = `production_team_photos/${userId}/${fileName}`;
+  const storageRef = ref(storage, filePath);
+  
+  await uploadBytes(storageRef, file);
+  return await getDownloadURL(storageRef);
+};
+
 
 // === Shooting Day Functions ===
 

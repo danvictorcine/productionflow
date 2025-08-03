@@ -1,11 +1,13 @@
+
 // @/src/components/create-edit-production-dialog.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Camera, User as UserIcon, Loader2 } from "lucide-react";
+import imageCompression from 'browser-image-compression';
 
 import type { Production, TeamMember } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -30,11 +32,17 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "./ui/separator";
 import { Checkbox } from "./ui/checkbox";
 import { Textarea } from "./ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import * as firestoreApi from '@/lib/firebase/firestore';
+import { useToast } from "@/hooks/use-toast";
+import { CopyableError } from "./copyable-error";
 
 const teamMemberSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Nome é obrigatório."),
   role: z.string().min(1, "Função é obrigatória."),
+  photoURL: z.string().optional(),
+  file: z.instanceof(File).optional(),
   contact: z.string().optional(),
   hasDietaryRestriction: z.boolean().optional().default(false),
   dietaryRestriction: z.string().optional(),
@@ -62,6 +70,8 @@ interface CreateEditProductionDialogProps {
 
 export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, production }: CreateEditProductionDialogProps) {
   const isEditMode = !!production;
+  const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
 
   const form = useForm<ProductionFormValues>({
     resolver: zodResolver(productionFormSchema),
@@ -76,12 +86,14 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
     },
   });
 
-  const { control, watch } = form;
+  const { control, watch, setValue } = form;
 
   const { fields: teamFields, append: appendTeam, remove: removeTeam } = useFieldArray({
     control: form.control,
     name: "team",
   });
+  
+  const watchedTeam = watch('team');
 
   useEffect(() => {
     if (isOpen) {
@@ -107,15 +119,46 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
       form.reset(defaultValues);
     }
   }, [isOpen, isEditMode, production, form]);
+  
+  const handlePhotoUpload = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files?.[0]) return;
+        
+        const file = event.target.files[0];
+        setValue(`team.${index}.file`, file);
+        setIsUploading(prev => ({ ...prev, [index]: true }));
+
+        try {
+            const options = { maxSizeMB: 0.5, maxWidthOrHeight: 256, useWebWorker: true };
+            const compressedFile = await imageCompression(file, options);
+            const url = await firestoreApi.uploadProductionTeamMemberPhoto(compressedFile);
+            
+            setValue(`team.${index}.photoURL`, url, { shouldDirty: true });
+            toast({ title: 'Foto enviada com sucesso!' });
+        } catch (error) {
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro de Upload',
+                description: <CopyableError userMessage="Não foi possível enviar a foto." errorCode={errorTyped.code || errorTyped.message} />,
+            });
+        } finally {
+            setIsUploading(prev => ({ ...prev, [index]: false }));
+        }
+    };
+
 
   const handleSubmit = (values: ProductionFormValues) => {
-    const sanitizedTeam = values.team.map((member) => ({
-      ...member,
-      id: member.id.startsWith('new-') ? '' : member.id, // Clear temporary ID for new members
-      contact: member.contact || "",
-      dietaryRestriction: member.dietaryRestriction || "",
-      extraNotes: member.extraNotes || "",
-    }));
+    const sanitizedTeam = values.team.map((member) => {
+      const { file, ...rest } = member;
+      return {
+        ...rest,
+        id: member.id.startsWith('new-') ? '' : member.id,
+        contact: member.contact || "",
+        photoURL: member.photoURL || "",
+        dietaryRestriction: member.dietaryRestriction || "",
+        extraNotes: member.extraNotes || "",
+      };
+    });
 
     const dataToSubmit = {
       name: values.name,
@@ -234,16 +277,35 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                     <div className="space-y-3 mt-2">
                       {teamFields.map((field, index) => {
                         const hasRestriction = watch(`team.${index}.hasDietaryRestriction`);
+                        const photoURL = watchedTeam[index]?.photoURL;
+                        const file = watchedTeam[index]?.file;
+                        let previewUrl = photoURL;
+                        if (file && !photoURL?.startsWith('https://firebasestorage')) {
+                            previewUrl = URL.createObjectURL(file);
+                        }
+
                         return (
-                          <div key={field.id} className="grid grid-cols-1 items-start gap-4 rounded-md border p-4">
-                            <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_1fr_auto]">
-                              <FormField control={form.control} name={`team.${index}.name`} render={({ field }) => (
-                                <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do membro" {...field} /></FormControl><FormMessage /></FormItem>
-                              )}/>
-                              <FormField control={form.control} name={`team.${index}.role`} render={({ field }) => (
-                                <FormItem><FormLabel className="text-xs">Função</FormLabel><FormControl><Input placeholder="ex: Ator, Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
-                              )}/>
-                              <Button type="button" variant="destructive" size="icon" onClick={() => removeTeam(index)}><Trash2 className="h-4 w-4" /></Button>
+                          <div key={field.id} className="items-start gap-4 rounded-md border p-4">
+                            <div className="flex items-center gap-4 mb-4">
+                               <div className="relative group">
+                                  <Avatar className="h-20 w-20">
+                                      <AvatarImage src={previewUrl} alt="Foto" className="object-cover" />
+                                      <AvatarFallback><UserIcon /></AvatarFallback>
+                                  </Avatar>
+                                  <label htmlFor={`photo-upload-${index}`} className="absolute inset-0 bg-black/40 flex items-center justify-center text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                      {isUploading[index] ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+                                  </label>
+                                  <input id={`photo-upload-${index}`} type="file" className="hidden" accept="image/png, image/jpeg" onChange={(e) => handlePhotoUpload(index, e)} disabled={isUploading[index]} />
+                                </div>
+                               <div className="grid grid-cols-1 items-end gap-3 flex-1">
+                                <FormField control={form.control} name={`team.${index}.name`} render={({ field }) => (
+                                  <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do membro" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name={`team.${index}.role`} render={({ field }) => (
+                                  <FormItem><FormLabel className="text-xs">Função</FormLabel><FormControl><Input placeholder="ex: Ator, Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                              </div>
+                              <Button type="button" variant="destructive" size="icon" onClick={() => removeTeam(index)} className="self-start"><Trash2 className="h-4 w-4" /></Button>
                             </div>
                              <div className="space-y-4">
                                 <FormField
@@ -308,7 +370,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                           </div>
                         )
                       })}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ id: `new-${Date.now()}`, name: "", role: "", contact: "", hasDietaryRestriction: false, dietaryRestriction: "", extraNotes: "" })}>
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ id: `new-${Date.now()}`, name: "", role: "", photoURL: "", contact: "", hasDietaryRestriction: false, dietaryRestriction: "", extraNotes: "" })}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adicionar Membro
                       </Button>
@@ -318,7 +380,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
             </div>
             <SheetFooter className="flex-shrink-0 border-t p-4 pt-6">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
-              <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Produção"}</Button>
+              <Button type="submit" disabled={Object.values(isUploading).some(v => v)}>{isEditMode ? "Salvar Alterações" : "Criar Produção"}</Button>
             </SheetFooter>
           </form>
         </Form>

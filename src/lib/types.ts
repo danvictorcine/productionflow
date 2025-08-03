@@ -1,5 +1,6 @@
 
 
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -115,6 +116,7 @@ export type TeamMember = {
   id:string;
   name: string;
   role: string;
+  photoURL?: string;
   contact?: string;
   hasDietaryRestriction?: boolean;
   dietaryRestriction?: string;

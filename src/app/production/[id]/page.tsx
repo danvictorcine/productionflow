@@ -1,5 +1,6 @@
 
 
+
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -49,6 +50,8 @@ import { AppFooter } from '@/components/app-footer';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/lib/utils';
 
 type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
     equipment: ChecklistItem[];
@@ -636,11 +639,15 @@ function ProductionPageDetail() {
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
                                 <div key={member.id} className="p-3 rounded-md border bg-muted/50">
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <p className="font-semibold text-base">{member.name}</p>
-                                            <p className="text-base text-muted-foreground">{member.role}</p>
-                                        </div>
+                                    <div className="flex items-center gap-4">
+                                      <Avatar className="h-12 w-12">
+                                        <AvatarImage src={member.photoURL} />
+                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                          <p className="font-semibold text-base">{member.name}</p>
+                                          <p className="text-base text-muted-foreground">{member.role}</p>
+                                      </div>
                                     </div>
                                     {member.contact && (
                                         <div className="mt-2 flex items-start gap-2 text-base p-2 bg-background rounded">
