@@ -175,7 +175,8 @@ const formatLocation = (location?: LocationAddress): string => {
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     
     const totalDuration = calculateDuration(day.startTime, day.endTime);
-    const topGridClass = "grid grid-cols-1 md:grid-cols-3 gap-6";
+    const formattedLocation = formatLocation(day.location);
+    const topGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
 
     return (
         <AccordionItem value={day.id} className="border-none">
