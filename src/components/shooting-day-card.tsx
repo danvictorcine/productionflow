@@ -29,6 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
 import { WeatherCardAnimated } from "./weather-card-animated";
+import { cn } from "@/lib/utils";
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -284,7 +285,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                             </div>
                                         )}
                                     </div>
-                                    <div className="h-full">
+                                    <div className="h-full transition-all duration-500 ease-in-out hover:scale-105">
                                         {day.latitude && day.longitude ? (
                                             <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" isExporting={isExporting} />
                                         ) : (
@@ -297,7 +298,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 </div>
                             </div>
                             <div className="h-[235px]">
-                                <Card className="h-full flex flex-col justify-center items-center p-4 bg-card/50">
+                                <Card className="h-full flex flex-col justify-center items-center p-4 bg-card/50 transition-all duration-500 ease-in-out hover:scale-105">
                                     <CardHeader className="p-0 text-center">
                                         <CardTitle className="text-lg flex items-center justify-center gap-2">
                                             <Clock className="h-5 w-5 text-primary" />
