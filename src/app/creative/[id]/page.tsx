@@ -1,5 +1,3 @@
-
-
 // @/src/app/creative/[id]/page.tsx
 'use client';
 
@@ -46,7 +44,7 @@ const LocationPicker = dynamic(() => import('@/components/location-picker').then
   loading: () => <Skeleton className="h-64 w-full" />,
 });
 
-const QuillEditor = dynamic(() => import('react-quill').then((mod) => mod.default), { 
+const QuillEditor = dynamic(() => import('react-quill'), { 
     ssr: false,
     loading: () => <Skeleton className="h-full w-full rounded-b-md" />
 });
@@ -367,7 +365,6 @@ function CreativeProjectPageDetail() {
   
   const setInitialView = useCallback(() => {
     if (items.length === 0 || !mainContainerRef.current) {
-        // Center view if canvas is empty
         const container = mainContainerRef.current;
         if(container) {
             setPosition({ x: container.offsetWidth / 2, y: container.offsetHeight / 3 });
@@ -377,6 +374,7 @@ function CreativeProjectPageDetail() {
     };
     
     const container = mainContainerRef.current;
+    if (!container) return;
     const padding = 50;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -411,7 +409,7 @@ function CreativeProjectPageDetail() {
     if (!isLoading) {
       setInitialView();
     }
-  }, [isLoading, setInitialView]);
+  }, [isLoading, items, setInitialView]);
   
 
   const fetchProjectData = useCallback(async () => {
