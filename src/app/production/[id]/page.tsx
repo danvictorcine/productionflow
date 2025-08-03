@@ -700,7 +700,7 @@ function ProductionPageDetail() {
                                             <div className="mt-2 pt-2 border-t space-y-2">
                                                 {member.contact && (
                                                     <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
-                                                        <Phone className="h-4 w-4 mt-1 text-sky-600 flex-shrink-0" />
+                                                        <Phone className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
                                                         <div>
                                                             <span className="font-semibold">Contato: </span>
                                                             <a href={`tel:${member.contact.replace(/\D/g, '')}`} className="text-muted-foreground hover:underline">{member.contact}</a>
@@ -709,7 +709,7 @@ function ProductionPageDetail() {
                                                 )}
                                                 {member.hasDietaryRestriction && (
                                                     <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
-                                                        <Utensils className="h-4 w-4 mt-1 text-amber-600 flex-shrink-0" />
+                                                        <Utensils className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
                                                         <div>
                                                             <span className="font-semibold">Restrição Alimentar: </span>
                                                             <span className="text-muted-foreground">{member.dietaryRestriction || 'Não especificada'}</span>
@@ -718,7 +718,7 @@ function ProductionPageDetail() {
                                                 )}
                                                 {member.extraNotes && (
                                                     <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
-                                                        <Info className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
+                                                        <Info className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
                                                         <div>
                                                             <span className="font-semibold">Observação: </span>
                                                             <span className="text-muted-foreground">{member.extraNotes}</span>
