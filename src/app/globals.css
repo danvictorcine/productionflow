@@ -201,3 +201,21 @@
 .cursor-grabbing {
     cursor: grabbing;
 }
+
+.scrollbar-hidden-on-idle::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-hidden-on-idle::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-hidden-on-idle::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+}
+.scrollbar-hidden-on-idle:hover::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+}
+.scrollbar-hidden-on-idle::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}

@@ -623,29 +623,30 @@ function ProductionPageDetail() {
         >
             <AccordionItem value="team" className="border-none">
                 <Card>
-                    <AccordionTrigger className="w-full p-0 rounded-t-lg transition-colors hover:no-underline group">
+                    <AccordionTrigger className="w-full p-0 rounded-t-lg transition-colors group">
                         <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6">
-                           <div className="flex items-center">
-                            <Users className="h-6 w-6 mr-3 text-primary" />
-                             <div className="flex flex-col text-left">
+                           <div className="flex flex-col text-left">
+                             <div className="flex items-center">
+                                <Users className="h-6 w-6 mr-3 text-primary" />
                                 <CardTitle>Equipe e Elenco</CardTitle>
-                                <CardDescription className="mt-1">
-                                    Informações detalhadas sobre todos os envolvidos na produção.
-                                </CardDescription>
                              </div>
+                            <CardDescription className="mt-1 pl-9">
+                                Informações detalhadas sobre todos os envolvidos na produção.
+                            </CardDescription>
                            </div>
                            <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
                              <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                            </div>
                         </CardHeader>
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 pt-0 max-h-[500px] overflow-y-auto">
+                    <AccordionContent className="p-6 pt-0">
+                       <ScrollArea className="max-h-[500px] pr-4 scrollbar-hidden-on-idle">
                         <div className="space-y-4">
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
                                 <Collapsible key={member.id} className="group">
                                     <div className="rounded-md border bg-muted/50">
-                                        <CollapsibleTrigger asChild>
+                                        <CollapsibleTrigger className="w-full">
                                           <div className="flex items-center justify-between p-3 cursor-pointer">
                                               <div className="flex items-center gap-4 text-left">
                                                   <Avatar className="h-12 w-12">
@@ -702,6 +703,7 @@ function ProductionPageDetail() {
                           <p className="text-sm text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado.</p>
                         )}
                         </div>
+                      </ScrollArea>
                     </AccordionContent>
                 </Card>
             </AccordionItem>
