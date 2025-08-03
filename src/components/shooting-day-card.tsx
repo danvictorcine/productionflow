@@ -26,11 +26,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
-import { WeatherCard } from "./weather-card";
 import { Skeleton } from "./ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
+import { WeatherCardAnimated } from "./weather-card-animated";
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
@@ -175,47 +175,6 @@ const formatLocation = (location?: LocationAddress): string => {
 
 
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
-    const [timeLeft, setTimeLeft] = useState<string | null>(null);
-    const [isFinished, setIsFinished] = useState(false);
-
-    useEffect(() => {
-        if (!day.endTime || !isToday(day.date)) {
-            if (isPast(day.date)) {
-                setIsFinished(true);
-            }
-            return;
-        }
-
-        let interval: NodeJS.Timeout | undefined;
-
-        const calculateTimeLeft = () => {
-            const now = new Date();
-            const [endH, endM] = day.endTime!.split(':').map(Number);
-            
-            const endDate = new Date();
-            endDate.setHours(endH, endM, 0, 0);
-
-            const diff = endDate.getTime() - now.getTime();
-
-            if (diff <= 0) {
-                setTimeLeft(null);
-                setIsFinished(true);
-                if (interval) {
-                    clearInterval(interval);
-                }
-            } else {
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                setTimeLeft(`${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`);
-                setIsFinished(false);
-            }
-        };
-
-        calculateTimeLeft();
-        interval = setInterval(calculateTimeLeft, 60000); // Update every minute
-
-        return () => clearInterval(interval);
-    }, [day.date, day.endTime]);
     
     const totalDuration = calculateDuration(day.startTime, day.endTime);
     const topGridClass = "grid grid-cols-1 md:grid-cols-3 gap-6";
@@ -280,11 +239,11 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className={topGridClass}>
-                            <div className="h-[180px]">
+                            <div className="h-[235px]">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full" />
                                 ) : day.weather ? (
-                                    <WeatherCard weather={day.weather} />
+                                    <WeatherCardAnimated weather={day.weather} day={day} />
                                 ) : (
                                     <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                                         <p className="text-sm font-semibold">Sem dados de clima</p>
@@ -293,7 +252,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     </div>
                                 )}
                             </div>
-                            <div className="h-[180px]">
+                            <div className="h-[235px]">
                                 {day.latitude && day.longitude ? (
                                     <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full rounded-lg" isExporting={isExporting} />
                                 ) : (
@@ -303,7 +262,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     </div>
                                 )}
                             </div>
-                            <div className="h-[180px]">
+                            <div className="h-[235px]">
                                 <Card className="h-full flex flex-col justify-between items-center text-center p-4 bg-card/50">
                                     <CardHeader className="p-0 mb-2">
                                         <CardTitle className="text-lg flex items-center gap-2">
@@ -324,15 +283,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                             {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
                                         </div>
                                     )}
-                                    <div className="h-10 mt-auto">
-                                        {isFinished && <Badge variant="destructive">Produção Finalizada</Badge>}
-                                        {timeLeft && (
-                                            <div className="text-center">
-                                                <p className="text-sm font-semibold text-primary">Tempo Restante da Produção</p>
-                                                <p className="text-xl font-bold text-foreground">{timeLeft}</p>
-                                            </div>
-                                        )}
-                                    </div>
                                 </Card>
                             </div>
                         </div>
@@ -422,3 +372,5 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         </AccordionItem>
     );
 };
+
+    

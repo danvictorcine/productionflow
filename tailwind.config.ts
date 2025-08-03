@@ -88,12 +88,31 @@ export default {
             height: '0',
           },
         },
+        'sunshine': {
+          '0%': { transform: 'scale(1)', opacity: '0.6' },
+          '100%': { transform: 'scale(1.4)', opacity: '0' },
+        },
+        'clouds-fast': {
+          '0%': { transform: 'translateX(15px)' },
+          '50%': { transform: 'translateX(0px)' },
+          '100%': { transform: 'translateX(15px)' },
+        },
+         'clouds-slow': {
+          '0%': { transform: 'translateX(0px)' },
+          '50%': { transform: 'translateX(15px)' },
+          '100%': { transform: 'translateX(0px)' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'sunshine': 'sunshine 2s infinite',
+        'clouds-fast': 'clouds-fast 8s infinite ease-in-out',
+        'clouds-slow': 'clouds-slow 12s infinite ease-in-out',
       },
     },
   },
   plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 } satisfies Config;
+
+    
