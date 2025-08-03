@@ -152,7 +152,7 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
                 {daylightStatus && (
                     <div className="flex items-center justify-center gap-1">
                         <Hourglass className="w-3 h-3"/>
-                        <span>Luz do dia restante: {daylightStatus}</span>
+                        <span>{daylightStatus}</span>
                     </div>
                 )}
             </div>
