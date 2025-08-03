@@ -1,3 +1,4 @@
+
 // @/src/components/weather-card-animated.tsx
 "use client";
 
@@ -63,10 +64,13 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
 
     }, [weather.sunrise, weather.sunset, weather.date]);
 
+  const formattedLocation = [day.location?.city, day.location?.state]
+    .filter(Boolean)
+    .join(', ');
 
   return (
     <div className={cn(
-        "relative w-[350px] h-[235px] p-6 rounded-2xl text-[#574d33] overflow-hidden shadow-lg",
+        "relative w-full h-full p-6 rounded-2xl text-[#574d33] overflow-hidden shadow-lg",
         "transition-all duration-500 ease-in-out hover:scale-105",
         weatherState === 'sunny' && 'bg-gradient-to-br from-[#FFF7B1] via-white to-white/0',
         weatherState === 'cloudy' && 'bg-gradient-to-br from-gray-300 via-white to-white/0',
@@ -91,7 +95,7 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
         {/* Content */}
         <div className="relative z-30 flex flex-col h-full">
             <div className="card-header">
-                <span className="font-extrabold text-base leading-tight text-[#574d33]/80 break-words">{weather.locationName}</span>
+                <span className="font-extrabold text-base leading-tight text-[#574d33]/80 break-words">{formattedLocation || weather.locationName}</span>
                 <span className="font-bold text-sm text-[#574d33]/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</span>
             </div>
             

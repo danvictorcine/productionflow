@@ -1,5 +1,3 @@
-
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -158,19 +156,19 @@ const formatLocation = (location?: LocationAddress): string => {
     
     const parts = [
         location.road,
-        location.house_number,
         location.city,
         location.state,
         location.country
-    ];
-    
-    const validParts = parts.filter(p => typeof p === 'string' && p.trim() !== '');
+    ].filter(Boolean);
 
-    if (validParts.length === 0) {
+    if (parts.length === 0) {
         return location.displayName || "Localização não definida";
     }
+    
+    // Remove duplicates, e.g. city and state might be the same in some countries
+    const uniqueParts = [...new Set(parts)];
 
-    return validParts.join(', ');
+    return uniqueParts.join(', ');
 }
 
 
@@ -239,7 +237,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className={topGridClass}>
-                            <div className="h-[235px]">
+                            <div className="h-[235px] w-full min-w-[350px]">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full" />
                                 ) : day.weather ? (
@@ -372,5 +370,3 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         </AccordionItem>
     );
 };
-
-    
