@@ -621,7 +621,7 @@ function ProductionPageDetail() {
         >
             <AccordionItem value="team" className="border-none">
                 <Card>
-                    <AccordionTrigger className="w-full hover:no-underline p-0 hover:bg-muted/50 rounded-t-lg transition-colors">
+                    <AccordionTrigger className="w-full p-0 rounded-t-lg">
                         <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6">
                            <div className="flex items-center">
                              <CardTitle className="flex items-center text-left">
@@ -632,9 +632,7 @@ function ProductionPageDetail() {
                                 Informações detalhadas sobre todos os envolvidos na produção.
                             </CardDescription>
                            </div>
-                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full group-hover:bg-accent -mr-2">
-                                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                            </Button>
+                           <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent className="p-6 pt-0">
@@ -654,7 +652,7 @@ function ProductionPageDetail() {
                                             </div>
                                         </div>
                                         <CollapsibleTrigger asChild>
-                                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-accent/50">
+                                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                                                 <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
                                              </Button>
                                         </CollapsibleTrigger>
