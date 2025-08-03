@@ -1,13 +1,10 @@
-
-
-
 // @/src/app/production/[id]/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Copy, Share2, Hourglass } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Copy, Share2, Hourglass, ChevronDown } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -52,6 +49,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
     equipment: ChecklistItem[];
@@ -638,45 +636,56 @@ function ProductionPageDetail() {
                         <div className="space-y-4">
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
-                                <div key={member.id} className="p-3 rounded-md border bg-muted/50">
-                                    <div className="flex items-center gap-4">
-                                      <Avatar className="h-12 w-12">
-                                        <AvatarImage src={member.photoURL} />
-                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                      </Avatar>
-                                      <div>
-                                          <p className="font-semibold text-base">{member.name}</p>
-                                          <p className="text-base text-muted-foreground">{member.role}</p>
-                                      </div>
+                                <Collapsible key={member.id} className="p-3 rounded-md border bg-muted/50">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <Avatar className="h-12 w-12">
+                                                <AvatarImage src={member.photoURL} />
+                                                <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-semibold text-base">{member.name}</p>
+                                                <p className="text-base text-muted-foreground">{member.role}</p>
+                                            </div>
+                                        </div>
+                                        <CollapsibleTrigger asChild>
+                                             <Button variant="ghost" size="icon">
+                                                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                                             </Button>
+                                        </CollapsibleTrigger>
                                     </div>
-                                    {member.contact && (
-                                        <div className="mt-2 flex items-start gap-2 text-base p-2 bg-background rounded">
-                                            <Phone className="h-4 w-4 mt-1 text-sky-600 flex-shrink-0" />
-                                            <div>
-                                                <span className="font-semibold">Contato: </span>
-                                                <a href={`tel:${member.contact.replace(/\D/g, '')}`} className="text-muted-foreground hover:underline">{member.contact}</a>
-                                            </div>
+                                    <CollapsibleContent>
+                                        <div className="mt-4 pt-4 border-t space-y-2">
+                                            {member.contact && (
+                                                <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                    <Phone className="h-4 w-4 mt-1 text-sky-600 flex-shrink-0" />
+                                                    <div>
+                                                        <span className="font-semibold">Contato: </span>
+                                                        <a href={`tel:${member.contact.replace(/\D/g, '')}`} className="text-muted-foreground hover:underline">{member.contact}</a>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {member.hasDietaryRestriction && (
+                                                <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                    <Utensils className="h-4 w-4 mt-1 text-amber-600 flex-shrink-0" />
+                                                    <div>
+                                                        <span className="font-semibold">Restrição Alimentar: </span>
+                                                        <span className="text-muted-foreground">{member.dietaryRestriction || 'Não especificada'}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {member.extraNotes && (
+                                                <div className="flex items-start gap-2 text-base p-2 bg-background rounded">
+                                                    <Info className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
+                                                    <div>
+                                                        <span className="font-semibold">Observação: </span>
+                                                        <span className="text-muted-foreground">{member.extraNotes}</span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                    {member.hasDietaryRestriction && (
-                                        <div className="mt-2 flex items-start gap-2 text-base p-2 bg-background rounded">
-                                            <Utensils className="h-4 w-4 mt-1 text-amber-600 flex-shrink-0" />
-                                            <div>
-                                                <span className="font-semibold">Restrição Alimentar: </span>
-                                                <span className="text-muted-foreground">{member.dietaryRestriction || 'Não especificada'}</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {member.extraNotes && (
-                                        <div className="mt-2 flex items-start gap-2 text-base p-2 bg-background rounded">
-                                            <Info className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
-                                            <div>
-                                                <span className="font-semibold">Observação: </span>
-                                                <span className="text-muted-foreground">{member.extraNotes}</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
                             ))
                         ) : (
                           <p className="text-sm text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado.</p>
