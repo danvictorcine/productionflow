@@ -599,11 +599,11 @@ function ProductionPageDetail() {
         </div>
         <div className="ml-auto flex items-center gap-2">
         <Button onClick={() => { setEditingShootingDay(null); setIsShootingDayDialogOpen(true); }} size="sm">
-            <PlusCircle className="h-4 w-4 md:mr-2" />
+            <PlusCircle className="mr-2 h-4 w-4" />
             <span className="hidden md:inline">Criar Ordem do Dia</span>
           </Button>
           <Button onClick={() => setIsProductionDialogOpen(true)} variant="outline" size="sm">
-            <Edit className="h-4 w-4 md:mr-2" />
+            <Edit className="mr-2 h-4 w-4" />
             <span className="hidden md:inline">Editar Produção</span>
           </Button>
           <Button onClick={() => handleShare('production', production.id)} variant="outline" size="icon" aria-label="Compartilhar Produção">
@@ -622,7 +622,7 @@ function ProductionPageDetail() {
         >
             <AccordionItem value="team" className="border-none">
                 <Card>
-                    <AccordionTrigger className="w-full p-0 rounded-t-lg hover:no-underline transition-colors hover:bg-muted/50">
+                    <AccordionTrigger className="w-full p-0 rounded-t-lg transition-colors hover:no-underline hover:bg-muted/50">
                         <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6">
                            <div className="flex items-center">
                             <Users className="h-6 w-6 mr-3 text-primary" />
