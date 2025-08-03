@@ -623,7 +623,7 @@ function ProductionPageDetail() {
         >
             <AccordionItem value="team" className="border-none">
                 <Card>
-                    <AccordionTrigger className="w-full p-0 rounded-t-lg transition-colors hover:no-underline">
+                    <AccordionTrigger className="w-full p-0 rounded-t-lg transition-colors hover:no-underline group">
                         <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6">
                            <div className="flex items-center">
                             <Users className="h-6 w-6 mr-3 text-primary" />
@@ -639,8 +639,7 @@ function ProductionPageDetail() {
                            </div>
                         </CardHeader>
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 pt-0">
-                       <ScrollArea className="max-h-[500px] pr-3">
+                    <AccordionContent className="p-6 pt-0 max-h-[500px] overflow-y-auto">
                         <div className="space-y-4">
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
@@ -703,7 +702,6 @@ function ProductionPageDetail() {
                           <p className="text-sm text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado.</p>
                         )}
                         </div>
-                       </ScrollArea>
                     </AccordionContent>
                 </Card>
             </AccordionItem>
