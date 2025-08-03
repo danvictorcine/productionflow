@@ -223,59 +223,62 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                <AccordionTrigger className="w-full hover:no-underline p-0 hover:bg-muted/50 rounded-t-lg transition-colors">
-                     <CardHeader className="p-6 flex-1 flex flex-row justify-between items-center text-left">
-                         <div className="flex items-center gap-4">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                                <Calendar className="h-6 w-6" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-semibold leading-none tracking-tight">
-                                    {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
-                                    {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
-                                </h3>
-                                <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
-                                <MapPin className="h-4 w-4" /> {formatLocationForHeader(day.location)}
-                                </p>
-                            </div>
+                <CardHeader className="p-6 flex flex-row justify-between items-center text-left">
+                     <div className="flex items-center gap-4 flex-1">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                            <Calendar className="h-6 w-6" />
                         </div>
-                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            {!isPublicView && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            Editar Ordem do Dia
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={onShare} disabled={isExporting}>
-                                            <Share2 className="mr-2 h-4 w-4" />
-                                            Compartilhar Link
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
-                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                            Exportar para Excel
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
-                                            <FileDown className="mr-2 h-4 w-4" />
-                                            Exportar como PDF
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Excluir
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
+                        <div>
+                            <h3 className="text-xl font-semibold leading-none tracking-tight">
+                                {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
+                                {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
+                            </h3>
+                            <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
+                            <MapPin className="h-4 w-4" /> {formatLocationForHeader(day.location)}
+                            </p>
                         </div>
-                    </CardHeader>
-                </AccordionTrigger>
+                    </div>
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        {!isPublicView && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={onEdit} disabled={isExporting}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Editar Ordem do Dia
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={onShare} disabled={isExporting}>
+                                        <Share2 className="mr-2 h-4 w-4" />
+                                        Compartilhar Link
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                        Exportar para Excel
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={onExportPdf} disabled={isExporting}>
+                                        <FileDown className="mr-2 h-4 w-4" />
+                                        Exportar como PDF
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={onDelete} disabled={isExporting} className="text-destructive focus:text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Excluir
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                         <AccordionTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                            </Button>
+                        </AccordionTrigger>
+                    </div>
+                </CardHeader>
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
