@@ -1,3 +1,4 @@
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -186,6 +187,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
     const isFinished = isPast(parse(day.endTime || "00:00", "HH:mm", day.date));
 
+    const formattedDateString = format(new Date(day.date), "eeee, dd/MM", { locale: ptBR });
+    const displayDate = formattedDateString.charAt(0).toUpperCase() + formattedDateString.slice(1);
 
     useEffect(() => {
         if (!day.startTime || !day.endTime || !isToday(day.date)) {
@@ -223,8 +226,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     return (
         <AccordionItem value={day.id} className="border-none">
             <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
-                 <AccordionTrigger className="w-full p-0 hover:no-underline hover:bg-muted/50 rounded-t-lg transition-colors">
-                    <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6">
+                 <AccordionTrigger className="w-full p-0 hover:no-underline rounded-t-lg transition-colors">
+                    <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6 hover:bg-muted/50 transition-colors rounded-t-lg">
                         <div className="flex items-center gap-4 flex-1">
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                                 <Calendar className="h-6 w-6" />
@@ -232,7 +235,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                             <div>
                                 <h3 className="text-xl font-semibold leading-none tracking-tight">
                                     {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
-                                    {format(new Date(day.date), "eeee, dd/MM", { locale: ptBR })}
+                                    {displayDate}
                                 </h3>
                                 <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
                                 <MapPin className="h-4 w-4" /> {formatLocationForHeader(day.location)}
