@@ -622,7 +622,7 @@ function ProductionPageDetail() {
         >
             <AccordionItem value="team" className="border-none">
                 <Card>
-                    <AccordionTrigger className="w-full p-0 rounded-t-lg hover:bg-muted/50 hover:no-underline transition-colors">
+                    <AccordionTrigger className="w-full p-0 rounded-t-lg hover:no-underline transition-colors hover:bg-muted/50">
                         <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-6">
                            <div className="flex items-center">
                             <Users className="h-6 w-6 mr-3 text-primary" />
@@ -635,7 +635,9 @@ function ProductionPageDetail() {
                                 </CardDescription>
                              </div>
                            </div>
-                           <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                           <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                             <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                           </div>
                         </CardHeader>
                     </AccordionTrigger>
                     <AccordionContent className="p-6 pt-0">
@@ -643,9 +645,9 @@ function ProductionPageDetail() {
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
                                 <Collapsible key={member.id}>
-                                    <div className="rounded-md border bg-muted/50">
+                                    <div className="rounded-md border bg-muted/50 group">
                                         <CollapsibleTrigger asChild>
-                                          <div className="flex items-center justify-between p-3 cursor-pointer group">
+                                          <div className="flex items-center justify-between p-3 cursor-pointer">
                                               <div className="flex items-center gap-4 text-left">
                                                   <Avatar className="h-12 w-12">
                                                       <AvatarImage src={member.photoURL} />
@@ -656,7 +658,9 @@ function ProductionPageDetail() {
                                                       <p className="text-base text-muted-foreground">{member.role}</p>
                                                   </div>
                                               </div>
-                                              <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                               <div className="h-8 w-8 rounded-md flex items-center justify-center transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                                                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                               </div>
                                           </div>
                                         </CollapsibleTrigger>
                                         <CollapsibleContent>
