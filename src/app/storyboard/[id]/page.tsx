@@ -126,9 +126,11 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
             style={{ opacity: isDragging ? 0.3 : 1 }}
             className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm break-inside-avoid group relative"
         >
-             <div ref={handleRef} className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-move z-10 opacity-30 group-hover:opacity-100 transition-opacity">
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </div>
+             {!isExporting && (
+                <div ref={handleRef} className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-move z-10 opacity-30 group-hover:opacity-100 transition-opacity">
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                </div>
+             )}
             <div
                 className={cn(
                     "relative w-full rounded-md overflow-hidden bg-muted",
@@ -136,7 +138,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                 )}
             >
                 <Image src={panel.imageUrl} alt={`Storyboard panel ${index + 1}`} layout="fill" objectFit="cover" data-ai-hint="action sequence" />
-                 <div className="absolute top-1 left-1 bg-black/30 text-white/90 text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none transition-colors opacity-0 group-hover:opacity-100">
+                 <div className="absolute top-1 left-1 bg-black/30 text-white/90 text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none transition-colors group-hover:opacity-100">
                     {index + 1}
                 </div>
                 {!isExporting && (
@@ -150,6 +152,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
                 value={notes}
                 onChange={handleNotesChange}
                 className="text-base bg-transparent border-none focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-ring p-1"
+                readOnly={isExporting}
             />
         </div>
     );
@@ -390,9 +393,18 @@ function StoryboardPageDetail() {
         toast({ title: "Gerando arquivo...", description: "Isso pode levar alguns segundos." });
         setIsExporting(true);
         
+        // Timeout to allow UI to update before capturing
         setTimeout(async () => {
             try {
-                const canvas = await html2canvas(exportRef.current!, { useCORS: true, scale: 2, logging: false, backgroundColor: window.getComputedStyle(document.body).backgroundColor, scrollY: -window.scrollY });
+                const elementToCapture = exportRef.current;
+                if (!elementToCapture) throw new Error("Element to capture not found.");
+                
+                const canvas = await html2canvas(elementToCapture, { 
+                    useCORS: true, 
+                    scale: 2, 
+                    logging: false, 
+                    backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+                });
                 const imgData = canvas.toDataURL('image/png');
                 
                 if (format === 'png') {
@@ -403,7 +415,11 @@ function StoryboardPageDetail() {
                     link.click();
                     document.body.removeChild(link);
                 } else {
-                    const pdf = new jsPDF({ orientation: 'l', unit: 'px', format: [canvas.width, canvas.height] });
+                    const pdf = new jsPDF({ 
+                        orientation: canvas.width > canvas.height ? 'l' : 'p', 
+                        unit: 'px', 
+                        format: [canvas.width, canvas.height] 
+                    });
                     pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
                     pdf.save(`Storyboard_${storyboard.name.replace(/ /g, "_")}.pdf`);
                 }
@@ -551,6 +567,12 @@ function StoryboardPageDetail() {
                     }}
                  >
                     <div ref={exportRef} className="p-8 space-y-8 min-w-[1200px]">
+                        {isExporting && (
+                           <div className="p-6 rounded-xl bg-background border shadow-lg mb-8">
+                                <h1 className="text-3xl font-bold">{storyboard.name}</h1>
+                                {storyboard.description && <p className="text-lg text-muted-foreground mt-1">{storyboard.description}</p>}
+                           </div>
+                        )}
                         {scenes.map((scene) => (
                             <div key={scene.id} className="p-6 rounded-xl bg-background/80 backdrop-blur-sm border shadow-lg space-y-4">
                                 <div className="flex justify-between items-center">
@@ -558,19 +580,21 @@ function StoryboardPageDetail() {
                                         <h2 className="text-xl font-bold">{scene.title}</h2>
                                         <p className="text-muted-foreground">{scene.description}</p>
                                     </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}>
-                                                <Edit className="mr-2 h-4 w-4" /> Editar Cena
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setSceneToDelete(scene)}>
-                                                <Trash2 className="mr-2 h-4 w-4" /> Excluir Cena
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    {!isExporting && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Editar Cena
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setSceneToDelete(scene)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Excluir Cena
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )}
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
@@ -586,20 +610,22 @@ function StoryboardPageDetail() {
                                             isExporting={isExporting}
                                         />
                                     ))}
-                                    <button
-                                        className={cn(
-                                            "flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors",
-                                            storyboard.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]"
-                                        )}
-                                        onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }}
-                                        disabled={isUploading}
-                                    >
-                                        {isUploading && sceneForUpload === scene.id ? (
-                                            <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                                        ) : (
-                                            <PlusCircle className="h-8 w-8 text-muted-foreground/50" />
-                                        )}
-                                    </button>
+                                    {!isExporting && (
+                                        <button
+                                            className={cn(
+                                                "flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors",
+                                                storyboard.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]"
+                                            )}
+                                            onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }}
+                                            disabled={isUploading}
+                                        >
+                                            {isUploading && sceneForUpload === scene.id ? (
+                                                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                                            ) : (
+                                                <PlusCircle className="h-8 w-8 text-muted-foreground/50" />
+                                            )}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -612,6 +638,12 @@ function StoryboardPageDetail() {
 
     const mobileView = (
         <div ref={exportRef} className="p-4 space-y-6">
+            {isExporting && (
+               <div className="p-4 rounded-lg bg-card border mb-6">
+                    <h1 className="text-2xl font-bold">{storyboard.name}</h1>
+                    {storyboard.description && <p className="text-base text-muted-foreground mt-1">{storyboard.description}</p>}
+               </div>
+            )}
             {scenes.map((scene) => (
                 <div key={scene.id} className="p-4 rounded-lg bg-card border space-y-4">
                     <div className="flex justify-between items-center">
@@ -619,19 +651,21 @@ function StoryboardPageDetail() {
                             <h2 className="text-xl font-bold">{scene.title}</h2>
                             {scene.description && <p className="text-base text-muted-foreground">{scene.description}</p>}
                         </div>
-                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}>
-                                    <Edit className="mr-2 h-4 w-4" /> Editar Cena
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setSceneToDelete(scene)}>
-                                    <Trash2 className="mr-2 h-4 w-4" /> Excluir Cena
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                         {!isExporting && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}>
+                                        <Edit className="mr-2 h-4 w-4" /> Editar Cena
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setSceneToDelete(scene)}>
+                                        <Trash2 className="mr-2 h-4 w-4" /> Excluir Cena
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                         )}
                     </div>
                     <div className="grid grid-cols-1 gap-4">
                         {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
@@ -647,20 +681,22 @@ function StoryboardPageDetail() {
                                 isExporting={isExporting}
                             />
                         ))}
-                        <button
-                            className={cn(
-                                "flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors",
-                                storyboard.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]"
-                            )}
-                            onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }}
-                            disabled={isUploading}
-                        >
-                            {isUploading && sceneForUpload === scene.id ? (
-                                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                            ) : (
-                                <PlusCircle className="h-8 w-8 text-muted-foreground/50" />
-                            )}
-                        </button>
+                         {!isExporting && (
+                            <button
+                                className={cn(
+                                    "flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors",
+                                    storyboard.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]"
+                                )}
+                                onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }}
+                                disabled={isUploading}
+                            >
+                                {isUploading && sceneForUpload === scene.id ? (
+                                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                                ) : (
+                                    <PlusCircle className="h-8 w-8 text-muted-foreground/50" />
+                                )}
+                            </button>
+                         )}
                     </div>
                 </div>
             ))}
@@ -709,30 +745,30 @@ function StoryboardPageDetail() {
                     ref={mainContainerRef}
                     className="flex-1 flex flex-col overflow-auto"
                 >
-                    <div className="bg-background border-b z-30 shrink-0">
-                        <div className="p-4 sm:p-6 md:p-6 pb-2">
-                            <Card>
-                                <CardHeader>
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <CardTitle>{storyboard.name}</CardTitle>
-                                            {storyboard.description && (
-                                                <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>
-                                            )}
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                            </Card>
-                        </div>
-                        {!isMobile && (
+                    {!isMobile && (
+                         <div className="bg-background border-b z-30 shrink-0">
+                             <div className="p-4 sm:p-6 md:p-6 pb-2">
+                                 <Card>
+                                     <CardHeader>
+                                         <div className="flex justify-between items-start">
+                                             <div>
+                                                 <CardTitle>{storyboard.name}</CardTitle>
+                                                 {storyboard.description && (
+                                                     <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>
+                                                 )}
+                                             </div>
+                                         </div>
+                                     </CardHeader>
+                                 </Card>
+                             </div>
                             <div className="px-4 md:px-8 pb-4">
                                 <div className="flex items-center gap-1 rounded-lg bg-muted p-2">
                                     <Button variant="outline" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
                                     <Button variant="outline" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
                                 </div>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                     {isMobile ? mobileView : desktopView}
                 </main>
                 <AppFooter />
