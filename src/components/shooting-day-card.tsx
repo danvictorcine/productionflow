@@ -320,15 +320,11 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
 
                                     <div className="mt-auto pt-4 text-center">
                                         {remainingProductionTime ? (
-                                            <div className="bg-primary/10 text-primary font-semibold text-sm p-2 rounded-md">
-                                                {remainingProductionTime}
-                                            </div>
+                                            <Badge variant="secondary" className="text-sm bg-primary/10 text-primary">{remainingProductionTime}</Badge>
                                         ) : isFinished ? (
-                                            <div className="bg-destructive/10 text-destructive font-semibold text-sm p-2 rounded-md">
-                                                Produção Finalizada
-                                            </div>
+                                            <Badge variant="destructive" className="text-sm">{`Produção Finalizada`}</Badge>
                                         ) : (
-                                            <div className="h-9"></div> // Placeholder to keep height consistent
+                                            <div className="h-6"></div>
                                         )}
                                     </div>
                                 </Card>
