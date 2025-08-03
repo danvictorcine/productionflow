@@ -1,3 +1,4 @@
+
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -640,23 +641,21 @@ function ProductionPageDetail() {
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
                                 <Collapsible key={member.id} className="p-3 rounded-md border bg-muted/50">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <Avatar className="h-12 w-12">
-                                                <AvatarImage src={member.photoURL} />
-                                                <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="font-semibold text-base">{member.name}</p>
-                                                <p className="text-base text-muted-foreground">{member.role}</p>
+                                    <CollapsibleTrigger className='w-full'>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4 text-left">
+                                                <Avatar className="h-12 w-12">
+                                                    <AvatarImage src={member.photoURL} />
+                                                    <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-semibold text-base">{member.name}</p>
+                                                    <p className="text-base text-muted-foreground">{member.role}</p>
+                                                </div>
                                             </div>
+                                            <ChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
                                         </div>
-                                        <CollapsibleTrigger asChild>
-                                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                                                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-                                             </Button>
-                                        </CollapsibleTrigger>
-                                    </div>
+                                    </CollapsibleTrigger>
                                     <CollapsibleContent>
                                         <div className="mt-4 pt-4 border-t space-y-2">
                                             {member.contact && (
@@ -799,3 +798,5 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
+
+    
