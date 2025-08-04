@@ -3,6 +3,7 @@
 
 
 
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -163,6 +164,12 @@ export type LocationAddress = {
     state?: string;
     postcode?: string;
     country?: string;
+    suburb?: string;
+    neighbourhood?: string;
+    amenity?: string;
+    shop?: string;
+    tourism?: string;
+    office?: string;
 }
 
 export type Scene = {

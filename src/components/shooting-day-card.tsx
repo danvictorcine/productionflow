@@ -1,4 +1,3 @@
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -116,9 +115,38 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
 };
 
 const formatSceneAddress = (location?: LocationAddress): string => {
-    if (!location?.displayName) return "Localização não definida";
-    return location.displayName;
+    if (!location) return "Localização não definida";
+
+    const addressParts: string[] = [];
+
+    // Prioritize a specific place name if available, otherwise build from road
+    const placeName = location.amenity || location.shop || location.tourism || location.office;
+    if (placeName) {
+        addressParts.push(placeName);
+    }
+    
+    const street = [location.road, location.house_number].filter(Boolean).join(', ');
+    if (street) {
+        addressParts.push(street);
+    }
+
+    const neighborhood = location.suburb || location.neighbourhood;
+    if (neighborhood) {
+        addressParts.push(neighborhood);
+    }
+    
+    if (location.city) addressParts.push(location.city);
+    if (location.state) addressParts.push(location.state);
+    if (location.postcode) addressParts.push(location.postcode);
+    if (location.country) addressParts.push(location.country);
+
+    if (addressParts.length > 0) {
+        return addressParts.join(', ');
+    }
+
+    return location.displayName || "Localização não definida";
 };
+
 
 const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: { 
     scene: Scene, 
