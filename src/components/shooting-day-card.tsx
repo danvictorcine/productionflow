@@ -82,7 +82,7 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
                 <Icon className="h-5 w-5 mr-2 text-primary" />
                 <span>{title}</span>
             </h4>
-            <div className="space-y-2 pt-1 pl-7">
+            <div className="space-y-2 pt-2 pl-7">
                 {items.map((item) => (
                     <div key={item.id} className="flex items-center space-x-3">
                         <Checkbox
@@ -103,6 +103,9 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
 
 const formatSceneAddress = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
+    
+    // Normalize city-like fields
+    const city = location.city || location.town || location.village;
 
     const addressParts: string[] = [
         location.amenity,
@@ -112,7 +115,7 @@ const formatSceneAddress = (location?: LocationAddress): string => {
         location.road,
         location.house_number,
         location.suburb || location.neighbourhood,
-        location.city,
+        city,
         location.state,
         location.postcode,
         location.country,
@@ -200,8 +203,8 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                             </div>
                             <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
                         </AccordionTrigger>
-                        <AccordionContent>
-                            <div className="space-y-4 pt-4">
+                        <AccordionContent className="pt-2">
+                            <div className="space-y-4 pt-2">
                                 <ChecklistSection icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
                                 <ChecklistSection icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
                                 <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
@@ -232,9 +235,11 @@ interface ShootingDayCardProps {
 
 const formatLocationForHeader = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
+
+    const city = location.city || location.town || location.village;
     
     const parts = [
-        location.city,
+        city,
         location.state,
         location.country
     ].filter(Boolean); // filter(Boolean) removes any null/undefined/empty strings
@@ -269,8 +274,8 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     const { toast } = useToast();
-    const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
     const [localDay, setLocalDay] = useState(day);
+    const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
     
     useEffect(() => {
         setLocalDay(day);
