@@ -2,6 +2,7 @@
 
 
 
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -544,7 +545,6 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
   const days = querySnapshot.docs.map(doc => {
       let data = doc.data() as ShootingDay;
       
-      // Migration logic for old data structure
       const hasOldNotes = data.equipment || data.costumes || data.props;
       if (hasOldNotes && data.scenes && data.scenes.length > 0) {
         const firstScene = data.scenes[0];
@@ -553,7 +553,6 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
         firstScene.costumes = convertNotesToItems(data.costumes);
         firstScene.props = convertNotesToItems(data.props);
 
-        // Remove deprecated fields from the day object in memory
         delete data.equipment;
         delete data.costumes;
         delete data.props;
@@ -588,13 +587,31 @@ export const updateShootingDay = async (dayId: string, data: Partial<Omit<Shooti
       dataToUpdate.weather = deleteField();
   }
 
-  // Ensure deprecated fields are removed on save
   dataToUpdate.equipment = deleteField();
   dataToUpdate.costumes = deleteField();
   dataToUpdate.props = deleteField();
 
   await updateDoc(docRef, dataToUpdate);
 };
+
+export const updateShootingDayScene = async (dayId: string, sceneId: string, data: Partial<Scene>) => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
+    const dayRef = doc(db, 'shooting_days', dayId);
+
+    const dayDoc = await getDoc(dayRef);
+    if (!dayDoc.exists() || dayDoc.data().userId !== userId) {
+        throw new Error("Permission denied to update this shooting day.");
+    }
+    
+    const dayData = dayDoc.data() as ShootingDay;
+    const updatedScenes = dayData.scenes.map(scene => 
+        scene.id === sceneId ? { ...scene, ...data } : scene
+    );
+    
+    await updateDoc(dayRef, { scenes: updatedScenes });
+};
+
 
 export const deleteShootingDay = async (dayId: string) => {
     const userId = getUserId();

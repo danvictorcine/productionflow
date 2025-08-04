@@ -33,6 +33,10 @@ import { WeatherCardAnimated } from "./weather-card-animated";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { getInitials } from "@/lib/utils";
+import * as firestoreApi from '@/lib/firebase/firestore';
+import { useToast } from "@/hooks/use-toast";
+import { CopyableError } from "./copyable-error";
+
 
 
 const DisplayMap = dynamic(() => import('../components/display-map').then(mod => mod.DisplayMap), {
@@ -153,10 +157,11 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                 )}
             </div>
         </div>
+        
+        <Separator className="my-3" />
+
         {hasNotes && (
-          <>
-            <Separator className="my-3" />
-            <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="notes" className="border-b-0">
                     <AccordionTrigger>
                         <div className="flex items-center text-lg font-semibold">
@@ -174,7 +179,6 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
-          </>
         )}
     </div>
 )};
@@ -220,12 +224,30 @@ const formatLocationForHeader = (location?: LocationAddress): string => {
 
 
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
-    
+    const { toast } = useToast();
     const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
     const isFinished = isPast(parse(day.endTime || "00:00", "HH:mm", day.date));
 
     const formattedDateString = format(new Date(day.date), "eeee, dd/MM", { locale: ptBR });
     const displayDate = formattedDateString.charAt(0).toUpperCase() + formattedDateString.slice(1);
+
+    const handleUpdateSceneNotes = async (
+      sceneId: string,
+      listName: 'equipment' | 'costumes' | 'props',
+      updatedList: ChecklistItem[]
+    ) => {
+        try {
+            await firestoreApi.updateShootingDayScene(day.id, sceneId, { [listName]: updatedList });
+        } catch (error) {
+            const errorTyped = error as { code?: string; message: string };
+            toast({ 
+                variant: 'destructive', 
+                title: 'Erro ao Atualizar', 
+                description: <CopyableError userMessage="Não foi possível salvar a nota da cena." errorCode={errorTyped.code || errorTyped.message} /> 
+            });
+        }
+    };
+
 
     useEffect(() => {
         if (!day.startTime || !day.endTime || !isToday(day.date)) {
@@ -435,6 +457,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                                 key={scene.id} 
                                                 scene={scene} 
                                                 isExporting={isExporting}
+                                                onUpdateSceneNotes={handleUpdateSceneNotes}
                                             />
                                         ))
                                     ) : (
