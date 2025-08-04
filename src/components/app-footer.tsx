@@ -7,7 +7,7 @@ export function AppFooter() {
   return (
     <footer className="w-full border-t border-border/40 bg-background z-50">
       <div className="container mx-auto px-6 py-4">
-        <div className="flex flex-col items-center sm:flex-row sm:justify-between sm:items-center text-sm text-muted-foreground">
+        <div className="flex flex-col items-center sm:flex-row sm:justify-between sm:items-center text-xs text-muted-foreground">
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-2 sm:mb-0">
             <Link href="/blog" className="hover:text-primary transition-colors">Blog</Link>
             <Link href="/contact" className="hover:text-primary transition-colors">Contate-nos</Link>
