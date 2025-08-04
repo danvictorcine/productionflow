@@ -2,6 +2,7 @@
 
 
 
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -154,6 +155,16 @@ export type HospitalInfo = {
   phone: string;
 };
 
+export type LocationAddress = {
+    displayName: string;
+    road?: string;
+    house_number?: string;
+    city?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+}
+
 export type Scene = {
   id: string;
   sceneNumber: string;
@@ -180,16 +191,6 @@ export type ChecklistItem = {
   text: string;
   checked: boolean;
 };
-
-export type LocationAddress = {
-    displayName: string;
-    road?: string;
-    house_number?: string;
-    city?: string;
-    state?: string;
-    postcode?: string;
-    country?: string;
-}
 
 export type ShootingDay = {
   id: string;

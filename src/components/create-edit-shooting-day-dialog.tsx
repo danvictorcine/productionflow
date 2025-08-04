@@ -1,3 +1,4 @@
+
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -37,6 +38,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 import { Separator } from "./ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 const LocationPicker = dynamic(() => import('./location-picker').then(mod => mod.LocationPicker), {
   ssr: false,
@@ -61,15 +64,6 @@ const callTimeSchema = z.object({
     time: z.string().min(1, "Horário é obrigatório."),
 });
 
-const sceneSchema = z.object({
-    id: z.string(),
-    sceneNumber: z.string().min(1, "Nº da cena é obrigatório."),
-    title: z.string().min(1, "Título é obrigatório."),
-    description: z.string().min(1, "Descrição é obrigatória."),
-    pages: z.string().min(1, "Nº de páginas é obrigatório."),
-    presentInScene: z.array(teamMemberSchema),
-});
-
 const checklistItemSchema = z.object({
   id: z.string(),
   text: z.string().min(1, "O texto do item não pode ser vazio."),
@@ -77,14 +71,30 @@ const checklistItemSchema = z.object({
 });
 
 const locationAddressSchema = z.object({
-  displayName: z.string().min(1, "A localização é obrigatória. Clique no mapa ou pesquise."),
+  displayName: z.string().optional(),
   road: z.string().optional(),
   house_number: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   postcode: z.string().optional(),
   country: z.string().optional(),
+}).optional();
+
+const sceneSchema = z.object({
+    id: z.string(),
+    sceneNumber: z.string().min(1, "Nº da cena é obrigatório."),
+    title: z.string().min(1, "Título é obrigatório."),
+    description: z.string().min(1, "Descrição é obrigatória."),
+    pages: z.string().min(1, "Nº de páginas é obrigatório."),
+    presentInScene: z.array(teamMemberSchema),
+    location: locationAddressSchema,
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    equipment: z.array(checklistItemSchema).optional(),
+    costumes: z.array(checklistItemSchema).optional(),
+    props: z.array(checklistItemSchema).optional(),
 });
+
 
 const shootingDaySchema = z.object({
   date: z.date({ required_error: "A data da filmagem é obrigatória." }),
@@ -92,21 +102,16 @@ const shootingDaySchema = z.object({
   totalDays: z.coerce.number().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
-  location: locationAddressSchema,
-  latitude: z.number(),
-  longitude: z.number(),
+  location: z.object({ displayName: z.string().optional() }).optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
   callTimes: z.array(callTimeSchema),
   scenes: z.array(sceneSchema),
   presentTeam: z.array(teamMemberSchema).optional(),
-  // Logistics
   mealTime: z.string().optional(),
   parkingInfo: z.string().optional(),
   radioChannels: z.string().optional(),
   nearestHospital: hospitalSchema.optional(),
-  // Department notes
-  equipment: z.array(checklistItemSchema).optional(),
-  costumes: z.array(checklistItemSchema).optional(),
-  props: z.array(checklistItemSchema).optional(),
   generalNotes: z.array(checklistItemSchema).optional(),
 });
 
@@ -117,11 +122,11 @@ interface CreateEditShootingDayDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => void;
-  shootingDay?: (Omit<ShootingDay, 'equipment'|'costumes'|'props'|'generalNotes'> & { equipment: ChecklistItem[], costumes: ChecklistItem[], props: ChecklistItem[], generalNotes: ChecklistItem[]}) | null;
+  shootingDay?: (Omit<ShootingDay, 'generalNotes'> & { generalNotes?: ChecklistItem[]}) | null;
   productionTeam: TeamMember[];
 }
 
-const ChecklistFormSection = ({ name, label, control }: { name: "equipment" | "costumes" | "props" | "generalNotes", label: string, control: any }) => {
+const ChecklistFormSection = ({ name, label, control }: { name: string, label: string, control: any }) => {
     const { fields, append, remove } = useFieldArray({
         control,
         name,
@@ -172,9 +177,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       longitude: defaultPosition[1],
       scenes: [],
       callTimes: [],
-      equipment: [],
-      costumes: [],
-      props: [],
       generalNotes: [],
       presentTeam: [],
       dayNumber: undefined,
@@ -215,15 +217,12 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           latitude: shootingDay.latitude || defaultPosition[0],
           longitude: shootingDay.longitude || defaultPosition[1],
           callTimes: Array.isArray(shootingDay.callTimes) ? shootingDay.callTimes : [],
-          scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes : [],
+          scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
           mealTime: shootingDay.mealTime || "",
           parkingInfo: shootingDay.parkingInfo || "",
           radioChannels: shootingDay.radioChannels || "",
           nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
           presentTeam: shootingDay.presentTeam || [],
-          equipment: shootingDay.equipment,
-          costumes: shootingDay.costumes,
-          props: shootingDay.props,
           generalNotes: shootingDay.generalNotes,
         });
       } else {
@@ -234,9 +233,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
             longitude: defaultPosition[1],
             scenes: [],
             callTimes: [{ id: crypto.randomUUID(), department: "Chamada Geral", time: "08:00" }],
-            equipment: [],
-            costumes: [],
-            props: [],
             generalNotes: [],
             presentTeam: [],
             dayNumber: undefined,
@@ -260,6 +256,12 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     form.setValue('latitude', lat);
     form.setValue('longitude', lng);
     form.setValue('location', address, { shouldValidate: true });
+  };
+  
+  const handleSceneLocationChange = (index: number, lat: number, lng: number, address: LocationAddress) => {
+    form.setValue(`scenes.${index}.latitude`, lat);
+    form.setValue(`scenes.${index}.longitude`, lng);
+    form.setValue(`scenes.${index}.location`, address, { shouldValidate: true });
   };
 
   return (
@@ -342,17 +344,17 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <Separator />
 
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Localização e Logística</h3>
+                        <h3 className="text-lg font-semibold mb-2">Localização Principal e Logística</h3>
                         <div className="border p-4 rounded-lg space-y-4">
                             <FormField control={form.control} name="location.displayName" render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Localização</FormLabel>
+                                    <FormLabel>Localização Principal do Dia</FormLabel>
                                     <FormControl><Input readOnly placeholder="Selecione no mapa ou pesquise" {...field} /></FormControl>
-                                    <FormDescription>Use a busca ou clique no mapa para definir a localização.</FormDescription>
+                                    <FormDescription>Use a busca ou clique no mapa para definir a localização geral.</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )} />
-                            <LocationPicker initialPosition={[lat, lng]} onLocationChange={handleLocationChange} />
+                            <LocationPicker initialPosition={[lat || defaultPosition[0], lng || defaultPosition[1]]} onLocationChange={handleLocationChange} />
                             <FormField control={form.control} name="parkingInfo" render={({ field }) => (
                                 <FormItem><FormLabel>Informações de Estacionamento</FormLabel><FormControl><Textarea placeholder="Ex: Estacionamento disponível na rua lateral..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>
                             )}/>
@@ -465,9 +467,41 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                         </FormItem>
                                         )}
                                     />
+                                    <Collapsible>
+                                        <CollapsibleTrigger asChild>
+                                             <Button variant="outline" size="sm" className="w-full justify-between">
+                                                Notas de Departamento e Localização da Cena
+                                                <ChevronDown className="h-4 w-4" />
+                                            </Button>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent className="p-1 pt-4">
+                                            <div className="border rounded-lg p-4 space-y-4">
+                                                <FormField control={form.control} name={`scenes.${index}.location`} render={() => (
+                                                    <FormItem>
+                                                        <FormLabel>Localização Específica da Cena</FormLabel>
+                                                        <FormDescription>Se esta cena tem uma localização diferente da principal, defina aqui.</FormDescription>
+                                                        <FormControl>
+                                                            <LocationPicker
+                                                                initialPosition={[
+                                                                    form.watch(`scenes.${index}.latitude`) || defaultPosition[0],
+                                                                    form.watch(`scenes.${index}.longitude`) || defaultPosition[1]
+                                                                ]}
+                                                                onLocationChange={(lat, lng, address) => handleSceneLocationChange(index, lat, lng, address)}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )} />
+                                                <Separator />
+                                                <ChecklistFormSection name={`scenes.${index}.equipment`} label="Equipamentos" control={form.control} />
+                                                <ChecklistFormSection name={`scenes.${index}.costumes`} label="Figurino" control={form.control} />
+                                                <ChecklistFormSection name={`scenes.${index}.props`} label="Objetos de Cena e Direção de Arte" control={form.control} />
+                                            </div>
+                                        </CollapsibleContent>
+                                    </Collapsible>
                                 </div>
                             ))}
-                             <Button type="button" variant="outline" size="sm" onClick={() => appendScene({id: crypto.randomUUID(), sceneNumber: "", title: "", description: "", pages: "", presentInScene: []})}>
+                             <Button type="button" variant="outline" size="sm" onClick={() => appendScene({id: crypto.randomUUID(), sceneNumber: "", title: "", description: "", pages: "", presentInScene: [], equipment:[], costumes:[], props:[]})}>
                                 <PlusCircle className="mr-2 h-4 w-4"/>Adicionar Cena
                             </Button>
                          </div>
@@ -476,12 +510,9 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <Separator />
                     
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Notas dos Departamentos</h3>
+                        <h3 className="text-lg font-semibold mb-2">Observações Gerais do Dia</h3>
                          <div className="border p-4 rounded-lg space-y-4">
-                            <ChecklistFormSection name="equipment" label="Equipamentos" control={form.control} />
-                            <ChecklistFormSection name="costumes" label="Figurino" control={form.control} />
-                            <ChecklistFormSection name="props" label="Objetos de Cena e Direção de Arte" control={form.control} />
-                            <ChecklistFormSection name="generalNotes" label="Observações Gerais" control={form.control} />
+                            <ChecklistFormSection name="generalNotes" label="Notas Gerais" control={form.control} />
                          </div>
                     </div>
 
