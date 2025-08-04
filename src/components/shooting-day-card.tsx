@@ -1,4 +1,3 @@
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -35,7 +34,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { getInitials } from "@/lib/utils";
 
 
-const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
+const DisplayMap = dynamic(() => import('./display-map').then(mod => mod.DisplayMap), {
   ssr: false,
   loading: () => <Skeleton className="h-full w-full rounded-lg" />,
 });
