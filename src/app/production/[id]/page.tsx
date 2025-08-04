@@ -595,7 +595,7 @@ function ProductionPageDetail() {
         <PdfExportPortal day={dayToExportPdf} production={production} />
       )}
       
-      <header className="sticky top-0 z-10 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
+      <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
           <Button variant="outline" size="icon" className="h-8 w-8">
             <ArrowLeft className="h-4 w-4" />
@@ -648,7 +648,7 @@ function ProductionPageDetail() {
                             </div>
                          </CardHeader>
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 pt-0 overflow-y-auto max-h-[500px]">
+                    <AccordionContent className="p-6 pt-0 max-h-[500px] overflow-y-auto">
                         <div className="space-y-4">
                         {(production.team && production.team.length > 0) ? (
                             production.team.map(member => (
@@ -699,7 +699,7 @@ function ProductionPageDetail() {
                                         <div className="p-3 pt-0">
                                             <div className="mt-2 pt-2 border-t space-y-2">
                                                 {member.contact && (
-                                                    <div className="flex items-start gap-2 text-base p-2 rounded">
+                                                    <div className="flex items-start gap-2 text-base p-2">
                                                         <Phone className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
                                                         <div>
                                                             <span className="font-semibold">Contato: </span>
@@ -708,7 +708,7 @@ function ProductionPageDetail() {
                                                     </div>
                                                 )}
                                                 {member.hasDietaryRestriction && (
-                                                    <div className="flex items-start gap-2 text-base p-2 rounded">
+                                                    <div className="flex items-start gap-2 text-base p-2">
                                                         <Utensils className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
                                                         <div>
                                                             <span className="font-semibold">Restrição Alimentar: </span>
@@ -717,7 +717,7 @@ function ProductionPageDetail() {
                                                     </div>
                                                 )}
                                                 {member.extraNotes && (
-                                                    <div className="flex items-start gap-2 text-base p-2 rounded">
+                                                    <div className="flex items-start gap-2 text-base p-2">
                                                         <Info className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
                                                         <div>
                                                             <span className="font-semibold">Observação: </span>
