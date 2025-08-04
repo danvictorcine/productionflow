@@ -14,7 +14,7 @@ import dynamic from 'next/dynamic';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -111,45 +111,66 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
     scene: Scene, 
     isExporting: boolean,
     onUpdateSceneNotes?: (sceneId: string, listName: 'equipment' | 'costumes' | 'props', updatedList: ChecklistItem[]) => void 
-}) => (
+}) => {
+    const hasNotes = scene.equipment?.length || scene.costumes?.length || scene.props?.length;
+    
+    return (
     <div className="p-4 rounded-lg border bg-background/50 space-y-3">
-        <div className="flex justify-between items-center">
-            <div className="flex items-baseline gap-2">
-                <h5 className="font-bold text-xl text-foreground">{scene.sceneNumber}</h5>
-                <p className="font-semibold text-lg text-primary">{scene.title}</p>
-            </div>
-            <Badge variant="outline" className="text-sm">{scene.pages}</Badge>
-        </div>
-        <div className="pl-2 space-y-3">
-            <div className="flex items-start gap-2">
-                <AlignLeft className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                <p className="text-base text-muted-foreground">{scene.description}</p>
-            </div>
-             {scene.presentInScene && scene.presentInScene.length > 0 && (
-                <div className="flex items-start gap-2">
-                    <Users className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                     <div className="flex flex-wrap gap-2 items-center">
-                        {scene.presentInScene.map(member => (
-                            <Badge key={member.id} variant="secondary" className="font-normal text-sm p-1 pr-2.5 flex items-center gap-1.5">
-                                <Avatar className="h-5 w-5">
-                                    <AvatarImage src={member.photoURL} />
-                                    <AvatarFallback className="text-xs">{getInitials(member.name)}</AvatarFallback>
-                                </Avatar>
-                                {member.name}
-                            </Badge>
-                        ))}
-                    </div>
+        <div className="flex flex-col md:flex-row gap-4 items-start">
+            {scene.latitude && scene.longitude && (
+                <div className="w-full md:w-1/3 aspect-video md:aspect-auto md:h-40 rounded-lg overflow-hidden shadow-lg border flex-shrink-0">
+                    <DisplayMap position={[scene.latitude, scene.longitude]} className="h-full w-full" isExporting={isExporting} />
                 </div>
             )}
+            <div className="flex-1 space-y-2">
+                <div className="flex justify-between items-start">
+                    <div className="flex items-baseline gap-2">
+                        <h5 className="font-bold text-xl text-foreground">{scene.sceneNumber}</h5>
+                        <p className="font-semibold text-lg text-primary">{scene.title}</p>
+                    </div>
+                    <Badge variant="outline" className="text-sm">{scene.pages}</Badge>
+                </div>
+                 <div className="flex items-start gap-2">
+                    <AlignLeft className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
+                    <p className="text-base text-muted-foreground">{scene.description}</p>
+                </div>
+                {scene.presentInScene && scene.presentInScene.length > 0 && (
+                    <div className="flex items-start gap-2">
+                        <Users className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
+                        <div className="flex flex-wrap gap-2 items-center">
+                            {scene.presentInScene.map(member => (
+                                <Badge key={member.id} variant="secondary" className="font-normal text-sm p-1 pr-2.5 flex items-center gap-1.5">
+                                    <Avatar className="h-5 w-5">
+                                        <AvatarImage src={member.photoURL} />
+                                        <AvatarFallback className="text-xs">{getInitials(member.name)}</AvatarFallback>
+                                    </Avatar>
+                                    {member.name}
+                                </Badge>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
-        <Separator />
-        <div className="space-y-4">
-             <ChecklistSection icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
-             <ChecklistSection icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
-             <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
-        </div>
+        {hasNotes && (
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="notes">
+                    <AccordionTrigger>
+                        <h4 className="font-semibold">Notas por Departamento</h4>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <Separator className="mb-2" />
+                        <div className="space-y-4">
+                            <ChecklistSection icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
+                            <ChecklistSection icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
+                            <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        )}
     </div>
-);
+)};
 
 const calculateDuration = (start?: string, end?: string): string | null => {
     if (!start || !end) return null;
@@ -403,14 +424,11 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 <div className="space-y-3">
                                     {Array.isArray(day.scenes) && day.scenes.length > 0 ? (
                                         day.scenes.map(scene => (
-                                            <div key={scene.id} className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                                                <SceneCard scene={scene} isExporting={isExporting} />
-                                                {scene.latitude && scene.longitude && (
-                                                     <div className="h-[300px] lg:h-auto lg:aspect-video rounded-lg overflow-hidden shadow-lg border">
-                                                        <DisplayMap position={[scene.latitude, scene.longitude]} className="h-full w-full" isExporting={isExporting} />
-                                                    </div>
-                                                )}
-                                            </div>
+                                            <SceneCard 
+                                                key={scene.id} 
+                                                scene={scene} 
+                                                isExporting={isExporting}
+                                            />
                                         ))
                                     ) : (
                                         <p className="text-base text-muted-foreground pl-6">Nenhuma cena definida para hoje.</p>
