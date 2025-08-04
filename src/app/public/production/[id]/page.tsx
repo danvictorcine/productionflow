@@ -1,71 +1,97 @@
-
+// @/src/app/public/production/[id]/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import type { Production, ShootingDay } from "@/lib/types";
-import * as firestoreApi from "@/lib/firebase/firestore";
-import { useToast } from "@/hooks/use-toast";
-import { Accordion } from "@/components/ui/accordion";
-import { ShootingDayCard } from "@/components/shooting-day-card";
-import { ProductionInfoCard } from "@/components/production-info-card";
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import type { Production, ShootingDay } from '@/lib/types';
+import * as firestoreApi from '@/lib/firebase/firestore';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, LogIn } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Accordion } from '@/components/ui/accordion';
+import { ShootingDayCard } from '@/components/shooting-day-card';
+import { ProductionInfoCard } from '@/components/production-info-card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { LogIn } from 'lucide-react';
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function PublicShootingDayPage() {
   const params = useParams();
-  const { toast } = useToast();
-
+  const dayId = params.id as string;
   const [data, setData] = useState<{ production: Production, day: ShootingDay } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDay = async () => {
-      setIsLoading(true);
-      try {
-        const fetchedData = await firestoreApi.getPublicShootingDay(params.id as string);
-        if (fetchedData) {
-          setData(fetchedData);
-        } else {
-          toast({ variant: "destructive", title: "Ordem do Dia não encontrada", description: "O link pode estar incorreto ou a página foi removida." });
-        }
-      } catch (error) {
-        toast({ variant: "destructive", title: "Erro ao carregar", description: "Não foi possível carregar os dados da Ordem do Dia." });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchDay();
-  }, [params.id, toast]);
+    if (dayId) {
+      firestoreApi.getPublicShootingDay(dayId)
+        .then(fetchedData => {
+          if (fetchedData) {
+            setData(fetchedData);
+          } else {
+            setError("Ordem do Dia não encontrada ou não está disponível publicamente.");
+          }
+        })
+        .catch(() => {
+          setError("Ocorreu um erro ao carregar os dados.");
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [dayId]);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Carregando Ordem do Dia...</div>;
+    return (
+      <div className="p-8 space-y-6">
+        <Skeleton className="h-[60px] w-full" />
+        <Skeleton className="h-[150px] w-full" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
   }
 
-  if (!data) {
-    return <div className="flex items-center justify-center min-h-screen">Ordem do Dia não encontrada.</div>;
+  if (error || !data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-muted/40">
+        <Alert variant="destructive" className="max-w-lg">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro ao Carregar</AlertTitle>
+          <AlertDescription>
+            {error || "Não foi possível carregar a Ordem do Dia. Verifique o link ou tente novamente mais tarde."}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
-
+  
   const { production, day } = data;
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
-      <header className="sticky top-0 z-40 flex h-[60px] items-center justify-between gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
-        <div className="flex items-center justify-center flex-1 gap-2">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
+      <header className="sticky top-0 z-40 flex h-[60px] items-center justify-between gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Criado com:</span>
+          <div className="flex items-center gap-1.5">
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
               <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))"/>
               <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
             </svg>
-            <h1 className="text-lg md:text-xl font-bold">{production.name}</h1>
+            <p className="font-semibold tracking-tighter text-foreground" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</p>
+          </div>
         </div>
+
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button asChild variant="outline" size="sm">
+                    <Button asChild size="sm" className="ml-auto shrink-0">
                         <Link href="/login">
-                            <LogIn className="h-4 w-4 md:mr-2" />
+                            <LogIn className="h-4 w-4 md:mr-2"/>
                             <span className="hidden md:inline">Acessar a Plataforma</span>
                         </Link>
                     </Button>
@@ -79,15 +105,14 @@ export default function PublicShootingDayPage() {
 
       <main className="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-6xl mx-auto">
         <ProductionInfoCard production={production} />
-
-        <Accordion type="single" collapsible defaultValue={day.id} className="w-full space-y-4 mt-6">
-          <ShootingDayCard
-            day={day}
-            production={production}
-            isFetchingWeather={false}
-            isPublicView={true}
-            isExporting={false}
-          />
+        <Accordion type="single" collapsible defaultValue={day.id} className="w-full">
+            <ShootingDayCard
+              day={day}
+              production={production}
+              isFetchingWeather={false}
+              isPublicView={true}
+              isExporting={false}
+            />
         </Accordion>
       </main>
     </div>
