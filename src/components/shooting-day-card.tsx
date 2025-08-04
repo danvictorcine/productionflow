@@ -1,3 +1,4 @@
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -156,7 +157,11 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
             <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="notes">
                     <AccordionTrigger>
-                        <h4 className="font-semibold">Notas por Departamento</h4>
+                        <div className="flex items-center text-lg font-semibold">
+                           <FileText className="h-5 w-5 mr-2 text-primary"/>
+                           Notas por Departamento
+                        </div>
+                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
                     </AccordionTrigger>
                     <AccordionContent>
                         <Separator className="mb-2" />
