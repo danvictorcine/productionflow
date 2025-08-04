@@ -59,6 +59,24 @@ interface ShootingDayCardProps {
   onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
 }
 
+const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType; title: string; content?: string | React.ReactNode }) => {
+    if (!content) return null;
+
+    return (
+        <div className="flex items-start gap-3 pt-2">
+            <Icon className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+            <div className="flex-1">
+                <p className="font-semibold text-foreground text-base">{title}</p>
+                {typeof content === 'string' ? (
+                    <p className="text-base text-muted-foreground">{content}</p>
+                ) : (
+                    <div className="text-muted-foreground">{content}</div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView }: { icon: React.ElementType; title: string; items?: ChecklistItem[]; onListUpdate?: (updatedList: ChecklistItem[]) => void; isPublicView?: boolean; }) => {
     if (!items || items.length === 0) {
         return null;
