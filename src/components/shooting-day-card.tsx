@@ -43,21 +43,6 @@ const DisplayMap = dynamic(() => import('../components/display-map').then(mod =>
   loading: () => <Skeleton className="h-full w-full rounded-lg" />,
 });
 
-
-interface ShootingDayCardProps {
-  day: Omit<ShootingDay, 'generalNotes'> & { generalNotes?: ChecklistItem[]};
-  production: Production;
-  isFetchingWeather: boolean;
-  isExporting: boolean;
-  isPublicView?: boolean;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onShare?: () => void;
-  onExportExcel?: () => void;
-  onExportPdf?: () => void;
-  onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
-}
-
 const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType; title: string; content?: string | React.ReactNode }) => {
     if (!content) return null;
 
@@ -75,6 +60,7 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
         </div>
     );
 };
+
 
 const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView }: { icon: React.ElementType; title: string; items?: ChecklistItem[]; onListUpdate?: (updatedList: ChecklistItem[]) => void; isPublicView?: boolean; }) => {
     if (!items || items.length === 0) {
@@ -117,26 +103,23 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
 const formatSceneAddress = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
 
-    const addressParts: string[] = [];
     const placeName = location.amenity || location.shop || location.tourism || location.office;
-    if (placeName) {
-        addressParts.push(placeName);
-    }
-    
-    const street = [location.road, location.house_number].filter(Boolean).join(', ');
-    if (street) {
-        addressParts.push(street);
-    }
-
+    const road = location.road;
+    const houseNumber = location.house_number;
     const neighborhood = location.suburb || location.neighbourhood;
-    if (neighborhood) {
-        addressParts.push(neighborhood);
-    }
+    const city = location.city;
+    const state = location.state;
+    const postcode = location.postcode;
+    const country = location.country;
     
-    if (location.city) addressParts.push(location.city);
-    if (location.state) addressParts.push(location.state);
-    if (location.postcode) addressParts.push(location.postcode);
-    if (location.country) addressParts.push(location.country);
+    const addressParts: string[] = [];
+    if(placeName) addressParts.push(placeName);
+    if(road) addressParts.push(`${road}${houseNumber ? ', ' + houseNumber : ''}`);
+    if(neighborhood) addressParts.push(neighborhood);
+    if(city) addressParts.push(city);
+    if(state) addressParts.push(state);
+    if(postcode) addressParts.push(postcode);
+    if(country) addressParts.push(country);
 
     if (addressParts.length > 0) {
         return [...new Set(addressParts)].join(', ');
@@ -212,7 +195,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
         {hasNotes && (
           <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="notes" className="border-b-0">
-                     <AccordionTrigger className="w-full hover:no-underline">
+                     <AccordionTrigger className="w-full hover:no-underline p-1 -ml-1">
                         <div className="flex items-center text-lg font-semibold flex-1">
                            <FileText className="h-5 w-5 mr-2 text-primary"/>
                            Notas por Departamento
@@ -220,7 +203,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                         <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
                     </AccordionTrigger>
                     <AccordionContent>
-                        <div className="space-y-4">
+                        <div className="space-y-4 pt-4">
                             <ChecklistSection icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
                             <ChecklistSection icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
                             <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
@@ -231,6 +214,41 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
         )}
     </div>
 )};
+
+
+interface ShootingDayCardProps {
+  day: Omit<ShootingDay, 'generalNotes'> & { generalNotes?: ChecklistItem[]};
+  production: Production;
+  isFetchingWeather: boolean;
+  isExporting: boolean;
+  isPublicView?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onShare?: () => void;
+  onExportExcel?: () => void;
+  onExportPdf?: () => void;
+  onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
+}
+
+
+const formatLocationForHeader = (location?: LocationAddress): string => {
+    if (!location) return "Localização não definida";
+    
+    const parts = [
+        location.road,
+        location.city,
+        location.state,
+        location.country
+    ].filter(Boolean);
+
+    if (parts.length === 0) {
+        return location.displayName || "Localização não definida";
+    }
+    
+    const uniqueParts = [...new Set(parts)];
+
+    return uniqueParts.join(', ');
+}
 
 const calculateDuration = (start?: string, end?: string): string | null => {
     if (!start || !end) return null;
@@ -252,26 +270,6 @@ const calculateDuration = (start?: string, end?: string): string | null => {
     return `${hours}h ${minutes}m`;
 };
 
-const formatLocationForHeader = (location?: LocationAddress): string => {
-    if (!location) return "Localização não definida";
-    
-    const parts = [
-        location.road,
-        location.city,
-        location.state,
-        location.country
-    ].filter(Boolean);
-
-    if (parts.length === 0) {
-        return location.displayName || "Localização não definida";
-    }
-    
-    const uniqueParts = [...new Set(parts)];
-
-    return uniqueParts.join(', ');
-}
-
-
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     const { toast } = useToast();
     const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
@@ -291,7 +289,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
       listName: 'equipment' | 'costumes' | 'props',
       updatedList: ChecklistItem[]
     ) => {
-        // Optimistic update
         const newLocalDay = {
             ...localDay,
             scenes: localDay.scenes.map(scene => 
@@ -311,11 +308,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 title: 'Erro ao Atualizar', 
                 description: <CopyableError userMessage="Não foi possível salvar a nota da cena." errorCode={errorTyped.code || errorTyped.message} /> 
             });
-            // Revert optimistic update
             setLocalDay(day);
         }
     };
-
 
     useEffect(() => {
         if (!localDay.startTime || !localDay.endTime || !isToday(localDay.date)) {
@@ -341,7 +336,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         };
 
         calculateRemaining();
-        const interval = setInterval(calculateRemaining, 60000); // Update every minute
+        const interval = setInterval(calculateRemaining, 60000);
         return () => clearInterval(interval);
 
     }, [localDay.startTime, localDay.endTime, localDay.date]);
@@ -473,7 +468,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                         <Separator />
                         
                         <div className="space-y-4">
-                            {/* Logistics Section */}
                             <div className="p-4 border rounded-lg space-y-2">
                                 <h4 className="font-semibold text-xl flex items-center"><Hash className="h-6 w-6 mr-2 text-primary" />Logística e Segurança</h4>
                                 <StaticDetailSection icon={ParkingCircle} title="Estacionamento" content={localDay.parkingInfo} />
@@ -490,7 +484,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 )}
                             </div>
 
-                            {/* Call Times */}
                             <div>
                                 <h4 className="flex items-center text-xl font-semibold mb-2">
                                     <Clock className="h-6 w-6 mr-2 text-primary" />
@@ -512,7 +505,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 )}
                             </div>
 
-                            {/* Scenes */}
                             <div>
                                 <h4 className="flex items-center text-xl font-semibold mb-2">
                                     <Film className="h-6 w-6 mr-2 text-primary" />
@@ -525,7 +517,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                                 key={scene.id} 
                                                 scene={scene} 
                                                 isExporting={isExporting}
-                                                onUpdateSceneNotes={handleUpdateSceneNotes}
+                                                onUpdateSceneNotes={onUpdateNotes ? handleUpdateSceneNotes : undefined}
                                             />
                                         ))
                                     ) : (
@@ -534,7 +526,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 </div>
                             </div>
                             
-                            {/* General Notes & Present Team */}
                             <div className="p-4 border rounded-lg space-y-2">
                                 <ChecklistSection icon={FileText} title="Observações Gerais" items={localDay.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(localDay.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
                                 <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
