@@ -59,21 +59,6 @@ interface ShootingDayCardProps {
   onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
 }
 
-const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType, title: string, content?: React.ReactNode }) => {
-  const hasContent = typeof content === 'string' ? !!content.trim() : !!content;
-  if (!hasContent) return null;
-
-  return (
-    <div className="py-2">
-        <h4 className="flex items-center text-lg font-semibold relative">
-            <Icon className="h-5 w-5 mr-2 text-primary" />
-            <span className="relative bottom-px">{title}</span>
-        </h4>
-        <div className="text-base text-muted-foreground whitespace-pre-wrap pt-1 pl-7">{content}</div>
-    </div>
-  );
-};
-
 const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView }: { icon: React.ElementType; title: string; items?: ChecklistItem[]; onListUpdate?: (updatedList: ChecklistItem[]) => void; isPublicView?: boolean; }) => {
     if (!items || items.length === 0) {
         return null;
@@ -102,7 +87,7 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
                             onCheckedChange={(checked) => handleCheckChange(item.id, !!checked)}
                             disabled={isPublicView || !onListUpdate}
                         />
-                        <Label htmlFor={`${item.id}-checkbox`} className={`text-base font-normal ${item.checked ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                        <Label htmlFor={`${item.id}-checkbox`} className={cn("text-base font-normal", item.checked ? 'text-muted-foreground line-through' : 'text-foreground')}>
                             {item.text}
                         </Label>
                     </div>
@@ -143,7 +128,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                     <div className="flex items-start gap-2">
                         <Users className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
                         <div className="flex flex-wrap gap-2 items-center">
-                            {scene.presentInScene.map(member => (
+                           {scene.presentInScene.map(member => (
                                 <Badge key={member.id} variant="secondary" className="font-normal text-sm p-1 pr-2.5 flex items-center gap-1.5">
                                     <Avatar className="h-5 w-5">
                                         <AvatarImage src={member.photoURL} />
@@ -158,13 +143,13 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
             </div>
         </div>
         
-        <Separator className="my-3" />
+        {hasNotes && <Separator className="my-3" />}
 
         {hasNotes && (
           <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="notes" className="border-b-0">
-                    <AccordionTrigger>
-                        <div className="flex items-center text-lg font-semibold">
+                     <AccordionTrigger>
+                        <div className="flex items-center text-lg font-semibold flex-1">
                            <FileText className="h-5 w-5 mr-2 text-primary"/>
                            Notas por Departamento
                         </div>
@@ -226,9 +211,15 @@ const formatLocationForHeader = (location?: LocationAddress): string => {
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     const { toast } = useToast();
     const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
-    const isFinished = isPast(parse(day.endTime || "00:00", "HH:mm", day.date));
+    const [localDay, setLocalDay] = useState(day);
+    
+    useEffect(() => {
+        setLocalDay(day);
+    }, [day]);
 
-    const formattedDateString = format(new Date(day.date), "eeee, dd/MM", { locale: ptBR });
+    const isFinished = isPast(parse(localDay.endTime || "00:00", "HH:mm", localDay.date));
+
+    const formattedDateString = format(new Date(localDay.date), "eeee, dd/MM", { locale: ptBR });
     const displayDate = formattedDateString.charAt(0).toUpperCase() + formattedDateString.slice(1);
 
     const handleUpdateSceneNotes = async (
@@ -236,8 +227,18 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
       listName: 'equipment' | 'costumes' | 'props',
       updatedList: ChecklistItem[]
     ) => {
+        // Optimistic update
+        setLocalDay(prevDay => ({
+            ...prevDay,
+            scenes: prevDay.scenes.map(scene => 
+                scene.id === sceneId 
+                ? { ...scene, [listName]: updatedList } 
+                : scene
+            )
+        }));
+
         try {
-            await firestoreApi.updateShootingDayScene(day.id, sceneId, { [listName]: updatedList });
+            await firestoreApi.updateShootingDayScene(localDay.id, sceneId, { [listName]: updatedList });
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({ 
@@ -245,20 +246,22 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 title: 'Erro ao Atualizar', 
                 description: <CopyableError userMessage="Não foi possível salvar a nota da cena." errorCode={errorTyped.code || errorTyped.message} /> 
             });
+            // Revert optimistic update
+            setLocalDay(day);
         }
     };
 
 
     useEffect(() => {
-        if (!day.startTime || !day.endTime || !isToday(day.date)) {
+        if (!localDay.startTime || !localDay.endTime || !isToday(localDay.date)) {
             setRemainingProductionTime(null);
             return;
         }
 
         const calculateRemaining = () => {
             const now = new Date();
-            const startTime = parse(day.startTime!, "HH:mm", day.date);
-            const endTime = parse(day.endTime!, "HH:mm", day.date);
+            const startTime = parse(localDay.startTime!, "HH:mm", localDay.date);
+            const endTime = parse(localDay.endTime!, "HH:mm", localDay.date);
 
             if (now < startTime) {
                 setRemainingProductionTime("A produção ainda não começou.");
@@ -276,15 +279,15 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         const interval = setInterval(calculateRemaining, 60000); // Update every minute
         return () => clearInterval(interval);
 
-    }, [day.startTime, day.endTime, day.date]);
+    }, [localDay.startTime, localDay.endTime, localDay.date]);
 
 
-    const totalDuration = calculateDuration(day.startTime, day.endTime);
+    const totalDuration = calculateDuration(localDay.startTime, localDay.endTime);
     const topGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
 
     return (
-        <AccordionItem value={day.id} className="border-none">
-            <Card id={`shooting-day-card-${day.id}`} className="flex flex-col w-full">
+        <AccordionItem value={localDay.id} className="border-none">
+            <Card id={`shooting-day-card-${localDay.id}`} className="flex flex-col w-full">
                  <AccordionTrigger className="w-full p-6 hover:no-underline hover:bg-muted/50 rounded-t-lg transition-colors">
                     <CardHeader className="flex-1 flex flex-row items-center justify-between text-left p-0">
                         <div className="flex items-center gap-4 flex-1">
@@ -293,11 +296,11 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                             </div>
                             <div>
                                 <h3 className="text-xl font-semibold leading-none tracking-tight">
-                                    {day.dayNumber && day.totalDays ? `Diária ${day.dayNumber}/${day.totalDays}: ` : ''} 
+                                    {localDay.dayNumber && localDay.totalDays ? `Diária ${localDay.dayNumber}/${localDay.totalDays}: ` : ''} 
                                     {displayDate}
                                 </h3>
                                 <p className="text-base text-muted-foreground flex items-center gap-1.5 pt-1">
-                                <MapPin className="h-4 w-4" /> {formatLocationForHeader(day.location)}
+                                <MapPin className="h-4 w-4" /> {formatLocationForHeader(localDay.location)}
                                 </p>
                             </div>
                         </div>
@@ -347,8 +350,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                             <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full" />
-                                ) : day.weather ? (
-                                    <WeatherCardAnimated weather={day.weather} day={day} />
+                                ) : localDay.weather ? (
+                                    <WeatherCardAnimated weather={localDay.weather} day={localDay} />
                                 ) : (
                                     <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                                         <p className="text-sm font-semibold">Sem dados de clima</p>
@@ -358,8 +361,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 )}
                             </div>
                             <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105 rounded-2xl shadow-lg">
-                                {day.latitude && day.longitude ? (
-                                    <DisplayMap position={[day.latitude, day.longitude]} className="h-full w-full" isExporting={isExporting} />
+                                {localDay.latitude && localDay.longitude ? (
+                                    <DisplayMap position={[localDay.latitude, localDay.longitude]} className="h-full w-full" isExporting={isExporting} />
                                 ) : (
                                     <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                                     <p className="text-sm font-semibold">Sem mapa</p>
@@ -377,10 +380,10 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     </CardHeader>
                                     
                                     <div className="text-center space-y-2 mt-4">
-                                        {day.startTime && day.endTime ? (
+                                        {localDay.startTime && localDay.endTime ? (
                                             <>
                                                 <p className="text-muted-foreground text-lg">
-                                                    <span className="font-semibold text-foreground">{day.startTime}</span> até <span className="font-semibold text-foreground">{day.endTime}</span>
+                                                    <span className="font-semibold text-foreground">{localDay.startTime}</span> até <span className="font-semibold text-foreground">{localDay.endTime}</span>
                                                 </p>
                                                 <div className="flex flex-col items-center gap-1.5 mt-2">
                                                     {totalDuration && <Badge variant="secondary" className="text-sm">{totalDuration} de duração</Badge>}
@@ -408,15 +411,15 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                             {/* Logistics Section */}
                             <div className="p-4 border rounded-lg space-y-2">
                                 <h4 className="font-semibold text-xl flex items-center"><Hash className="h-6 w-6 mr-2 text-primary" />Logística e Segurança</h4>
-                                <StaticDetailSection icon={ParkingCircle} title="Estacionamento" content={day.parkingInfo} />
-                                <StaticDetailSection icon={Utensils} title="Refeição" content={day.mealTime} />
-                                <StaticDetailSection icon={Radio} title="Rádios" content={day.radioChannels} />
-                                {day.nearestHospital && day.nearestHospital.name && (
+                                <StaticDetailSection icon={ParkingCircle} title="Estacionamento" content={localDay.parkingInfo} />
+                                <StaticDetailSection icon={Utensils} title="Refeição" content={localDay.mealTime} />
+                                <StaticDetailSection icon={Radio} title="Rádios" content={localDay.radioChannels} />
+                                {localDay.nearestHospital && localDay.nearestHospital.name && (
                                     <StaticDetailSection icon={Hospital} title="Hospital Mais Próximo" content={
                                         <div className="space-y-1 text-base">
-                                            <p><span className="font-semibold text-foreground">Nome:</span> {day.nearestHospital.name}</p>
-                                            <p><span className="font-semibold text-foreground">Endereço:</span> {day.nearestHospital.address}</p>
-                                            <p><span className="font-semibold text-foreground">Telefone:</span> {day.nearestHospital.phone}</p>
+                                            <p><span className="font-semibold text-foreground">Nome:</span> {localDay.nearestHospital.name}</p>
+                                            <p><span className="font-semibold text-foreground">Endereço:</span> {localDay.nearestHospital.address}</p>
+                                            <p><span className="font-semibold text-foreground">Telefone:</span> {localDay.nearestHospital.phone}</p>
                                         </div>
                                     }/>
                                 )}
@@ -428,13 +431,13 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     <Clock className="h-6 w-6 mr-2 text-primary" />
                                     Horários de Chamada
                                 </h4>
-                                {Array.isArray(day.callTimes) && day.callTimes.length > 0 ? (
+                                {Array.isArray(localDay.callTimes) && localDay.callTimes.length > 0 ? (
                                     <Table>
                                         <TableHeader>
                                             <TableRow><TableHead className="text-base">Departamento/Pessoa</TableHead><TableHead className="text-right text-base">Horário</TableHead></TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {day.callTimes.map(ct => (
+                                            {localDay.callTimes.map(ct => (
                                                 <TableRow key={ct.id}><TableCell className="text-base">{ct.department}</TableCell><TableCell className="text-right text-base">{ct.time}</TableCell></TableRow>
                                             ))}
                                         </TableBody>
@@ -451,8 +454,8 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     Cenas a Gravar
                                 </h4>
                                 <div className="space-y-3">
-                                    {Array.isArray(day.scenes) && day.scenes.length > 0 ? (
-                                        day.scenes.map(scene => (
+                                    {Array.isArray(localDay.scenes) && localDay.scenes.length > 0 ? (
+                                        localDay.scenes.map(scene => (
                                             <SceneCard 
                                                 key={scene.id} 
                                                 scene={scene} 
@@ -468,11 +471,11 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                             
                             {/* General Notes & Present Team */}
                             <div className="p-4 border rounded-lg space-y-2">
-                                <ChecklistSection icon={FileText} title="Observações Gerais" items={day.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
+                                <ChecklistSection icon={FileText} title="Observações Gerais" items={localDay.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(localDay.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
                                 <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
-                                    day.presentTeam && day.presentTeam.length > 0 ? (
+                                    localDay.presentTeam && localDay.presentTeam.length > 0 ? (
                                         <div className="flex flex-wrap gap-3 items-center">
-                                            {day.presentTeam.map(member => (
+                                            {localDay.presentTeam.map(member => (
                                                 <div key={member.id} className="flex items-center gap-2 bg-muted p-1 pr-2.5 rounded-full">
                                                     <Avatar className="h-6 w-6">
                                                         <AvatarImage src={member.photoURL} />
