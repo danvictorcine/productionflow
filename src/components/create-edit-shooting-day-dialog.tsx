@@ -50,6 +50,7 @@ const teamMemberSchema = z.object({
   id: z.string(),
   name: z.string(),
   role: z.string(),
+  photoURL: z.string().optional(),
 });
 
 const hospitalSchema = z.object({
