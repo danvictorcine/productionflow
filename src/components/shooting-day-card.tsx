@@ -41,7 +41,7 @@ const DisplayMap = dynamic(() => import('../components/display-map').then(mod =>
 
 
 interface ShootingDayCardProps {
-  day: Omit<ShootingDay, 'equipment'|'costumes'|'props'|'generalNotes'> & { equipment: ChecklistItem[], costumes: ChecklistItem[], props: ChecklistItem[], generalNotes: ChecklistItem[]};
+  day: Omit<ShootingDay, 'generalNotes'> & { generalNotes?: ChecklistItem[]};
   production: Production;
   isFetchingWeather: boolean;
   isExporting: boolean;
@@ -69,13 +69,13 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
   );
 };
 
-const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView }: { icon: React.ElementType; title: string; items: ChecklistItem[]; onListUpdate?: (updatedList: ChecklistItem[]) => void; isPublicView?: boolean; }) => {
+const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView }: { icon: React.ElementType; title: string; items?: ChecklistItem[]; onListUpdate?: (updatedList: ChecklistItem[]) => void; isPublicView?: boolean; }) => {
     if (!items || items.length === 0) {
         return null;
     }
 
     const handleCheckChange = (itemId: string, newCheckedState: boolean) => {
-        if (!onListUpdate) return;
+        if (!onListUpdate || !items) return;
         const updatedList = items.map(item =>
             item.id === itemId ? { ...item, checked: newCheckedState } : item
         );
@@ -107,7 +107,11 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
     );
 };
 
-const SceneCard = ({ scene }: { scene: Scene }) => (
+const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: { 
+    scene: Scene, 
+    isExporting: boolean,
+    onUpdateSceneNotes?: (sceneId: string, listName: 'equipment' | 'costumes' | 'props', updatedList: ChecklistItem[]) => void 
+}) => (
     <div className="p-4 rounded-lg border bg-background/50 space-y-3">
         <div className="flex justify-between items-center">
             <div className="flex items-baseline gap-2">
@@ -137,6 +141,12 @@ const SceneCard = ({ scene }: { scene: Scene }) => (
                     </div>
                 </div>
             )}
+        </div>
+        <Separator />
+        <div className="space-y-4">
+             <ChecklistSection icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
+             <ChecklistSection icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
+             <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
         </div>
     </div>
 );
@@ -392,22 +402,23 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 </h4>
                                 <div className="space-y-3">
                                     {Array.isArray(day.scenes) && day.scenes.length > 0 ? (
-                                        day.scenes.map(scene => <SceneCard key={scene.id} scene={scene} />)
+                                        day.scenes.map(scene => (
+                                            <div key={scene.id} className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                                                <SceneCard scene={scene} isExporting={isExporting} />
+                                                {scene.latitude && scene.longitude && (
+                                                     <div className="h-[300px] lg:h-auto lg:aspect-video rounded-lg overflow-hidden shadow-lg border">
+                                                        <DisplayMap position={[scene.latitude, scene.longitude]} className="h-full w-full" isExporting={isExporting} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
                                     ) : (
                                         <p className="text-base text-muted-foreground pl-6">Nenhuma cena definida para hoje.</p>
                                     )}
                                 </div>
                             </div>
-
-                            {/* Department Notes */}
-                            <div className="p-4 border rounded-lg space-y-2">
-                                <h4 className="font-semibold text-xl flex items-center"><Users className="h-6 w-6 mr-2 text-primary"/>Notas dos Departamentos</h4>
-                                <ChecklistSection icon={Truck} title="Equipamentos" items={day.equipment} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'equipment', list) : undefined} isPublicView={isPublicView} />
-                                <ChecklistSection icon={Shirt} title="Figurino" items={day.costumes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'costumes', list) : undefined} isPublicView={isPublicView} />
-                                <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={day.props} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'props', list) : undefined} isPublicView={isPublicView} />
-                            </div>
                             
-                            {/* Present Team & General Notes */}
+                            {/* General Notes & Present Team */}
                             <div className="p-4 border rounded-lg space-y-2">
                                 <ChecklistSection icon={FileText} title="Observações Gerais" items={day.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(day.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
                                 <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={

@@ -1,6 +1,7 @@
 
 
 
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -22,7 +23,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, BetaLimits, TeamMember } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, BetaLimits, TeamMember, ChecklistItem } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { DEFAULT_BETA_LIMITS } from '../app-config';
 
@@ -503,6 +504,21 @@ export const uploadProductionTeamMemberPhoto = async (file: File): Promise<strin
 
 // === Shooting Day Functions ===
 
+const convertNotesToItems = (notes: string | ChecklistItem[] | undefined): ChecklistItem[] => {
+    if (Array.isArray(notes)) {
+        return notes.map(item => ({...item, id: item.id || crypto.randomUUID()}));
+    }
+    if (typeof notes === 'string' && notes.trim()) {
+        return notes.split('\n').filter(Boolean).map(line => ({
+            id: crypto.randomUUID(),
+            text: line.trim(),
+            checked: false
+        }));
+    }
+    return [];
+};
+
+
 export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'productionId' | 'userId'>): Promise<string> => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
@@ -526,7 +542,23 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
   );
   const querySnapshot = await getDocs(q);
   const days = querySnapshot.docs.map(doc => {
-      const data = doc.data();
+      let data = doc.data() as ShootingDay;
+      
+      // Migration logic for old data structure
+      const hasOldNotes = data.equipment || data.costumes || data.props;
+      if (hasOldNotes && data.scenes && data.scenes.length > 0) {
+        const firstScene = data.scenes[0];
+        
+        firstScene.equipment = convertNotesToItems(data.equipment);
+        firstScene.costumes = convertNotesToItems(data.costumes);
+        firstScene.props = convertNotesToItems(data.props);
+
+        // Remove deprecated fields from the day object in memory
+        delete data.equipment;
+        delete data.costumes;
+        delete data.props;
+      }
+      
       return {
           id: doc.id,
           ...data,
@@ -555,6 +587,11 @@ export const updateShootingDay = async (dayId: string, data: Partial<Omit<Shooti
   if (data.hasOwnProperty('weather') && data.weather === undefined) {
       dataToUpdate.weather = deleteField();
   }
+
+  // Ensure deprecated fields are removed on save
+  dataToUpdate.equipment = deleteField();
+  dataToUpdate.costumes = deleteField();
+  dataToUpdate.props = deleteField();
 
   await updateDoc(docRef, dataToUpdate);
 };

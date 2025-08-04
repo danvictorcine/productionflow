@@ -1,6 +1,7 @@
 
 
 
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -160,6 +161,12 @@ export type Scene = {
   description: string;
   pages: string; // e.g., "1 3/8"
   presentInScene: TeamMember[];
+  equipment?: ChecklistItem[];
+  costumes?: ChecklistItem[];
+  props?: ChecklistItem[];
+  location?: LocationAddress;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type CallTime = {
@@ -200,14 +207,16 @@ export type ShootingDay = {
   parkingInfo?: string;
   radioChannels?: string;
   nearestHospital?: HospitalInfo;
-  equipment: string | ChecklistItem[];
-  costumes: string | ChecklistItem[];
-  props: string | ChecklistItem[];
-  generalNotes: string | ChecklistItem[];
+  generalNotes?: ChecklistItem[];
   presentTeam: TeamMember[];
   latitude?: number;
   longitude?: number;
   weather?: WeatherInfo;
+
+  // Deprecated fields for migration
+  equipment?: string | ChecklistItem[];
+  costumes?: string | ChecklistItem[];
+  props?: string | ChecklistItem[];
 };
 
 // === Creative Project (Moodboard) Types ===
