@@ -36,7 +36,7 @@ import { getInitials } from "@/lib/utils";
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
 import { CopyableError } from "./copyable-error";
-
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 const DisplayMap = dynamic(() => import('../components/display-map').then(mod => mod.DisplayMap), {
@@ -115,18 +115,30 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
     );
 };
 
+const formatSceneAddress = (location?: LocationAddress): string => {
+    if (!location?.displayName) return "Localização não definida";
+    return location.displayName;
+};
+
 const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: { 
     scene: Scene, 
     isExporting: boolean,
     onUpdateSceneNotes?: (sceneId: string, listName: 'equipment' | 'costumes' | 'props', updatedList: ChecklistItem[]) => void 
 }) => {
     const hasNotes = scene.equipment?.length || scene.costumes?.length || scene.props?.length;
+    const isMobile = useIsMobile();
+
+    const shareLink = scene.latitude && scene.longitude
+      ? isMobile
+        ? `geo:${scene.latitude},${scene.longitude}`
+        : `https://www.google.com/maps?q=${scene.latitude},${scene.longitude}`
+      : '#';
     
     return (
     <div className="p-4 rounded-lg border bg-background/50 space-y-3">
         <div className="flex flex-col md:flex-row gap-4 items-start">
             {scene.latitude && scene.longitude && (
-                <div className="w-full md:w-1/3 aspect-video md:aspect-auto md:h-40 rounded-lg overflow-hidden shadow-lg border flex-shrink-0">
+                <div className="w-full md:w-1/3 aspect-video md:aspect-auto md:h-48 rounded-lg overflow-hidden shadow-lg border flex-shrink-0">
                     <DisplayMap position={[scene.latitude, scene.longitude]} className="h-full w-full" isExporting={isExporting} />
                 </div>
             )}
@@ -142,6 +154,14 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                     <AlignLeft className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
                     <p className="text-base text-muted-foreground">{scene.description}</p>
                 </div>
+                 {scene.location?.displayName && scene.latitude && scene.longitude && (
+                     <div className="flex items-start gap-2">
+                        <MapPin className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
+                        <a href={shareLink} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                            {formatSceneAddress(scene.location)}
+                        </a>
+                    </div>
+                )}
                 {scene.presentInScene && scene.presentInScene.length > 0 && (
                     <div className="flex items-start gap-2">
                         <Users className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
@@ -166,7 +186,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
         {hasNotes && (
           <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="notes" className="border-b-0">
-                     <AccordionTrigger>
+                     <AccordionTrigger className="w-full hover:no-underline">
                         <div className="flex items-center text-lg font-semibold flex-1">
                            <FileText className="h-5 w-5 mr-2 text-primary"/>
                            Notas por Departamento
@@ -246,14 +266,15 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
       updatedList: ChecklistItem[]
     ) => {
         // Optimistic update
-        setLocalDay(prevDay => ({
-            ...prevDay,
-            scenes: prevDay.scenes.map(scene => 
+        const newLocalDay = {
+            ...localDay,
+            scenes: localDay.scenes.map(scene => 
                 scene.id === sceneId 
                 ? { ...scene, [listName]: updatedList } 
                 : scene
             )
-        }));
+        };
+        setLocalDay(newLocalDay);
 
         try {
             await firestoreApi.updateShootingDayScene(localDay.id, sceneId, { [listName]: updatedList });
