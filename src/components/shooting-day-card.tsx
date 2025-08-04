@@ -91,7 +91,7 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
 
     return (
         <div className="py-2">
-            <h4 className="flex items-center text-lg font-semibold">
+            <h4 className="flex items-center text-base font-semibold">
                 <Icon className="h-5 w-5 mr-2 text-primary" />
                 <span>{title}</span>
             </h4>
@@ -118,8 +118,6 @@ const formatSceneAddress = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
 
     const addressParts: string[] = [];
-
-    // Prioritize a specific place name if available, otherwise build from road
     const placeName = location.amenity || location.shop || location.tourism || location.office;
     if (placeName) {
         addressParts.push(placeName);
@@ -141,7 +139,7 @@ const formatSceneAddress = (location?: LocationAddress): string => {
     if (location.country) addressParts.push(location.country);
 
     if (addressParts.length > 0) {
-        return addressParts.join(', ');
+        return [...new Set(addressParts)].join(', ');
     }
 
     return location.displayName || "Localização não definida";
