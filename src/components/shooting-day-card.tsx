@@ -154,8 +154,10 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
             </div>
         </div>
         {hasNotes && (
+          <>
+            <Separator className="my-3" />
             <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="notes">
+                <AccordionItem value="notes" className="border-b-0">
                     <AccordionTrigger>
                         <div className="flex items-center text-lg font-semibold">
                            <FileText className="h-5 w-5 mr-2 text-primary"/>
@@ -164,7 +166,6 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                         <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
                     </AccordionTrigger>
                     <AccordionContent>
-                        <Separator className="mb-2" />
                         <div className="space-y-4">
                             <ChecklistSection icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
                             <ChecklistSection icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
@@ -173,6 +174,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
+          </>
         )}
     </div>
 )};
