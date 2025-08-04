@@ -79,7 +79,7 @@ export function DisplayMap({ position, className, isExporting = false }: Display
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button asChild size="icon" className="absolute top-2 right-2 z-[401] h-8 w-8 bg-white/90 text-gray-800 border border-gray-300 rounded-sm shadow-md hover:bg-gray-100">
+                        <Button asChild size="icon" className="absolute top-2 right-2 z-20 h-8 w-8 bg-white/90 text-gray-800 border border-gray-300 rounded-sm shadow-md hover:bg-gray-100">
                             <a href={shareLink} target="_blank" rel="noopener noreferrer" aria-label="Compartilhar localização">
                                 <Share2 className="h-4 w-4" />
                             </a>
