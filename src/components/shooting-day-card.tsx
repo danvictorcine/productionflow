@@ -34,7 +34,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { getInitials } from "@/lib/utils";
 
 
-const DisplayMap = dynamic(() => import('./display-map').then(mod => mod.DisplayMap), {
+const DisplayMap = dynamic(() => import('../components/display-map').then(mod => mod.DisplayMap), {
   ssr: false,
   loading: () => <Skeleton className="h-full w-full rounded-lg" />,
 });
@@ -124,15 +124,15 @@ const SceneCard = ({ scene }: { scene: Scene }) => (
              {scene.presentInScene && scene.presentInScene.length > 0 && (
                 <div className="flex items-start gap-2">
                     <Users className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                    <div className="flex flex-wrap gap-2 items-center">
+                     <div className="flex flex-wrap gap-2 items-center">
                         {scene.presentInScene.map(member => (
-                            <div key={member.id} className="flex items-center gap-1.5">
+                            <Badge key={member.id} variant="secondary" className="font-normal text-sm p-1 pr-2.5 flex items-center gap-1.5">
                                 <Avatar className="h-5 w-5">
                                     <AvatarImage src={member.photoURL} />
                                     <AvatarFallback className="text-xs">{getInitials(member.name)}</AvatarFallback>
                                 </Avatar>
-                                <Badge variant="secondary" className="font-normal text-sm">{member.name}</Badge>
-                            </div>
+                                {member.name}
+                            </Badge>
                         ))}
                     </div>
                 </div>
