@@ -7,7 +7,7 @@ import { format, isToday, isPast, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown
+  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown, AlignJustify
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -103,23 +103,20 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
 const formatSceneAddress = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
 
-    const placeName = location.amenity || location.shop || location.tourism || location.office;
-    const road = location.road;
-    const houseNumber = location.house_number;
-    const neighborhood = location.suburb || location.neighbourhood;
-    const city = location.city;
-    const state = location.state;
-    const postcode = location.postcode;
-    const country = location.country;
-    
-    const addressParts: string[] = [];
-    if(placeName) addressParts.push(placeName);
-    if(road) addressParts.push(`${road}${houseNumber ? ', ' + houseNumber : ''}`);
-    if(neighborhood) addressParts.push(neighborhood);
-    if(city) addressParts.push(city);
-    if(state) addressParts.push(state);
-    if(postcode) addressParts.push(postcode);
-    if(country) addressParts.push(country);
+    const addressParts: string[] = [
+        location.amenity,
+        location.shop,
+        location.tourism,
+        location.office,
+        location.road,
+        location.house_number,
+        location.suburb || location.neighbourhood,
+        location.city,
+        location.state,
+        location.postcode,
+        location.country,
+    ].filter((p): p is string => typeof p === 'string' && p.trim() !== '');
+
 
     if (addressParts.length > 0) {
         return [...new Set(addressParts)].join(', ');
@@ -190,27 +187,28 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
             </div>
         </div>
         
-        {hasNotes && <Separator className="my-3" />}
-
         {hasNotes && (
-          <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="notes" className="border-b-0">
-                     <AccordionTrigger className="w-full hover:no-underline p-1 -ml-1">
-                        <div className="flex items-center text-lg font-semibold flex-1">
-                           <FileText className="h-5 w-5 mr-2 text-primary"/>
-                           Notas por Departamento
-                        </div>
-                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <div className="space-y-4 pt-4">
-                            <ChecklistSection icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
-                            <ChecklistSection icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
-                            <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
-                        </div>
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
+            <>
+                <Separator className="my-3" />
+                <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="notes" className="border-b-0">
+                        <AccordionTrigger className="w-full hover:no-underline p-1 -ml-1">
+                            <div className="flex items-center text-lg font-semibold flex-1">
+                                <FileText className="h-5 w-5 mr-2 text-primary"/>
+                                Notas por Departamento
+                            </div>
+                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <div className="space-y-4 pt-4">
+                                <ChecklistSection icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
+                                <ChecklistSection icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
+                                <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+            </>
         )}
     </div>
 )};
@@ -336,8 +334,11 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         };
 
         calculateRemaining();
-        const interval = setInterval(calculateRemaining, 60000);
-        return () => clearInterval(interval);
+        
+        if (isToday(localDay.date) && new Date() < parse(localDay.endTime!, "HH:mm", localDay.date)) {
+            const interval = setInterval(calculateRemaining, 60000);
+            return () => clearInterval(interval);
+        }
 
     }, [localDay.startTime, localDay.endTime, localDay.date]);
 
@@ -527,7 +528,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                             </div>
                             
                             <div className="p-4 border rounded-lg space-y-2">
-                                <ChecklistSection icon={FileText} title="Observações Gerais" items={localDay.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(localDay.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
+                                <ChecklistSection icon={AlignJustify} title="Observações Gerais" items={localDay.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(localDay.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
                                 <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
                                     localDay.presentTeam && localDay.presentTeam.length > 0 ? (
                                         <div className="flex flex-wrap gap-3 items-center">
