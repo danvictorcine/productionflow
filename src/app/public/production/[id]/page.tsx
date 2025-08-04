@@ -1,4 +1,4 @@
-// @/src/app/public/production/all/[id]/page.tsx
+// @/src/app/public/production/[id]/page.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -20,25 +20,22 @@ type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props'
     generalNotes: ChecklistItem[];
 };
 
-export default function PublicProductionPage({ params }: { params: { id: string } }) {
-  const [production, setProduction] = useState<Production | null>(null);
-  const [shootingDays, setShootingDays] = useState<ProcessedShootingDay[]>([]);
+export default function PublicShootingDayPage({ params }: { params: { id: string } }) {
+  const [data, setData] = useState<{ production: Production; day: ProcessedShootingDay } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!params.id) {
-        setError("ID da Produção não fornecido.");
+        setError("ID da Ordem do Dia não fornecido.");
         setIsLoading(false);
         return;
     }
 
     const fetchData = async () => {
       try {
-        const result = await firestoreApi.getPublicProduction(params.id);
+        const result = await firestoreApi.getPublicShootingDay(params.id);
         if (result) {
-          setProduction(result);
-
           const convertNotesToItems = (notes: string | ChecklistItem[] | undefined): ChecklistItem[] => {
             if (Array.isArray(notes)) return notes.map(item => ({...item, id: item.id || crypto.randomUUID()}));
             if (typeof notes === 'string' && notes.trim()) {
@@ -47,18 +44,18 @@ export default function PublicProductionPage({ params }: { params: { id: string 
             return [];
           };
 
-          const processedDays = result.days.map(day => ({
-            ...day,
-            equipment: convertNotesToItems(day.equipment),
-            costumes: convertNotesToItems(day.costumes),
-            props: convertNotesToItems(day.props),
-            generalNotes: convertNotesToItems(day.generalNotes),
-          }));
-
-          setShootingDays(processedDays);
+          const processedDay: ProcessedShootingDay = {
+            ...result.day,
+            equipment: convertNotesToItems(result.day.equipment),
+            costumes: convertNotesToItems(result.day.costumes),
+            props: convertNotesToItems(result.day.props),
+            generalNotes: convertNotesToItems(result.day.generalNotes),
+          };
+          
+          setData({ production: result.production, day: processedDay });
 
         } else {
-          setError("Produção não encontrada ou não é pública.");
+          setError("Ordem do Dia não encontrada ou não é pública.");
         }
       } catch (e) {
         console.error(e);
@@ -69,57 +66,36 @@ export default function PublicProductionPage({ params }: { params: { id: string 
     };
     fetchData();
   }, [params.id]);
-  
+
   const renderContent = () => {
     if (isLoading) {
-      return (
-        <div className="p-8 space-y-4">
-          <Skeleton className="h-24 w-full" />
-          <div className="space-y-4">
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-48 w-full" />
-          </div>
-        </div>
-      );
+      return <div className="p-8 space-y-4"><Skeleton className="h-24 w-full" /><Skeleton className="h-96 w-full" /></div>;
     }
     if (error) {
       return <div className="text-center p-8 text-destructive">{error}</div>;
     }
-    if (production && shootingDays.length > 0) {
+    if (data) {
       return (
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 md:p-8">
-          <ProductionInfoCard production={production} />
-          <Accordion type="multiple" className="w-full space-y-4">
-            {shootingDays.map(day => (
-              <ShootingDayCard
-                key={day.id}
-                day={day}
-                production={production}
-                isFetchingWeather={false}
-                isExporting={false}
-                isPublicView={true}
-              />
-            ))}
-          </Accordion>
+            <ProductionInfoCard production={data.production} />
+            <Accordion type="single" collapsible defaultValue={data.day.id} className="w-full">
+                <ShootingDayCard
+                    day={data.day}
+                    production={data.production}
+                    isFetchingWeather={false}
+                    isExporting={false}
+                    isPublicView={true}
+                />
+            </Accordion>
         </div>
       );
-    }
-    if (production && shootingDays.length === 0) {
-        return (
-            <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 md:p-8">
-                <ProductionInfoCard production={production} />
-                <div className="text-center p-8 border-2 border-dashed rounded-lg mt-6">
-                    Nenhuma Ordem do Dia foi criada para esta produção ainda.
-                </div>
-            </div>
-        )
     }
     return null;
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/40">
-        <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
+       <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
             <div className="flex items-center justify-center flex-1 gap-2">
                 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
                     <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))"/>
@@ -127,7 +103,7 @@ export default function PublicProductionPage({ params }: { params: { id: string 
                 </svg>
                 <p className="text-lg font-semibold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</p>
             </div>
-             <TooltipProvider>
+            <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button asChild variant="outline" size="sm">
