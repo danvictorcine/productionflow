@@ -1,8 +1,9 @@
+
 // @/src/components/weather-card-animated.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import type { WeatherInfo, ShootingDay } from "@/lib/types";
+import type { WeatherInfo, ShootingDay, LocationAddress } from "@/lib/types";
 import { format, isToday, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Wind, Sunrise, Sunset, Hourglass, Cloud, Sun, CloudRain, Snowflake } from "lucide-react";
@@ -102,9 +103,22 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
 
     }, [weather.sunrise, weather.sunset, weather.date]);
 
-  const formattedLocation = [day.location?.city, day.location?.state]
-    .filter(Boolean)
-    .join(', ');
+  const formatLocationForCard = (location?: LocationAddress): string => {
+    if (!location) return "";
+    const parts = [
+        location.city,
+        location.state,
+        location.country
+    ].filter(Boolean);
+    
+    if (parts.length > 0) {
+      return parts.join(', ');
+    }
+
+    return weather.locationName;
+  }
+
+  const formattedLocation = formatLocationForCard(day.location);
 
   return (
     <div className={cn(
@@ -133,7 +147,7 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
         {/* Content */}
         <div className="relative z-30 flex flex-col h-full">
             <div className="card-header">
-                <span className="font-extrabold text-base leading-tight text-foreground/80 break-words">{formattedLocation || weather.locationName}</span>
+                <span className="font-extrabold text-base leading-tight text-foreground/80 break-words">{formattedLocation}</span>
                 <p className="font-bold text-sm text-foreground/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
             </div>
             

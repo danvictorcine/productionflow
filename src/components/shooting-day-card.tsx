@@ -1,3 +1,4 @@
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -7,7 +8,7 @@ import { format, isToday, isPast, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
-  Users, Truck, Shirt, Star, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown, AlignJustify
+  Users, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown, AlignJustify, Truck, Star, Shirt
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -233,19 +234,17 @@ const formatLocationForHeader = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
     
     const parts = [
-        location.road,
         location.city,
         location.state,
         location.country
-    ].filter(Boolean);
+    ].filter(Boolean); // filter(Boolean) removes any null/undefined/empty strings
 
-    if (parts.length === 0) {
-        return location.displayName || "Localização não definida";
+    if (parts.length > 0) {
+        return parts.join(', ');
     }
     
-    const uniqueParts = [...new Set(parts)];
-
-    return uniqueParts.join(', ');
+    // Fallback to displayName if no specific parts are available
+    return location.displayName || "Localização não definida";
 }
 
 const calculateDuration = (start?: string, end?: string): string | null => {
