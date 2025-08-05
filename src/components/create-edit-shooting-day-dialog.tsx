@@ -1,4 +1,3 @@
-
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -40,6 +39,7 @@ import { Skeleton } from "./ui/skeleton";
 import { Separator } from "./ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { ScrollArea } from "./ui/scroll-area";
 
 const LocationPicker = dynamic(() => import('./location-picker').then(mod => mod.LocationPicker), {
   ssr: false,
@@ -365,7 +365,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <Separator />
 
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Localização Principal e Logística</h3>
+                        <h3 className="text-lg font-semibold mb-2">Localização Principal</h3>
                         <div className="border p-4 rounded-lg space-y-4">
                            <FormItem>
                                 <FormLabel>Selecione em qual cidade vai ocorrer a produção:</FormLabel>
@@ -460,31 +460,34 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                         render={() => (
                                         <FormItem>
                                             <FormLabel className="text-xs">Elenco/Equipe na Cena</FormLabel>
-                                            <div className="space-y-2 rounded-md border p-4 max-h-32 overflow-y-auto grid grid-cols-2 md:grid-cols-3">
-                                            {productionTeam.map((member) => (
-                                                <FormField
-                                                    key={member.id}
-                                                    control={form.control}
-                                                    name={`scenes.${index}.presentInScene`}
-                                                    render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                                                            <FormControl>
-                                                                <Checkbox
-                                                                checked={field.value?.some(p => p.id === member.id)}
-                                                                onCheckedChange={(checked) => {
-                                                                    const memberData = productionTeam.find(m => m.id === member.id);
-                                                                    return checked
-                                                                    ? field.onChange([...(field.value || []), memberData])
-                                                                    : field.onChange(field.value?.filter((p) => p.id !== member.id));
-                                                                }}
-                                                                />
-                                                            </FormControl>
-                                                            <FormLabel className="font-normal text-sm">{member.name}</FormLabel>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            ))}
-                                            </div>
+                                            <ScrollArea className="h-48 rounded-md border">
+                                                <div className="p-4 space-y-2 grid grid-cols-2 md:grid-cols-3">
+                                                    {productionTeam.map((member) => (
+                                                        <FormField
+                                                            key={member.id}
+                                                            control={form.control}
+                                                            name={`scenes.${index}.presentInScene`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                                                                    <FormControl>
+                                                                        <Checkbox
+                                                                        checked={field.value?.some(p => p.id === member.id)}
+                                                                        onCheckedChange={(checked) => {
+                                                                            const memberData = productionTeam.find(m => m.id === member.id);
+                                                                            if (!memberData) return;
+                                                                            return checked
+                                                                            ? field.onChange([...(field.value || []), memberData])
+                                                                            : field.onChange(field.value?.filter((p) => p.id !== member.id));
+                                                                        }}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormLabel className="font-normal text-sm">{member.name}</FormLabel>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </ScrollArea>
                                             <FormMessage />
                                         </FormItem>
                                         )}
@@ -548,35 +551,38 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                             render={() => (
                             <FormItem>
                                 <FormDescription>Selecione quem da equipe principal estará presente nesta diária (para fins de organização geral).</FormDescription>
-                                <div className="space-y-2 rounded-md border p-4 max-h-48 overflow-y-auto">
-                                {productionTeam.length > 0 ? productionTeam.map((member) => (
-                                    <FormField
-                                    key={member.id}
-                                    control={form.control}
-                                    name="presentTeam"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                        <FormControl>
-                                            <Checkbox
-                                            checked={field.value?.some(p => p.id === member.id)}
-                                            onCheckedChange={(checked) => {
-                                                const memberData = productionTeam.find(m => m.id === member.id);
-                                                return checked
-                                                ? field.onChange([...(field.value || []), memberData])
-                                                : field.onChange(field.value?.filter((p) => p.id !== member.id));
-                                            }}
+                                <ScrollArea className="h-48 rounded-md border">
+                                    <div className="p-4 space-y-2">
+                                        {productionTeam.length > 0 ? productionTeam.map((member) => (
+                                            <FormField
+                                            key={member.id}
+                                            control={form.control}
+                                            name="presentTeam"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                <FormControl>
+                                                    <Checkbox
+                                                    checked={field.value?.some(p => p.id === member.id)}
+                                                    onCheckedChange={(checked) => {
+                                                        const memberData = productionTeam.find(m => m.id === member.id);
+                                                        if (!memberData) return;
+                                                        return checked
+                                                        ? field.onChange([...(field.value || []), memberData])
+                                                        : field.onChange(field.value?.filter((p) => p.id !== member.id));
+                                                    }}
+                                                    />
+                                                </FormControl>
+                                                <FormLabel className="font-normal">
+                                                    {member.name} <span className="text-muted-foreground">({member.role})</span>
+                                                </FormLabel>
+                                                </FormItem>
+                                            )}
                                             />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">
-                                            {member.name} <span className="text-muted-foreground">({member.role})</span>
-                                        </FormLabel>
-                                        </FormItem>
-                                    )}
-                                    />
-                                )) : (
-                                    <p className="text-sm text-muted-foreground text-center">Nenhum membro da equipe cadastrado na produção.</p>
-                                )}
-                                </div>
+                                        )) : (
+                                            <p className="text-sm text-muted-foreground text-center py-4">Nenhum membro da equipe cadastrado na produção.</p>
+                                        )}
+                                    </div>
+                                </ScrollArea>
                                 <FormMessage />
                             </FormItem>
                             )}
