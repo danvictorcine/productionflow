@@ -1,4 +1,3 @@
-
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -132,7 +131,7 @@ interface CreateEditShootingDayDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => void;
-  shootingDay?: (Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string}) | null;
+  shootingDay?: (Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string | ChecklistItem[]}) | null;
   productionTeam: TeamMember[];
 }
 
@@ -228,9 +227,11 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     if (isOpen) {
       if (isEditMode && shootingDay) {
         
-        let notesAsString = shootingDay.generalNotes || "";
-        if (Array.isArray(shootingDay.generalNotes)) {
-            notesAsString = shootingDay.generalNotes.map(item => item.text).join('\n');
+        let notesAsString = '';
+        if (typeof shootingDay.generalNotes === 'string') {
+          notesAsString = shootingDay.generalNotes;
+        } else if (Array.isArray(shootingDay.generalNotes)) {
+          notesAsString = shootingDay.generalNotes.map(item => item.text).join('\n');
         }
 
         form.reset({
@@ -379,7 +380,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <Separator />
 
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Localização Principal e Logística</h3>
+                        <h3 className="text-lg font-semibold mb-2">Localização Principal do Dia</h3>
                         <div className="border p-4 rounded-lg space-y-4">
                            <FormItem>
                                 <FormLabel>Selecione em qual cidade vai ocorrer a produção:</FormLabel>
