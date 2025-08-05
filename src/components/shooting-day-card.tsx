@@ -217,7 +217,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
 
 
 interface ShootingDayCardProps {
-  day: Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string };
+  day: Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string | ChecklistItem[] };
   production: Production;
   isFetchingWeather: boolean;
   isExporting: boolean;
@@ -292,7 +292,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 : scene
             )
         };
-        setLocalDay(newLocalDay);
+        setLocalDay(newLocalDay as any);
 
         try {
             await firestoreApi.updateShootingDayScene(localDay.id, sceneId, { [listName]: updatedList });
@@ -339,6 +339,15 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
 
     }, [localDay.startTime, localDay.endTime, localDay.date]);
 
+    const getFormattedGeneralNotes = () => {
+        if (typeof localDay.generalNotes === 'string') {
+            return localDay.generalNotes;
+        }
+        if (Array.isArray(localDay.generalNotes)) {
+            return localDay.generalNotes.map(item => item.text).join('\n');
+        }
+        return '';
+    };
 
     const totalDuration = calculateDuration(localDay.startTime, localDay.endTime);
     const topGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
@@ -409,7 +418,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full" />
                                 ) : localDay.weather ? (
-                                    <WeatherCardAnimated weather={localDay.weather} day={localDay} />
+                                    <WeatherCardAnimated weather={localDay.weather} day={localDay as ShootingDay} />
                                 ) : (
                                     <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                                         <p className="text-sm font-semibold">Sem dados de clima</p>
@@ -524,7 +533,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                             </div>
                             
                             <div className="p-4 border rounded-lg space-y-2">
-                                <StaticDetailSection icon={AlignJustify} title="Observações Gerais" content={localDay.generalNotes} />
+                                <StaticDetailSection icon={AlignJustify} title="Observações Gerais" content={getFormattedGeneralNotes()} />
                                 <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
                                     localDay.presentTeam && localDay.presentTeam.length > 0 ? (
                                         <div className="flex flex-wrap gap-3 items-center">

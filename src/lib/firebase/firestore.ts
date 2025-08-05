@@ -1,3 +1,4 @@
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -500,21 +501,6 @@ export const uploadProductionTeamMemberPhoto = async (file: File): Promise<strin
 
 // === Shooting Day Functions ===
 
-const convertNotesToItems = (notes: string | ChecklistItem[] | undefined): ChecklistItem[] => {
-    if (Array.isArray(notes)) {
-        return notes.map(item => ({...item, id: item.id || crypto.randomUUID()}));
-    }
-    if (typeof notes === 'string' && notes.trim()) {
-        return notes.split('\n').filter(Boolean).map(line => ({
-            id: crypto.randomUUID(),
-            text: line.trim(),
-            checked: false
-        }));
-    }
-    return [];
-};
-
-
 export const addShootingDay = async (productionId: string, data: Omit<ShootingDay, 'id' | 'productionId' | 'userId'>): Promise<string> => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
@@ -528,7 +514,7 @@ export const addShootingDay = async (productionId: string, data: Omit<ShootingDa
   return docRef.id;
 };
 
-export const getShootingDays = async (productionId: string): Promise<ShootingDay[]> => {
+export const getShootingDays = async (productionId: string): Promise<(Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string | ChecklistItem[] })[]> => {
   const userId = getUserId();
   if (!userId) return [];
   const q = query(
@@ -538,34 +524,13 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
   );
   const querySnapshot = await getDocs(q);
   const days = querySnapshot.docs.map(doc => {
-      let data = doc.data() as ShootingDay;
-      
-      const hasOldNotes = data.equipment || data.costumes || data.props;
-      if (hasOldNotes && data.scenes && data.scenes.length > 0) {
-        const firstScene = data.scenes[0];
-        
-        firstScene.equipment = convertNotesToItems(data.equipment);
-        firstScene.costumes = convertNotesToItems(data.costumes);
-        firstScene.props = convertNotesToItems(data.props);
-
-        delete data.equipment;
-        delete data.costumes;
-        delete data.props;
-      }
-      
-      let generalNotesString = "";
-      if (Array.isArray(data.generalNotes)) {
-        generalNotesString = (data.generalNotes as ChecklistItem[]).map(item => item.text).join('\n');
-      } else if (typeof data.generalNotes === 'string') {
-        generalNotesString = data.generalNotes;
-      }
+      let data = doc.data();
       
       return {
           id: doc.id,
           ...data,
           date: (data.date as Timestamp).toDate(),
-          generalNotes: generalNotesString,
-      } as ShootingDay;
+      } as (Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string | ChecklistItem[] });
   });
   days.sort((a, b) => a.date.getTime() - b.date.getTime());
   return days;
@@ -589,10 +554,6 @@ export const updateShootingDay = async (dayId: string, data: Partial<Omit<Shooti
   if (data.hasOwnProperty('weather') && data.weather === undefined) {
       dataToUpdate.weather = deleteField();
   }
-
-  dataToUpdate.equipment = deleteField();
-  dataToUpdate.costumes = deleteField();
-  dataToUpdate.props = deleteField();
 
   await updateDoc(docRef, dataToUpdate);
 };

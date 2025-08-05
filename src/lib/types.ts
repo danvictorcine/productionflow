@@ -4,6 +4,7 @@
 
 
 
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -217,16 +218,11 @@ export type ShootingDay = {
   mealTime?: string;
   radioChannels?: string;
   nearestHospital?: HospitalInfo;
-  generalNotes?: string;
+  generalNotes: string;
   presentTeam: TeamMember[];
   latitude?: number;
   longitude?: number;
   weather?: WeatherInfo;
-
-  // Deprecated fields for migration
-  equipment?: string | ChecklistItem[];
-  costumes?: string | ChecklistItem[];
-  props?: string | ChecklistItem[];
 };
 
 // === Creative Project (Moodboard) Types ===
