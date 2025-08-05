@@ -1,4 +1,3 @@
-
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -189,7 +188,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   const form = useForm<FormValues>({
     resolver: zodResolver(shootingDaySchema),
     defaultValues: {
-      date: undefined,
+      date: new Date(),
       location: { displayName: "" },
       latitude: defaultPosition[0],
       longitude: defaultPosition[1],
@@ -227,9 +226,14 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && shootingDay) {
+        // Correctly handle date conversion and potential array-like notes
+        const generalNotesAsString = Array.isArray(shootingDay.generalNotes)
+            ? shootingDay.generalNotes.map(n => n.text).join('\n')
+            : shootingDay.generalNotes || '';
+
         form.reset({
           ...shootingDay,
-          date: new Date(shootingDay.date), // Ensure it's a Date object
+          date: new Date(shootingDay.date), // Ensure it's always a Date object
           location: shootingDay.location || { displayName: "Localização não definida" },
           latitude: shootingDay.latitude || defaultPosition[0],
           longitude: shootingDay.longitude || defaultPosition[1],
@@ -237,7 +241,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
           nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
           presentTeam: shootingDay.presentTeam || [],
-          generalNotes: shootingDay.generalNotes || "",
+          generalNotes: generalNotesAsString,
         });
       } else {
         form.reset({
@@ -368,7 +372,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <Separator />
 
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Localização Principal do Dia</h3>
+                        <h3 className="text-lg font-semibold mb-2">Selecione em qual cidade vai ocorrer a produção:</h3>
                         <div className="border p-4 rounded-lg space-y-4">
                            <FormItem>
                                 <FormLabel>Selecione em qual cidade vai ocorrer a produção:</FormLabel>
@@ -619,5 +623,3 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     </Sheet>
   );
 }
-
-    
