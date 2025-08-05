@@ -227,17 +227,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   useEffect(() => {
     if (isOpen) {
         if (isEditMode && shootingDay) {
-            // Robustly handle date conversion
             const validDate = shootingDay.date ? (shootingDay.date.toDate ? shootingDay.date.toDate() : new Date(shootingDay.date)) : new Date();
-
-            // Robustly handle generalNotes conversion
-            let generalNotesString = "";
-            if (typeof shootingDay.generalNotes === 'string') {
-                generalNotesString = shootingDay.generalNotes;
-            } else if (Array.isArray(shootingDay.generalNotes)) {
-                // Handle old format (array of objects)
-                generalNotesString = shootingDay.generalNotes.map(item => item.text).join('\n');
-            }
 
             form.reset({
                 ...shootingDay,
@@ -249,7 +239,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                 scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
                 nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
                 presentTeam: shootingDay.presentTeam || [],
-                generalNotes: generalNotesString,
+                generalNotes: shootingDay.generalNotes,
             });
         } else {
             // Reset to default for creating a new day
