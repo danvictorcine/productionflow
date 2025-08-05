@@ -1,3 +1,4 @@
+
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -131,7 +132,7 @@ interface CreateEditShootingDayDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => void;
-  shootingDay?: (Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string | ChecklistItem[]}) | null;
+  shootingDay?: ShootingDay | null;
   productionTeam: TeamMember[];
 }
 
@@ -226,34 +227,21 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && shootingDay) {
-        
-        let notesAsString = '';
-        if (typeof shootingDay.generalNotes === 'string') {
-          notesAsString = shootingDay.generalNotes;
-        } else if (Array.isArray(shootingDay.generalNotes)) {
-          notesAsString = shootingDay.generalNotes.map(item => item.text).join('\n');
-        }
-
         form.reset({
-          date: new Date(shootingDay.date),
-          dayNumber: shootingDay.dayNumber,
-          totalDays: shootingDay.totalDays,
-          startTime: shootingDay.startTime || "",
-          endTime: shootingDay.endTime || "",
+          ...shootingDay,
+          date: new Date(shootingDay.date), // Ensure it's a Date object
           location: shootingDay.location || { displayName: "Localização não definida" },
           latitude: shootingDay.latitude || defaultPosition[0],
           longitude: shootingDay.longitude || defaultPosition[1],
           callTimes: Array.isArray(shootingDay.callTimes) ? shootingDay.callTimes : [],
           scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
-          mealTime: shootingDay.mealTime || "",
-          radioChannels: shootingDay.radioChannels || "",
           nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
           presentTeam: shootingDay.presentTeam || [],
-          generalNotes: notesAsString,
+          generalNotes: shootingDay.generalNotes || "",
         });
       } else {
         form.reset({
-            date: undefined,
+            date: new Date(),
             location: { displayName: "" },
             latitude: defaultPosition[0],
             longitude: defaultPosition[1],
@@ -631,3 +619,5 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     </Sheet>
   );
 }
+
+    
