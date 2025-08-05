@@ -106,15 +106,12 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
   const formatLocationForCard = (location?: LocationAddress): string => {
     if (!location) return "";
     
-    // Normalize city-like fields
-    const city = location.city || location.town || location.village;
-
-    const parts = [
-        city,
-        location.state,
-        location.country
-    ].filter(Boolean);
+    const city = location.city || location.town || location.village || location.county;
+    const state = location.state;
+    const country = location.country;
     
+    const parts = [city, state, country].filter(Boolean);
+
     if (parts.length > 0) {
       return parts.join(', ');
     }

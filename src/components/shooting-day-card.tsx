@@ -193,7 +193,6 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
         
         {hasNotes && (
             <>
-                <Separator className="my-3" />
                 <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="notes" className="border-b-0">
                         <AccordionTrigger className="w-full hover:no-underline p-1 -ml-1">
@@ -236,19 +235,16 @@ interface ShootingDayCardProps {
 const formatLocationForHeader = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
 
-    const city = location.city || location.town || location.village;
+    const city = location.city || location.town || location.village || location.county;
+    const state = location.state;
+    const country = location.country;
     
-    const parts = [
-        city,
-        location.state,
-        location.country
-    ].filter(Boolean); // filter(Boolean) removes any null/undefined/empty strings
+    const parts = [city, state, country].filter(Boolean);
 
     if (parts.length > 0) {
         return parts.join(', ');
     }
     
-    // Fallback to displayName if no specific parts are available
     return location.displayName || "Localização não definida";
 }
 
