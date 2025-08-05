@@ -2,7 +2,7 @@
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -76,9 +76,18 @@ const locationAddressSchema = z.object({
   road: z.string().optional(),
   house_number: z.string().optional(),
   city: z.string().optional(),
+  town: z.string().optional(),
+  village: z.string().optional(),
+  county: z.string().optional(),
   state: z.string().optional(),
   postcode: z.string().optional(),
   country: z.string().optional(),
+  suburb: z.string().optional(),
+  neighbourhood: z.string().optional(),
+  amenity: z.string().optional(),
+  shop: z.string().optional(),
+  tourism: z.string().optional(),
+  office: z.string().optional(),
 }).optional();
 
 const sceneSchema = z.object({
@@ -103,7 +112,7 @@ const shootingDaySchema = z.object({
   totalDays: z.coerce.number().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
-  location: z.object({ displayName: z.string().optional() }).optional(),
+  location: locationAddressSchema,
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   callTimes: z.array(callTimeSchema),
@@ -126,6 +135,14 @@ interface CreateEditShootingDayDialogProps {
   shootingDay?: (Omit<ShootingDay, 'generalNotes'> & { generalNotes?: ChecklistItem[]}) | null;
   productionTeam: TeamMember[];
 }
+
+const formatLocationForInput = (location?: LocationAddress): string => {
+    if (!location) return "";
+    const city = location.city || location.town || location.village || location.county;
+    const state = location.state;
+    const country = location.country;
+    return [city, state, country].filter(Boolean).join(', ');
+};
 
 const ChecklistFormSection = ({ name, label, control }: { name: string, label: string, control: any }) => {
     const { fields, append, remove } = useFieldArray({
@@ -193,6 +210,9 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   
   const lat = form.watch('latitude');
   const lng = form.watch('longitude');
+  const location = form.watch('location');
+
+  const [displayLocation, setDisplayLocation] = useState("");
 
   const { fields: callTimeFields, append: appendCallTime, remove: removeCallTime } = useFieldArray({
     control: form.control,
@@ -248,6 +268,10 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       }
     }
   }, [isOpen, isEditMode, shootingDay, form]);
+  
+  useEffect(() => {
+    setDisplayLocation(formatLocationForInput(location));
+  }, [location]);
 
   const handleSubmit = (values: FormValues) => {
     onSubmit(values);
@@ -347,14 +371,14 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <div>
                         <h3 className="text-lg font-semibold mb-2">Localização Principal e Logística</h3>
                         <div className="border p-4 rounded-lg space-y-4">
-                            <FormField control={form.control} name="location.displayName" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Localização Principal do Dia</FormLabel>
-                                    <FormControl><Input readOnly placeholder="Selecione no mapa ou pesquise" {...field} /></FormControl>
-                                    <FormDescription>Use a busca ou clique no mapa para definir a localização geral.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
+                           <FormItem>
+                                <FormLabel>Localização Principal do Dia</FormLabel>
+                                <FormControl>
+                                    <Input readOnly placeholder="Selecione no mapa ou pesquise" value={displayLocation} />
+                                </FormControl>
+                                <FormDescription>Use a busca ou clique no mapa para definir a localização geral.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
                             <LocationPicker initialPosition={[lat || defaultPosition[0], lng || defaultPosition[1]]} onLocationChange={handleLocationChange} />
                             <FormField control={form.control} name="parkingInfo" render={({ field }) => (
                                 <FormItem><FormLabel>Informações de Estacionamento</FormLabel><FormControl><Textarea placeholder="Ex: Estacionamento disponível na rua lateral..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>
@@ -539,8 +563,9 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                             <Checkbox
                                             checked={field.value?.some(p => p.id === member.id)}
                                             onCheckedChange={(checked) => {
+                                                const memberData = productionTeam.find(m => m.id === member.id);
                                                 return checked
-                                                ? field.onChange([...(field.value || []), member])
+                                                ? field.onChange([...(field.value || []), memberData])
                                                 : field.onChange(field.value?.filter((p) => p.id !== member.id));
                                             }}
                                             />
