@@ -1,3 +1,4 @@
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -233,11 +234,9 @@ interface ShootingDayCardProps {
 const formatLocationForHeader = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
 
-    const city = location.city || location.town || location.village || location.county;
-    const state = location.state;
-    const country = location.country;
+    const city = location.city || location.town || location.village;
     
-    const parts = [city, state, country].filter(Boolean);
+    const parts = [city, location.state, location.country].filter(Boolean);
 
     if (parts.length > 0) {
         return parts.join(', ');
