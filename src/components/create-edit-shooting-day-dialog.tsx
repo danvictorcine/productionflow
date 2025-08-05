@@ -121,7 +121,7 @@ const shootingDaySchema = z.object({
   mealTime: z.string().optional(),
   radioChannels: z.string().optional(),
   nearestHospital: hospitalSchema.optional(),
-  generalNotes: z.array(checklistItemSchema).optional(),
+  generalNotes: z.string().optional(),
 });
 
 
@@ -131,7 +131,7 @@ interface CreateEditShootingDayDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => void;
-  shootingDay?: (Omit<ShootingDay, 'generalNotes'> & { generalNotes?: ChecklistItem[]}) | null;
+  shootingDay?: (Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string}) | null;
   productionTeam: TeamMember[];
 }
 
@@ -194,7 +194,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       longitude: defaultPosition[1],
       scenes: [],
       callTimes: [],
-      generalNotes: [],
+      generalNotes: "",
       presentTeam: [],
       dayNumber: undefined,
       totalDays: undefined,
@@ -251,7 +251,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
             longitude: defaultPosition[1],
             scenes: [],
             callTimes: [{ id: crypto.randomUUID(), department: "Chamada Geral", time: "08:00" }],
-            generalNotes: [],
+            generalNotes: "",
             presentTeam: [],
             dayNumber: undefined,
             totalDays: undefined,
@@ -270,7 +270,14 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   }, [location]);
 
   const handleSubmit = (values: FormValues) => {
-    onSubmit(values);
+    const dataToSubmit: Omit<ShootingDay, 'id'> = {
+        ...values,
+        generalNotes: values.generalNotes || "",
+        equipment: [], // Deprecated
+        costumes: [], // Deprecated
+        props: [], // Deprecated
+    }
+    onSubmit(dataToSubmit);
   };
   
   const handleLocationChange = (lat: number, lng: number, address: LocationAddress) => {
@@ -399,7 +406,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                     )} />
                                 </div>
                             </div>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={form.control} name="mealTime" render={({ field }) => (
                                     <FormItem><FormLabel>Horário de Refeições</FormLabel><FormControl><Input placeholder="Ex: 12:00 - 13:00" {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
@@ -537,7 +544,23 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <div>
                         <h3 className="text-lg font-semibold mb-2">Observações Gerais do Dia</h3>
                          <div className="border p-4 rounded-lg space-y-4">
-                            <ChecklistFormSection name="generalNotes" label="Notas Gerais" control={form.control} />
+                            <FormField
+                                control={form.control}
+                                name="generalNotes"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Notas Gerais</FormLabel>
+                                    <FormControl>
+                                    <Textarea
+                                        placeholder="Adicione aqui quaisquer observações gerais para a diária..."
+                                        className="min-h-[100px]"
+                                        {...field}
+                                    />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
                          </div>
                     </div>
 
@@ -552,7 +575,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                             <FormItem>
                                 <FormDescription>Selecione quem da equipe principal estará presente nesta diária (para fins de organização geral).</FormDescription>
                                 <ScrollArea className="h-48 rounded-md border">
-                                    <div className="p-4 space-y-2">
+                                    <div className="p-4 space-y-2 grid grid-cols-2 md:grid-cols-3">
                                         {productionTeam.length > 0 ? productionTeam.map((member) => (
                                             <FormField
                                             key={member.id}
@@ -572,7 +595,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                                     }}
                                                     />
                                                 </FormControl>
-                                                <FormLabel className="font-normal">
+                                                <FormLabel className="font-normal text-sm">
                                                     {member.name} <span className="text-muted-foreground">({member.role})</span>
                                                 </FormLabel>
                                                 </FormItem>

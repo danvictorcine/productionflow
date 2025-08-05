@@ -1,4 +1,3 @@
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -8,7 +7,7 @@ import { format, isToday, isPast, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
-  Users, FileText, Hospital, ParkingCircle, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown, AlignJustify, Truck, Star, Shirt
+  Users, FileText, Hospital, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown, AlignJustify, Truck, Star, Shirt
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -53,7 +52,7 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
             <div className="flex-1">
                 <p className="font-semibold text-foreground text-base">{title}</p>
                 {typeof content === 'string' ? (
-                    <p className="text-base text-muted-foreground">{content}</p>
+                    <p className="text-base text-muted-foreground whitespace-pre-wrap">{content}</p>
                 ) : (
                     <div className="text-muted-foreground">{content}</div>
                 )}
@@ -217,7 +216,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
 
 
 interface ShootingDayCardProps {
-  day: Omit<ShootingDay, 'generalNotes'> & { generalNotes?: ChecklistItem[]};
+  day: Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string };
   production: Production;
   isFetchingWeather: boolean;
   isExporting: boolean;
@@ -526,7 +525,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                             </div>
                             
                             <div className="p-4 border rounded-lg space-y-2">
-                                <ChecklistSection icon={AlignJustify} title="Observações Gerais" items={localDay.generalNotes} onListUpdate={onUpdateNotes ? (list) => onUpdateNotes(localDay.id, 'generalNotes', list) : undefined} isPublicView={isPublicView} />
+                                <StaticDetailSection icon={AlignJustify} title="Observações Gerais" content={localDay.generalNotes} />
                                 <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
                                     localDay.presentTeam && localDay.presentTeam.length > 0 ? (
                                         <div className="flex flex-wrap gap-3 items-center">

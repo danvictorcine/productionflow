@@ -4,7 +4,6 @@
 
 
 
-
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -162,6 +161,9 @@ export type LocationAddress = {
     road?: string;
     house_number?: string;
     city?: string;
+    town?: string;
+    village?: string;
+    county?: string;
     state?: string;
     postcode?: string;
     country?: string;
@@ -215,7 +217,7 @@ export type ShootingDay = {
   mealTime?: string;
   radioChannels?: string;
   nearestHospital?: HospitalInfo;
-  generalNotes?: ChecklistItem[];
+  generalNotes?: string;
   presentTeam: TeamMember[];
   latitude?: number;
   longitude?: number;

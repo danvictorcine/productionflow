@@ -3,6 +3,7 @@
 
 
 
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -562,6 +563,7 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
           id: doc.id,
           ...data,
           date: (data.date as Timestamp).toDate(),
+          generalNotes: data.generalNotes || "",
       } as ShootingDay;
   });
   days.sort((a, b) => a.date.getTime() - b.date.getTime());
