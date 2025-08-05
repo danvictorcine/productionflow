@@ -365,7 +365,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <Separator />
 
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Localização Principal e Logística</h3>
+                        <h3 className="text-lg font-semibold mb-2">Localização Principal</h3>
                         <div className="border p-4 rounded-lg space-y-4">
                            <FormItem>
                                 <FormLabel>Localização Principal do Dia</FormLabel>
@@ -376,33 +376,36 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                 <FormMessage />
                             </FormItem>
                             <LocationPicker initialPosition={[lat || defaultPosition[0], lng || defaultPosition[1]]} onLocationChange={handleLocationChange} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="mealTime" render={({ field }) => (
-                                    <FormItem><FormLabel>Horário de Refeições</FormLabel><FormControl><Input placeholder="Ex: 12:00 - 13:00" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={form.control} name="radioChannels" render={({ field }) => (
-                                    <FormItem><FormLabel>Canais de Rádio</FormLabel><FormControl><Input placeholder="Ex: Canal 1 - Geral, Canal 2 - Direção" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                            </div>
                         </div>
                     </div>
 
                     <Separator />
                     
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Informações de Segurança</h3>
-                        <div className="border p-4 rounded-lg">
-                            <FormLabel>Hospital Mais Próximo</FormLabel>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                                <FormField control={form.control} name="nearestHospital.name" render={({ field }) => (
-                                    <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do hospital" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={form.control} name="nearestHospital.address" render={({ field }) => (
-                                    <FormItem><FormLabel className="text-xs">Endereço</FormLabel><FormControl><Input placeholder="Endereço completo" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={form.control} name="nearestHospital.phone" render={({ field }) => (
-                                    <FormItem><FormLabel className="text-xs">Telefone</FormLabel><FormControl><Input placeholder="(XX) XXXX-XXXX" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
+                        <h3 className="text-lg font-semibold mb-2">Informações de Segurança e Logística</h3>
+                        <div className="border p-4 rounded-lg space-y-4">
+                            <div>
+                                <FormLabel>Hospital Mais Próximo</FormLabel>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                                    <FormField control={form.control} name="nearestHospital.name" render={({ field }) => (
+                                        <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do hospital" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="nearestHospital.address" render={({ field }) => (
+                                        <FormItem><FormLabel className="text-xs">Endereço</FormLabel><FormControl><Input placeholder="Endereço completo" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="nearestHospital.phone" render={({ field }) => (
+                                        <FormItem><FormLabel className="text-xs">Telefone</FormLabel><FormControl><Input placeholder="(XX) XXXX-XXXX" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                </div>
+                            </div>
+                            <Separator />
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="mealTime" render={({ field }) => (
+                                    <FormItem><FormLabel>Horário de Refeições</FormLabel><FormControl><Input placeholder="Ex: 12:00 - 13:00" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="radioChannels" render={({ field }) => (
+                                    <FormItem><FormLabel>Canais de Rádio</FormLabel><FormControl><Input placeholder="Ex: Canal 1 - Geral, Canal 2 - Direção" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
                             </div>
                         </div>
                     </div>
