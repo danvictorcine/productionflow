@@ -272,8 +272,8 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                   <Separator />
 
                   <div>
-                    <FormLabel>Equipe & Elenco</FormLabel>
-                    <FormDescription>Cadastre todos os envolvidos na produção. Esta lista será usada para montar a Ordem do Dia.</FormDescription>
+                    <h3 className="text-lg font-semibold">Equipe & Elenco</h3>
+                    <p className="text-sm text-muted-foreground">Cadastre todos os envolvidos na produção. Esta lista será usada para montar a Ordem do Dia.</p>
                     <div className="space-y-3 mt-2">
                       {teamFields.map((field, index) => {
                         const hasRestriction = watch(`team.${index}.hasDietaryRestriction`);
