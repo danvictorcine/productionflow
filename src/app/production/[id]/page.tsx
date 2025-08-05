@@ -167,6 +167,23 @@ function ProductionPageDetail() {
       setIsFetchingWeather(prev => ({ ...prev, [day.id]: false }));
     }
   }, [toast]);
+  
+  const checkAndFetchWeatherForDays = useCallback((days: ShootingDay[]) => {
+      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+      days.forEach(day => {
+          if (isFetchingWeather[day.id]) return;
+          
+          const weather = day.weather;
+          const locationName = formatLocationForWeather(day.location);
+          const locationMismatch = weather && weather.locationName !== locationName;
+          const isStale = !weather || (weather.lastUpdated && new Date(weather.lastUpdated) < threeHoursAgo);
+          const shouldUpdate = locationMismatch || isStale;
+
+          if (shouldUpdate && day.latitude && day.longitude) {
+              fetchAndUpdateWeather(day);
+          }
+      });
+  }, [fetchAndUpdateWeather, isFetchingWeather]);
 
   const fetchProductionData = useCallback(async () => {
     if (!productionId || !user) return;
@@ -203,19 +220,7 @@ function ProductionPageDetail() {
         }));
 
         setShootingDays(processedDays);
-
-        // Fetch weather for days that need it
-        processedDays.forEach(day => {
-            const weather = day.weather;
-            const locationName = formatLocationForWeather(day.location);
-            const locationMismatch = weather && weather.locationName !== locationName;
-            const dateMismatch = weather && !isToday(new Date(weather.date));
-            const shouldUpdateWeather = !weather || locationMismatch || dateMismatch;
-
-            if (shouldUpdateWeather && day.latitude && day.longitude) {
-              fetchAndUpdateWeather(day);
-            }
-        });
+        checkAndFetchWeatherForDays(processedDays);
 
       } else {
         toast({ variant: 'destructive', title: 'Erro', description: 'Produção não encontrada.' });
@@ -231,11 +236,21 @@ function ProductionPageDetail() {
     } finally {
       setIsLoading(false);
     }
-  }, [productionId, user, router, toast, fetchAndUpdateWeather]);
+  }, [productionId, user, router, toast, checkAndFetchWeatherForDays]);
 
   useEffect(() => {
     fetchProductionData();
   }, [fetchProductionData]);
+  
+  useEffect(() => {
+    const todayShootingDays = shootingDays.filter(day => isToday(day.date));
+    if (todayShootingDays.length > 0) {
+      const interval = setInterval(() => {
+        checkAndFetchWeatherForDays(todayShootingDays);
+      }, 60 * 60 * 1000); // 1 hour
+      return () => clearInterval(interval);
+    }
+  }, [shootingDays, checkAndFetchWeatherForDays]);
 
   const handleProductionSubmit = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
     if (!production) return;
