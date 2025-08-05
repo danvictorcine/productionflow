@@ -1,4 +1,3 @@
-
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -227,11 +226,16 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   useEffect(() => {
     if (isOpen) {
         if (isEditMode && shootingDay) {
-            const validDate = shootingDay.date ? (shootingDay.date.toDate ? shootingDay.date.toDate() : new Date(shootingDay.date)) : new Date();
-
+            let notesString = "";
+            if (typeof shootingDay.generalNotes === 'string') {
+              notesString = shootingDay.generalNotes;
+            } else if (Array.isArray(shootingDay.generalNotes)) {
+              notesString = shootingDay.generalNotes.map(n => n.text).join('\n');
+            }
+            
             form.reset({
                 ...shootingDay,
-                date: validDate,
+                date: shootingDay.date?.toDate ? shootingDay.date.toDate() : new Date(shootingDay.date),
                 location: shootingDay.location || { displayName: "Localização não definida" },
                 latitude: shootingDay.latitude || defaultPosition[0],
                 longitude: shootingDay.longitude || defaultPosition[1],
@@ -239,7 +243,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                 scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
                 nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
                 presentTeam: shootingDay.presentTeam || [],
-                generalNotes: shootingDay.generalNotes,
+                generalNotes: notesString,
             });
         } else {
             // Reset to default for creating a new day
@@ -308,29 +312,30 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                     render={({ field }) => (
                                     <FormItem className="flex flex-col">
                                         <FormLabel>Data da Filmagem</FormLabel>
-                                        <Popover>
-                                        <PopoverTrigger asChild>
-                                            <FormControl>
-                                            <Button
-                                                variant={"outline"}
-                                                className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                                            >
-                                                {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
-                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value}
-                                                onSelect={field.onChange}
-                                                initialFocus
-                                                locale={ptBR}
-                                                fromDate={new Date()}
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                value={field.value ? format(field.value, "PPP", { locale: ptBR }) : "Escolha uma data"}
+                                                readOnly
+                                                className="flex-1"
                                             />
-                                        </PopoverContent>
-                                        </Popover>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant={"outline"} size="icon">
+                                                        <CalendarIcon className="h-4 w-4" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value}
+                                                        onSelect={field.onChange}
+                                                        initialFocus
+                                                        locale={ptBR}
+                                                        fromDate={new Date()}
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                     )}
