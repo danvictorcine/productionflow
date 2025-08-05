@@ -192,6 +192,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
         
         {hasNotes && (
             <>
+                <Separator className="my-3" />
                 <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="notes" className="border-b-0">
                         <AccordionTrigger className="w-full hover:no-underline p-1 -ml-1">
