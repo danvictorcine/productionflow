@@ -119,7 +119,6 @@ const shootingDaySchema = z.object({
   scenes: z.array(sceneSchema),
   presentTeam: z.array(teamMemberSchema).optional(),
   mealTime: z.string().optional(),
-  parkingInfo: z.string().optional(),
   radioChannels: z.string().optional(),
   nearestHospital: hospitalSchema.optional(),
   generalNotes: z.array(checklistItemSchema).optional(),
@@ -202,7 +201,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       startTime: "08:00",
       endTime: "18:00",
       mealTime: "",
-      parkingInfo: "",
       radioChannels: "",
       nearestHospital: { name: "", address: "", phone: "" },
     },
@@ -240,7 +238,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           callTimes: Array.isArray(shootingDay.callTimes) ? shootingDay.callTimes : [],
           scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
           mealTime: shootingDay.mealTime || "",
-          parkingInfo: shootingDay.parkingInfo || "",
           radioChannels: shootingDay.radioChannels || "",
           nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
           presentTeam: shootingDay.presentTeam || [],
@@ -261,7 +258,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
             startTime: "08:00",
             endTime: "18:00",
             mealTime: "12:00 - 13:00",
-            parkingInfo: "",
             radioChannels: "Canal 1 - Produção | Canal 2 - Direção",
             nearestHospital: { name: "", address: "", phone: "" },
         });
@@ -380,9 +376,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                 <FormMessage />
                             </FormItem>
                             <LocationPicker initialPosition={[lat || defaultPosition[0], lng || defaultPosition[1]]} onLocationChange={handleLocationChange} />
-                            <FormField control={form.control} name="parkingInfo" render={({ field }) => (
-                                <FormItem><FormLabel>Informações de Estacionamento</FormLabel><FormControl><Textarea placeholder="Ex: Estacionamento disponível na rua lateral..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>
-                            )}/>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={form.control} name="mealTime" render={({ field }) => (
                                     <FormItem><FormLabel>Horário de Refeições</FormLabel><FormControl><Input placeholder="Ex: 12:00 - 13:00" {...field} /></FormControl><FormMessage /></FormItem>
@@ -476,8 +469,9 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                                                 <Checkbox
                                                                 checked={field.value?.some(p => p.id === member.id)}
                                                                 onCheckedChange={(checked) => {
+                                                                    const memberData = productionTeam.find(m => m.id === member.id);
                                                                     return checked
-                                                                    ? field.onChange([...(field.value || []), member])
+                                                                    ? field.onChange([...(field.value || []), memberData])
                                                                     : field.onChange(field.value?.filter((p) => p.id !== member.id));
                                                                 }}
                                                                 />

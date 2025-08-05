@@ -106,13 +106,12 @@ const formatSceneAddress = (location?: LocationAddress): string => {
     
     // Normalize city-like fields
     const city = location.city || location.town || location.village;
+    const amenity = location.amenity || location.shop || location.tourism || location.office;
+    const road = location.road;
 
     const addressParts: string[] = [
-        location.amenity,
-        location.shop,
-        location.tourism,
-        location.office,
-        location.road,
+        amenity,
+        road,
         location.house_number,
         location.suburb || location.neighbourhood,
         city,
@@ -471,7 +470,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                         <div className="space-y-4">
                             <div className="p-4 border rounded-lg space-y-2">
                                 <h4 className="font-semibold text-xl flex items-center"><Hash className="h-6 w-6 mr-2 text-primary" />Logística e Segurança</h4>
-                                <StaticDetailSection icon={ParkingCircle} title="Estacionamento" content={localDay.parkingInfo} />
                                 <StaticDetailSection icon={Utensils} title="Refeição" content={localDay.mealTime} />
                                 <StaticDetailSection icon={Radio} title="Rádios" content={localDay.radioChannels} />
                                 {localDay.nearestHospital && localDay.nearestHospital.name && (

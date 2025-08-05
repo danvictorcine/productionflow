@@ -4,6 +4,7 @@
 
 
 
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -212,7 +213,6 @@ export type ShootingDay = {
   startTime?: string; // e.g., "08:00"
   endTime?: string; // e.g., "18:00"
   mealTime?: string;
-  parkingInfo?: string;
   radioChannels?: string;
   nearestHospital?: HospitalInfo;
   generalNotes?: ChecklistItem[];
