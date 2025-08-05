@@ -365,10 +365,10 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <Separator />
 
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Localização Principal</h3>
+                        <h3 className="text-lg font-semibold mb-2">Localização Principal e Logística</h3>
                         <div className="border p-4 rounded-lg space-y-4">
                            <FormItem>
-                                <FormLabel>Localização Principal do Dia</FormLabel>
+                                <FormLabel>Selecione em qual cidade vai ocorrer a produção:</FormLabel>
                                 <FormControl>
                                     <Input readOnly placeholder="Selecione no mapa ou pesquise" value={displayLocation} />
                                 </FormControl>
@@ -376,6 +376,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                 <FormMessage />
                             </FormItem>
                             <LocationPicker initialPosition={[lat || defaultPosition[0], lng || defaultPosition[1]]} onLocationChange={handleLocationChange} />
+                             
                         </div>
                     </div>
 
@@ -398,7 +399,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                     )} />
                                 </div>
                             </div>
-                            <Separator />
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={form.control} name="mealTime" render={({ field }) => (
                                     <FormItem><FormLabel>Horário de Refeições</FormLabel><FormControl><Input placeholder="Ex: 12:00 - 13:00" {...field} /></FormControl><FormMessage /></FormItem>
