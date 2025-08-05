@@ -1,3 +1,4 @@
+
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -10,6 +11,7 @@ import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import dynamic from 'next/dynamic';
 
 
 import type { Production, ShootingDay, WeatherInfo, ChecklistItem, LocationAddress, TeamMember } from '@/lib/types';
