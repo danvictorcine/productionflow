@@ -1,3 +1,4 @@
+
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -225,41 +226,44 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
 
   useEffect(() => {
     if (isOpen) {
-      if (isEditMode && shootingDay) {
-        // Ensure date is a valid Date object before resetting the form
-        const validDate = shootingDay.date instanceof Date ? shootingDay.date : new Date(shootingDay.date);
+        if (isEditMode && shootingDay) {
+            // Ensure date is a valid JavaScript Date object for the calendar component
+            const validDate = shootingDay.date instanceof Date 
+                ? shootingDay.date 
+                : new Date(shootingDay.date);
 
-        form.reset({
-          ...shootingDay,
-          date: validDate,
-          location: shootingDay.location || { displayName: "Localização não definida" },
-          latitude: shootingDay.latitude || defaultPosition[0],
-          longitude: shootingDay.longitude || defaultPosition[1],
-          callTimes: Array.isArray(shootingDay.callTimes) ? shootingDay.callTimes : [],
-          scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
-          nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
-          presentTeam: shootingDay.presentTeam || [],
-          generalNotes: shootingDay.generalNotes || '',
-        });
-      } else {
-        form.reset({
-            date: new Date(),
-            location: { displayName: "" },
-            latitude: defaultPosition[0],
-            longitude: defaultPosition[1],
-            scenes: [],
-            callTimes: [{ id: crypto.randomUUID(), department: "Chamada Geral", time: "08:00" }],
-            generalNotes: "",
-            presentTeam: [],
-            dayNumber: undefined,
-            totalDays: undefined,
-            startTime: "08:00",
-            endTime: "18:00",
-            mealTime: "",
-            radioChannels: "",
-            nearestHospital: { name: "", address: "", phone: "" },
-        });
-      }
+            form.reset({
+                ...shootingDay,
+                date: validDate,
+                location: shootingDay.location || { displayName: "Localização não definida" },
+                latitude: shootingDay.latitude || defaultPosition[0],
+                longitude: shootingDay.longitude || defaultPosition[1],
+                callTimes: Array.isArray(shootingDay.callTimes) ? shootingDay.callTimes : [],
+                scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
+                nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
+                presentTeam: shootingDay.presentTeam || [],
+                generalNotes: shootingDay.generalNotes || '',
+            });
+        } else {
+            // Reset to default for creating a new day
+            form.reset({
+                date: new Date(),
+                location: { displayName: "" },
+                latitude: defaultPosition[0],
+                longitude: defaultPosition[1],
+                scenes: [],
+                callTimes: [{ id: crypto.randomUUID(), department: "Chamada Geral", time: "08:00" }],
+                generalNotes: "",
+                presentTeam: [],
+                dayNumber: undefined,
+                totalDays: undefined,
+                startTime: "08:00",
+                endTime: "18:00",
+                mealTime: "",
+                radioChannels: "",
+                nearestHospital: { name: "", address: "", phone: "" },
+            });
+        }
     }
   }, [isOpen, isEditMode, shootingDay, form]);
   
@@ -370,7 +374,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <Separator />
 
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Selecione em qual cidade vai ocorrer a produção:</h3>
                         <div className="border p-4 rounded-lg space-y-4">
                            <FormItem>
                                 <FormLabel>Selecione em qual cidade vai ocorrer a produção:</FormLabel>
@@ -404,14 +407,12 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                     )} />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="mealTime" render={({ field }) => (
-                                    <FormItem><FormLabel>Horário de Refeições</FormLabel><FormControl><Input placeholder="Ex: 12:00 - 13:00" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={form.control} name="radioChannels" render={({ field }) => (
-                                    <FormItem><FormLabel>Canais de Rádio</FormLabel><FormControl><Input placeholder="Ex: Canal 1 - Geral, Canal 2 - Direção" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                            </div>
+                            <FormField control={form.control} name="mealTime" render={({ field }) => (
+                                <FormItem><FormLabel>Horário de Refeições</FormLabel><FormControl><Input placeholder="Ex: 12:00 - 13:00" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="radioChannels" render={({ field }) => (
+                                <FormItem><FormLabel>Canais de Rádio</FormLabel><FormControl><Input placeholder="Ex: Canal 1 - Geral, Canal 2 - Direção" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
                         </div>
                     </div>
 
