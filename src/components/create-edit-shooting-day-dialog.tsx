@@ -227,9 +227,9 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   useEffect(() => {
     if (isOpen) {
         if (isEditMode && shootingDay) {
-            // Ensure date is a valid JavaScript Date object for the calendar component
-            const validDate = shootingDay.date instanceof Date 
-                ? shootingDay.date 
+            // Check if date has a .toDate method (like a Firebase Timestamp)
+            const validDate = typeof shootingDay.date.toDate === 'function' 
+                ? shootingDay.date.toDate() 
                 : new Date(shootingDay.date);
 
             form.reset({
@@ -622,3 +622,5 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     </Sheet>
   );
 }
+
+    
