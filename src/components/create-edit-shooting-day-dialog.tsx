@@ -1,3 +1,4 @@
+
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -225,46 +226,45 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
 
   useEffect(() => {
     if (isOpen) {
-        if (isEditMode && shootingDay) {
-            let notesString = "";
-            if (typeof shootingDay.generalNotes === 'string') {
-              notesString = shootingDay.generalNotes;
-            } else if (Array.isArray(shootingDay.generalNotes)) {
-              notesString = shootingDay.generalNotes.map(n => n.text).join('\n');
-            }
-            
-            form.reset({
-                ...shootingDay,
-                date: shootingDay.date?.toDate ? shootingDay.date.toDate() : new Date(shootingDay.date),
-                location: shootingDay.location || { displayName: "Localização não definida" },
-                latitude: shootingDay.latitude || defaultPosition[0],
-                longitude: shootingDay.longitude || defaultPosition[1],
-                callTimes: Array.isArray(shootingDay.callTimes) ? shootingDay.callTimes : [],
-                scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
-                nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
-                presentTeam: shootingDay.presentTeam || [],
-                generalNotes: notesString,
-            });
-        } else {
-            // Reset to default for creating a new day
-            form.reset({
-                date: new Date(),
-                location: { displayName: "" },
-                latitude: defaultPosition[0],
-                longitude: defaultPosition[1],
-                scenes: [],
-                callTimes: [{ id: crypto.randomUUID(), department: "Chamada Geral", time: "08:00" }],
-                generalNotes: "",
-                presentTeam: [],
-                dayNumber: undefined,
-                totalDays: undefined,
-                startTime: "08:00",
-                endTime: "18:00",
-                mealTime: "",
-                radioChannels: "",
-                nearestHospital: { name: "", address: "", phone: "" },
-            });
+      if (isEditMode && shootingDay) {
+        let notesString = "";
+        if (typeof shootingDay.generalNotes === 'string') {
+          notesString = shootingDay.generalNotes;
+        } else if (Array.isArray(shootingDay.generalNotes)) {
+          notesString = shootingDay.generalNotes.map(n => n.text).join('\n');
         }
+
+        form.reset({
+          ...shootingDay,
+          date: (shootingDay.date as any)?.toDate ? (shootingDay.date as any).toDate() : new Date(shootingDay.date),
+          location: shootingDay.location || { displayName: "Localização não definida" },
+          latitude: shootingDay.latitude || defaultPosition[0],
+          longitude: shootingDay.longitude || defaultPosition[1],
+          callTimes: Array.isArray(shootingDay.callTimes) ? shootingDay.callTimes : [],
+          scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
+          nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
+          presentTeam: shootingDay.presentTeam || [],
+          generalNotes: notesString,
+        });
+      } else {
+        form.reset({
+          date: new Date(),
+          location: { displayName: "" },
+          latitude: defaultPosition[0],
+          longitude: defaultPosition[1],
+          scenes: [],
+          callTimes: [{ id: crypto.randomUUID(), department: "Chamada Geral", time: "08:00" }],
+          generalNotes: "",
+          presentTeam: [],
+          dayNumber: undefined,
+          totalDays: undefined,
+          startTime: "08:00",
+          endTime: "18:00",
+          mealTime: "",
+          radioChannels: "",
+          nearestHospital: { name: "", address: "", phone: "" },
+        });
+      }
     }
   }, [isOpen, isEditMode, shootingDay, form]);
   
@@ -310,34 +310,40 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                     control={form.control}
                                     name="date"
                                     render={({ field }) => (
-                                    <FormItem className="flex flex-col">
+                                      <FormItem className="flex flex-col">
                                         <FormLabel>Data da Filmagem</FormLabel>
-                                        <div className="flex items-center gap-2">
-                                            <Input
-                                                value={field.value ? format(field.value, "PPP", { locale: ptBR }) : "Escolha uma data"}
-                                                readOnly
-                                                className="flex-1"
+                                        <Popover>
+                                          <PopoverTrigger asChild>
+                                            <FormControl>
+                                              <Button
+                                                variant={"outline"}
+                                                className={cn(
+                                                  "w-full pl-3 text-left font-normal",
+                                                  !field.value && "text-muted-foreground"
+                                                )}
+                                              >
+                                                {field.value ? (
+                                                  format(field.value, "PPP", { locale: ptBR })
+                                                ) : (
+                                                  <span>Escolha uma data</span>
+                                                )}
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                              </Button>
+                                            </FormControl>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                              mode="single"
+                                              selected={field.value}
+                                              onSelect={field.onChange}
+                                              initialFocus
+                                              locale={ptBR}
+                                              fromDate={new Date()}
                                             />
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant={"outline"} size="icon">
-                                                        <CalendarIcon className="h-4 w-4" />
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={field.value}
-                                                        onSelect={field.onChange}
-                                                        initialFocus
-                                                        locale={ptBR}
-                                                        fromDate={new Date()}
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                        </div>
+                                          </PopoverContent>
+                                        </Popover>
                                         <FormMessage />
-                                    </FormItem>
+                                      </FormItem>
                                     )}
                                 />
                                 <FormField control={form.control} name="dayNumber" render={({ field }) => (
