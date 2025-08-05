@@ -200,8 +200,8 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       totalDays: undefined,
       startTime: "08:00",
       endTime: "18:00",
-      mealTime: "",
-      radioChannels: "",
+      mealTime: "12:00 - 13:00",
+      radioChannels: "Canal 1 - Produção | Canal 2 - Direção",
       nearestHospital: { name: "", address: "", phone: "" },
     },
   });
@@ -241,7 +241,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           radioChannels: shootingDay.radioChannels || "",
           nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
           presentTeam: shootingDay.presentTeam || [],
-          generalNotes: shootingDay.generalNotes,
+          generalNotes: shootingDay.generalNotes || "",
         });
       } else {
         form.reset({
@@ -372,7 +372,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <Separator />
 
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Localização Principal</h3>
+                        <h3 className="text-lg font-semibold mb-2">Localização Principal e Logística</h3>
                         <div className="border p-4 rounded-lg space-y-4">
                            <FormItem>
                                 <FormLabel>Selecione em qual cidade vai ocorrer a produção:</FormLabel>
@@ -390,7 +390,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <Separator />
                     
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Informações de Segurança e Logística</h3>
+                        <h3 className="text-lg font-semibold mb-2">Informações de Segurança</h3>
                         <div className="border p-4 rounded-lg space-y-4">
                             <div>
                                 <FormLabel>Hospital Mais Próximo</FormLabel>

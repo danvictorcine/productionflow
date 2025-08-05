@@ -1,9 +1,3 @@
-
-
-
-
-
-
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -559,11 +553,18 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
         delete data.props;
       }
       
+      let generalNotesString = "";
+      if (Array.isArray(data.generalNotes)) {
+        generalNotesString = (data.generalNotes as ChecklistItem[]).map(item => item.text).join('\n');
+      } else if (typeof data.generalNotes === 'string') {
+        generalNotesString = data.generalNotes;
+      }
+      
       return {
           id: doc.id,
           ...data,
           date: (data.date as Timestamp).toDate(),
-          generalNotes: data.generalNotes || "",
+          generalNotes: generalNotesString,
       } as ShootingDay;
   });
   days.sort((a, b) => a.date.getTime() - b.date.getTime());
