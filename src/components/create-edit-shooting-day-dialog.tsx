@@ -227,11 +227,13 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   useEffect(() => {
     if (isOpen) {
         if (isEditMode && shootingDay) {
-            // Check if date has a .toDate method (like a Firebase Timestamp)
-            const validDate = typeof shootingDay.date.toDate === 'function' 
-                ? shootingDay.date.toDate() 
-                : new Date(shootingDay.date);
-
+            // This is the robust fix: ensure `date` is always a Date object
+            const validDate = shootingDay.date instanceof Date 
+                ? shootingDay.date 
+                : typeof shootingDay.date.toDate === 'function' 
+                    ? shootingDay.date.toDate() 
+                    : new Date();
+            
             form.reset({
                 ...shootingDay,
                 date: validDate,
@@ -275,9 +277,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     const dataToSubmit: Omit<ShootingDay, 'id'> = {
         ...values,
         generalNotes: values.generalNotes || "",
-        equipment: [], // Deprecated
-        costumes: [], // Deprecated
-        props: [], // Deprecated
     }
     onSubmit(dataToSubmit);
   };
@@ -622,5 +621,3 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
     </Sheet>
   );
 }
-
-    

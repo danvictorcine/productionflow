@@ -514,7 +514,7 @@ export const addShootingDay = async (productionId: string, data: Omit<ShootingDa
   return docRef.id;
 };
 
-export const getShootingDays = async (productionId: string): Promise<(Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string | ChecklistItem[] })[]> => {
+export const getShootingDays = async (productionId: string): Promise<ShootingDay[]> => {
   const userId = getUserId();
   if (!userId) return [];
   const q = query(
@@ -524,13 +524,22 @@ export const getShootingDays = async (productionId: string): Promise<(Omit<Shoot
   );
   const querySnapshot = await getDocs(q);
   const days = querySnapshot.docs.map(doc => {
-      let data = doc.data();
+      const data = doc.data();
       
+      // Backward compatibility for generalNotes
+      let generalNotesString = "";
+      if (typeof data.generalNotes === 'string') {
+        generalNotesString = data.generalNotes;
+      } else if (Array.isArray(data.generalNotes)) {
+        generalNotesString = data.generalNotes.map((item: ChecklistItem) => item.text).join('\n');
+      }
+
       return {
           id: doc.id,
           ...data,
           date: (data.date as Timestamp).toDate(),
-      } as (Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string | ChecklistItem[] });
+          generalNotes: generalNotesString,
+      } as ShootingDay;
   });
   days.sort((a, b) => a.date.getTime() - b.date.getTime());
   return days;

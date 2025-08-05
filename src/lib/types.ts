@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
