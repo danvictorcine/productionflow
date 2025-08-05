@@ -1,3 +1,4 @@
+
 // @/src/components/create-edit-shooting-day-dialog.tsx
 "use client";
 
@@ -200,8 +201,8 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       totalDays: undefined,
       startTime: "08:00",
       endTime: "18:00",
-      mealTime: "12:00 - 13:00",
-      radioChannels: "Canal 1 - Produção | Canal 2 - Direção",
+      mealTime: "",
+      radioChannels: "",
       nearestHospital: { name: "", address: "", phone: "" },
     },
   });
@@ -226,6 +227,12 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && shootingDay) {
+        
+        let notesAsString = shootingDay.generalNotes || "";
+        if (Array.isArray(shootingDay.generalNotes)) {
+            notesAsString = shootingDay.generalNotes.map(item => item.text).join('\n');
+        }
+
         form.reset({
           date: new Date(shootingDay.date),
           dayNumber: shootingDay.dayNumber,
@@ -241,7 +248,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           radioChannels: shootingDay.radioChannels || "",
           nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
           presentTeam: shootingDay.presentTeam || [],
-          generalNotes: shootingDay.generalNotes || "",
+          generalNotes: notesAsString,
         });
       } else {
         form.reset({
@@ -257,8 +264,8 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
             totalDays: undefined,
             startTime: "08:00",
             endTime: "18:00",
-            mealTime: "12:00 - 13:00",
-            radioChannels: "Canal 1 - Produção | Canal 2 - Direção",
+            mealTime: "",
+            radioChannels: "",
             nearestHospital: { name: "", address: "", phone: "" },
         });
       }
