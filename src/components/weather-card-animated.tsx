@@ -1,4 +1,3 @@
-
 // @/src/components/weather-card-animated.tsx
 "use client";
 
