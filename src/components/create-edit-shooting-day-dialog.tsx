@@ -226,14 +226,12 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && shootingDay) {
-        // Correctly handle date conversion and potential array-like notes
-        const generalNotesAsString = Array.isArray(shootingDay.generalNotes)
-            ? shootingDay.generalNotes.map(n => n.text).join('\n')
-            : shootingDay.generalNotes || '';
+        // Ensure date is a valid Date object before resetting the form
+        const validDate = shootingDay.date instanceof Date ? shootingDay.date : new Date(shootingDay.date);
 
         form.reset({
           ...shootingDay,
-          date: new Date(shootingDay.date), // Ensure it's always a Date object
+          date: validDate,
           location: shootingDay.location || { displayName: "Localização não definida" },
           latitude: shootingDay.latitude || defaultPosition[0],
           longitude: shootingDay.longitude || defaultPosition[1],
@@ -241,7 +239,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
           nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
           presentTeam: shootingDay.presentTeam || [],
-          generalNotes: generalNotesAsString,
+          generalNotes: shootingDay.generalNotes || '',
         });
       } else {
         form.reset({
