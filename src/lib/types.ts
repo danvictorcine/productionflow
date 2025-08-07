@@ -1,4 +1,5 @@
 
+
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
   "Custos de Produção",
@@ -135,15 +136,22 @@ export type Production = {
 };
 
 export type WeatherInfo = {
-  temperature: number;
-  windSpeed: number;
-  sunrise: string; // ISO String
-  sunset: string; // ISO String
-  weatherCode: number;
+  daily: {
+    temperature_2m_max: number[];
+    sunrise: string[];
+    sunset: string[];
+    weather_code: number[];
+  };
+  hourly: {
+    time: string[];
+    temperature_2m: number[];
+    weather_code: number[];
+  };
   lastUpdated: string; // ISO String
   locationName: string;
   date: string; // YYYY-MM-DD
 };
+
 
 export type HospitalInfo = {
   name: string;

@@ -1,4 +1,5 @@
 
+
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -42,7 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CopyableError } from '@/components/copyable-error';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Accordion, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
@@ -138,7 +139,7 @@ function ProductionPageDetail() {
       const formattedDate = format(date, 'yyyy-MM-dd');
       const locationName = formatLocationForWeather(day.location);
   
-      const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weather_code,temperature_2m_max,sunrise,sunset,wind_speed_10m_max&timezone=auto&start_date=${formattedDate}&end_date=${formattedDate}`);
+      const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weather_code,temperature_2m_max,sunrise,sunset&hourly=temperature_2m,weather_code&timezone=auto&start_date=${formattedDate}&end_date=${formattedDate}`);
       if (!weatherResponse.ok) throw new Error('Weather API failed');
       const weatherData = await weatherResponse.json();
 
@@ -147,11 +148,17 @@ function ProductionPageDetail() {
       }
   
       const newWeather: WeatherInfo = {
-        temperature: Math.round(weatherData.daily.temperature_2m_max[0]),
-        windSpeed: Math.round(weatherData.daily.wind_speed_10m_max[0]),
-        sunrise: weatherData.daily.sunrise[0],
-        sunset: weatherData.daily.sunset[0],
-        weatherCode: weatherData.daily.weather_code[0],
+        daily: {
+          temperature_2m_max: weatherData.daily.temperature_2m_max,
+          sunrise: weatherData.daily.sunrise,
+          sunset: weatherData.daily.sunset,
+          weather_code: weatherData.daily.weather_code,
+        },
+        hourly: {
+          time: weatherData.hourly.time,
+          temperature_2m: weatherData.hourly.temperature_2m,
+          weather_code: weatherData.hourly.weather_code,
+        },
         lastUpdated: new Date().toISOString(),
         locationName: locationName,
         date: formattedDate,
@@ -869,5 +876,6 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
+
 
 

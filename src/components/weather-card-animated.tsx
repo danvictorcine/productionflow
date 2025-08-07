@@ -62,49 +62,87 @@ const getWeatherDescription = (code: number): { text: string; icon: React.ReactN
     }
 }
 
-
 export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefreshWeather, isFetchingWeather }: WeatherCardAnimatedProps) {
     const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
-    const weatherState = getWeatherState(weather.weatherCode);
-    const weatherDescription = getWeatherDescription(weather.weatherCode);
+    const [currentWeather, setCurrentWeather] = useState<{ temp: number; code: number; } | null>(null);
 
     useEffect(() => {
-        const sunriseTime = parseISO(weather.sunrise);
-        const sunsetTime = parseISO(weather.sunset);
-        const weatherDate = parseISO(weather.date);
-
-        const calculateDaylight = () => {
-            const now = new Date();
-
-            if (isPast(weatherDate) && !isToday(weatherDate)) {
-                setDaylightStatus("Fim da Luz Natural");
+        const updateCurrentWeather = () => {
+            if (!weather.hourly?.time) {
+                const temp = weather.daily.temperature_2m_max[0];
+                const code = weather.daily.weather_code[0];
+                setCurrentWeather({ temp: Math.round(temp), code });
                 return;
             }
 
-            if (isToday(weatherDate)) {
-                if (now < sunriseTime) {
-                    setDaylightStatus(`Começa às ${format(sunriseTime, "HH:mm")}`);
-                } else if (now > sunsetTime) {
-                    setDaylightStatus("Fim da Luz Natural");
-                } else {
-                    const diff = sunsetTime.getTime() - now.getTime();
-                    const hours = Math.floor(diff / (1000 * 60 * 60));
-                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    setDaylightStatus(`${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`);
-                }
+            const now = new Date();
+            const currentHourISO = now.toISOString().substring(0, 14) + "00:00"; // Format to YYYY-MM-DDTHH:00:00
+
+            const hourlyIndex = weather.hourly.time.findIndex(time => time.startsWith(now.toISOString().substring(0, 13)));
+
+            if (hourlyIndex !== -1) {
+                const temp = weather.hourly.temperature_2m[hourlyIndex];
+                const code = weather.hourly.weather_code[hourlyIndex];
+                setCurrentWeather({ temp: Math.round(temp), code });
             } else {
-                 setDaylightStatus(null);
+                // Fallback to daily max if current hour is not found (should be rare)
+                const temp = weather.daily.temperature_2m_max[0];
+                const code = weather.daily.weather_code[0];
+                setCurrentWeather({ temp: Math.round(temp), code });
             }
         };
 
-        calculateDaylight();
-        
-        if (isToday(weatherDate) && new Date() < sunsetTime) {
-            const interval = setInterval(calculateDaylight, 60000);
-            return () => clearInterval(interval);
+        updateCurrentWeather();
+        // Update every minute to catch the change of hour
+        const interval = setInterval(updateCurrentWeather, 60000);
+        return () => clearInterval(interval);
+
+    }, [weather]);
+
+    const weatherState = currentWeather ? getWeatherState(currentWeather.code) : "cloudy";
+    const weatherDescription = currentWeather ? getWeatherDescription(currentWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
+    const sunriseTime = weather.daily.sunrise?.[0] ? parseISO(weather.daily.sunrise[0]) : null;
+    const sunsetTime = weather.daily.sunset?.[0] ? parseISO(weather.daily.sunset[0]) : null;
+    
+    useEffect(() => {
+      const calculateDaylight = () => {
+        if (!sunriseTime || !sunsetTime) {
+            setDaylightStatus(null);
+            return;
         }
 
-    }, [weather.sunrise, weather.sunset, weather.date]);
+        const weatherDate = parseISO(weather.date);
+        const now = new Date();
+
+        if (isPast(weatherDate) && !isToday(weatherDate)) {
+            setDaylightStatus("Fim da Luz Natural");
+            return;
+        }
+
+        if (isToday(weatherDate)) {
+            if (now < sunriseTime) {
+                setDaylightStatus(`Começa às ${format(sunriseTime, "HH:mm")}`);
+            } else if (now > sunsetTime) {
+                setDaylightStatus("Fim da Luz Natural");
+            } else {
+                const diff = sunsetTime.getTime() - now.getTime();
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                setDaylightStatus(`${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`);
+            }
+        } else {
+             setDaylightStatus(null);
+        }
+      };
+      
+      calculateDaylight();
+      
+       if (isToday(day.date) && sunsetTime && new Date() < sunsetTime) {
+          const interval = setInterval(calculateDaylight, 60000);
+          return () => clearInterval(interval);
+      }
+    }, [weather.date, sunriseTime, sunsetTime, day.date]);
+
 
   const formatLocationForCard = (location?: LocationAddress): string => {
     if (!location) return "";
@@ -159,17 +197,21 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                 <p className="font-bold text-sm text-foreground/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
             </div>
             
-            <span className="absolute left-0 bottom-2 font-bold text-6xl text-foreground">{weather.temperature}°</span>
+            <span className="absolute left-0 bottom-2 font-bold text-6xl text-foreground">
+                {currentWeather ? `${currentWeather.temp}°` : '--°'}
+            </span>
 
             <div className="absolute right-0 bottom-2 space-y-2 text-xs font-semibold text-foreground/80 text-center">
                 <div className="flex items-center justify-center gap-1.5 font-bold text-sm text-foreground">
                     {weatherDescription.icon}
                     <span>{weatherDescription.text}</span>
                 </div>
-                 <div className="flex items-center justify-center gap-4">
-                    <div className="flex items-center gap-1"><Sunrise className="w-3 h-3"/> {format(parseISO(weather.sunrise), "HH:mm")}</div>
-                    <div className="flex items-center gap-1"><Sunset className="w-3 h-3"/> {format(parseISO(weather.sunset), "HH:mm")}</div>
-                </div>
+                 {sunriseTime && sunsetTime && (
+                    <div className="flex items-center justify-center gap-4">
+                        <div className="flex items-center gap-1"><Sunrise className="w-3 h-3"/> {format(sunriseTime, "HH:mm")}</div>
+                        <div className="flex items-center gap-1"><Sunset className="w-3 h-3"/> {format(sunsetTime, "HH:mm")}</div>
+                    </div>
+                 )}
                 {daylightStatus && (
                     <div className="flex items-center justify-center gap-1">
                         <Hourglass className="w-3 h-3"/>
