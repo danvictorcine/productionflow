@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import type { WeatherInfo, ShootingDay, LocationAddress } from "@/lib/types";
-import { format, isToday, isFuture, parse, parseISO } from "date-fns";
+import { format, isToday, isFuture, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Wind, Sunrise, Sunset, Hourglass, Cloud, Sun, CloudRain, Snowflake, RotateCw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -116,8 +116,8 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
             }
 
             // Fallback for past dates or future dates without a start time
-            const temp = weather.daily.temperature_2m_max?.[0];
-            const code = weather.daily.weather_code?.[0];
+            const temp = weather.daily?.temperature_2m_max?.[0];
+            const code = weather.daily?.weather_code?.[0];
             if (temp !== undefined && code !== undefined) {
               setCurrentWeather({ temp: Math.round(temp), code });
             }
@@ -233,14 +233,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
             <div className="absolute right-0 bottom-2 space-y-2 text-xs font-semibold text-foreground/80 text-center">
                 <div className="flex items-center justify-center gap-1.5 font-bold text-sm text-foreground">
                     {weatherDescription.icon}
-                    <div className="flex flex-col items-center">
-                        <span>{weatherDescription.text}</span>
-                        {isFuture(day.date) && day.startTime && (
-                            <span className="text-xs font-normal">
-                                às {day.startTime}
-                            </span>
-                        )}
-                    </div>
+                    <span>{weatherDescription.text}</span>
                 </div>
                  {sunriseTime && sunsetTime && (
                     <div className="flex items-center justify-center gap-4">
