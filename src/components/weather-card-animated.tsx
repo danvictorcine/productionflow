@@ -64,7 +64,7 @@ const getWeatherDescription = (code: number): { text: string; icon: React.ReactN
 
 export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefreshWeather, isFetchingWeather }: WeatherCardAnimatedProps) {
     const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
-    const [currentWeather, setCurrentWeather] = useState<{ temp: number; code: number; } | null>(null);
+    const [currentWeather, setCurrentWeather] = useState<{ temp: number; code: number; time?: string } | null>(null);
 
     useEffect(() => {
         const updateCurrentWeather = () => {
@@ -105,12 +105,12 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                 if (hourlyIndex !== -1) {
                     const temp = weather.hourly.temperature_2m[hourlyIndex];
                     const code = weather.hourly.weather_code[hourlyIndex];
-                    setCurrentWeather({ temp: Math.round(temp), code });
+                    setCurrentWeather({ temp: Math.round(temp), code, time: day.startTime });
                 } else {
                      // Fallback for future date if start time not found in hourly data
                     const temp = weather.daily.temperature_2m_max[0];
                     const code = weather.daily.weather_code[0];
-                    setCurrentWeather({ temp: Math.round(temp), code });
+                    setCurrentWeather({ temp: Math.round(temp), code, time: day.startTime });
                 }
                 return;
             }
@@ -199,13 +199,8 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         weatherState === 'rainy' && 'bg-gradient-to-br from-blue-300 via-white to-white/0 dark:from-blue-800/50 dark:via-background dark:to-background/0',
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
-         {!isPublicView && (
-            <Button type="button" size="icon" variant="ghost" className="absolute top-2 right-2 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
-                {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
-            </Button>
-        )}
         {/* Animated Background Elements */}
-        <div className="absolute w-[250px] h-[250px] -right-9 -top-12 flex items-center justify-center scale-70 z-10">
+        <div className="absolute w-[200px] h-[200px] -right-8 -top-12 flex items-center justify-center scale-[0.6] z-10">
             <div className={cn("sun absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] dark:from-yellow-400 dark:to-yellow-300", weatherState !== 'sunny' && "hidden")}></div>
             <div className={cn("sunshine absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] animate-sunshine", weatherState !== 'sunny' && "hidden")}></div>
             
@@ -224,6 +219,11 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
             <div className="card-header">
                 <span className="font-extrabold text-base leading-tight text-foreground/80 break-words">{formattedLocation}</span>
                 <p className="font-bold text-sm text-foreground/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
+                 {!isPublicView && (
+                    <Button type="button" size="icon" variant="ghost" className="absolute top-2 right-2 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
+                        {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
+                    </Button>
+                )}
             </div>
             
             <span className="absolute left-0 bottom-2 font-bold text-6xl text-foreground">
