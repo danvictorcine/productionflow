@@ -77,7 +77,6 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                 return;
             }
 
-            // Logic for today: Show weather for the current hour
             if (isToday(day.date)) {
                 const now = new Date();
                 const hourlyIndex = weather.hourly.time.findIndex(time => time.startsWith(now.toISOString().substring(0, 13)));
@@ -86,7 +85,6 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                     const code = weather.hourly.weather_code[hourlyIndex];
                     setCurrentWeather({ temp: Math.round(temp), code });
                 } else {
-                    // Fallback for today if current hour not found
                     const temp = weather.daily.temperature_2m_max[0];
                     const code = weather.daily.weather_code[0];
                     setCurrentWeather({ temp: Math.round(temp), code });
@@ -94,7 +92,6 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                 return;
             }
 
-            // Logic for future dates: Show weather for the start time
             if (isFuture(day.date) && day.startTime) {
                 const startHour = parseInt(day.startTime.split(':')[0], 10);
                 const dayDateStr = format(day.date, 'yyyy-MM-dd');
@@ -107,7 +104,6 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                     const code = weather.hourly.weather_code[hourlyIndex];
                     setCurrentWeather({ temp: Math.round(temp), code, time: day.startTime });
                 } else {
-                     // Fallback for future date if start time not found in hourly data
                     const temp = weather.daily.temperature_2m_max[0];
                     const code = weather.daily.weather_code[0];
                     setCurrentWeather({ temp: Math.round(temp), code, time: day.startTime });
@@ -115,7 +111,6 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                 return;
             }
 
-            // Fallback for past dates or future dates without a start time
             const temp = weather.daily?.temperature_2m_max?.[0];
             const code = weather.daily?.weather_code?.[0];
             if (temp !== undefined && code !== undefined) {
@@ -125,9 +120,8 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
 
         updateCurrentWeather();
         
-        // Auto-update only for today
         if (isToday(day.date)) {
-            const interval = setInterval(updateCurrentWeather, 60000); // Check every minute
+            const interval = setInterval(updateCurrentWeather, 60000); 
             return () => clearInterval(interval);
         }
 
@@ -135,6 +129,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
 
     const weatherState = currentWeather ? getWeatherState(currentWeather.code) : "cloudy";
     const weatherDescription = currentWeather ? getWeatherDescription(currentWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
+    
     const sunriseTime = weather.daily?.sunrise?.[0] ? parseISO(weather.daily.sunrise[0]) : null;
     const sunsetTime = weather.daily?.sunset?.[0] ? parseISO(weather.daily.sunset[0]) : null;
     
@@ -199,8 +194,8 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         weatherState === 'rainy' && 'bg-gradient-to-br from-blue-300 via-white to-white/0 dark:from-blue-800/50 dark:via-background dark:to-background/0',
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
-        {/* Animated Background Elements */}
-        <div className="absolute w-[200px] h-[200px] -right-8 -top-12 flex items-center justify-center scale-[0.6] z-10">
+        
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%+2rem)] w-[150px] h-[150px] flex items-center justify-center scale-[0.6] z-10">
             <div className={cn("sun absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] dark:from-yellow-400 dark:to-yellow-300", weatherState !== 'sunny' && "hidden")}></div>
             <div className={cn("sunshine absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] animate-sunshine", weatherState !== 'sunny' && "hidden")}></div>
             
@@ -214,16 +209,16 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
             </div>
         </div>
 
-        {/* Content */}
         <div className="relative z-20 flex flex-col h-full">
+             {!isPublicView && onRefreshWeather && (
+                <Button type="button" size="icon" variant="ghost" className="absolute top-0 right-0 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
+                    {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
+                </Button>
+            )}
+
             <div className="card-header">
                 <span className="font-extrabold text-base leading-tight text-foreground/80 break-words">{formattedLocation}</span>
                 <p className="font-bold text-sm text-foreground/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
-                 {!isPublicView && (
-                    <Button type="button" size="icon" variant="ghost" className="absolute top-2 right-2 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
-                        {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
-                    </Button>
-                )}
             </div>
             
             <span className="absolute left-0 bottom-2 font-bold text-6xl text-foreground">
