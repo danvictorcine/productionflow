@@ -106,14 +106,21 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                     const temp = weather.hourly.temperature_2m[hourlyIndex];
                     const code = weather.hourly.weather_code[hourlyIndex];
                     setCurrentWeather({ temp: Math.round(temp), code });
+                } else {
+                     // Fallback for future date if start time not found in hourly data
+                    const temp = weather.daily.temperature_2m_max[0];
+                    const code = weather.daily.weather_code[0];
+                    setCurrentWeather({ temp: Math.round(temp), code });
                 }
                 return;
             }
 
             // Fallback for past dates or future dates without a start time
-            const temp = weather.daily.temperature_2m_max[0];
-            const code = weather.daily.weather_code[0];
-            setCurrentWeather({ temp: Math.round(temp), code });
+            const temp = weather.daily.temperature_2m_max?.[0];
+            const code = weather.daily.weather_code?.[0];
+            if (temp !== undefined && code !== undefined) {
+              setCurrentWeather({ temp: Math.round(temp), code });
+            }
         };
 
         updateCurrentWeather();
@@ -226,10 +233,14 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
             <div className="absolute right-0 bottom-2 space-y-2 text-xs font-semibold text-foreground/80 text-center">
                 <div className="flex items-center justify-center gap-1.5 font-bold text-sm text-foreground">
                     {weatherDescription.icon}
-                    <span>
-                         {weatherDescription.text}
-                         {isFuture(day.date) && day.startTime && ` às ${day.startTime}`}
-                    </span>
+                    <div className="flex flex-col items-center">
+                        <span>{weatherDescription.text}</span>
+                        {isFuture(day.date) && day.startTime && (
+                            <span className="text-xs font-normal">
+                                às {day.startTime}
+                            </span>
+                        )}
+                    </div>
                 </div>
                  {sunriseTime && sunsetTime && (
                     <div className="flex items-center justify-center gap-4">
