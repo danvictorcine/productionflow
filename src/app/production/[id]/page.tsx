@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Edit, PlusCircle, Clapperboard, Trash2, Users, Utensils, Info, Phone, FileDown, Loader2, FileSpreadsheet, Copy, Share2, Hourglass, ChevronDown, MoreVertical } from 'lucide-react';
-import { format, isToday } from 'date-fns';
+import { format, isToday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -179,8 +179,9 @@ function ProductionPageDetail() {
           const locationName = formatLocationForWeather(day.location);
           const locationMismatch = weather && weather.locationName !== locationName;
           const isStale = !weather || (weather.lastUpdated && new Date(weather.lastUpdated) < threeHoursAgo);
-          const shouldUpdate = locationMismatch || isStale;
-
+          const dateMismatch = weather && weather.date !== format(day.date, 'yyyy-MM-dd');
+          const shouldUpdate = dateMismatch || locationMismatch || isStale;
+          
           if (shouldUpdate && day.latitude && day.longitude) {
               fetchAndUpdateWeather(day);
           }
@@ -293,12 +294,14 @@ function ProductionPageDetail() {
       scenes: Array.isArray(data.scenes) ? data.scenes.map(s => ({ ...s, id: s.id || crypto.randomUUID() })) : [],
     };
     
+    let savedDayId = editingShootingDay?.id;
+
     try {
       if (editingShootingDay) {
         await firestoreApi.updateShootingDay(editingShootingDay.id, sanitizedData);
         toast({ title: 'Ordem do Dia atualizada!' });
       } else {
-        await firestoreApi.addShootingDay(productionId, sanitizedData);
+        savedDayId = await firestoreApi.addShootingDay(productionId, sanitizedData);
         toast({ title: 'Ordem do Dia criada!' });
       }
       
@@ -311,6 +314,12 @@ function ProductionPageDetail() {
       }
       
       setIsShootingDayDialogOpen(false);
+      
+      if (savedDayId) {
+        const updatedDay = await firestoreApi.getShootingDay(savedDayId);
+        if (updatedDay) checkAndFetchWeatherForDays([updatedDay]);
+      }
+      
       setEditingShootingDay(null);
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
@@ -858,3 +867,4 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
+

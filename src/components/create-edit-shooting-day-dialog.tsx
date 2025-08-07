@@ -137,11 +137,8 @@ interface CreateEditShootingDayDialogProps {
 }
 
 const formatLocationForInput = (location?: LocationAddress): string => {
-    if (!location) return "";
-    const city = location.city || location.town || location.village || location.county;
-    const state = location.state;
-    const country = location.country;
-    return [city, state, country].filter(Boolean).join(', ');
+    if (!location || !location.displayName) return "";
+    return location.displayName;
 };
 
 const ChecklistFormSection = ({ name, label, control }: { name: string, label: string, control: any }) => {
