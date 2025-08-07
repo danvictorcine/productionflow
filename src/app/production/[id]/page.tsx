@@ -43,7 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CopyableError } from '@/components/copyable-error';
-import { Accordion, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
@@ -876,6 +876,7 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
+
 
 
 
