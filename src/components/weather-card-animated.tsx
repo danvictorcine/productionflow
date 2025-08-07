@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import type { WeatherInfo, ShootingDay, LocationAddress } from "@/lib/types";
-import { format, isToday, isFuture, parseISO } from "date-fns";
+import { format, isToday, isFuture, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Wind, Sunrise, Sunset, Hourglass, Cloud, Sun, CloudRain, Snowflake, RotateCw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -195,7 +195,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
         
-        <div className="absolute top-1/2 right-4 -translate-y-[calc(50%-1rem)] w-[120px] h-[120px] flex items-center justify-center scale-[0.6] z-10">
+        <div className={cn("absolute top-1 right-4 w-[120px] h-[120px] flex items-center justify-center scale-[0.6] z-10")}>
             <div className={cn("sun absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] dark:from-yellow-400 dark:to-yellow-300", weatherState !== 'sunny' && "hidden")}></div>
             <div className={cn("sunshine absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] animate-sunshine", weatherState !== 'sunny' && "hidden")}></div>
             
