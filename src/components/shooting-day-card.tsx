@@ -1,13 +1,14 @@
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import type { Production, ShootingDay, Scene, ChecklistItem, LocationAddress, TeamMember } from "@/lib/types";
-import { format, isToday, isPast, parseISO } from "date-fns";
+import { format, isToday, isPast, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
-  Users, FileText, Hospital, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown, AlignJustify, Truck, Star, Shirt, RotateCw, Loader2
+  Users, FileText, Hospital, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown, AlignJustify, Truck, Star, Shirt
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -414,7 +415,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div className="relative h-[235px] transition-all duration-500 ease-in-out hover:scale-105 group">
+                            <div className="relative h-[235px] transition-all duration-500 ease-in-out group hover:scale-105">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full rounded-2xl" />
                                 ) : localDay.weather ? (
