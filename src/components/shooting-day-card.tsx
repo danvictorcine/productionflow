@@ -195,12 +195,12 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                 <Separator className="my-3" />
                 <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="notes" className="border-b-0">
-                        <AccordionTrigger className="w-full hover:no-underline p-1 -ml-1">
-                            <div className="flex items-center text-lg font-semibold flex-1">
+                        <AccordionTrigger className="w-full p-0 rounded-t-lg transition-colors group hover:no-underline">
+                           <div className="flex items-center text-lg font-semibold flex-1">
                                 <FileText className="h-5 w-5 mr-2 text-primary"/>
                                 Notas por Departamento
                             </div>
-                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                         </AccordionTrigger>
                         <AccordionContent className="pt-2">
                             <div className="space-y-4 pt-2">
@@ -423,7 +423,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     <>
                                         <WeatherCardAnimated weather={localDay.weather} day={localDay as ShootingDay} />
                                         {!isPublicView && (
-                                            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-40 h-8 w-8 text-black/60 dark:text-white/70" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
+                                            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-40 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
                                                 {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
                                             </Button>
                                         )}
