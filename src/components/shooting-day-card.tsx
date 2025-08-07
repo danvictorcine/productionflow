@@ -416,18 +416,17 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div className="relative h-[235px] transition-all duration-500 ease-in-out group">
+                            <div className="relative h-[235px]">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full rounded-2xl" />
                                 ) : localDay.weather ? (
-                                    <>
-                                        <WeatherCardAnimated weather={localDay.weather} day={localDay as ShootingDay} />
-                                        {!isPublicView && (
-                                            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-10 h-8 w-8 text-black/60 hover:text-black/90 dark:text-white/70 dark:hover:text-white hover:bg-transparent" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
-                                                {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
-                                            </Button>
-                                        )}
-                                    </>
+                                    <WeatherCardAnimated 
+                                        weather={localDay.weather} 
+                                        day={localDay as ShootingDay} 
+                                        isPublicView={isPublicView}
+                                        onRefreshWeather={onRefreshWeather}
+                                        isFetchingWeather={isFetchingWeather}
+                                    />
                                 ) : (
                                     <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                                         <p className="text-sm font-semibold">Sem dados de clima</p>

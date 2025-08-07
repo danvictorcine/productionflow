@@ -1,3 +1,4 @@
+
 // @/src/components/weather-card-animated.tsx
 "use client";
 
@@ -5,12 +6,16 @@ import { useEffect, useState } from "react";
 import type { WeatherInfo, ShootingDay, LocationAddress } from "@/lib/types";
 import { format, isToday, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Wind, Sunrise, Sunset, Hourglass, Cloud, Sun, CloudRain, Snowflake } from "lucide-react";
+import { Wind, Sunrise, Sunset, Hourglass, Cloud, Sun, CloudRain, Snowflake, RotateCw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
 
 interface WeatherCardAnimatedProps {
   weather: WeatherInfo;
   day: ShootingDay;
+  isPublicView?: boolean;
+  onRefreshWeather?: () => void;
+  isFetchingWeather?: boolean;
 }
 
 const getWeatherState = (code: number) => {
@@ -59,7 +64,7 @@ const getWeatherDescription = (code: number): { text: string; icon: React.ReactN
 }
 
 
-export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) {
+export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefreshWeather, isFetchingWeather }: WeatherCardAnimatedProps) {
     const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
     const weatherState = getWeatherState(weather.weatherCode);
     const weatherDescription = getWeatherDescription(weather.weatherCode);
@@ -122,13 +127,18 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
 
   return (
     <div className={cn(
-        "relative w-full h-full p-6 rounded-2xl text-foreground overflow-hidden shadow-lg",
-        "transition-all duration-500 ease-in-out hover:scale-105",
+        "relative w-full h-full p-6 rounded-2xl text-foreground overflow-hidden shadow-lg group",
+        "transition-all duration-500 ease-in-out group-hover:scale-105",
         weatherState === 'sunny' && 'bg-gradient-to-br from-[#FFF7B1] via-white to-white/0 dark:from-yellow-900/50 dark:via-background dark:to-background/0',
         weatherState === 'cloudy' && 'bg-gradient-to-br from-gray-300 via-white to-white/0 dark:from-gray-700/50 dark:via-background dark:to-background/0',
         weatherState === 'rainy' && 'bg-gradient-to-br from-blue-300 via-white to-white/0 dark:from-blue-800/50 dark:via-background dark:to-background/0',
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
+         {!isPublicView && (
+            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-20 h-8 w-8 text-black/60 hover:text-black/90 dark:text-white/70 dark:hover:text-white hover:bg-transparent" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
+                {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
+            </Button>
+        )}
         {/* Animated Background Elements */}
         <div className="absolute w-[250px] h-[250px] -right-9 -top-12 flex items-center justify-center scale-70">
             <div className={cn("sun absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] dark:from-yellow-400 dark:to-yellow-300", weatherState !== 'sunny' && "hidden")}></div>
@@ -145,7 +155,7 @@ export function WeatherCardAnimated({ weather, day }: WeatherCardAnimatedProps) 
         </div>
 
         {/* Content */}
-        <div className="relative z-30 flex flex-col h-full">
+        <div className="relative z-10 flex flex-col h-full">
             <div className="card-header">
                 <span className="font-extrabold text-base leading-tight text-foreground/80 break-words">{formattedLocation}</span>
                 <p className="font-bold text-sm text-foreground/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
