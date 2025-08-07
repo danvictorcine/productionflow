@@ -1,10 +1,9 @@
-
 // @/src/components/weather-card-animated.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import type { WeatherInfo, ShootingDay, LocationAddress } from "@/lib/types";
-import { format, isToday, isPast, parseISO } from "date-fns";
+import { format, isToday, isFuture, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Wind, Sunrise, Sunset, Hourglass, Cloud, Sun, CloudRain, Snowflake, RotateCw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -78,29 +77,54 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                 return;
             }
 
-            const now = new Date();
-            const currentHourISO = now.toISOString().substring(0, 14) + "00:00"; // Format to YYYY-MM-DDTHH:00:00
-
-            const hourlyIndex = weather.hourly.time.findIndex(time => time.startsWith(now.toISOString().substring(0, 13)));
-
-            if (hourlyIndex !== -1) {
-                const temp = weather.hourly.temperature_2m[hourlyIndex];
-                const code = weather.hourly.weather_code[hourlyIndex];
-                setCurrentWeather({ temp: Math.round(temp), code });
-            } else {
-                // Fallback to daily max if current hour is not found (should be rare)
-                const temp = weather.daily.temperature_2m_max[0];
-                const code = weather.daily.weather_code[0];
-                setCurrentWeather({ temp: Math.round(temp), code });
+            // Logic for today: Show weather for the current hour
+            if (isToday(day.date)) {
+                const now = new Date();
+                const hourlyIndex = weather.hourly.time.findIndex(time => time.startsWith(now.toISOString().substring(0, 13)));
+                if (hourlyIndex !== -1) {
+                    const temp = weather.hourly.temperature_2m[hourlyIndex];
+                    const code = weather.hourly.weather_code[hourlyIndex];
+                    setCurrentWeather({ temp: Math.round(temp), code });
+                } else {
+                    // Fallback for today if current hour not found
+                    const temp = weather.daily.temperature_2m_max[0];
+                    const code = weather.daily.weather_code[0];
+                    setCurrentWeather({ temp: Math.round(temp), code });
+                }
+                return;
             }
+
+            // Logic for future dates: Show weather for the start time
+            if (isFuture(day.date) && day.startTime) {
+                const startHour = parseInt(day.startTime.split(':')[0], 10);
+                const dayDateStr = format(day.date, 'yyyy-MM-dd');
+                const targetTimeStr = `${dayDateStr}T${String(startHour).padStart(2, '0')}:00`;
+                
+                const hourlyIndex = weather.hourly.time.findIndex(time => time.startsWith(targetTimeStr));
+
+                if (hourlyIndex !== -1) {
+                    const temp = weather.hourly.temperature_2m[hourlyIndex];
+                    const code = weather.hourly.weather_code[hourlyIndex];
+                    setCurrentWeather({ temp: Math.round(temp), code });
+                }
+                return;
+            }
+
+            // Fallback for past dates or future dates without a start time
+            const temp = weather.daily.temperature_2m_max[0];
+            const code = weather.daily.weather_code[0];
+            setCurrentWeather({ temp: Math.round(temp), code });
         };
 
         updateCurrentWeather();
-        // Update every minute to catch the change of hour
-        const interval = setInterval(updateCurrentWeather, 60000);
-        return () => clearInterval(interval);
+        
+        // Auto-update only for today
+        if (isToday(day.date)) {
+            const interval = setInterval(updateCurrentWeather, 60000); // Check every minute
+            return () => clearInterval(interval);
+        }
 
-    }, [weather]);
+    }, [weather, day.date, day.startTime]);
 
     const weatherState = currentWeather ? getWeatherState(currentWeather.code) : "cloudy";
     const weatherDescription = currentWeather ? getWeatherDescription(currentWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
@@ -116,11 +140,6 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
 
         const weatherDate = parseISO(weather.date);
         const now = new Date();
-
-        if (isPast(weatherDate) && !isToday(weatherDate)) {
-            setDaylightStatus("Fim da Luz Natural");
-            return;
-        }
 
         if (isToday(weatherDate)) {
             if (now < sunriseTime) {
@@ -174,7 +193,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
          {!isPublicView && (
-            <Button type="button" size="icon" variant="ghost" className="absolute top-2 right-2 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
+            <Button type="button" size="icon" variant="ghost" className="absolute top-2 right-2 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
                 {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
             </Button>
         )}
@@ -207,7 +226,10 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
             <div className="absolute right-0 bottom-2 space-y-2 text-xs font-semibold text-foreground/80 text-center">
                 <div className="flex items-center justify-center gap-1.5 font-bold text-sm text-foreground">
                     {weatherDescription.icon}
-                    <span>{weatherDescription.text}</span>
+                    <span>
+                         {weatherDescription.text}
+                         {isFuture(day.date) && day.startTime && ` às ${day.startTime}`}
+                    </span>
                 </div>
                  {sunriseTime && sunsetTime && (
                     <div className="flex items-center justify-center gap-4">
