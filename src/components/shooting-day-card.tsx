@@ -1,10 +1,9 @@
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import type { Production, ShootingDay, Scene, ChecklistItem, LocationAddress, TeamMember } from "@/lib/types";
-import { format, isToday, isPast, parse, parseISO } from "date-fns";
+import { format, isToday, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
@@ -249,22 +248,21 @@ const formatLocationForHeader = (location?: LocationAddress): string => {
 
 const calculateDuration = (start?: string, end?: string): string | null => {
     if (!start || !end) return null;
-    const [startH, startM] = start.split(':').map(Number);
-    const [endH, endM] = end.split(':').map(Number);
-    if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return null;
+    try {
+      const startTime = parse(start, "HH:mm", new Date());
+      let endTime = parse(end, "HH:mm", new Date());
 
-    const startDate = new Date(0, 0, 0, startH, startM);
-    const endDate = new Date(0, 0, 0, endH, endM);
+      if (endTime < startTime) {
+          endTime.setDate(endTime.getDate() + 1);
+      }
 
-    let diff = endDate.getTime() - startDate.getTime();
-    if (diff < 0) { // Handles overnight shoots
-        diff += 24 * 60 * 60 * 1000;
+      const diff = endTime.getTime() - startTime.getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      return `${hours}h ${minutes}m`;
+    } catch (e) {
+      return null;
     }
-    
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    return `${hours}h ${minutes}m`;
 };
 
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, onRefreshWeather, isExporting, isPublicView = false }: ShootingDayCardProps) => {
@@ -276,7 +274,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         setLocalDay(day);
     }, [day]);
 
-    const isFinished = isPast(parse(localDay.endTime || "00:00", "HH:mm", localDay.date));
+    const isFinished = isPast(parseISO(day.date.toISOString())) && localDay.endTime ? isPast(parse(localDay.endTime, "HH:mm", new Date(localDay.date))) : false;
 
     const formattedDateString = format(new Date(localDay.date), "eeee, dd/MM", { locale: ptBR });
     const displayDate = formattedDateString.charAt(0).toUpperCase() + formattedDateString.slice(1);
@@ -416,7 +414,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div className="relative h-[235px]">
+                            <div className="relative h-[235px] transition-all duration-500 ease-in-out hover:scale-105 group">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full rounded-2xl" />
                                 ) : localDay.weather ? (

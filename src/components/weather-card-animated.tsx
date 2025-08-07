@@ -1,4 +1,3 @@
-
 // @/src/components/weather-card-animated.tsx
 "use client";
 
@@ -127,35 +126,34 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
 
   return (
     <div className={cn(
-        "relative w-full h-full p-6 rounded-2xl text-foreground overflow-hidden shadow-lg group",
-        "transition-all duration-500 ease-in-out group-hover:scale-105",
+        "relative w-full h-full p-6 rounded-2xl text-foreground overflow-hidden shadow-lg",
         weatherState === 'sunny' && 'bg-gradient-to-br from-[#FFF7B1] via-white to-white/0 dark:from-yellow-900/50 dark:via-background dark:to-background/0',
         weatherState === 'cloudy' && 'bg-gradient-to-br from-gray-300 via-white to-white/0 dark:from-gray-700/50 dark:via-background dark:to-background/0',
         weatherState === 'rainy' && 'bg-gradient-to-br from-blue-300 via-white to-white/0 dark:from-blue-800/50 dark:via-background dark:to-background/0',
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
          {!isPublicView && (
-            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-20 h-8 w-8 text-black/60 hover:text-black/90 dark:text-white/70 dark:hover:text-white hover:bg-transparent" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
+            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
                 {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
             </Button>
         )}
         {/* Animated Background Elements */}
-        <div className="absolute w-[250px] h-[250px] -right-9 -top-12 flex items-center justify-center scale-70">
+        <div className="absolute w-[250px] h-[250px] -right-9 -top-12 flex items-center justify-center scale-70 z-10">
             <div className={cn("sun absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] dark:from-yellow-400 dark:to-yellow-300", weatherState !== 'sunny' && "hidden")}></div>
             <div className={cn("sunshine absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] animate-sunshine", weatherState !== 'sunny' && "hidden")}></div>
             
-            <div className={cn("cloud absolute w-60 pt-11 ml-6 animate-clouds-fast z-10", weatherState === 'sunny' && "hidden")}>
+            <div className={cn("cloud absolute w-60 pt-11 ml-6 animate-clouds-fast", weatherState === 'sunny' && "hidden")}>
                 <div className={cn("w-[65px] h-[65px] inline-block rounded-[50%_50%_0%_50%] ", weatherState === 'rainy' ? 'bg-blue-400 dark:bg-blue-600': 'bg-gray-400 dark:bg-gray-500')}></div>
                 <div className={cn("w-[45px] h-[45px] -ml-6 inline-block rounded-[50%_50%_50%_0%]", weatherState === 'rainy' ? 'bg-blue-400 dark:bg-blue-600': 'bg-gray-400 dark:bg-gray-500')}></div>
             </div>
-            <div className="cloud absolute w-60 -mt-8 ml-36 animate-clouds-slow z-20">
+            <div className="cloud absolute w-60 -mt-8 ml-36 animate-clouds-slow">
                 <div className={cn("w-[30px] h-[30px] inline-block rounded-[50%_50%_0%_50%]", weatherState === 'rainy' ? 'bg-blue-500 dark:bg-blue-700': 'bg-gray-500 dark:bg-gray-600')}></div>
                 <div className={cn("w-[50px] h-[50px] -ml-5 inline-block rounded-[50%_50%_50%_0%]", weatherState === 'rainy' ? 'bg-blue-500 dark:bg-blue-700': 'bg-gray-500 dark:bg-gray-600')}></div>
             </div>
         </div>
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col h-full">
+        <div className="relative z-20 flex flex-col h-full">
             <div className="card-header">
                 <span className="font-extrabold text-base leading-tight text-foreground/80 break-words">{formattedLocation}</span>
                 <p className="font-bold text-sm text-foreground/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
