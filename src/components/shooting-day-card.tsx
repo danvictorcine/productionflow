@@ -147,7 +147,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
     <div className="p-4 rounded-lg border bg-background/50 space-y-3">
         <div className="flex flex-col md:flex-row gap-4 items-start">
             {scene.latitude && scene.longitude && (
-                <div className="w-full md:w-1/3 aspect-video md:aspect-auto md:h-48 rounded-lg overflow-hidden shadow-lg border flex-shrink-0">
+                <div className="w-full md:w-1/3 aspect-video md:aspect-auto md:h-48 rounded-lg overflow-hidden shadow-lg border flex-shrink-0 group transition-all duration-500 ease-in-out hover:scale-105">
                     <DisplayMap position={[scene.latitude, scene.longitude]} className="h-full w-full" isExporting={isExporting} />
                 </div>
             )}
