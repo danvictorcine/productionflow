@@ -545,6 +545,24 @@ export const getShootingDays = async (productionId: string): Promise<ShootingDay
   return days;
 };
 
+export const getShootingDay = async (dayId: string): Promise<ShootingDay | null> => {
+    const userId = getUserId();
+    if (!userId) return null;
+    const docRef = doc(db, 'shooting_days', dayId);
+
+    const dayDoc = await getDoc(docRef);
+    if (!dayDoc.exists() || dayDoc.data().userId !== userId) {
+        return null;
+    }
+
+    const data = dayDoc.data();
+    return {
+      id: docRef.id,
+      ...data,
+      date: (data.date as Timestamp).toDate(),
+    } as ShootingDay;
+};
+
 export const updateShootingDay = async (dayId: string, data: Partial<Omit<ShootingDay, 'id' | 'userId' | 'productionId'>>) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
