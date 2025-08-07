@@ -423,7 +423,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                     <>
                                         <WeatherCardAnimated weather={localDay.weather} day={localDay as ShootingDay} />
                                         {!isPublicView && (
-                                            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-40 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
+                                            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-10 h-8 w-8 text-black/60 hover:text-black/90 dark:text-white/70 dark:hover:text-white hover:bg-transparent" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
                                                 {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
                                             </Button>
                                         )}
