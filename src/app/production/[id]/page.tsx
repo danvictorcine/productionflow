@@ -77,6 +77,7 @@ const PdfExportPortal = ({ day, production }: { day: ProcessedShootingDay, produ
           isFetchingWeather={false}
           isExporting={true}
           isPublicView={true}
+          onRefreshWeather={() => {}}
         />
       </Accordion>
       <div className="mt-8 text-center text-sm text-muted-foreground">
@@ -773,6 +774,7 @@ function ProductionPageDetail() {
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting}
                     onShare={() => handleShare('day', day.id, day)}
+                    onRefreshWeather={() => fetchAndUpdateWeather(day)}
                   />
                 ))
             )}
@@ -867,4 +869,5 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
+
 
