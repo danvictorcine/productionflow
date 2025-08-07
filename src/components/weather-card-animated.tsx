@@ -133,7 +133,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
          {!isPublicView && (
-            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
+            <Button type="button" size="icon" variant="ghost" className="absolute top-2 right-2 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
                 {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
             </Button>
         )}
