@@ -360,9 +360,9 @@ function CreativeProjectPageDetail() {
   const imageUploadRef = useRef<HTMLInputElement>(null);
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const storyboardUploadRef = useRef<HTMLInputElement>(null);
-  const hasUnsavedChanges = useRef(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
+  const dirtyItemsRef = useRef(new Set<string>());
 
   const [project, setProject] = useState<CreativeProject | null>(null);
   const [items, setItems] = useState<BoardItem[]>([]);
@@ -489,35 +489,50 @@ function CreativeProjectPageDetail() {
     fetchProjectData();
   }, [fetchProjectData]);
 
+  const saveDirtyItems = useCallback(async () => {
+    if (dirtyItemsRef.current.size === 0) return;
+
+    const itemsToUpdate = Array.from(dirtyItemsRef.current).map(id => {
+        const item = items.find(i => i.id === id);
+        if (!item) return null;
+        return {
+            id: item.id,
+            data: { position: item.position, size: item.size }
+        };
+    }).filter(Boolean) as { id: string, data: Partial<BoardItem> }[];
+
+    if (itemsToUpdate.length > 0) {
+        try {
+            await firestoreApi.updateBoardItemsBatch(itemsToUpdate);
+            dirtyItemsRef.current.clear();
+        } catch (error) {
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro de Sincronização',
+                description: <CopyableError userMessage="Não foi possível salvar as últimas alterações." errorCode={errorTyped.code || 'BATCH_UPDATE_FAILED'} />,
+            });
+        }
+    }
+  }, [items, toast]);
+  
   // Debounced save effect for position and size
   useEffect(() => {
-    if (isLoading || !hasUnsavedChanges.current) return;
+    if (isLoading || dirtyItemsRef.current.size === 0) return;
   
     const debounceTimer = setTimeout(() => {
-        const updates = items.map(item => ({
-            id: item.id,
-            data: {
-                position: item.position,
-                size: item.size
-            }
-        }));
-
-        if (updates.length > 0) {
-            firestoreApi.updateBoardItemsBatch(updates)
-                .then(() => { hasUnsavedChanges.current = false; })
-                .catch(error => {
-                    const errorTyped = error as { code?: string; message: string };
-                    toast({
-                        variant: 'destructive',
-                        title: 'Erro de Sincronização',
-                        description: <CopyableError userMessage="Não foi possível salvar as últimas alterações." errorCode={errorTyped.code || 'BATCH_UPDATE_FAILED'} />,
-                    });
-                });
-        }
+        saveDirtyItems();
     }, 2000); // 2-second debounce time
   
     return () => clearTimeout(debounceTimer);
-  }, [items, isLoading, toast]);
+  }, [items, isLoading, saveDirtyItems]);
+
+  // Save on unmount
+  useEffect(() => {
+    return () => {
+        saveDirtyItems();
+    };
+  }, [saveDirtyItems]);
   
   const handleProjectSubmit = async (data: Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>) => {
     if (!project) return;
@@ -539,14 +554,13 @@ function CreativeProjectPageDetail() {
   const handleItemUpdate = useCallback((itemId: string, data: Partial<BoardItem>) => {
     setItems(prevItems => {
         const newItems = prevItems.map(item => (item.id === itemId ? { ...item, ...data } : item));
-        // Only flag for batch update if position or size changed
+        
         if(data.position || data.size) {
-          hasUnsavedChanges.current = true;
+            dirtyItemsRef.current.add(itemId);
         }
         return newItems;
     });
 
-    // Save content-related changes immediately or debounced within component
     if (data.content || data.items) {
         const contentUpdate: Partial<BoardItem> = {};
         if(data.content) contentUpdate.content = data.content;
@@ -555,7 +569,7 @@ function CreativeProjectPageDetail() {
         const debounceContentTimer = setTimeout(() => {
              firestoreApi.updateBoardItem(itemId, contentUpdate)
                 .catch(err => console.error("Failed to save content", err));
-        }, 500); // Debounce content updates to avoid saving on every keystroke
+        }, 500);
         return () => clearTimeout(debounceContentTimer);
     }
   }, []);
