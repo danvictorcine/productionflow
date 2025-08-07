@@ -416,14 +416,14 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div className="relative h-[235px] transition-all duration-500 ease-in-out hover:scale-105 group">
+                            <div className="relative h-[235px] transition-all duration-500 ease-in-out group">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full rounded-2xl" />
                                 ) : localDay.weather ? (
                                     <>
                                         <WeatherCardAnimated weather={localDay.weather} day={localDay as ShootingDay} />
                                         {!isPublicView && (
-                                            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-40 h-8 w-8 text-black/60 dark:text-white/70 opacity-0 group-hover:opacity-100 transition-opacity" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
+                                            <Button size="icon" variant="ghost" className="absolute top-2 right-2 z-40 h-8 w-8 text-black/60 dark:text-white/70" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
                                                 {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
                                             </Button>
                                         )}
