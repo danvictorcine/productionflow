@@ -195,7 +195,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
         
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%+2rem)] w-[150px] h-[150px] flex items-center justify-center scale-[0.6] z-10">
+        <div className="absolute top-1/2 right-4 -translate-y-[calc(50%-1rem)] w-[120px] h-[120px] flex items-center justify-center scale-[0.6] z-10">
             <div className={cn("sun absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] dark:from-yellow-400 dark:to-yellow-300", weatherState !== 'sunny' && "hidden")}></div>
             <div className={cn("sunshine absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] animate-sunshine", weatherState !== 'sunny' && "hidden")}></div>
             
@@ -226,9 +226,11 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
             </span>
 
             <div className="absolute right-0 bottom-2 space-y-2 text-xs font-semibold text-foreground/80 text-center">
-                <div className="flex items-center justify-center gap-1.5 font-bold text-sm text-foreground">
-                    {weatherDescription.icon}
-                    <span>{weatherDescription.text}</span>
+                 <div className="flex flex-col items-center justify-center font-bold text-sm text-foreground">
+                    <div className="flex items-center gap-1.5">
+                       {weatherDescription.icon}
+                       <span>{weatherDescription.text}</span>
+                    </div>
                 </div>
                  {sunriseTime && sunsetTime && (
                     <div className="flex items-center justify-center gap-4">
