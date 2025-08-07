@@ -1,3 +1,4 @@
+
 // @/src/components/weather-card-animated.tsx
 "use client";
 
@@ -68,10 +69,12 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
 
     useEffect(() => {
         const updateCurrentWeather = () => {
-            if (!weather.hourly?.time) {
-                const temp = weather.daily.temperature_2m_max[0];
-                const code = weather.daily.weather_code[0];
-                setCurrentWeather({ temp: Math.round(temp), code });
+            if (!weather.hourly?.time || !weather.daily) {
+                const temp = weather.daily?.temperature_2m_max?.[0];
+                const code = weather.daily?.weather_code?.[0];
+                if (temp !== undefined && code !== undefined) {
+                  setCurrentWeather({ temp: Math.round(temp), code });
+                }
                 return;
             }
 
@@ -101,8 +104,8 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
 
     const weatherState = currentWeather ? getWeatherState(currentWeather.code) : "cloudy";
     const weatherDescription = currentWeather ? getWeatherDescription(currentWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
-    const sunriseTime = weather.daily.sunrise?.[0] ? parseISO(weather.daily.sunrise[0]) : null;
-    const sunsetTime = weather.daily.sunset?.[0] ? parseISO(weather.daily.sunset[0]) : null;
+    const sunriseTime = weather.daily?.sunrise?.[0] ? parseISO(weather.daily.sunrise[0]) : null;
+    const sunsetTime = weather.daily?.sunset?.[0] ? parseISO(weather.daily.sunset[0]) : null;
     
     useEffect(() => {
       const calculateDaylight = () => {
@@ -171,7 +174,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
          {!isPublicView && (
-            <Button type="button" size="icon" variant="ghost" className="absolute top-2 right-2 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
+            <Button type="button" size="icon" variant="ghost" className="absolute top-2 right-2 z-30 h-8 w-8 text-black/60 dark:text-white/70 hover:bg-transparent hover:text-black/90 dark:hover:text-white" onClick={onRefreshWeather} disabled={isFetchingWeather} aria-label="Atualizar previsão do tempo">
                 {isFetchingWeather ? <Loader2 className="h-4 w-4 animate-spin"/> : <RotateCw className="h-4 w-4"/>}
             </Button>
         )}
