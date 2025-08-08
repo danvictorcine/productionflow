@@ -162,6 +162,7 @@ function ProductionPageDetail() {
         lastUpdated: new Date().toISOString(),
         locationName: locationName,
         date: formattedDate,
+        timezone: weatherData.timezone,
       };
   
       await firestoreApi.updateShootingDay(day.id, { weather: newWeather });
@@ -876,6 +877,7 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
+
 
 
 

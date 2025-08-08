@@ -150,6 +150,7 @@ export type WeatherInfo = {
   lastUpdated: string; // ISO String
   locationName: string;
   date: string; // YYYY-MM-DD
+  timezone?: string;
 };
 
 
