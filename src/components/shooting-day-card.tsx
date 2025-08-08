@@ -1,3 +1,4 @@
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -135,9 +136,6 @@ const ChecklistSection = ({ title, items, onListUpdate, isPublicView, icon: Icon
                             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddItem(); } }}
                             className="h-8 flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
                         />
-                        <Button type="button" size="icon" variant="ghost" onClick={handleAddItem} disabled={!newItemText.trim()} className="h-8 w-8">
-                            <PlusCircle className="h-4 w-4" />
-                        </Button>
                     </div>
                 )}
             </div>
