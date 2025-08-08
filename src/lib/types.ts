@@ -221,11 +221,14 @@ export type ShootingDay = {
   mealTime?: string;
   radioChannels?: string;
   nearestHospital?: HospitalInfo;
-  generalNotes: string;
+  generalNotes: ChecklistItem[];
   presentTeam: TeamMember[];
   latitude?: number;
   longitude?: number;
   weather?: WeatherInfo;
+  equipment: ChecklistItem[];
+  costumes: ChecklistItem[];
+  props: ChecklistItem[];
 };
 
 // === Creative Project (Moodboard) Types ===

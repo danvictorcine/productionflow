@@ -122,7 +122,10 @@ const shootingDaySchema = z.object({
   mealTime: z.string().optional(),
   radioChannels: z.string().optional(),
   nearestHospital: hospitalSchema.optional(),
-  generalNotes: z.string().optional(),
+  generalNotes: z.array(checklistItemSchema).optional(),
+  equipment: z.array(checklistItemSchema).optional(),
+  costumes: z.array(checklistItemSchema).optional(),
+  props: z.array(checklistItemSchema).optional(),
 });
 
 
@@ -192,7 +195,10 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       longitude: defaultPosition[1],
       scenes: [],
       callTimes: [],
-      generalNotes: "",
+      generalNotes: [],
+      equipment: [],
+      costumes: [],
+      props: [],
       presentTeam: [],
       dayNumber: undefined,
       totalDays: undefined,
@@ -224,13 +230,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && shootingDay) {
-        let notesString = "";
-        if (typeof shootingDay.generalNotes === 'string') {
-          notesString = shootingDay.generalNotes;
-        } else if (Array.isArray(shootingDay.generalNotes)) {
-          notesString = shootingDay.generalNotes.map(n => n.text).join('\n');
-        }
-
         form.reset({
           ...shootingDay,
           date: (shootingDay.date as any)?.toDate ? (shootingDay.date as any).toDate() : new Date(shootingDay.date),
@@ -241,7 +240,10 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           scenes: Array.isArray(shootingDay.scenes) ? shootingDay.scenes.map(s => ({...s, location: s.location || undefined, latitude: s.latitude, longitude: s.longitude})) : [],
           nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
           presentTeam: shootingDay.presentTeam || [],
-          generalNotes: notesString,
+          generalNotes: Array.isArray(shootingDay.generalNotes) ? shootingDay.generalNotes : [],
+          equipment: Array.isArray(shootingDay.equipment) ? shootingDay.equipment : [],
+          costumes: Array.isArray(shootingDay.costumes) ? shootingDay.costumes : [],
+          props: Array.isArray(shootingDay.props) ? shootingDay.props : [],
         });
       } else {
         form.reset({
@@ -251,7 +253,10 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           longitude: defaultPosition[1],
           scenes: [],
           callTimes: [{ id: crypto.randomUUID(), department: "Chamada Geral", time: "08:00" }],
-          generalNotes: "",
+          generalNotes: [],
+          equipment: [],
+          costumes: [],
+          props: [],
           presentTeam: [],
           dayNumber: undefined,
           totalDays: undefined,
@@ -541,23 +546,13 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     <div>
                         <h3 className="text-lg font-semibold mb-2">Observações Gerais do Dia</h3>
                          <div className="border p-4 rounded-lg space-y-4">
-                            <FormField
-                                control={form.control}
-                                name="generalNotes"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Notas Gerais</FormLabel>
-                                    <FormControl>
-                                    <Textarea
-                                        placeholder="Adicione aqui quaisquer observações gerais para a diária..."
-                                        className="min-h-[100px]"
-                                        {...field}
-                                    />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
+                            <ChecklistFormSection name="generalNotes" label="Notas Gerais" control={form.control} />
+                            <Separator />
+                            <ChecklistFormSection name="equipment" label="Equipamentos Gerais do Dia" control={form.control} />
+                             <Separator />
+                            <ChecklistFormSection name="costumes" label="Figurinos Gerais do Dia" control={form.control} />
+                             <Separator />
+                            <ChecklistFormSection name="props" label="Objetos de Cena Gerais do Dia" control={form.control} />
                          </div>
                     </div>
 

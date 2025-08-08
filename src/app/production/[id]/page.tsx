@@ -1,3 +1,4 @@
+
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -53,12 +54,7 @@ import { getInitials } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ProductionInfoCard } from '@/components/production-info-card';
 
-type ProcessedShootingDay = Omit<ShootingDay, 'equipment' | 'costumes' | 'props' | 'generalNotes'> & {
-    equipment: ChecklistItem[];
-    costumes: ChecklistItem[];
-    props: ChecklistItem[];
-    generalNotes: ChecklistItem[];
-};
+type ProcessedShootingDay = ShootingDay;
 
 const PdfExportPortal = ({ day, production }: { day: ProcessedShootingDay, production: Production }) => {
   return (
@@ -802,7 +798,7 @@ function ProductionPageDetail() {
           setIsShootingDayDialogOpen(open);
         }}
         onSubmit={handleShootingDaySubmit}
-        shootingDay={editingShootingDay || undefined}
+        shootingDay={editingShootingDay}
         productionTeam={production?.team || []}
       />
       
