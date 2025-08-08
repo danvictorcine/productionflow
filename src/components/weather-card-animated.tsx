@@ -135,7 +135,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
     const sunsetTime = weather.daily?.sunset?.[0] ? parseISO(weather.daily.sunset[0]) : null;
     
     useEffect(() => {
-        if (!weather.timezone) {
+        if (!weather.timezone || !isToday(day.date)) {
             setLocalTime(null);
             return;
         }
@@ -159,7 +159,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
 
         return () => clearInterval(interval);
 
-    }, [weather.timezone]);
+    }, [weather.timezone, day.date]);
     
     useEffect(() => {
       const calculateDaylight = () => {
