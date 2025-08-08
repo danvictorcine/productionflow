@@ -1,3 +1,4 @@
+
 // @/src/components/weather-card-animated.tsx
 "use client";
 
@@ -223,7 +224,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
         
-        <div className={cn("absolute top-2 right-4 w-[150px] h-[150px] flex items-center justify-center scale-[0.8] z-10 -translate-y-2")}>
+        <div className={cn("absolute -top-2 right-4 w-[150px] h-[150px] flex items-center justify-center scale-[1.1] z-10")}>
             <div className={cn("sun absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] dark:from-yellow-400 dark:to-yellow-300", weatherState !== 'sunny' && "hidden")}></div>
             <div className={cn("sunshine absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] animate-sunshine", weatherState !== 'sunny' && "hidden")}></div>
             
@@ -238,7 +239,6 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         </div>
 
         <div className="relative z-20 flex flex-col h-full">
-
             <div className="card-header">
                 <span className="font-extrabold text-base leading-tight text-foreground/80 break-words">{formattedLocation}</span>
                 <p className="font-bold text-sm text-foreground/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
@@ -273,3 +273,4 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
     </div>
   );
 }
+
