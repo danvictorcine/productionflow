@@ -387,7 +387,7 @@ function ProductionPageDetail() {
     XLSX.utils.sheet_add_aoa(wsDay, [[]], { origin: -1 });
     XLSX.utils.sheet_add_aoa(wsDay, [["Cenas a Gravar"]], { origin: -1 });
     const scenes = (day.scenes && Array.isArray(day.scenes) ? day.scenes : []).map(s => ({
-        'Cena Nº': s.sceneNumber, Título: s.title, Páginas: s.pages, Descrição: s.description,
+        'Cena Nº': s.sceneNumber, Título: s.title, 'Hora Prevista': s.pages, Descrição: s.description,
         'Elenco na Cena': (s.presentInScene || []).map(p => p.name).join(', '),
     }));
     XLSX.utils.sheet_add_json(wsDay, scenes, { origin: -1, skipHeader: false });

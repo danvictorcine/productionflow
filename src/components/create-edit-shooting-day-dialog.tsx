@@ -96,7 +96,7 @@ const sceneSchema = z.object({
     sceneNumber: z.string().min(1, "Nº da cena é obrigatório."),
     title: z.string().min(1, "Título é obrigatório."),
     description: z.string().min(1, "Descrição é obrigatória."),
-    pages: z.string().min(1, "Nº de páginas é obrigatório."),
+    pages: z.string().min(1, "Hora prevista é obrigatória."),
     presentInScene: z.array(teamMemberSchema),
     location: locationAddressSchema,
     latitude: z.number().optional(),
@@ -444,7 +444,7 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                                             <FormItem><FormLabel className="text-xs">Título/Local</FormLabel><FormControl><Input placeholder="Ex: EXT. PARQUE - DIA" {...field}/></FormControl><FormMessage /></FormItem>
                                         )}/>
                                         <FormField control={form.control} name={`scenes.${index}.pages`} render={({ field }) => (
-                                            <FormItem><FormLabel className="text-xs">Páginas</FormLabel><FormControl><Input placeholder="Ex: 1 3/8" {...field}/></FormControl><FormMessage /></FormItem>
+                                            <FormItem><FormLabel className="text-xs">Hora Prevista</FormLabel><FormControl><Input placeholder="Ex: 14:30" {...field}/></FormControl><FormMessage /></FormItem>
                                         )}/>
                                         <Button type="button" variant="ghost" size="icon" onClick={() => removeScene(index)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4"/></Button>
                                     </div>

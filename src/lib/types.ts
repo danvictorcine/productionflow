@@ -184,7 +184,7 @@ export type Scene = {
   sceneNumber: string;
   title: string; // e.g., EXT. PARK - DAY
   description: string;
-  pages: string; // e.g., "1 3/8"
+  pages: string; // e.g., "1 3/8" or a time like "14:30"
   presentInScene: TeamMember[];
   equipment?: ChecklistItem[];
   costumes?: ChecklistItem[];
@@ -226,6 +226,7 @@ export type ShootingDay = {
   latitude?: number;
   longitude?: number;
   weather?: WeatherInfo;
+  parkingInfo?: string;
 };
 
 // === Creative Project (Moodboard) Types ===

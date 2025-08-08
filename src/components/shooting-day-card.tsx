@@ -310,7 +310,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
 
 
 interface ShootingDayCardProps {
-  day: Omit<ShootingDay, 'generalNotes'> & { generalNotes?: ChecklistItem[] };
+  day: ShootingDay;
   production: Production;
   isFetchingWeather: boolean;
   isExporting: boolean;
@@ -408,7 +408,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     };
 
     useEffect(() => {
-        if (!localDay.startTime || !localDay.endTime || !isToday(localDay.date)) {
+        if (!isToday(localDay.date) || !localDay.startTime || !localDay.endTime) {
             setRemainingProductionTime(null);
             return;
         }
@@ -445,7 +445,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     const totalDuration = calculateDuration(localDay.startTime, localDay.endTime);
     
     useEffect(() => {
-        if (!day.weather?.timezone) {
+        if (!day.weather?.timezone || !isToday(day.date)) {
             setLocalTime(null);
             return;
         }
@@ -465,11 +465,11 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         };
 
         updateLocalTime();
-        const interval = setInterval(updateLocalTime, 1000); // Update every second
+        const interval = setInterval(updateLocalTime, 60000); // Update every minute
 
         return () => clearInterval(interval);
 
-    }, [day.weather?.timezone]);
+    }, [day.weather?.timezone, day.date]);
 
 
     return (
