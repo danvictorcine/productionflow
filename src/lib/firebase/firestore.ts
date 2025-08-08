@@ -515,34 +515,24 @@ export const addShootingDay = async (productionId: string, data: Omit<ShootingDa
 };
 
 export const getShootingDays = async (productionId: string): Promise<ShootingDay[]> => {
-  const userId = getUserId();
-  if (!userId) return [];
-  const q = query(
-    collection(db, 'shooting_days'),
-    where('productionId', '==', productionId),
-    where('userId', '==', userId)
-  );
-  const querySnapshot = await getDocs(q);
-  const days = querySnapshot.docs.map(doc => {
-      const data = doc.data();
-      
-      // Backward compatibility for generalNotes
-      let generalNotesString = "";
-      if (typeof data.generalNotes === 'string') {
-        generalNotesString = data.generalNotes;
-      } else if (Array.isArray(data.generalNotes)) {
-        generalNotesString = data.generalNotes.map((item: ChecklistItem) => item.text).join('\n');
-      }
-
-      return {
-          id: doc.id,
-          ...data,
-          date: (data.date as Timestamp).toDate(),
-          generalNotes: generalNotesString,
-      } as ShootingDay;
-  });
-  days.sort((a, b) => a.date.getTime() - b.date.getTime());
-  return days;
+    const userId = getUserId();
+    if (!userId) return [];
+    const q = query(
+        collection(db, 'shooting_days'),
+        where('productionId', '==', productionId),
+        where('userId', '==', userId)
+    );
+    const querySnapshot = await getDocs(q);
+    const days = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            date: (data.date as Timestamp).toDate(),
+        } as ShootingDay;
+    });
+    days.sort((a, b) => a.date.getTime() - b.date.getTime());
+    return days;
 };
 
 export const getShootingDay = async (dayId: string): Promise<ShootingDay | null> => {

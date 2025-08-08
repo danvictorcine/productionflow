@@ -226,9 +226,6 @@ export type ShootingDay = {
   latitude?: number;
   longitude?: number;
   weather?: WeatherInfo;
-  equipment: ChecklistItem[];
-  costumes: ChecklistItem[];
-  props: ChecklistItem[];
 };
 
 // === Creative Project (Moodboard) Types ===

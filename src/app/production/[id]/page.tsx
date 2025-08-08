@@ -203,26 +203,9 @@ function ProductionPageDetail() {
       if (prodData) {
         setProduction(prodData);
         
-        const convertNotesToItems = (notes: string | ChecklistItem[] | undefined): ChecklistItem[] => {
-            if (Array.isArray(notes)) {
-                return notes.map(item => ({...item, id: item.id || crypto.randomUUID()}));
-            }
-            if (typeof notes === 'string' && notes.trim()) {
-                return notes.split('\n').filter(Boolean).map(line => ({
-                    id: crypto.randomUUID(),
-                    text: line.trim(),
-                    checked: false
-                }));
-            }
-            return [];
-        };
-
         const processedDays = daysData.map(day => ({
           ...day,
-          equipment: convertNotesToItems(day.equipment),
-          costumes: convertNotesToItems(day.costumes),
-          props: convertNotesToItems(day.props),
-          generalNotes: convertNotesToItems(day.generalNotes),
+          generalNotes: Array.isArray(day.generalNotes) ? day.generalNotes : [],
         }));
 
         setShootingDays(processedDays);
@@ -278,13 +261,9 @@ function ProductionPageDetail() {
   const handleShootingDaySubmit = async (data: Omit<ShootingDay, 'id' | 'userId' | 'productionId'>) => {
     const sanitizedData = {
       ...data,
-      equipment: data.equipment || [],
-      costumes: data.costumes || [],
-      props: data.props || [],
       generalNotes: data.generalNotes || [],
       presentTeam: data.presentTeam || [],
       mealTime: data.mealTime || "",
-      parkingInfo: data.parkingInfo || "",
       radioChannels: data.radioChannels || "",
       startTime: data.startTime || "",
       endTime: data.endTime || "",
@@ -393,9 +372,6 @@ function ProductionPageDetail() {
     ];
     const notesInfo = [
         [], ["Notas dos Departamentos"],
-        ["Equipamentos", (day.equipment || []).map(i => i.text).join('\n') || 'N/A'],
-        ["Figurino", (day.costumes || []).map(i => i.text).join('\n') || 'N/A'],
-        ["Objetos de Cena e Direção de Arte", (day.props || []).map(i => i.text).join('\n') || 'N/A'],
         ["Observações Gerais", (day.generalNotes || []).map(i => i.text).join('\n') || 'N/A'],
     ];
     const presentTeamInfo = [[], ["Equipe Presente"], [(day.presentTeam || []).map(p => p.name).join(', ') || 'N/A']];
@@ -548,7 +524,7 @@ function ProductionPageDetail() {
 
   const handleUpdateNotes = async (
     dayId: string,
-    listName: 'equipment' | 'costumes' | 'props' | 'generalNotes',
+    listName: 'generalNotes',
     updatedList: ChecklistItem[]
   ) => {
     // Optimistic update

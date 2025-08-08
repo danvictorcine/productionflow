@@ -123,9 +123,6 @@ const shootingDaySchema = z.object({
   radioChannels: z.string().optional(),
   nearestHospital: hospitalSchema.optional(),
   generalNotes: z.array(checklistItemSchema).optional(),
-  equipment: z.array(checklistItemSchema).optional(),
-  costumes: z.array(checklistItemSchema).optional(),
-  props: z.array(checklistItemSchema).optional(),
 });
 
 
@@ -196,9 +193,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
       scenes: [],
       callTimes: [],
       generalNotes: [],
-      equipment: [],
-      costumes: [],
-      props: [],
       presentTeam: [],
       dayNumber: undefined,
       totalDays: undefined,
@@ -241,9 +235,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           nearestHospital: shootingDay.nearestHospital || { name: "", address: "", phone: "" },
           presentTeam: shootingDay.presentTeam || [],
           generalNotes: Array.isArray(shootingDay.generalNotes) ? shootingDay.generalNotes : [],
-          equipment: Array.isArray(shootingDay.equipment) ? shootingDay.equipment : [],
-          costumes: Array.isArray(shootingDay.costumes) ? shootingDay.costumes : [],
-          props: Array.isArray(shootingDay.props) ? shootingDay.props : [],
         });
       } else {
         form.reset({
@@ -254,9 +245,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
           scenes: [],
           callTimes: [{ id: crypto.randomUUID(), department: "Chamada Geral", time: "08:00" }],
           generalNotes: [],
-          equipment: [],
-          costumes: [],
-          props: [],
           presentTeam: [],
           dayNumber: undefined,
           totalDays: undefined,
@@ -547,12 +535,6 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                         <h3 className="text-lg font-semibold mb-2">Observações Gerais do Dia</h3>
                          <div className="border p-4 rounded-lg space-y-4">
                             <ChecklistFormSection name="generalNotes" label="Notas Gerais" control={form.control} />
-                            <Separator />
-                            <ChecklistFormSection name="equipment" label="Equipamentos Gerais do Dia" control={form.control} />
-                             <Separator />
-                            <ChecklistFormSection name="costumes" label="Figurinos Gerais do Dia" control={form.control} />
-                             <Separator />
-                            <ChecklistFormSection name="props" label="Objetos de Cena Gerais do Dia" control={form.control} />
                          </div>
                     </div>
 

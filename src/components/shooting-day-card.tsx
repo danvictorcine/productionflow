@@ -64,6 +64,45 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
 };
 
 
+const ChecklistFormSection = ({ name, label, control }: { name: string, label: string, control: any }) => {
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name,
+    });
+
+    return (
+        <div>
+            <FormLabel>{label}</FormLabel>
+            <div className="space-y-2 mt-2">
+                {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2">
+                        <FormField
+                            control={control}
+                            name={`${name}.${index}.text`}
+                            render={({ field }) => (
+                                <FormItem className="flex-1">
+                                    <FormControl>
+                                        <Input placeholder="Descreva o item..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ))}
+                 <Button type="button" variant="outline" size="sm" onClick={() => append({ id: crypto.randomUUID(), text: "", checked: false })}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Adicionar Item
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+
 const ChecklistSection = ({ title, items, onListUpdate, isPublicView, icon: Icon, name }: { 
     name: string;
     icon: React.ElementType;
@@ -281,7 +320,8 @@ interface ShootingDayCardProps {
   onShare?: () => void;
   onExportExcel?: () => void;
   onExportPdf?: () => void;
-  onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
+  onUpdateNotes?: (dayId: string, listName: 'generalNotes', updatedList: ChecklistItem[]) => void;
+  onRefreshWeather?: () => void;
 }
 
 
@@ -318,7 +358,7 @@ const calculateDuration = (start?: string, end?: string): string | null => {
     }
 };
 
-export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
+export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false, onRefreshWeather }: ShootingDayCardProps) => {
     const { toast } = useToast();
     const [localDay, setLocalDay] = useState(day);
     const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
@@ -363,7 +403,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
 
     const handleLocalUpdateNotes = (listName: string, updatedList: ChecklistItem[]) => {
       if (onUpdateNotes) {
-        onUpdateNotes(day.id, listName as 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList);
+        onUpdateNotes(day.id, listName as 'generalNotes', updatedList);
       }
     };
 
@@ -502,6 +542,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                         weather={localDay.weather} 
                                         day={localDay as ShootingDay} 
                                         isPublicView={isPublicView}
+                                        onRefreshWeather={onRefreshWeather}
                                         isFetchingWeather={isFetchingWeather}
                                     />
                                 ) : (
