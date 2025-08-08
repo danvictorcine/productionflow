@@ -133,9 +133,11 @@ const ChecklistSection = ({ title, items, onListUpdate, isPublicView, icon: Icon
                             onChange={(e) => setNewItemText(e.target.value)} 
                             placeholder="Adicionar novo item..."
                             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddItem(); } }}
-                            className="h-9"
+                            className="h-8 flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
                         />
-                        <Button type="button" size="sm" onClick={handleAddItem} disabled={!newItemText.trim()}>Adicionar</Button>
+                        <Button type="button" size="icon" variant="ghost" onClick={handleAddItem} disabled={!newItemText.trim()} className="h-8 w-8">
+                            <PlusCircle className="h-4 w-4" />
+                        </Button>
                     </div>
                 )}
             </div>
@@ -282,7 +284,6 @@ interface ShootingDayCardProps {
   onExportExcel?: () => void;
   onExportPdf?: () => void;
   onUpdateNotes?: (dayId: string, listName: 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList: ChecklistItem[]) => void;
-  onRefreshWeather: () => void;
 }
 
 
@@ -319,10 +320,11 @@ const calculateDuration = (start?: string, end?: string): string | null => {
     }
 };
 
-export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, onRefreshWeather, isExporting, isPublicView = false }: ShootingDayCardProps) => {
+export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     const { toast } = useToast();
     const [localDay, setLocalDay] = useState(day);
     const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
+    const [localTime, setLocalTime] = useState<string | null>(null);
     
     useEffect(() => {
         setLocalDay(day);
@@ -403,6 +405,34 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     const sunsetTime = localDay.weather?.daily?.sunset?.[0] ? parseISO(localDay.weather.daily.sunset[0]) : null;
     
     const totalDuration = calculateDuration(localDay.startTime, localDay.endTime);
+    
+    useEffect(() => {
+        if (!day.weather?.timezone) {
+            setLocalTime(null);
+            return;
+        }
+
+        const updateLocalTime = () => {
+            try {
+                const timeString = new Date().toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: day.weather?.timezone,
+                });
+                setLocalTime(timeString);
+            } catch (error) {
+                console.error("Invalid timezone:", day.weather?.timezone);
+                setLocalTime(null); // Fallback if timezone is invalid
+            }
+        };
+
+        updateLocalTime();
+        const interval = setInterval(updateLocalTime, 1000); // Update every second
+
+        return () => clearInterval(interval);
+
+    }, [day.weather?.timezone]);
+
 
     return (
         <AccordionItem value={localDay.id} className="border-none">
@@ -474,7 +504,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                         weather={localDay.weather} 
                                         day={localDay as ShootingDay} 
                                         isPublicView={isPublicView}
-                                        onRefreshWeather={onRefreshWeather}
                                         isFetchingWeather={isFetchingWeather}
                                     />
                                 ) : (
