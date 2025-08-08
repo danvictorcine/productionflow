@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -20,9 +21,9 @@ export default function TermsPage() {
   const [pageContent, setPageContent] = useState<PageContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fallbackContent = `
+  const fallbackContent = (date: Date) => `
     <h2>Termos de Uso e Política de Privacidade</h2>
-    <p class="text-muted-foreground">Última atualização: ${new Date().toLocaleDateString('pt-BR')}</p>
+    <p class="text-muted-foreground">Última atualização: ${date.toLocaleDateString('pt-BR')}</p>
     <p>Bem-vindo ao ProductionFlow. Ao utilizar nosso aplicativo, você concorda com estes Termos de Uso e nossa Política de Privacidade.</p>
     
     <h3>1. Aceitação dos Termos</h3>
@@ -62,12 +63,12 @@ export default function TermsPage() {
         if (content) {
           setPageContent(content);
         } else {
-          // Fallback content if nothing is in the database yet
+          const now = new Date();
           setPageContent({
             id: 'terms',
             title: 'Termos e Privacidade',
-            content: fallbackContent,
-            updatedAt: new Date(),
+            content: fallbackContent(now),
+            updatedAt: now,
           });
         }
       })
@@ -80,7 +81,7 @@ export default function TermsPage() {
         });
       })
       .finally(() => setIsLoading(false));
-  }, [toast, fallbackContent]);
+  }, [toast]);
 
   return (
     <>
