@@ -156,7 +156,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         };
 
         updateLocalTime();
-        const interval = setInterval(updateLocalTime, 1000); // Update every second
+        const interval = setInterval(updateLocalTime, 60000); // Update every minute
 
         return () => clearInterval(interval);
 
@@ -224,8 +224,8 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
         weatherState === 'snowy' && 'bg-gradient-to-br from-sky-300 via-white to-white/0 dark:from-sky-800/50 dark:via-background dark:to-background/0'
     )}>
         
-        <div className={cn("absolute -top-2 right-4 w-[150px] h-[150px] flex items-center justify-center scale-[1.1] z-10")}>
-            <div className={cn("sun absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] dark:from-yellow-400 dark:to-yellow-300", weatherState !== 'sunny' && "hidden")}></div>
+        <div className={cn("absolute -top-12 right-0 w-[150px] h-[150px] flex items-center justify-center scale-[0.8]")}>
+             <div className={cn("sun absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] dark:from-yellow-400 dark:to-yellow-300", weatherState !== 'sunny' && "hidden")}></div>
             <div className={cn("sunshine absolute w-28 h-28 rounded-full bg-gradient-to-r from-[#fcbb04] to-[#fffc00] animate-sunshine", weatherState !== 'sunny' && "hidden")}></div>
             
             <div className={cn("cloud absolute w-60 pt-11 ml-6 animate-clouds-fast", weatherState === 'sunny' && "hidden")}>
@@ -273,4 +273,3 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
     </div>
   );
 }
-
