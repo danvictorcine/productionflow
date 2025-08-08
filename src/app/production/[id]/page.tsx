@@ -1,5 +1,3 @@
-
-
 // @/src/app/production/[id]/page.tsx
 'use client';
 
@@ -877,8 +875,3 @@ export default function ProductionPage() {
     </AuthGuard>
   );
 }
-
-
-
-
-

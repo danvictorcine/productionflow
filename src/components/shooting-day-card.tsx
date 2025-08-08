@@ -1,4 +1,3 @@
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -8,7 +7,7 @@ import { format, isToday, isPast, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
-  Users, FileText, Hospital, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown, AlignJustify, Truck, Star, Shirt
+  Users, FileText, Hospital, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown, AlignJustify, Truck, Star, Shirt, PlusCircle
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -37,6 +36,7 @@ import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
 import { CopyableError } from "./copyable-error";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Input } from "./ui/input";
 
 
 const DisplayMap = dynamic(() => import('../components/display-map').then(mod => mod.DisplayMap), {
@@ -45,7 +45,7 @@ const DisplayMap = dynamic(() => import('../components/display-map').then(mod =>
 });
 
 const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType; title: string; content?: string | React.ReactNode }) => {
-    if (!content) return null;
+    if (!content && typeof content !== 'boolean') return null;
 
     return (
         <div className="flex items-start gap-3 pt-2">
@@ -63,18 +63,41 @@ const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.Eleme
 };
 
 
-const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView }: { icon: React.ElementType; title: string; items?: ChecklistItem[]; onListUpdate?: (updatedList: ChecklistItem[]) => void; isPublicView?: boolean; }) => {
-    if (!items || items.length === 0) {
-        return null;
-    }
+const ChecklistSection = ({ title, items, onListUpdate, isPublicView, icon: Icon, name }: { 
+    name: string;
+    icon: React.ElementType;
+    title: string;
+    items?: ChecklistItem[];
+    onListUpdate?: (listName: string, updatedList: ChecklistItem[]) => void;
+    isPublicView?: boolean;
+}) => {
+    const [newItemText, setNewItemText] = useState("");
 
     const handleCheckChange = (itemId: string, newCheckedState: boolean) => {
         if (!onListUpdate || !items) return;
         const updatedList = items.map(item =>
             item.id === itemId ? { ...item, checked: newCheckedState } : item
         );
-        onListUpdate(updatedList);
+        onListUpdate(name, updatedList);
     };
+
+    const handleAddItem = () => {
+        if (newItemText.trim() && onListUpdate && items) {
+            const newItem = { id: crypto.randomUUID(), text: newItemText.trim(), checked: false };
+            onListUpdate(name, [...items, newItem]);
+            setNewItemText("");
+        }
+    }
+    
+    const handleRemoveItem = (itemId: string) => {
+        if (onListUpdate && items) {
+            onListUpdate(name, items.filter(item => item.id !== itemId));
+        }
+    }
+
+    if (!items || (items.length === 0 && isPublicView)) {
+        return null;
+    }
 
     return (
         <div className="py-2">
@@ -83,23 +106,43 @@ const ChecklistSection = ({ icon: Icon, title, items, onListUpdate, isPublicView
                 <span>{title}</span>
             </h4>
             <div className="space-y-2 pt-2 pl-7">
-                {items.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-3">
+                {items.length > 0 ? items.map((item) => (
+                    <div key={item.id} className="flex items-center gap-2 group">
                         <Checkbox
-                            id={`${item.id}-checkbox`}
+                            id={`${name}-${item.id}-checkbox`}
                             checked={item.checked}
                             onCheckedChange={(checked) => handleCheckChange(item.id, !!checked)}
                             disabled={isPublicView || !onListUpdate}
                         />
-                        <Label htmlFor={`${item.id}-checkbox`} className={cn("text-base font-normal", item.checked ? 'text-muted-foreground line-through' : 'text-foreground')}>
+                        <Label htmlFor={`${name}-${item.id}-checkbox`} className={cn("text-base font-normal flex-1", item.checked ? 'text-muted-foreground line-through' : 'text-foreground')}>
                             {item.text}
                         </Label>
+                         {!isPublicView && (
+                             <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveItem(item.id)}>
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                         )}
                     </div>
-                ))}
+                )) : (
+                     <p className="text-sm text-muted-foreground">Nenhum item adicionado.</p>
+                )}
+                {!isPublicView && onListUpdate && (
+                     <div className="flex items-center gap-2 pt-2">
+                        <Input 
+                            value={newItemText} 
+                            onChange={(e) => setNewItemText(e.target.value)} 
+                            placeholder="Adicionar novo item..."
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddItem(); } }}
+                            className="h-9"
+                        />
+                        <Button type="button" size="sm" onClick={handleAddItem} disabled={!newItemText.trim()}>Adicionar</Button>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
+
 
 const formatSceneAddress = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
@@ -190,7 +233,7 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
             </div>
         </div>
         
-        {hasNotes && (
+        {hasNotes && !isExporting && (
             <>
                 <Separator className="my-3" />
                 <Accordion type="single" collapsible className="w-full">
@@ -204,21 +247,31 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                         </AccordionTrigger>
                         <AccordionContent className="pt-2">
                             <div className="space-y-4 pt-2">
-                                <ChecklistSection icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
-                                <ChecklistSection icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
-                                <ChecklistSection icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} onListUpdate={onUpdateSceneNotes ? (list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
+                                <ChecklistSection name="equipment" icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (listName, list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
+                                <ChecklistSection name="costumes" icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (listName, list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
+                                <ChecklistSection name="props" icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} onListUpdate={onUpdateSceneNotes ? (listName, list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
                             </div>
                         </AccordionContent>
                     </AccordionItem>
                 </Accordion>
             </>
         )}
+         {isExporting && hasNotes && (
+             <>
+                 <Separator className="my-3" />
+                  <div className="space-y-4 pt-2">
+                      <ChecklistSection name="equipment" icon={Truck} title="Equipamentos" items={scene.equipment} isPublicView={true} />
+                      <ChecklistSection name="costumes" icon={Shirt} title="Figurino" items={scene.costumes} isPublicView={true} />
+                      <ChecklistSection name="props" icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} isPublicView={true} />
+                  </div>
+             </>
+         )}
     </div>
 )};
 
 
 interface ShootingDayCardProps {
-  day: Omit<ShootingDay, 'generalNotes'> & { generalNotes?: string | ChecklistItem[] };
+  day: Omit<ShootingDay, 'generalNotes'> & { generalNotes?: ChecklistItem[] };
   production: Production;
   isFetchingWeather: boolean;
   isExporting: boolean;
@@ -308,6 +361,12 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         }
     };
 
+    const handleLocalUpdateNotes = (listName: string, updatedList: ChecklistItem[]) => {
+      if (onUpdateNotes) {
+        onUpdateNotes(day.id, listName as 'equipment' | 'costumes' | 'props' | 'generalNotes', updatedList);
+      }
+    };
+
     useEffect(() => {
         if (!localDay.startTime || !localDay.endTime || !isToday(localDay.date)) {
             setRemainingProductionTime(null);
@@ -333,25 +392,17 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
 
         calculateRemaining();
         
-        if (isToday(localDay.date) && new Date() < parse(localDay.endTime!, "HH:mm", localDay.date)) {
+        if (isToday(localDay.date) && sunsetTime && new Date() < parse(localDay.endTime!, "HH:mm", localDay.date)) {
             const interval = setInterval(calculateRemaining, 60000);
             return () => clearInterval(interval);
         }
 
     }, [localDay.startTime, localDay.endTime, localDay.date]);
-
-    const getFormattedGeneralNotes = () => {
-        if (typeof localDay.generalNotes === 'string') {
-            return localDay.generalNotes;
-        }
-        if (Array.isArray(localDay.generalNotes)) {
-            return localDay.generalNotes.map(item => item.text).join('\n');
-        }
-        return '';
-    };
-
+    
+    const sunriseTime = localDay.weather?.daily?.sunrise?.[0] ? parseISO(localDay.weather.daily.sunrise[0]) : null;
+    const sunsetTime = localDay.weather?.daily?.sunset?.[0] ? parseISO(localDay.weather.daily.sunset[0]) : null;
+    
     const totalDuration = calculateDuration(localDay.startTime, localDay.endTime);
-    const topGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
 
     return (
         <AccordionItem value={localDay.id} className="border-none">
@@ -539,9 +590,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 </div>
                             </div>
                             
-                            <div className="p-4 border rounded-lg space-y-2">
-                                <StaticDetailSection icon={AlignJustify} title="Observações Gerais" content={getFormattedGeneralNotes()} />
-                                <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
+                             <div className="p-4 border rounded-lg space-y-2">
+                               <ChecklistSection name="generalNotes" icon={AlignJustify} title="Observações Gerais" items={localDay.generalNotes} onListUpdate={handleLocalUpdateNotes} isPublicView={isPublicView} />
+                               <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
                                     localDay.presentTeam && localDay.presentTeam.length > 0 ? (
                                         <div className="flex flex-wrap gap-3 items-center">
                                             {localDay.presentTeam.map(member => (
