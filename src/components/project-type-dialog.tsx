@@ -77,7 +77,7 @@ export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect, onImport }: Pro
             Escolha o tipo de projeto que você deseja criar ou importe um projeto existente.
           </SheetDescription>
         </SheetHeader>
-        <div className="flex-1 flex flex-col gap-4 py-4">
+        <div className="flex-1 flex flex-col gap-4 py-4 overflow-hidden">
             <h3 className="text-sm font-medium text-muted-foreground px-6">Criar do zero</h3>
             <ScrollArea className="flex-1 -mx-6">
                 <div className="grid grid-cols-1 gap-4 px-6">
