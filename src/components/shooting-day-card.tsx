@@ -158,8 +158,8 @@ const ChecklistSection = ({ title, items, onListUpdate, isPublicView, icon: Icon
                             {item.text}
                         </Label>
                          {!isPublicView && (
-                             <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveItem(item.id)}>
-                                <Trash2 className="h-3 w-3 text-destructive" />
+                             <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 group/button hover:bg-destructive/90" onClick={() => handleRemoveItem(item.id)}>
+                                <Trash2 className="h-3 w-3 text-destructive group-hover/button:text-white" />
                             </Button>
                          )}
                     </div>
@@ -361,8 +361,6 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false, onRefreshWeather }: ShootingDayCardProps) => {
     const { toast } = useToast();
     const [localDay, setLocalDay] = useState(day);
-    const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
-    const [localTime, setLocalTime] = useState<string | null>(null);
     
     useEffect(() => {
         setLocalDay(day);
@@ -406,7 +404,25 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
         onUpdateNotes(day.id, listName as 'generalNotes', updatedList);
       }
     };
+    
+    const sunriseTime = localDay.weather?.daily?.sunrise?.[0] ? parseISO(localDay.weather.daily.sunrise[0]) : null;
+    const sunsetTime = localDay.weather?.daily?.sunset?.[0] ? parseISO(localDay.weather.daily.sunset[0]) : null;
+    
+    const totalDuration = calculateDuration(localDay.startTime, localDay.endTime);
 
+    const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(() => {
+        if (!isToday(localDay.date) || !localDay.startTime || !localDay.endTime) return null;
+        const now = new Date();
+        const startTime = parse(localDay.startTime!, "HH:mm", localDay.date);
+        const endTime = parse(localDay.endTime!, "HH:mm", localDay.date);
+        if (now < startTime) return "A produção ainda não começou.";
+        if (now > endTime) return null;
+        const diff = endTime.getTime() - now.getTime();
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        return `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m restantes`;
+    });
+    
     useEffect(() => {
         if (!isToday(localDay.date) || !localDay.startTime || !localDay.endTime) {
             setRemainingProductionTime(null);
@@ -437,40 +453,7 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
             return () => clearInterval(interval);
         }
 
-    }, [localDay.startTime, localDay.endTime, localDay.date]);
-    
-    const sunriseTime = localDay.weather?.daily?.sunrise?.[0] ? parseISO(localDay.weather.daily.sunrise[0]) : null;
-    const sunsetTime = localDay.weather?.daily?.sunset?.[0] ? parseISO(localDay.weather.daily.sunset[0]) : null;
-    
-    const totalDuration = calculateDuration(localDay.startTime, localDay.endTime);
-    
-    useEffect(() => {
-        if (!day.weather?.timezone || !isToday(day.date)) {
-            setLocalTime(null);
-            return;
-        }
-
-        const updateLocalTime = () => {
-            try {
-                const timeString = new Date().toLocaleTimeString('pt-BR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    timeZone: day.weather?.timezone,
-                });
-                setLocalTime(timeString);
-            } catch (error) {
-                console.error("Invalid timezone:", day.weather?.timezone);
-                setLocalTime(null); // Fallback if timezone is invalid
-            }
-        };
-
-        updateLocalTime();
-        const interval = setInterval(updateLocalTime, 60000); // Update every minute
-
-        return () => clearInterval(interval);
-
-    }, [day.weather?.timezone, day.date]);
-
+    }, [localDay.startTime, localDay.endTime, localDay.date, sunsetTime]);
 
     return (
         <AccordionItem value={localDay.id} className="border-none">
