@@ -309,3 +309,11 @@ export type BetaLimits = {
   MAX_ITEMS_PER_MOODBOARD: number;
   MAX_PANELS_PER_STORYBOARD_SCENE: number;
 };
+
+// === Data Export/Import Types ===
+type ExportedFinancialProject = { type: 'financial'; project: Project; transactions: Transaction[] };
+type ExportedProductionProject = { type: 'production'; production: Production; shootingDays: ShootingDay[] };
+type ExportedCreativeProject = { type: 'creative'; creativeProject: CreativeProject; boardItems: BoardItem[] };
+type ExportedStoryboardProject = { type: 'storyboard'; storyboard: Storyboard; scenes: StoryboardScene[]; panels: StoryboardPanel[] };
+
+export type ExportedProjectData = ExportedFinancialProject | ExportedProductionProject | ExportedCreativeProject | ExportedStoryboardProject;

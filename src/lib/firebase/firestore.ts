@@ -20,7 +20,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, BetaLimits, TeamMember, ChecklistItem } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, BetaLimits, TeamMember, ChecklistItem, ExportedProjectData } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { DEFAULT_BETA_LIMITS } from '../app-config';
 
@@ -379,6 +379,182 @@ export const importData = async (data: { projects: Project[], transactions: Tran
   }
 
   await batch.commit();
+};
+
+export const getProjectDataForExport = async (projectId: string, projectType: DisplayableItem['itemType']): Promise<ExportedProjectData> => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
+    
+    switch (projectType) {
+        case 'financial': {
+            const project = await getProject(projectId);
+            if (!project) throw new Error("Projeto Financeiro não encontrado.");
+            const transactions = await getTransactions(projectId);
+            return { type: 'financial', project, transactions };
+        }
+        case 'production': {
+            const production = await getProduction(projectId);
+            if (!production) throw new Error("Produção não encontrada.");
+            const shootingDays = await getShootingDays(projectId);
+            return { type: 'production', production, shootingDays };
+        }
+        case 'creative': {
+            const creativeProject = await getCreativeProject(projectId);
+            if (!creativeProject) throw new Error("Moodboard não encontrado.");
+            const boardItems = await getBoardItems(projectId);
+            return { type: 'creative', creativeProject, boardItems };
+        }
+        case 'storyboard': {
+            const storyboard = await getStoryboard(projectId);
+            if (!storyboard) throw new Error("Storyboard não encontrado.");
+            const scenes = await getStoryboardScenes(projectId);
+            const panels = await getStoryboardPanels(projectId);
+            return { type: 'storyboard', storyboard, scenes, panels };
+        }
+        default:
+            throw new Error("Tipo de projeto desconhecido para exportação.");
+    }
+};
+
+export const importProject = async (data: ExportedProjectData) => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
+    const batch = writeBatch(db);
+
+    const checkAndRename = async (collectionName: string, originalName: string) => {
+        const q = query(collection(db, collectionName), where('userId', '==', userId));
+        const snapshot = await getDocs(q);
+        const existingNames = new Set(snapshot.docs.map(doc => doc.data().name));
+        let newName = originalName;
+        let counter = 2;
+        while (existingNames.has(newName)) {
+            newName = `${originalName} (${counter})`;
+            counter++;
+        }
+        return newName;
+    };
+
+    const deserializeDates = (obj: any) => {
+        for (const key in obj) {
+            if (typeof obj[key] === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(obj[key])) {
+                obj[key] = Timestamp.fromDate(new Date(obj[key]));
+            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                deserializeDates(obj[key]);
+            }
+        }
+        return obj;
+    };
+
+    switch (data.type) {
+        case 'financial': {
+            const { project, transactions } = data;
+            const newName = await checkAndRename('projects', project.name);
+            const newProjectRef = doc(collection(db, 'projects'));
+            batch.set(newProjectRef, {
+                ...deserializeDates(project),
+                id: newProjectRef.id,
+                name: newName,
+                userId,
+                createdAt: Timestamp.now(),
+            });
+            transactions.forEach(tx => {
+                const newTxRef = doc(collection(db, 'transactions'));
+                batch.set(newTxRef, {
+                    ...deserializeDates(tx),
+                    id: newTxRef.id,
+                    userId,
+                    projectId: newProjectRef.id,
+                });
+            });
+            break;
+        }
+        case 'production': {
+            const { production, shootingDays } = data;
+            const newName = await checkAndRename('productions', production.name);
+            const newProdRef = doc(collection(db, 'productions'));
+            batch.set(newProdRef, {
+                ...deserializeDates(production),
+                id: newProdRef.id,
+                name: newName,
+                userId,
+                createdAt: Timestamp.now(),
+            });
+            shootingDays.forEach(day => {
+                const newDayRef = doc(collection(db, 'shooting_days'));
+                batch.set(newDayRef, {
+                    ...deserializeDates(day),
+                    id: newDayRef.id,
+                    userId,
+                    productionId: newProdRef.id,
+                });
+            });
+            break;
+        }
+        case 'creative': {
+            const { creativeProject, boardItems } = data;
+            const newName = await checkAndRename('creative_projects', creativeProject.name);
+            const newCreativeRef = doc(collection(db, 'creative_projects'));
+            batch.set(newCreativeRef, {
+                ...deserializeDates(creativeProject),
+                id: newCreativeRef.id,
+                name: newName,
+                userId,
+                createdAt: Timestamp.now(),
+            });
+            boardItems.forEach(item => {
+                const newItemRef = doc(collection(db, 'board_items'));
+                batch.set(newItemRef, {
+                    ...deserializeDates(item),
+                    id: newItemRef.id,
+                    userId,
+                    projectId: newCreativeRef.id,
+                });
+            });
+            break;
+        }
+        case 'storyboard': {
+            const { storyboard, scenes, panels } = data;
+            const newName = await checkAndRename('storyboards', storyboard.name);
+            const newStoryboardRef = doc(collection(db, 'storyboards'));
+            batch.set(newStoryboardRef, {
+                ...deserializeDates(storyboard),
+                id: newStoryboardRef.id,
+                name: newName,
+                userId,
+                createdAt: Timestamp.now(),
+            });
+            
+            const sceneIdMap = new Map<string, string>();
+            scenes.forEach(scene => {
+                const newSceneRef = doc(collection(db, 'storyboard_scenes'));
+                sceneIdMap.set(scene.id, newSceneRef.id);
+                batch.set(newSceneRef, {
+                    ...deserializeDates(scene),
+                    id: newSceneRef.id,
+                    userId,
+                    storyboardId: newStoryboardRef.id,
+                });
+            });
+
+            panels.forEach(panel => {
+                const newPanelRef = doc(collection(db, 'storyboard_panels'));
+                const newSceneId = sceneIdMap.get(panel.sceneId);
+                if (!newSceneId) return; // Skip panels from scenes that don't exist
+                batch.set(newPanelRef, {
+                    ...deserializeDates(panel),
+                    id: newPanelRef.id,
+                    userId,
+                    storyboardId: newStoryboardRef.id,
+                    sceneId: newSceneId,
+                });
+            });
+            break;
+        }
+        default:
+            throw new Error("Tipo de projeto desconhecido para importação.");
+    }
+    
+    await batch.commit();
 };
 
 

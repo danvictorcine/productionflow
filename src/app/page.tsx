@@ -13,9 +13,11 @@ import {
   DollarSign,
   Brush,
   Image as ImageIcon,
+  Upload,
+  Download,
 } from 'lucide-react';
 
-import type { Project, Production, CreativeProject, Storyboard } from '@/lib/types';
+import type { Project, Production, CreativeProject, Storyboard, ExportedProjectData } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -30,6 +32,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -314,6 +317,45 @@ function HomePage() {
     setItemToDelete(null);
   };
 
+  const handleExportProject = async (item: DisplayableItem) => {
+    try {
+      const dataToExport = await firestoreApi.getProjectDataForExport(item.id, item.itemType);
+      const jsonString = JSON.stringify(dataToExport, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `productionflow_${item.itemType}_${item.name.replace(/ /g, "_")}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({ title: "Exportação Concluída!" });
+    } catch (error) {
+       const errorTyped = error as { code?: string; message: string };
+       toast({
+        variant: 'destructive',
+        title: 'Erro ao Exportar',
+        description: <CopyableError userMessage="Não foi possível exportar o projeto." errorCode={errorTyped.code || errorTyped.message} />,
+      });
+    }
+  };
+
+  const handleImportProject = async (data: ExportedProjectData) => {
+    try {
+      await firestoreApi.importProject(data);
+      await fetchItems();
+      toast({ title: "Projeto importado com sucesso!" });
+    } catch (error) {
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Importar',
+        description: <CopyableError userMessage="Não foi possível importar o projeto." errorCode={errorTyped.code || errorTyped.message} />,
+      });
+    }
+  };
+
   const openEditDialog = (item: DisplayableItem) => {
     if (item.itemType === 'financial') {
       setEditingProject(item);
@@ -349,11 +391,11 @@ function HomePage() {
             Nenhum projeto encontrado
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Comece criando seu primeiro projeto.
+            Comece criando ou importando seu primeiro projeto.
           </p>
           <Button className="mt-6" onClick={handleCreateNewClick}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Criar Projeto
+            Criar ou Importar Projeto
           </Button>
         </div>
       );
@@ -404,6 +446,11 @@ function HomePage() {
                       <Edit className="mr-2 h-4 w-4" />
                       Editar
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportProject(item)}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Exportar
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => setItemToDelete(item)}
                       className="text-destructive focus:text-destructive focus:bg-destructive/10"
@@ -485,6 +532,7 @@ function HomePage() {
         isOpen={isTypeDialogOpen}
         setIsOpen={setIsTypeDialogOpen}
         onSelect={handleSelectProjectType}
+        onImport={handleImportProject}
       />
 
       <CreateEditProjectDialog
