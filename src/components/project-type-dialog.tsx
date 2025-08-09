@@ -77,10 +77,9 @@ export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect, onImport }: Pro
             Escolha o tipo de projeto que você deseja criar ou importe um projeto existente.
           </SheetDescription>
         </SheetHeader>
-        <div className="flex-1 flex flex-col gap-4 py-4 overflow-hidden">
-            <h3 className="text-sm font-medium text-muted-foreground px-6">Criar do zero</h3>
+        <div className="flex-1 flex flex-col py-2 overflow-hidden">
             <ScrollArea className="flex-1 -mx-6">
-                <div className="grid grid-cols-1 gap-4 px-6">
+                <div className="grid grid-cols-1 gap-4 px-6 py-4">
                   <Card 
                     className="cursor-pointer hover:bg-muted/50 transition-colors"
                     onClick={() => onSelect('financial')}
@@ -132,9 +131,8 @@ export function ProjectTypeDialog({ isOpen, setIsOpen, onSelect, onImport }: Pro
                 </div>
             </ScrollArea>
         </div>
-        <Separator />
-        <div className="px-6 py-4 flex flex-col gap-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Importar de um arquivo</h3>
+        <div className="flex flex-col gap-4">
+            <Separator />
             <Button variant="outline" onClick={() => importInputRef.current?.click()}>
                 <Upload className="mr-2 h-4 w-4" />
                 Importar Projeto (.json)
