@@ -49,3 +49,4 @@ try {
 // The Firebase services are exported as potentially undefined.
 // The AuthProvider will handle the case where they are not available.
 export { app, auth, db, storage, firebaseError };
+
