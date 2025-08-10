@@ -1,8 +1,8 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
-import { getStorage, type FirebaseStorage } from "firebase/storage";
+import { getAuth, type Auth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, type Firestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getStorage, type FirebaseStorage, connectStorageEmulator } from "firebase/storage";
 
 // A configuração agora usa uma variável dedicada para o projectId dos dados,
 // para resolver o problema de serviços divididos entre projetos Firebase.
@@ -31,6 +31,15 @@ try {
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
+
+  // Conectar aos emuladores em ambiente de desenvolvimento
+  if (process.env.NODE_ENV === 'development' && auth && db && storage) {
+    console.log("Executando em ambiente de desenvolvimento, conectando aos emuladores do Firebase...");
+    connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
+    connectFirestoreEmulator(db, 'localhost', 8080);
+    connectStorageEmulator(storage, 'localhost', 9199);
+  }
+
 } catch (error: any) {
   // Catch the error and store it, so we can display a friendly message in the UI.
   firebaseError = error;
