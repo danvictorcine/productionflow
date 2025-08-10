@@ -1,8 +1,10 @@
 
+// @/src/lib/firebase/config.ts
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, type Firestore, connectFirestoreEmulator } from "firebase/firestore";
-import { getStorage, type FirebaseStorage, connectStorageEmulator } from "firebase/storage";
+import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 // A configuração agora usa uma variável dedicada para o projectId dos dados,
 // para resolver o problema de serviços divididos entre projetos Firebase.
@@ -32,12 +34,15 @@ try {
   db = getFirestore(app);
   storage = getStorage(app);
 
-  // Conectar aos emuladores em ambiente de desenvolvimento
-  if (process.env.NODE_ENV === 'development' && auth && db && storage) {
-    console.log("Executando em ambiente de desenvolvimento, conectando aos emuladores do Firebase...");
-    connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
-    connectFirestoreEmulator(db, 'localhost', 8080);
-    connectStorageEmulator(storage, 'localhost', 9199);
+  if (typeof window !== 'undefined') {
+    enableIndexedDbPersistence(db)
+      .catch((err) => {
+        if (err.code == 'failed-precondition') {
+          console.warn("A persistência do Firestore falhou, múltiplas abas abertas?");
+        } else if (err.code == 'unimplemented') {
+          console.warn("O navegador atual não suporta persistência offline.");
+        }
+      });
   }
 
 } catch (error: any) {
@@ -49,4 +54,3 @@ try {
 // The Firebase services are exported as potentially undefined.
 // The AuthProvider will handle the case where they are not available.
 export { app, auth, db, storage, firebaseError };
-
