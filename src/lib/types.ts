@@ -28,6 +28,7 @@ export type Installment = {
   description: string;
 }
 
+// O Projeto Financeiro agora tem um link para o projeto unificado
 export type Project = {
   id: string;
   userId: string;
@@ -41,11 +42,12 @@ export type Project = {
   isBudgetParcelado: boolean;
   installments: Installment[];
   createdAt: Date;
+  unifiedProjectId?: string; // Link para o novo modelo
 };
 
 export type Transaction = {
   id: string;
-  projectId: string;
+  projectId: string; // Este ainda se refere ao ID do projeto financeiro
   userId: string;
   type: "expense";
   amount: number;
@@ -122,6 +124,7 @@ export type TeamMember = {
   extraNotes?: string;
 };
 
+// A Produção agora tem um link para o projeto unificado
 export type Production = {
   id: string;
   userId: string;
@@ -133,6 +136,7 @@ export type Production = {
   producer?: string;
   createdAt: Date;
   team: TeamMember[];
+  unifiedProjectId?: string; // Link para o novo modelo
 };
 
 export type WeatherInfo = {
@@ -230,17 +234,19 @@ export type ShootingDay = {
 };
 
 // === Creative Project (Moodboard) Types ===
+// O CreativeProject agora tem um link para o projeto unificado
 export type CreativeProject = {
   id: string;
   userId: string;
   name: string;
   description: string;
   createdAt: Date;
+  unifiedProjectId?: string; // Link para o novo modelo
 };
 
 export type BoardItem = {
   id: string;
-  projectId: string;
+  projectId: string; // Este ainda se refere ao ID do creative_project
   userId: string;
   type: 'note' | 'image' | 'video' | 'location' | 'checklist' | 'palette' | 'pdf' | 'spotify' | 'text' | 'storyboard';
   content: string; // HTML for note, URL for image, URL for video, JSON for location, Title for checklist, JSON for palette, URL for PDF
@@ -252,6 +258,7 @@ export type BoardItem = {
 };
 
 // === Storyboard Project Types ===
+// O Storyboard agora tem um link para o projeto unificado
 export type Storyboard = {
   id: string;
   userId: string;
@@ -259,6 +266,7 @@ export type Storyboard = {
   description?: string;
   aspectRatio: '16:9' | '4:3';
   createdAt: Date;
+  unifiedProjectId?: string; // Link para o novo modelo
 };
 
 export type StoryboardScene = {
@@ -317,3 +325,30 @@ type ExportedCreativeProject = { type: 'creative'; creativeProject: CreativeProj
 type ExportedStoryboardProject = { type: 'storyboard'; storyboard: Storyboard; scenes: StoryboardScene[]; panels: StoryboardPanel[] };
 
 export type ExportedProjectData = ExportedFinancialProject | ExportedProductionProject | ExportedCreativeProject | ExportedStoryboardProject;
+
+
+// ===================================================================
+// === NOVA ARQUITETURA DE PROJETO ÚNICO ===
+// ===================================================================
+
+export type UnifiedProject = {
+  id: string;
+  userId: string;
+  name: string;
+  description: string;
+  createdAt: Date;
+
+  // IDs dos projetos associados
+  financialProjectId?: string;
+  productionProjectId?: string;
+  creativeProjectId?: string;
+  storyboardProjectId?: string;
+};
+
+// Esta é uma combinação de todos os tipos para a listagem
+export type DisplayableItem =
+  | (Project & { itemType: 'financial'; unifiedProjectId?: undefined }) // Projetos antigos
+  | (Production & { itemType: 'production'; unifiedProjectId?: undefined }) // Projetos antigos
+  | (CreativeProject & { itemType: 'creative'; unifiedProjectId?: undefined }) // Projetos antigos
+  | (Storyboard & { itemType: 'storyboard'; unifiedProjectId?: undefined }) // Projetos antigos
+  | (UnifiedProject & { itemType: 'unified' }); // Novos projetos
