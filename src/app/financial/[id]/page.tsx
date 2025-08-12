@@ -1,30 +1,32 @@
-// @/src/app/creative/[id]/page.tsx
+// @/src/app/financial/[id]/page.tsx
 'use client';
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getCreativeProject } from '@/lib/firebase/firestore';
+import { getProject } from '@/lib/firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 // Esta página agora atua como um redirecionador de compatibilidade.
-export default function LegacyCreativeRedirectPage() {
+// O nome da pasta é "financial" para corresponder à nova estrutura de abas,
+// embora a rota antiga fosse "/project/[id]".
+export default function LegacyFinancialRedirectPage() {
     const router = useRouter();
     const params = useParams();
-    const creativeId = params.id as string;
+    const financialId = params.id as string;
 
     useEffect(() => {
-        if (creativeId) {
-            getCreativeProject(creativeId).then(project => {
+        if (financialId) {
+            getProject(financialId).then(project => {
                 if (project?.unifiedProjectId) {
                     // Se o projeto legado tem um ID unificado, redireciona para a nova rota.
-                    router.replace(`/project/${project.unifiedProjectId}/creative`);
+                    router.replace(`/project/${project.unifiedProjectId}/financial`);
                 } else {
                     // Se não, redireciona para a home. A migração será tratada lá.
                     router.replace('/');
                 }
             });
         }
-    }, [creativeId, router]);
+    }, [financialId, router]);
 
     return (
         <div className="flex h-screen w-full flex-col items-center justify-center gap-4">

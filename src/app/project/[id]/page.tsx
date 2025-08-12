@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 
-// This page now acts as a redirector to the default financial tab.
+// Esta página agora atua como um redirecionador para a aba padrão (financeiro).
 export default function ProjectRedirectPage() {
     const router = useRouter();
     const params = useParams();
@@ -15,5 +15,5 @@ export default function ProjectRedirectPage() {
         }
     }, [projectId, router]);
 
-    return null; // Render nothing while redirecting
+    return null; // Renderiza nada enquanto redireciona
 }

@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   PlusCircle,
@@ -13,11 +13,12 @@ import {
   DollarSign,
   Brush,
   Image as ImageIcon,
-  Download,
   Folder,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 
-import type { Project, Production, CreativeProject, Storyboard, ExportedProjectData, UnifiedProject, DisplayableItem } from '@/lib/types';
+import type { Project, Production, CreativeProject, Storyboard, UnifiedProject, DisplayableItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -53,6 +54,7 @@ import { UserNav } from '@/components/user-nav';
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
+import { Alert } from '@/components/ui/alert';
 
 
 function HomePage() {
@@ -61,6 +63,7 @@ function HomePage() {
 
   const [items, setItems] = useState<DisplayableItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMigrating, setIsMigrating] = useState(false);
 
   // Dialog states
   const [isUnifiedProjectDialogOpen, setIsUnifiedProjectDialogOpen] = useState(false);
@@ -68,6 +71,8 @@ function HomePage() {
 
   // Deleting state
   const [itemToDelete, setItemToDelete] = useState<DisplayableItem | null>(null);
+  
+  const hasLegacyProjects = items.some(item => item.itemType !== 'unified');
 
   const fetchItems = async () => {
     if (!user) return;
@@ -154,12 +159,36 @@ function HomePage() {
     setIsUnifiedProjectDialogOpen(false);
     setEditingProject(null);
   };
+  
+  const handleMigrateProjects = async () => {
+    const legacyProjects = items.filter(item => item.itemType !== 'unified');
+    if (legacyProjects.length === 0) return;
+    
+    setIsMigrating(true);
+    try {
+        await firestoreApi.migrateLegacyProjects(legacyProjects);
+        toast({ title: "Migração Concluída!", description: "Seus projetos antigos agora estão no novo formato." });
+        await fetchItems();
+    } catch (error) {
+        const errorTyped = error as { code?: string; message: string };
+        toast({
+            variant: "destructive",
+            title: "Erro na Migração",
+            description: <CopyableError userMessage="Não foi possível migrar os projetos." errorCode={errorTyped.code || errorTyped.message} />,
+        });
+    } finally {
+        setIsMigrating(false);
+    }
+  };
 
   const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
     try {
       if (itemToDelete.itemType === 'unified') {
         await firestoreApi.deleteUnifiedProject(itemToDelete.id);
+      } else {
+         // Lógica para excluir projetos legado (se necessário no futuro)
+         console.warn("A exclusão de projetos legado ainda não está implementada nesta interface.");
       }
       toast({ title: `"${itemToDelete.name}" excluído(a).` });
       await fetchItems();
@@ -183,6 +212,27 @@ function HomePage() {
     setEditingProject(item);
     setIsUnifiedProjectDialogOpen(true);
   };
+  
+  const getLegacyProjectIcon = (itemType: DisplayableItem['itemType']) => {
+    switch(itemType) {
+        case 'financial': return <DollarSign className="h-6 w-6 text-muted-foreground" />;
+        case 'production': return <Clapperboard className="h-6 w-6 text-muted-foreground" />;
+        case 'creative': return <Brush className="h-6 w-6 text-muted-foreground" />;
+        case 'storyboard': return <ImageIcon className="h-6 w-6 text-muted-foreground" />;
+        default: return <Folder className="h-6 w-6 text-primary" />;
+    }
+  };
+  
+  const getLegacyProjectLink = (item: DisplayableItem) => {
+    // Links para rotas antigas, que agora serão redirecionadas
+    switch(item.itemType) {
+        case 'financial': return `/project/${item.id}`;
+        case 'production': return `/production/${item.id}`;
+        case 'creative': return `/creative/${item.id}`;
+        case 'storyboard': return `/storyboard/${item.id}`;
+        default: return '#';
+    }
+  }
 
   const renderCards = () => {
     if (isLoading) {
@@ -262,8 +312,28 @@ function HomePage() {
               </Card>
             );
           }
-          // Placeholder for legacy projects
-          return <Card key={`${item.itemType}-${item.id}`} className="bg-muted/50 p-4 border-dashed"><p className="text-sm text-muted-foreground">Projeto antigo: {item.name}</p></Card>
+          // Renderiza projetos legado
+          return (
+            <Card
+                key={`${item.itemType}-${item.id}`}
+                className="hover:shadow-lg transition-shadow h-full flex flex-col relative border-dashed bg-muted/50"
+              >
+                <Link href={getLegacyProjectLink(item)} className="flex flex-col flex-grow">
+                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10">
+                    <div className="p-3 rounded-full bg-muted">
+                        {getLegacyProjectIcon(item.itemType)}
+                    </div>
+                    <div>
+                      <CardTitle className="text-muted-foreground">{item.name}</CardTitle>
+                      <CardDescription>Projeto Legado</CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="mt-auto">
+                    <Button className="w-full" variant="secondary">Abrir Projeto Legado</Button>
+                  </CardContent>
+                </Link>
+            </Card>
+          );
         })}
       </div>
     );
@@ -306,6 +376,19 @@ function HomePage() {
       </header>
 
       <main className="flex-1 p-4 sm:p-6 md:p-8">
+        {hasLegacyProjects && (
+            <Alert className="mb-6 border-amber-500/50 text-amber-900 dark:text-amber-300 [&>svg]:text-amber-500">
+                <AlertTriangle className="h-4 w-4" />
+                <CardTitle className="text-base">Atualização da Estrutura de Projetos</CardTitle>
+                <CardDescription className="text-amber-700 dark:text-amber-400">
+                    Detectamos projetos no formato antigo. Para usar as novas funcionalidades integradas, migre seus projetos para o novo formato unificado. A migração é segura e não apaga seus dados originais.
+                </CardDescription>
+                <Button onClick={handleMigrateProjects} disabled={isMigrating} className="mt-3 bg-amber-500 hover:bg-amber-600 text-white">
+                    {isMigrating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Migrar Projetos Antigos
+                </Button>
+            </Alert>
+        )}
         <div className="mb-6">
           <h2 className="text-3xl font-bold tracking-tight">Meus Projetos</h2>
           <p className="text-muted-foreground">
