@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { CopyableError } from '@/components/copyable-error';
 import { Button } from '@/components/ui/button';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, PlusCircle } from 'lucide-react';
 
 function FinancialProjectPageDetail() {
     const router = useRouter();
