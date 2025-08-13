@@ -8,7 +8,7 @@ import { TouchBackend } from 'react-dnd-touch-backend';
 import Image from 'next/image';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { PlusCircle, Edit, Trash2, MoreVertical, FileDown, Loader2, X, GripVertical, ZoomIn, ZoomOut } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MoreVertical, FileDown, Loader2, X, GripVertical, ZoomIn, ZoomOut, FileSpreadsheet } from 'lucide-react';
 
 import type { Storyboard, StoryboardScene, StoryboardPanel } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -330,8 +330,34 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
         <DndProvider backend={dndBackend}>
             <div className="flex flex-col h-full w-full bg-muted/40 overflow-hidden">
                 <div className="bg-background border-b z-30 shrink-0 p-4">
-                    <Card><CardHeader><div className="flex justify-between items-start"><div><CardTitle>{storyboard.name}</CardTitle>{storyboard.description && (<CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>)}</div></div></CardHeader></Card>
-                    {!isMobile && (<div className="px-4 md:px-8 py-4"><div className="flex items-center gap-1 rounded-lg bg-muted p-1 w-fit"><Button variant="outline" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button><Button variant="outline" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button></div></div>)}
+                     <div className="flex flex-wrap items-center gap-2">
+                        <Button onClick={() => { setEditingScene(null); setIsSceneDialogOpen(true); }} size="sm">
+                            <PlusCircle className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Adicionar Cena</span>
+                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                    <FileDown className="h-4 w-4 md:mr-2" />
+                                    <span className="hidden md:inline">Exportar</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => handleExport('png')}>Exportar como PNG</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleExport('pdf')}>Exportar como PDF</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        {!isMobile && (
+                            <div className="flex items-center gap-1 ml-auto">
+                                <Button variant="outline" size="icon" onClick={() => handleZoom('out')} className="h-9 w-9">
+                                    <ZoomOut className="h-4 w-4" />
+                                </Button>
+                                <Button variant="outline" size="icon" onClick={() => handleZoom('in')} className="h-9 w-9">
+                                    <ZoomIn className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <div className="flex-1 flex flex-col overflow-auto">{isMobile ? mobileView : desktopView}</div>
                 
