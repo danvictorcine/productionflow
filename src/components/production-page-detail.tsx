@@ -5,12 +5,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PlusCircle, Edit, Share2, Clapperboard, FileSpreadsheet, FileDown } from 'lucide-react';
-import { format, isToday } from 'date-fns';
+import { format, isToday, isFuture, parseISO, differenceInHours } from 'date-fns';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-import type { Production, ShootingDay, TeamMember } from '@/lib/types';
+import type { Production, ShootingDay, TeamMember, WeatherInfo } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -89,11 +89,60 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
   const [shareLink, setShareLink] = useState<string | null>(null);
 
   const fetchAndUpdateWeather = useCallback(async (day: ShootingDay) => {
-    // Weather logic would go here
-  }, [toast]);
+    if (!day.latitude || !day.longitude) {
+      toast({ variant: 'destructive', title: 'Localização necessária', description: 'Defina a localização da diária para obter a previsão do tempo.' });
+      return;
+    }
+    
+    setIsFetchingWeather(prev => ({ ...prev, [day.id]: true }));
+
+    try {
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${day.latitude}&longitude=${day.longitude}&daily=weather_code,temperature_2m_max,sunrise,sunset&hourly=temperature_2m,weather_code&timezone=auto`);
+        if (!response.ok) {
+            throw new Error('Não foi possível obter os dados do clima.');
+        }
+        const weatherData = await response.json();
+        
+        const locationResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${day.latitude}&lon=${day.longitude}`);
+        const locationData = await locationResponse.json();
+        const locationName = locationData.display_name || 'Localização Desconhecida';
+
+        const updatedWeather: WeatherInfo = {
+            daily: weatherData.daily,
+            hourly: weatherData.hourly,
+            lastUpdated: new Date().toISOString(),
+            locationName,
+            date: format(day.date, 'yyyy-MM-dd'),
+            timezone: weatherData.timezone
+        };
+
+        await firestoreApi.updateShootingDay(day.id, { weather: updatedWeather });
+        onDataRefresh();
+        toast({ title: 'Previsão do tempo atualizada!' });
+    } catch (error) {
+        const errorTyped = error as { code?: string; message: string };
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao buscar clima',
+            description: <CopyableError userMessage="Não foi possível obter a previsão do tempo." errorCode={errorTyped.code || errorTyped.message} />,
+        });
+    } finally {
+        setIsFetchingWeather(prev => ({ ...prev, [day.id]: false }));
+    }
+  }, [toast, onDataRefresh]);
   
   useEffect(() => {
-    // Weather fetching logic would go here
+    shootingDays.forEach(day => {
+        const dayDate = new Date(day.date);
+        const shouldFetch = isToday(dayDate) || isFuture(dayDate);
+        if (!shouldFetch) return;
+
+        const needsUpdate = !day.weather || !day.weather.lastUpdated || differenceInHours(new Date(), parseISO(day.weather.lastUpdated)) >= 1;
+
+        if (needsUpdate) {
+            fetchAndUpdateWeather(day);
+        }
+    });
   }, [shootingDays, fetchAndUpdateWeather]);
 
   const handleProductionSubmit = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
