@@ -489,12 +489,10 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
       const newPosition = { x: 50 + offset, y: 50 + offset };
       
       const newItemData: any = { type, content, size, position: newPosition, ...extraData };
-      const newItemId = await firestoreApi.addBoardItem(project.id, newItemData);
+      await firestoreApi.addBoardItem(project.id, newItemData);
       
-      onDataRefresh(); // This is the crucial line
+      onDataRefresh();
       
-      if (type === 'note') { setSelectedItemId(newItemId); }
-
       toast({ title: `Item adicionado!` });
       if (type === 'video') { setIsVideoDialogOpen(false); setVideoUrl(""); }
       if (type === 'spotify') { setIsSpotifyDialogOpen(false); setSpotifyUrl(""); }
@@ -565,8 +563,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   const handleDeleteItem = async (itemId: string) => {
     try {
       await firestoreApi.deleteBoardItem(project.id, itemId);
-      setItems(prev => prev.filter(item => item.id !== itemId));
-      if (selectedItemId === itemId) { setSelectedItemId(null); }
+      onDataRefresh();
       toast({ title: 'Item removido.' });
     } catch (error) {
        toast({ variant: 'destructive', title: 'Erro ao remover' });
