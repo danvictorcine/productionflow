@@ -43,7 +43,7 @@ const LocationPicker = dynamic(() => import('@/components/location-picker').then
   loading: () => <Skeleton className="h-64 w-full" />,
 });
 
-const QuillEditor = dynamic(() => import('react-quill').then((mod) => mod.default), { 
+const QuillEditor = dynamic(() => import('react-quill').then((mod) => mod.default), {
     ssr: false,
     loading: () => <Skeleton className="h-full w-full rounded-b-md" />
 });
@@ -490,7 +490,8 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
       
       const newItemData: any = { type, content, size, position: newPosition, ...extraData };
       const newItemId = await firestoreApi.addBoardItem(project.id, newItemData);
-      onDataRefresh();
+      
+      onDataRefresh(); // This is the crucial line
       
       if (type === 'note') { setSelectedItemId(newItemId); }
 
