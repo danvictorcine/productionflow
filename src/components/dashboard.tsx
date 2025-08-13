@@ -445,24 +445,12 @@ export default function Dashboard({
   };
   
   return (
-    <div className="flex flex-col min-h-screen w-full">
-      <header className="sticky top-0 z-10 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold" aria-label="Voltar para a página de projetos">
-            <Button variant="outline" size="icon" className="h-8 w-8">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Voltar para Projetos</span>
-            </Button>
-        </Link>
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="p-3 rounded-full bg-primary/10 flex-shrink-0">
-            <DollarSign className="h-5 w-5 text-primary" />
-          </div>
-          <h1 className="text-lg md:text-xl font-bold text-primary truncate">{project.name}</h1>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => setEditDialogOpen(true)} variant="outline" size="sm">
+    <div className="flex flex-col h-full w-full">
+      <div className="flex-none p-4 border-b">
+         <div className="flex items-center gap-2">
+           <Button onClick={() => setEditDialogOpen(true)} variant="outline" size="sm">
             <Edit className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Editar Projeto</span>
+            <span className="hidden md:inline">Editar Orçamento</span>
           </Button>
           <Button onClick={openAddSheet} size="sm">
             <PlusCircle className="h-4 w-4 md:mr-2" />
@@ -490,11 +478,10 @@ export default function Dashboard({
                 </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <UserNav />
         </div>
-      </header>
+      </div>
 
-      <main className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col gap-6">
+      <main className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col gap-6 overflow-y-auto">
         <SummaryCards
           budget={project.budget}
           talentFees={totalTalentFee}
