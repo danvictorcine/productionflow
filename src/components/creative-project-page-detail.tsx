@@ -585,7 +585,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
             </div>
       </div>
       <div ref={mainContainerRef} className="flex-1 relative overflow-hidden cursor-grab" onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-          <div className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75" style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} onClick={() => setSelectedItemId(null)}>
+          <div className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75 z-10" style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} onClick={() => setSelectedItemId(null)}>
             {items.map(item => (
               <Rnd
                 key={item.id}
