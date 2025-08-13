@@ -1,4 +1,3 @@
-
 // @/src/components/creative-project-page-detail.tsx
 'use client';
 
@@ -44,7 +43,7 @@ const LocationPicker = dynamic(() => import('@/components/location-picker').then
   loading: () => <Skeleton className="h-64 w-full" />,
 });
 
-const QuillEditor = dynamic(() => import('react-quill').then(mod => mod.default), { 
+const QuillEditor = dynamic(() => import('react-quill').then((mod) => mod.default), { 
     ssr: false,
     loading: () => <Skeleton className="h-full w-full rounded-b-md" />
 });
@@ -603,37 +602,27 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   
   return (
     <div className="flex flex-col h-full w-full bg-muted/40 overflow-hidden">
-      <div className="bg-background border-b z-30">
-        <div className="px-4 md:px-6 pt-4 md:pt-6">
-          <Card>
-            <CardContent className="p-4 md:p-6 space-y-1">
-              <CardTitle>{project.name}</CardTitle>
-              {project.description && (
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.description}</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-        <div className="p-2 md:p-4">
-            <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
-                <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
-                <Button variant="ghost" size="sm" onClick={handleAddPalette} className="tool-button"><Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Paleta</span></Button>
-                <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Imagem</span></Button>
-                <input type="file" ref={imageUploadRef} onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" className="hidden" />
-                <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <GalleryVertical className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Storyboard</span></Button>
-                <input type="file" ref={storyboardUploadRef} onChange={(e) => handleImageUpload(e, 'storyboard')} accept="image/*" className="hidden" />
-                <Button variant="ghost" size="sm" onClick={() => pdfUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <FileIcon className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">PDF</span></Button>
-                <input type="file" ref={pdfUploadRef} onChange={handlePdfUpload} accept="application/pdf" className="hidden" />
-                <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)} className="tool-button"><Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Vídeo</span></Button>
-                <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)} className="tool-button"><Music className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Música</span></Button>
-                <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)} className="tool-button"><MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span></Button>
-                <div className="flex items-center gap-1 ml-auto">
-                    <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
+        <div className="bg-background border-b z-30 shrink-0">
+            <div className="p-2 md:p-4">
+                <div className="flex items-center gap-1 md:gap-2 flex-wrap">
+                    <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
+                    <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
+                    <Button variant="ghost" size="sm" onClick={handleAddPalette} className="tool-button"><Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Paleta</span></Button>
+                    <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Imagem</span></Button>
+                    <input type="file" ref={imageUploadRef} onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" className="hidden" />
+                    <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <GalleryVertical className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Storyboard</span></Button>
+                    <input type="file" ref={storyboardUploadRef} onChange={(e) => handleImageUpload(e, 'storyboard')} accept="image/*" className="hidden" />
+                    <Button variant="ghost" size="sm" onClick={() => pdfUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <FileIcon className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">PDF</span></Button>
+                    <input type="file" ref={pdfUploadRef} onChange={handlePdfUpload} accept="application/pdf" className="hidden" />
+                    <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)} className="tool-button"><Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Vídeo</span></Button>
+                    <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)} className="tool-button"><Music className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Música</span></Button>
+                    <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)} className="tool-button"><MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span></Button>
+                    <div className="flex items-center gap-1 ml-auto">
+                        <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
+                    </div>
                 </div>
             </div>
-        </div>
       </div>
       <div ref={mainContainerRef} className={cn("flex-1 relative overflow-hidden cursor-grab")} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
           <div ref={canvasRef} className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75" style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} onClick={() => setSelectedItemId(null)}>
