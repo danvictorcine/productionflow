@@ -1,3 +1,4 @@
+
 // @/src/components/creative-project-page-detail.tsx
 'use client';
 
@@ -491,7 +492,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
       const newItemData: any = { type, content, size, position: newPosition, ...extraData };
       await firestoreApi.addBoardItem(project.id, newItemData);
       
-      onDataRefresh();
+      onDataRefresh(); // This is the crucial part to refresh the page data
       
       toast({ title: `Item adicionado!` });
       if (type === 'video') { setIsVideoDialogOpen(false); setVideoUrl(""); }
@@ -499,7 +500,12 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
       if (type === 'location') { setIsLocationDialogOpen(false); setSelectedLocation(null); }
 
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao adicionar item' });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+          variant: 'destructive',
+          title: 'Erro ao Adicionar Item',
+          description: <CopyableError userMessage="Não foi possível adicionar o item ao moodboard." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     }
   };
   
