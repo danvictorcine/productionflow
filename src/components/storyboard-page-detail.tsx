@@ -9,6 +9,7 @@ import Image from 'next/image';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { PlusCircle, Edit, Trash2, MoreVertical, FileDown, Loader2, X, GripVertical, ZoomIn, ZoomOut, FileSpreadsheet } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 
 import type { Storyboard, StoryboardScene, StoryboardPanel } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -295,9 +296,9 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
-                            <PanelCard key={panel.id} panel={panel} aspectRatio={storyboard.aspectRatio} index={panelIndex} onDelete={handleDeletePanel} onUpdateNotes={handleUpdatePanelNotes} movePanel={movePanel} onDropPanel={handleDropPanel} isExporting={isExporting} />
+                            <PanelCard key={panel.id} panel={panel} aspectRatio={scene.aspectRatio} index={panelIndex} onDelete={handleDeletePanel} onUpdateNotes={handleUpdatePanelNotes} movePanel={movePanel} onDropPanel={handleDropPanel} isExporting={isExporting} />
                         ))}
-                        {!isExporting && (<button className={cn("flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors", storyboard.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]")} onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }} disabled={isUploading}>{isUploading && sceneForUpload === scene.id ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <PlusCircle className="h-8 w-8 text-muted-foreground/50" />}</button>)}
+                        {!isExporting && (<button className={cn("flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors", scene.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]")} onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }} disabled={isUploading}>{isUploading && sceneForUpload === scene.id ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <PlusCircle className="h-8 w-8 text-muted-foreground/50" />}</button>)}
                     </div>
                 </div>
             ))}
@@ -316,9 +317,9 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
                     </div>
                     <div className="grid grid-cols-1 gap-4">
                         {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
-                            <PanelCard key={panel.id} panel={panel} aspectRatio={storyboard.aspectRatio} index={panelIndex} onDelete={handleDeletePanel} onUpdateNotes={handleUpdatePanelNotes} movePanel={movePanel} onDropPanel={handleDropPanel} isExporting={isExporting}/>
+                            <PanelCard key={panel.id} panel={panel} aspectRatio={scene.aspectRatio} index={panelIndex} onDelete={handleDeletePanel} onUpdateNotes={handleUpdatePanelNotes} movePanel={movePanel} onDropPanel={handleDropPanel} isExporting={isExporting}/>
                         ))}
-                        {!isExporting && (<button className={cn("flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors", storyboard.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]")} onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }} disabled={isUploading}>{isUploading && sceneForUpload === scene.id ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <PlusCircle className="h-8 w-8 text-muted-foreground/50" />}</button>)}
+                        {!isExporting && (<button className={cn("flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors", scene.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]")} onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }} disabled={isUploading}>{isUploading && sceneForUpload === scene.id ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <PlusCircle className="h-8 w-8 text-muted-foreground/50" />}</button>)}
                     </div>
                 </div>
             ))}
@@ -361,7 +362,13 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
                 </div>
                 <div className="flex-1 flex flex-col overflow-auto">{isMobile ? mobileView : desktopView}</div>
                 
-                <CreateEditStoryboardSceneDialog isOpen={isSceneDialogOpen} setIsOpen={setIsSceneDialogOpen} onSubmit={handleSceneSubmit} scene={editingScene}/>
+                <CreateEditStoryboardSceneDialog 
+                  isOpen={isSceneDialogOpen} 
+                  setIsOpen={setIsSceneDialogOpen} 
+                  onSubmit={handleSceneSubmit} 
+                  scene={editingScene}
+                  defaultAspectRatio={storyboard.aspectRatio}
+                />
                 <AlertDialog open={!!sceneToDelete} onOpenChange={(open) => !open && setSceneToDelete(null)}>
                     <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir Cena?</AlertDialogTitle><AlertDialogDescription>Tem certeza que deseja excluir a cena "{sceneToDelete?.title}"? Todos os quadros dentro dela serão perdidos. Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleSceneDelete} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
                 </AlertDialog>

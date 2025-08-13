@@ -277,6 +277,7 @@ export type StoryboardScene = {
   description: string;
   order: number;
   createdAt: Date;
+  aspectRatio: '16:9' | '4:3';
 };
 
 export type StoryboardPanel = {

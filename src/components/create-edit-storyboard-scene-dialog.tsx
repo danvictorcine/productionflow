@@ -26,10 +26,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "./ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 const formSchema = z.object({
   title: z.string().min(2, "O título da cena deve ter pelo menos 2 caracteres."),
   description: z.string().optional(),
+  aspectRatio: z.enum(['16:9', '4:3']),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -39,9 +41,10 @@ interface CreateEditStoryboardSceneDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<StoryboardScene, 'id' | 'storyboardId' | 'userId' | 'order' | 'createdAt'>) => void;
   scene?: StoryboardScene | null;
+  defaultAspectRatio?: '16:9' | '4:3';
 }
 
-export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, scene }: CreateEditStoryboardSceneDialogProps) {
+export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, scene, defaultAspectRatio }: CreateEditStoryboardSceneDialogProps) {
   const isEditMode = !!scene;
 
   const form = useForm<FormValues>({
@@ -49,6 +52,7 @@ export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, s
     defaultValues: {
       title: "",
       description: "",
+      aspectRatio: defaultAspectRatio || '16:9',
     },
   });
 
@@ -58,19 +62,22 @@ export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, s
         ? {
             title: scene.title,
             description: scene.description || "",
+            aspectRatio: scene.aspectRatio || defaultAspectRatio || '16:9',
           }
         : {
             title: "",
             description: "",
+            aspectRatio: defaultAspectRatio || '16:9',
           };
       form.reset(defaultValues);
     }
-  }, [isOpen, isEditMode, scene, form]);
+  }, [isOpen, isEditMode, scene, form, defaultAspectRatio]);
 
   const handleSubmit = (values: FormValues) => {
     onSubmit({
         title: values.title,
-        description: values.description || ""
+        description: values.description || "",
+        aspectRatio: values.aspectRatio,
     });
   };
 
@@ -80,7 +87,7 @@ export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, s
         <SheetHeader>
           <SheetTitle>{isEditMode ? "Editar Cena" : "Criar Nova Cena"}</SheetTitle>
           <SheetDescription>
-            {isEditMode ? "Atualize o título e a descrição da sua cena." : "Adicione um título e uma descrição para organizar seus quadros."}
+            {isEditMode ? "Atualize os detalhes da sua cena." : "Adicione um título, descrição e proporção para a sua cena."}
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
@@ -94,6 +101,27 @@ export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, s
                   <FormControl>
                     <Input placeholder="ex: CENA 01 - COZINHA (DIA)" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="aspectRatio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Proporção da Cena</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione a proporção" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="16:9">Widescreen (16:9)</SelectItem>
+                            <SelectItem value="4:3">Clássico (4:3)</SelectItem>
+                        </SelectContent>
+                    </Select>
                   <FormMessage />
                 </FormItem>
               )}
