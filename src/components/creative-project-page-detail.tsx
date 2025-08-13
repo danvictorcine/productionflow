@@ -349,7 +349,6 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   const imageUploadRef = useRef<HTMLInputElement>(null);
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const storyboardUploadRef = useRef<HTMLInputElement>(null);
-  const mainContainerRef = useRef<HTMLDivElement>(null);
   const dirtyItemsRef = useRef(new Set<string>());
 
   const [items, setItems] = useState<BoardItem[]>(initialItems);
@@ -558,52 +557,64 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
 
   const handleWheel = (e: React.WheelEvent) => { e.preventDefault(); const newScale = Math.min(Math.max(0.1, scale - (e.deltaY > 0 ? 0.1 : -0.1)), 2); setScale(newScale); };
   const handleZoom = (dir: 'in' | 'out') => { const newScale = Math.min(Math.max(0.1, scale + (dir === 'in' ? 0.15 : -0.15)), 2); setScale(newScale); }
-  const handleMouseDown = (e: React.MouseEvent) => { if ((e.target as HTMLElement).closest('.rnd-item, .tool-button')) return; e.preventDefault(); setSelectedItemId(null); isPanning.current = true; startPanPoint.current = { x: e.clientX - position.x, y: e.clientY - position.y }; if (mainContainerRef.current) mainContainerRef.current.classList.add('cursor-grabbing'); };
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.rnd-item, .tool-button, .ql-editor, .ql-toolbar')) return;
+    e.preventDefault();
+    setSelectedItemId(null);
+    isPanning.current = true;
+    startPanPoint.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  };
   const handleMouseMove = (e: React.MouseEvent) => { if (!isPanning.current) return; e.preventDefault(); setPosition({ x: e.clientX - startPanPoint.current.x, y: e.clientY - startPanPoint.current.y }); };
-  const handleMouseUp = () => { isPanning.current = false; if (mainContainerRef.current) mainContainerRef.current.classList.remove('cursor-grabbing'); };
+  const handleMouseUp = () => { isPanning.current = false; };
   
   return (
     <div className="flex flex-col h-full w-full bg-muted/40 overflow-hidden">
-        <div className="bg-background border-b z-30 shrink-0 p-2">
-            <div className="flex items-center gap-1 flex-wrap">
-                <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
-                <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
-                <Button variant="ghost" size="sm" onClick={handleAddPalette} className="tool-button"><Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Paleta</span></Button>
-                <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Imagem</span></Button>
-                <input type="file" ref={imageUploadRef} onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" className="hidden" />
-                <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <GalleryVertical className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Storyboard</span></Button>
-                <input type="file" ref={storyboardUploadRef} onChange={(e) => handleImageUpload(e, 'storyboard')} accept="image/*" className="hidden" />
-                <Button variant="ghost" size="sm" onClick={() => pdfUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <FileText className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">PDF</span></Button>
-                <input type="file" ref={pdfUploadRef} onChange={handlePdfUpload} accept="application/pdf" className="hidden" />
-                <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)} className="tool-button"><Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Vídeo</span></Button>
-                <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)} className="tool-button"><Music className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Música</span></Button>
-                <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)} className="tool-button"><MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span></Button>
-                <div className="flex items-center gap-1 ml-auto">
-                    <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
-                </div>
-            </div>
-      </div>
-      <div ref={mainContainerRef} className="flex-1 relative overflow-hidden cursor-grab" onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-          <div className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75 z-10" style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} onClick={() => setSelectedItemId(null)}>
-            {items.map(item => (
-              <Rnd
-                key={item.id}
-                size={{ width: item.size.width, height: item.size.height }}
-                position={{ x: item.position.x, y: item.position.y }}
-                onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y } })}
-                onResizeStop={(_e, _direction, ref, _delta, position) => { handleItemUpdate(item.id, { size: { width: ref.style.width, height: ref.style.height }, position }); }}
-                onClick={(e) => { e.stopPropagation(); setSelectedItemId(item.id); }}
-                minWidth={150}
-                minHeight={80}
-                className="z-20 rnd-item"
-                dragHandleClassName="drag-handle"
-                cancel=".note-editor-container, input, textarea, button" // Prevent drag on interactive elements
-              >
-                  <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} isSelected={selectedItemId === item.id} onSelect={setSelectedItemId} />
-              </Rnd>
-            ))}
+      <div className="bg-background border-b z-30 shrink-0 p-2">
+        <div className="flex items-center gap-1 flex-wrap">
+          <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
+          <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
+          <Button variant="ghost" size="sm" onClick={handleAddPalette} className="tool-button"><Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Paleta</span></Button>
+          <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Imagem</span></Button>
+          <input type="file" ref={imageUploadRef} onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" className="hidden" />
+          <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <GalleryVertical className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Storyboard</span></Button>
+          <input type="file" ref={storyboardUploadRef} onChange={(e) => handleImageUpload(e, 'storyboard')} accept="image/*" className="hidden" />
+          <Button variant="ghost" size="sm" onClick={() => pdfUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <FileText className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">PDF</span></Button>
+          <input type="file" ref={pdfUploadRef} onChange={handlePdfUpload} accept="application/pdf" className="hidden" />
+          <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)} className="tool-button"><Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Vídeo</span></Button>
+          <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)} className="tool-button"><Music className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Música</span></Button>
+          <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)} className="tool-button"><MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span></Button>
+          <div className="flex items-center gap-1 ml-auto">
+            <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
           </div>
+        </div>
+      </div>
+
+      <div className="relative flex-1 cursor-grab" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+        <div 
+          className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75 z-10" 
+          style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} 
+          onWheel={handleWheel}
+        >
+          {items.map(item => (
+            <Rnd
+              key={item.id}
+              size={{ width: item.size.width, height: item.size.height }}
+              position={{ x: item.position.x, y: item.position.y }}
+              onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y } })}
+              onResizeStop={(_e, _direction, ref, _delta, position) => { handleItemUpdate(item.id, { size: { width: ref.style.width, height: ref.style.height }, position }); }}
+              onClick={(e) => { e.stopPropagation(); setSelectedItemId(item.id); }}
+              minWidth={150}
+              minHeight={80}
+              className="z-20 rnd-item"
+              dragHandleClassName="drag-handle"
+              cancel=".note-editor-container, input, textarea, button, .ql-toolbar, .ql-editor"
+            >
+              <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} isSelected={selectedItemId === item.id} onSelect={setSelectedItemId} />
+            </Rnd>
+          ))}
+        </div>
       </div>
       
       <Sheet open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}><SheetContent><SheetHeader><SheetTitle>Adicionar Vídeo</SheetTitle><SheetDescription>Cole a URL de um vídeo do YouTube ou Vimeo.</SheetDescription></SheetHeader><div className="grid gap-4 py-4"><Label htmlFor="video-url">URL do Vídeo</Label><Input id="video-url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..."/></div><SheetFooter><Button onClick={handleAddVideo}>Adicionar</Button></SheetFooter></SheetContent></Sheet>
