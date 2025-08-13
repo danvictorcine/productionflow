@@ -647,3 +647,4 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     </div>
   );
 }
+
