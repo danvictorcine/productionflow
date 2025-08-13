@@ -80,8 +80,13 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
             }
 
             if (isToday(day.date)) {
-                const now = new Date();
-                const hourlyIndex = weather.hourly.time.findIndex(time => time.startsWith(now.toISOString().substring(0, 13)));
+                 const nowInTimezone = new Date(new Date().toLocaleString("en-US", { timeZone: weather.timezone }));
+                 const currentHour = nowInTimezone.getHours();
+                 const hourlyIndex = weather.hourly.time.findIndex(timeStr => {
+                     const hour = parseISO(timeStr).getHours();
+                     return hour === currentHour;
+                 });
+                
                 if (hourlyIndex !== -1) {
                     const temp = weather.hourly.temperature_2m[hourlyIndex];
                     const code = weather.hourly.weather_code[hourlyIndex];
