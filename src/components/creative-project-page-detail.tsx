@@ -1,36 +1,29 @@
-
 // @/src/components/creative-project-page-detail.tsx
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, Brush, Edit, Trash2, Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, File as FileIcon, X, ExternalLink, Music, Type, GalleryVertical, ZoomIn, ZoomOut } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
+import { 
+    Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, X, ExternalLink, Music, Type, GalleryVertical, ZoomIn, ZoomOut, Trash2
+} from 'lucide-react';
 
 
 import type { CreativeProject, BoardItem, ChecklistItem, LocationAddress } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import AuthGuard from '@/components/auth-guard';
 import { Button } from '@/components/ui/button';
-import { UserNav } from '@/components/user-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
-import { CreateEditCreativeProjectDialog } from '@/components/create-edit-creative-project-dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { DEFAULT_BETA_LIMITS } from '@/lib/app-config';
 
 
@@ -105,7 +98,6 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
     onSelect: (itemId: string | null) => void;
 }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
-    const debounceTimer = useRef<NodeJS.Timeout>();
     const quillRef = useRef<any>(null);
 
 
@@ -116,15 +108,9 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
     const handlePaletteUpdate = (updatedColors: string[]) => {
         onUpdate(item.id, { content: JSON.stringify(updatedColors) });
     };
-
-    const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const newNotes = e.target.value;
-        onUpdate(item.id, { notes: newNotes }); // Optimistic UI update
-
-        if (debounceTimer.current) clearTimeout(debounceTimer.current);
-        debounceTimer.current = setTimeout(() => {
-            firestoreApi.updateBoardItem(item.projectId, item.id, { notes: newNotes });
-        }, 500);
+    
+    const handleContentChange = (content: string) => {
+      onUpdate(item.id, { content });
     };
 
     const quillModules = useMemo(() => ({
@@ -155,7 +141,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                                 <button className="ql-italic"></button>
                                 <button className="ql-underline"></button>
                             </span>
-                            <span className="ql-formats">
+                             <span className="ql-formats">
                                 <button className="ql-list" value="ordered"></button>
                                 <button className="ql-list" value="bullet"></button>
                             </span>
@@ -170,7 +156,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                             ref={quillRef}
                             theme="snow"
                             value={item.content}
-                            onChange={(content) => onUpdate(item.id, { content })}
+                            onChange={handleContentChange}
                             modules={quillModules}
                             className="h-full w-full flex-grow"
                         />
@@ -182,10 +168,10 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                         <div className="relative w-full aspect-video bg-muted flex-shrink-0">
                            <img src={item.content} alt="Storyboard panel" className="w-full h-full object-cover" data-ai-hint="action sequence" />
                         </div>
-                        <Textarea 
+                         <Textarea 
                             placeholder="Adicione suas anotações aqui..."
                             defaultValue={item.notes}
-                            onChange={handleNotesChange}
+                            onBlur={(e) => onUpdate(item.id, { notes: e.target.value })}
                             className="text-sm bg-transparent border-none focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-ring p-2 flex-grow resize-none"
                         />
                     </div>
@@ -279,14 +265,14 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture" onClick={() => onSelect(null)}/>;
             case 'pdf':
-                return (
-                    <iframe
-                        src={`https://docs.google.com/gview?url=${encodeURIComponent(item.content)}&embedded=true`}
-                        className="w-full h-full"
-                        style={{ border: 'none' }}
-                        title="PDF Viewer"
-                        onClick={() => onSelect(null)}
-                    ></iframe>
+                 return (
+                    <a href={item.content} target="_blank" rel="noopener noreferrer" className="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors p-4 group" onClick={() => onSelect(null)}>
+                        <FileText className="h-16 w-16 text-destructive" />
+                        <p className="mt-2 font-semibold text-center break-all">PDF</p>
+                        <p className="flex items-center text-sm text-primary group-hover:underline mt-1">
+                            Abrir em nova aba <ExternalLink className="ml-1 h-3 w-3" />
+                        </p>
+                    </a>
                 );
             case 'video':
                  const youtubeUrl = getYoutubeEmbedUrl(item.content);
@@ -303,7 +289,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                  }
                  return <div className="p-2 text-red-500 text-xs" onClick={() => onSelect(null)}>Link do Spotify inválido. Use um link de música, álbum ou playlist.</div>;
             case 'location': {
-                let locationData: LocationAddress | null = null;
+                let locationData: LocationAddress & {lat: number, lng: number} | null = null;
                 try {
                     if (item.content) {
                         locationData = JSON.parse(item.content);
@@ -328,10 +314,11 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
     return (
         <div 
             className={cn(
-                "w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col transition-all duration-200"
+                "w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col transition-all duration-200",
+                 isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
             )}
         >
-            <div className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-move z-10 opacity-30 group-hover:opacity-100 transition-opacity">
+            <div className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-grab group-active:cursor-grabbing z-10 opacity-30 group-hover:opacity-100 transition-opacity">
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="flex-grow min-h-0">
@@ -362,7 +349,6 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   const imageUploadRef = useRef<HTMLInputElement>(null);
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const storyboardUploadRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const dirtyItemsRef = useRef(new Set<string>());
 
@@ -383,98 +369,11 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const isPanning = useRef(false);
   const startPanPoint = useRef({ x: 0, y: 0 });
-  const pinchStartDistance = useRef(0);
   
   useEffect(() => {
     setItems(initialItems);
   }, [initialItems]);
-
-  const setInitialView = useCallback((containerWidth: number, containerHeight: number) => {
-    if (items.length === 0) {
-        setPosition({ x: containerWidth / 2, y: containerHeight / 3 });
-        setScale(1);
-        return;
-    };
-
-    const padding = 50;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    items.forEach(item => {
-        const width = typeof item.size.width === 'string' ? parseFloat(item.size.width) : item.size.width;
-        const height = typeof item.size.height === 'string' ? parseFloat(item.size.height) : item.size.height;
-        minX = Math.min(minX, item.position.x);
-        minY = Math.min(minY, item.position.y);
-        maxX = Math.max(maxX, item.position.x + width);
-        maxY = Math.max(maxY, item.position.y + height);
-    });
-    const contentWidth = maxX - minX;
-    const contentHeight = maxY - minY;
-    if (contentWidth <= 0 || contentHeight <= 0) return;
-    const scaleX = (containerWidth - padding * 2) / contentWidth;
-    const scaleY = (containerHeight - padding * 2) / contentHeight;
-    const newScale = Math.min(scaleX, scaleY, 1);
-    const newX = (containerWidth - contentWidth * newScale) / 2 - minX * newScale;
-    const newY = (containerHeight - contentHeight * newScale) / 2 - minY * newScale;
-    setScale(newScale);
-    setPosition({ x: newX, y: newY });
-  }, [items]);
-
-  useEffect(() => {
-    if (!mainContainerRef.current) return;
-    const container = mainContainerRef.current;
-    setInitialView(container.clientWidth, container.clientHeight);
-  }, [items, setInitialView]);
   
-
-  const saveDirtyItems = useCallback(async () => {
-    if (dirtyItemsRef.current.size === 0) return;
-    const itemsToUpdate = Array.from(dirtyItemsRef.current).map(id => {
-        const item = items.find(i => i.id === id);
-        if (!item) return null;
-        return {
-            id: item.id,
-            data: { position: item.position, size: item.size }
-        };
-    }).filter(Boolean) as { id: string, data: Partial<BoardItem> }[];
-    if (itemsToUpdate.length > 0) {
-        try {
-            await firestoreApi.updateBoardItemsBatch(project.id, itemsToUpdate);
-            dirtyItemsRef.current.clear();
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro de Sincronização' });
-        }
-    }
-  }, [items, toast, project.id]);
-  
-  // Debounced save effect for position and size
-  useEffect(() => {
-    if (dirtyItemsRef.current.size === 0) return;
-    const debounceTimer = setTimeout(() => { saveDirtyItems(); }, 2000);
-    return () => clearTimeout(debounceTimer);
-  }, [items, saveDirtyItems]);
-
-  // Save on unmount
-  useEffect(() => {
-    return () => { saveDirtyItems(); };
-  }, [saveDirtyItems]);
-  
-  const handleItemUpdate = useCallback((itemId: string, data: Partial<BoardItem>) => {
-    setItems(prevItems => {
-        const newItems = prevItems.map(item => (item.id === itemId ? { ...item, ...data } : item));
-        if(data.position || data.size) { dirtyItemsRef.current.add(itemId); }
-        return newItems;
-    });
-    if (data.content || data.items) {
-        const contentUpdate: Partial<BoardItem> = {};
-        if(data.content) contentUpdate.content = data.content;
-        if(data.items) contentUpdate.items = data.items;
-        const debounceContentTimer = setTimeout(() => {
-             firestoreApi.updateBoardItem(project.id, itemId, contentUpdate)
-                .catch(err => console.error("Failed to save content", err));
-        }, 500);
-        return () => clearTimeout(debounceContentTimer);
-    }
-  }, [project.id]);
-
   const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, extraData?: Partial<Omit<BoardItem, 'type' | 'content' | 'size'>>) => {
     if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
         toast({
@@ -492,7 +391,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
       const newItemData: any = { type, content, size, position: newPosition, ...extraData };
       await firestoreApi.addBoardItem(project.id, newItemData);
       
-      onDataRefresh(); // This is the crucial part to refresh the page data
+      onDataRefresh();
       
       toast({ title: `Item adicionado!` });
       if (type === 'video') { setIsVideoDialogOpen(false); setVideoUrl(""); }
@@ -517,6 +416,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
         toast({ variant: "destructive", title: "Limite de itens atingido!" });
         if (imageUploadRef.current) imageUploadRef.current.value = "";
+        if (storyboardUploadRef.current) storyboardUploadRef.current.value = "";
         return;
     }
     if (!event.target.files?.[0]) return;
@@ -595,56 +495,120 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     handleAddItem('location', JSON.stringify(selectedLocation), { width: 300, height: 300 });
   };
   
+  const handleItemUpdate = useCallback((itemId: string, data: Partial<BoardItem>) => {
+    const itemToUpdate = items.find(i => i.id === itemId);
+    if (!itemToUpdate) return;
+    
+    // Optimistic UI update
+    setItems(prevItems => prevItems.map(item => item.id === itemId ? { ...item, ...data } : item));
+    
+    // Add to dirty set for batch updates (position/size)
+    if(data.position || data.size) { 
+        dirtyItemsRef.current.add(itemId);
+    }
+    
+    // Direct Firestore update for content changes with debounce
+    if (data.content || data.items) {
+        const contentUpdate: Partial<BoardItem> = {};
+        if(data.content) contentUpdate.content = data.content;
+        if(data.items) contentUpdate.items = data.items;
+        
+        const debounceTimer = setTimeout(() => {
+             firestoreApi.updateBoardItem(project.id, itemId, contentUpdate)
+                .catch(err => {
+                    console.error("Failed to save content", err);
+                    // Revert UI on error
+                    setItems(items); 
+                    toast({ variant: 'destructive', title: 'Erro de Sincronização' });
+                });
+        }, 800);
+        return () => clearTimeout(debounceTimer);
+    }
+  }, [items, project.id, toast]);
+
+  const saveDirtyItems = useCallback(async () => {
+    if (dirtyItemsRef.current.size === 0) return;
+    const itemsToUpdate = Array.from(dirtyItemsRef.current).map(id => {
+        const item = items.find(i => i.id === id);
+        if (!item) return null;
+        return {
+            id: item.id,
+            data: { position: item.position, size: item.size }
+        };
+    }).filter(Boolean) as { id: string, data: Partial<BoardItem> }[];
+    if (itemsToUpdate.length > 0) {
+        try {
+            await firestoreApi.updateBoardItemsBatch(project.id, itemsToUpdate);
+            dirtyItemsRef.current.clear();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Erro de Sincronização' });
+        }
+    }
+  }, [items, toast, project.id]);
+
+  useEffect(() => {
+    if (dirtyItemsRef.current.size === 0) return;
+    const debounceTimer = setTimeout(() => { saveDirtyItems(); }, 2000);
+    return () => clearTimeout(debounceTimer);
+  }, [items, saveDirtyItems]);
+
+  useEffect(() => {
+    return () => { saveDirtyItems(); };
+  }, [saveDirtyItems]);
+
   const handleWheel = (e: React.WheelEvent) => { e.preventDefault(); const newScale = Math.min(Math.max(0.1, scale - (e.deltaY > 0 ? 0.1 : -0.1)), 2); setScale(newScale); };
   const handleZoom = (dir: 'in' | 'out') => { const newScale = Math.min(Math.max(0.1, scale + (dir === 'in' ? 0.15 : -0.15)), 2); setScale(newScale); }
-  const handleMouseDown = (e: React.MouseEvent) => { if ((e.target as HTMLElement).closest('.rnd-item, .tool-button')) return; e.preventDefault(); setSelectedItemId(null); isPanning.current = true; startPanPoint.current = { x: e.clientX - position.x, y: e.clientY - position.y }; (e.target as HTMLElement).classList.add('cursor-grabbing'); };
+  const handleMouseDown = (e: React.MouseEvent) => { if ((e.target as HTMLElement).closest('.rnd-item, .tool-button')) return; e.preventDefault(); setSelectedItemId(null); isPanning.current = true; startPanPoint.current = { x: e.clientX - position.x, y: e.clientY - position.y }; if (mainContainerRef.current) mainContainerRef.current.classList.add('cursor-grabbing'); };
   const handleMouseMove = (e: React.MouseEvent) => { if (!isPanning.current) return; e.preventDefault(); setPosition({ x: e.clientX - startPanPoint.current.x, y: e.clientY - startPanPoint.current.y }); };
-  const handleMouseUp = (e: React.MouseEvent) => { isPanning.current = false; (e.target as HTMLElement).classList.remove('cursor-grabbing'); };
-  const handleTouchStart = (e: React.TouchEvent) => { if ((e.target as HTMLElement).closest('.rnd-item, .tool-button')) return; if (e.touches.length === 2) { e.preventDefault(); pinchStartDistance.current = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); isPanning.current = false; } else if (e.touches.length === 1) { e.preventDefault(); setSelectedItemId(null); isPanning.current = true; startPanPoint.current = { x: e.touches[0].clientX - position.x, y: e.touches[0].clientY - position.y }; } };
-  const handleTouchMove = (e: React.TouchEvent) => { if (e.touches.length === 2) { e.preventDefault(); const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); setScale(prev => Math.min(Math.max(0.1, prev * (currentDistance / pinchStartDistance.current)), 2)); pinchStartDistance.current = currentDistance; } else if (isPanning.current && e.touches.length === 1) { e.preventDefault(); setPosition({ x: e.touches[0].clientX - startPanPoint.current.x, y: e.touches[0].clientY - startPanPoint.current.y }); } };
-  const handleTouchEnd = () => { isPanning.current = false; };
+  const handleMouseUp = () => { isPanning.current = false; if (mainContainerRef.current) mainContainerRef.current.classList.remove('cursor-grabbing'); };
   
   return (
     <div className="flex flex-col h-full w-full bg-muted/40 overflow-hidden">
-        <div className="bg-background border-b z-30 shrink-0">
-            <div className="p-2 md:p-4">
-                <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                    <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
-                    <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
-                    <Button variant="ghost" size="sm" onClick={handleAddPalette} className="tool-button"><Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Paleta</span></Button>
-                    <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Imagem</span></Button>
-                    <input type="file" ref={imageUploadRef} onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" className="hidden" />
-                    <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <GalleryVertical className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Storyboard</span></Button>
-                    <input type="file" ref={storyboardUploadRef} onChange={(e) => handleImageUpload(e, 'storyboard')} accept="image/*" className="hidden" />
-                    <Button variant="ghost" size="sm" onClick={() => pdfUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <FileIcon className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">PDF</span></Button>
-                    <input type="file" ref={pdfUploadRef} onChange={handlePdfUpload} accept="application/pdf" className="hidden" />
-                    <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)} className="tool-button"><Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Vídeo</span></Button>
-                    <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)} className="tool-button"><Music className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Música</span></Button>
-                    <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)} className="tool-button"><MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span></Button>
-                    <div className="flex items-center gap-1 ml-auto">
-                        <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
-                    </div>
+        <div className="bg-background border-b z-30 shrink-0 p-2">
+            <div className="flex items-center gap-1 flex-wrap">
+                <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
+                <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
+                <Button variant="ghost" size="sm" onClick={handleAddPalette} className="tool-button"><Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Paleta</span></Button>
+                <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Imagem</span></Button>
+                <input type="file" ref={imageUploadRef} onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" className="hidden" />
+                <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <GalleryVertical className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Storyboard</span></Button>
+                <input type="file" ref={storyboardUploadRef} onChange={(e) => handleImageUpload(e, 'storyboard')} accept="image/*" className="hidden" />
+                <Button variant="ghost" size="sm" onClick={() => pdfUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <FileText className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">PDF</span></Button>
+                <input type="file" ref={pdfUploadRef} onChange={handlePdfUpload} accept="application/pdf" className="hidden" />
+                <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)} className="tool-button"><Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Vídeo</span></Button>
+                <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)} className="tool-button"><Music className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Música</span></Button>
+                <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)} className="tool-button"><MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span></Button>
+                <div className="flex items-center gap-1 ml-auto">
+                    <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
                 </div>
             </div>
       </div>
-      <div ref={mainContainerRef} className={cn("flex-1 relative overflow-hidden cursor-grab")} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-          <div ref={canvasRef} className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75" style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} onClick={() => setSelectedItemId(null)}>
-            <div className="relative min-w-full min-h-full">
-              {items.map(item => (
-                  <Rnd key={item.id} size={{ width: item.size.width, height: item.size.height }} position={{ x: item.position.x, y: item.position.y }} onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y }})} onResizeStop={(_e, _direction, ref, _delta, position) => { handleItemUpdate(item.id, { size: { width: ref.style.width, height: ref.style.height }, position }); }} onClick={(e) => e.stopPropagation()} minWidth={150} minHeight={80} className="z-20 rnd-item" dragHandleClassName="drag-handle">
+      <div ref={mainContainerRef} className="flex-1 relative overflow-hidden cursor-grab" onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+          <div className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75" style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} onClick={() => setSelectedItemId(null)}>
+            {items.map(item => (
+              <Rnd
+                key={item.id}
+                size={{ width: item.size.width, height: item.size.height }}
+                position={{ x: item.position.x, y: item.position.y }}
+                onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y } })}
+                onResizeStop={(_e, _direction, ref, _delta, position) => { handleItemUpdate(item.id, { size: { width: ref.style.width, height: ref.style.height }, position }); }}
+                onClick={(e) => { e.stopPropagation(); setSelectedItemId(item.id); }}
+                minWidth={150}
+                minHeight={80}
+                className="z-20 rnd-item"
+                dragHandleClassName="drag-handle"
+                cancel=".note-editor-container, input, textarea, button" // Prevent drag on interactive elements
+              >
                   <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} isSelected={selectedItemId === item.id} onSelect={setSelectedItemId} />
-                  </Rnd>
-              ))}
-            </div>
+              </Rnd>
+            ))}
           </div>
       </div>
       
       <Sheet open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}><SheetContent><SheetHeader><SheetTitle>Adicionar Vídeo</SheetTitle><SheetDescription>Cole a URL de um vídeo do YouTube ou Vimeo.</SheetDescription></SheetHeader><div className="grid gap-4 py-4"><Label htmlFor="video-url">URL do Vídeo</Label><Input id="video-url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..."/></div><SheetFooter><Button onClick={handleAddVideo}>Adicionar</Button></SheetFooter></SheetContent></Sheet>
       <Sheet open={isSpotifyDialogOpen} onOpenChange={setIsSpotifyDialogOpen}><SheetContent><SheetHeader><SheetTitle>Adicionar Música</SheetTitle><SheetDescription>Cole a URL de uma música, álbum ou playlist do Spotify.</SheetDescription></SheetHeader><div className="grid gap-4 py-4"><Label htmlFor="spotify-url">URL do Spotify</Label><Input id="spotify-url" value={spotifyUrl} onChange={e => setSpotifyUrl(e.target.value)} placeholder="https://open.spotify.com/track/..."/></div><SheetFooter><Button onClick={handleAddSpotify}>Adicionar</Button></SheetFooter></SheetContent></Sheet>
       <Sheet open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}><SheetContent className="sm:max-w-2xl"><SheetHeader><SheetTitle>Adicionar Localização</SheetTitle><SheetDescription>Pesquise ou clique no mapa para adicionar um local.</SheetDescription></SheetHeader><div className="py-4"><LocationPicker initialPosition={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [-14.235, -51.925]} onLocationChange={(lat, lng, name) => setSelectedLocation({ lat, lng, ...name })} /></div><SheetFooter><Button onClick={handleAddLocation} disabled={!selectedLocation}>Adicionar Local</Button></SheetFooter></SheetContent></Sheet>
-
     </div>
   );
 }
-
