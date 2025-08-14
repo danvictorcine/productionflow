@@ -400,6 +400,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
     };
 
     const handleLocalUpdateNotes = (listName: string, updatedList: ChecklistItem[]) => {
+      const newLocalDay = {...localDay, [listName]: updatedList};
+      setLocalDay(newLocalDay as any);
+
       if (onUpdateNotes) {
         onUpdateNotes(day.id, listName as 'generalNotes', updatedList);
       }

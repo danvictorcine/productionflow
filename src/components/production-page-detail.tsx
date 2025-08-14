@@ -204,7 +204,6 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
   const handleUpdateNotes = async (dayId: string, listName: string, list: any[]) => {
     try {
         await firestoreApi.updateShootingDay(dayId, { [listName]: list });
-        toast({ title: 'Nota atualizada!' });
     } catch (error) {
         toast({
             variant: 'destructive',
