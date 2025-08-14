@@ -579,7 +579,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   
   return (
     <div className="h-full flex flex-col">
-      <div className="p-4 border-b bg-background z-30">
+      <div className="p-4 border-b bg-background z-40">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
                 <h2 className="text-2xl font-bold tracking-tight">{project.name}</h2>
@@ -591,7 +591,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
             </Button>
         </div>
       </div>
-      <div className="bg-background border-b z-20 shrink-0 p-2">
+      <div className="bg-background border-b z-40 shrink-0 p-2">
         <div className="flex items-center gap-1 flex-wrap">
           <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
@@ -612,8 +612,8 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-      <div className="flex-1 relative overflow-hidden cursor-grab" ref={boardContainerRef}>
-        <div
+      <div className="flex-1 relative overflow-hidden cursor-grab z-30" ref={boardContainerRef}>
+         <div
             className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] z-0"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
