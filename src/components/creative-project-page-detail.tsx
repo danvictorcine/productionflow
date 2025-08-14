@@ -1,4 +1,3 @@
-
 // @/src/components/creative-project-page-detail.tsx
 'use client';
 
@@ -370,9 +369,50 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   const isPanning = useRef(false);
   const startPanPoint = useRef({ x: 0, y: 0 });
   
+  const frameAllItems = useCallback(() => {
+    if (!boardContainerRef.current || initialItems.length === 0) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+      return;
+    }
+
+    const PADDING = 100; // pixels
+    const { width: viewWidth, height: viewHeight } = boardContainerRef.current.getBoundingClientRect();
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    initialItems.forEach(item => {
+      const itemWidth = typeof item.size.width === 'string' ? parseFloat(item.size.width) : item.size.width;
+      const itemHeight = typeof item.size.height === 'string' ? parseFloat(item.size.height) : item.size.height;
+      minX = Math.min(minX, item.position.x);
+      minY = Math.min(minY, item.position.y);
+      maxX = Math.max(maxX, item.position.x + itemWidth);
+      maxY = Math.max(maxY, item.position.y + itemHeight);
+    });
+
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+
+    const scaleX = (viewWidth - PADDING * 2) / contentWidth;
+    const scaleY = (viewHeight - PADDING * 2) / contentHeight;
+    const newScale = Math.min(scaleX, scaleY, 1); // Do not zoom in more than 100%
+
+    const newX = (viewWidth - (contentWidth * newScale)) / 2 - (minX * newScale);
+    const newY = (viewHeight - (contentHeight * newScale)) / 2 - (minY * newScale);
+    
+    setScale(newScale);
+    setPosition({ x: newX, y: newY });
+
+  }, [initialItems]);
+
   useEffect(() => {
     setItems(initialItems);
-  }, [initialItems]);
+    // Call frameAllItems only after the initial items are set
+    // A small timeout ensures the container ref has its dimensions calculated
+    setTimeout(() => {
+        frameAllItems();
+    }, 100);
+  }, [initialItems, frameAllItems]);
   
   const handleAddItem = async (type: BoardItem['type'], content: string, size: { width: number | string; height: number | string }, extraData?: Partial<Omit<BoardItem, 'type' | 'content' | 'size'>>) => {
     if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
@@ -579,7 +619,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   };
   
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-full">
       <div className="bg-background border-b z-30 shrink-0 p-2">
         <div className="flex items-center gap-1 flex-wrap">
           <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
@@ -602,16 +642,16 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-       <div 
+      <div 
         ref={boardContainerRef} 
-        className="flex-1 relative overflow-hidden cursor-grab" 
+        className="flex-1 relative overflow-hidden cursor-grab bg-muted/40" 
         onMouseDown={handleMouseDown} 
         onMouseMove={handleMouseMove} 
         onMouseUp={handleMouseUp} 
         onMouseLeave={handleMouseUp} 
         onWheel={handleWheel}
       >
-         <div
+        <div
             className="w-full h-full bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]"
             style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`, transformOrigin: '0 0' }}
         >
