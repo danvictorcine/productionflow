@@ -595,35 +595,39 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
       </div>
 
       <div 
-        ref={boardContainerRef} 
-        className="relative flex-1 cursor-grab" 
-        onMouseDown={handleMouseDown} 
-        onMouseMove={handleMouseMove} 
-        onMouseUp={handleMouseUp} 
-        onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
+        className="flex-1 overflow-hidden"
       >
         <div 
-          className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75 z-10" 
-          style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} 
+          ref={boardContainerRef} 
+          className="relative h-full w-full cursor-grab" 
+          onMouseDown={handleMouseDown} 
+          onMouseMove={handleMouseMove} 
+          onMouseUp={handleMouseUp} 
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
         >
-          {items.map(item => (
-            <Rnd
-              key={item.id}
-              size={{ width: item.size.width, height: item.size.height }}
-              position={{ x: item.position.x, y: item.position.y }}
-              onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y } })}
-              onResizeStop={(_e, _direction, ref, _delta, position) => { handleItemUpdate(item.id, { size: { width: ref.style.width, height: ref.style.height }, position }); }}
-              onClick={(e) => { e.stopPropagation(); setSelectedItemId(item.id); }}
-              minWidth={150}
-              minHeight={80}
-              className="z-20 rnd-item"
-              dragHandleClassName="drag-handle"
-              cancel=".note-editor-container, input, textarea, button, .ql-toolbar, .ql-editor"
-            >
-              <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} isSelected={selectedItemId === item.id} onSelect={setSelectedItemId} />
-            </Rnd>
-          ))}
+          <div 
+            className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75 z-10" 
+            style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} 
+          >
+            {items.map(item => (
+              <Rnd
+                key={item.id}
+                size={{ width: item.size.width, height: item.size.height }}
+                position={{ x: item.position.x, y: item.position.y }}
+                onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y } })}
+                onResizeStop={(_e, _direction, ref, _delta, position) => { handleItemUpdate(item.id, { size: { width: ref.style.width, height: ref.style.height }, position }); }}
+                onClick={(e) => { e.stopPropagation(); setSelectedItemId(item.id); }}
+                minWidth={150}
+                minHeight={80}
+                className="z-20 rnd-item"
+                dragHandleClassName="drag-handle"
+                cancel=".note-editor-container, input, textarea, button, .ql-toolbar, .ql-editor"
+              >
+                <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} isSelected={selectedItemId === item.id} onSelect={setSelectedItemId} />
+              </Rnd>
+            ))}
+          </div>
         </div>
       </div>
       
