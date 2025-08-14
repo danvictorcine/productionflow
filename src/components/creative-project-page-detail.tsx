@@ -1,3 +1,4 @@
+
 // @/src/components/creative-project-page-detail.tsx
 'use client';
 
@@ -37,7 +38,7 @@ const LocationPicker = dynamic(() => import('@/components/location-picker').then
   loading: () => <Skeleton className="h-64 w-full" />,
 });
 
-const QuillEditor = dynamic(() => import('react-quill').then(mod => mod.default), {
+const QuillEditor = dynamic(() => import('react-quill').then((mod) => mod.default), {
     ssr: false,
     loading: () => <Skeleton className="h-full w-full rounded-b-md" />
 });
@@ -314,11 +315,11 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
     return (
         <div 
             className={cn(
-                "w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col transition-all duration-200",
+                "w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col transition-all duration-200 z-20",
                  isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
             )}
         >
-            <div className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-grab group-active:cursor-grabbing z-10 opacity-30 group-hover:opacity-100 transition-opacity">
+            <div className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-grab group-active:cursor-grabbing z-30 opacity-30 group-hover:opacity-100 transition-opacity">
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="flex-grow min-h-0">
@@ -327,7 +328,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-0.5 right-0.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-20 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
+                className="absolute top-0.5 right-0.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-30 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
                 onClick={() => onDelete(item.id)}
             >
                 <X className="h-4 w-4" />
@@ -593,11 +594,18 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-      <div ref={boardContainerRef} className="relative flex-1 cursor-grab" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+      <div 
+        ref={boardContainerRef} 
+        className="relative flex-1 cursor-grab" 
+        onMouseDown={handleMouseDown} 
+        onMouseMove={handleMouseMove} 
+        onMouseUp={handleMouseUp} 
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
+      >
         <div 
           className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75 z-10" 
           style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} 
-          onWheel={handleWheel}
         >
           {items.map(item => (
             <Rnd
