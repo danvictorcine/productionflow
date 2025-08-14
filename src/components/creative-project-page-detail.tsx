@@ -592,7 +592,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
 
       <div className="flex-1 relative overflow-hidden" ref={boardContainerRef}>
         <div
-          className="absolute inset-0 z-10 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] cursor-grab active:cursor-grabbing"
+          className="absolute inset-0 z-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
