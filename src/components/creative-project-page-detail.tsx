@@ -7,7 +7,7 @@ import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 import { 
-    Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, X, ExternalLink, Music, Type, GalleryVertical, ZoomIn, ZoomOut, Trash2
+    Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, X, ExternalLink, Music, Type, GalleryVertical, ZoomIn, ZoomOut, Trash2, Edit
 } from 'lucide-react';
 
 
@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { DEFAULT_BETA_LIMITS } from '@/lib/app-config';
+import { CreateEditCreativeProjectDialog } from './create-edit-creative-project-dialog';
 
 
 const DisplayMap = dynamic(() => import('@/components/display-map').then(mod => mod.DisplayMap), {
@@ -324,7 +325,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-0.5 right-0.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-20 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
+                className="absolute top-0.5 right-0.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-30 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
                 onClick={() => onDelete(item.id)}
             >
                 <X className="h-4 w-4" />
@@ -360,6 +361,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   const [spotifyUrl, setSpotifyUrl] = useState("");
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationAddress & {lat: number, lng: number} | null>(null);
+  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   
   // Zoom and Pan state
   const [scale, setScale] = useState(1);
@@ -568,9 +570,28 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   const handleMouseMove = (e: React.MouseEvent) => { if (!isPanning.current) return; e.preventDefault(); setPosition({ x: e.clientX - startPanPoint.current.x, y: e.clientY - startPanPoint.current.y }); };
   const handleMouseUp = () => { isPanning.current = false; };
   
+  const handleProjectUpdate = async (data: Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>) => {
+    await firestoreApi.updateCreativeProject(project.id, data);
+    onDataRefresh();
+    setIsProjectDialogOpen(false);
+    toast({ title: "Moodboard atualizado!" });
+  };
+  
   return (
     <div className="h-full flex flex-col">
-      <div className="bg-background border-b z-30 shrink-0 p-2">
+      <div className="p-4 border-b bg-background z-30">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+                <h2 className="text-2xl font-bold tracking-tight">{project.name}</h2>
+                <p className="text-muted-foreground">{project.description}</p>
+            </div>
+            <Button onClick={() => setIsProjectDialogOpen(true)} variant="outline" size="sm" className="shrink-0">
+                <Edit className="mr-2 h-4 w-4" />
+                Editar Moodboard
+            </Button>
+        </div>
+      </div>
+      <div className="bg-background border-b z-20 shrink-0 p-2">
         <div className="flex items-center gap-1 flex-wrap">
           <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
@@ -591,9 +612,9 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-      <div className="flex-1 relative overflow-hidden" ref={boardContainerRef}>
+      <div className="flex-1 relative overflow-hidden cursor-grab" ref={boardContainerRef}>
         <div
-          className="absolute inset-0 z-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] cursor-grab active:cursor-grabbing"
+          className="absolute inset-0 z-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -630,6 +651,12 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
       <Sheet open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}><SheetContent><SheetHeader><SheetTitle>Adicionar Vídeo</SheetTitle><SheetDescription>Cole a URL de um vídeo do YouTube ou Vimeo.</SheetDescription></SheetHeader><div className="grid gap-4 py-4"><Label htmlFor="video-url">URL do Vídeo</Label><Input id="video-url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..."/></div><SheetFooter><Button onClick={handleAddVideo}>Adicionar</Button></SheetFooter></SheetContent></Sheet>
       <Sheet open={isSpotifyDialogOpen} onOpenChange={setIsSpotifyDialogOpen}><SheetContent><SheetHeader><SheetTitle>Adicionar Música</SheetTitle><SheetDescription>Cole a URL de uma música, álbum ou playlist do Spotify.</SheetDescription></SheetHeader><div className="grid gap-4 py-4"><Label htmlFor="spotify-url">URL do Spotify</Label><Input id="spotify-url" value={spotifyUrl} onChange={e => setSpotifyUrl(e.target.value)} placeholder="https://open.spotify.com/track/..."/></div><SheetFooter><Button onClick={handleAddSpotify}>Adicionar</Button></SheetFooter></SheetContent></Sheet>
       <Sheet open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}><SheetContent className="sm:max-w-2xl"><SheetHeader><SheetTitle>Adicionar Localização</SheetTitle><SheetDescription>Pesquise ou clique no mapa para adicionar um local.</SheetDescription></SheetHeader><div className="py-4"><LocationPicker initialPosition={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [-14.235, -51.925]} onLocationChange={(lat, lng, name) => setSelectedLocation({ lat, lng, ...name })} /></div><SheetFooter><Button onClick={handleAddLocation} disabled={!selectedLocation}>Adicionar Local</Button></SheetFooter></SheetContent></Sheet>
+      <CreateEditCreativeProjectDialog 
+        isOpen={isProjectDialogOpen}
+        setIsOpen={setIsProjectDialogOpen}
+        project={project}
+        onSubmit={handleProjectUpdate}
+      />
     </div>
   );
 }
