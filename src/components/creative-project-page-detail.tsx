@@ -1,3 +1,4 @@
+
 // @/src/components/creative-project-page-detail.tsx
 'use client';
 
@@ -612,9 +613,9 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-      <div className="flex-1 relative overflow-hidden cursor-grab" ref={boardContainerRef}>
+      <div className="flex-1 relative overflow-hidden cursor-grab z-10" ref={boardContainerRef}>
          <div
-            className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] z-0"
+            className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
