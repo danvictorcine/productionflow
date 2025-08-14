@@ -579,21 +579,10 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   };
   
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b bg-background z-40">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div>
-                <h2 className="text-2xl font-bold tracking-tight">{project.name}</h2>
-                <p className="text-muted-foreground">{project.description}</p>
-            </div>
-            <Button onClick={() => setIsProjectDialogOpen(true)} variant="outline" size="sm" className="shrink-0">
-                <Edit className="mr-2 h-4 w-4" />
-                Editar Moodboard
-            </Button>
-        </div>
-      </div>
+    <div className="flex flex-col h-screen">
       <div className="bg-background border-b z-30 shrink-0 p-2">
         <div className="flex items-center gap-1 flex-wrap">
+          <Button variant="ghost" size="sm" onClick={() => setIsProjectDialogOpen(true)} className="tool-button"><Edit className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Editar</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddPalette} className="tool-button"><Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Paleta</span></Button>
@@ -613,7 +602,15 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-      <div className="flex-1 relative overflow-hidden cursor-grab" ref={boardContainerRef} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onWheel={handleWheel}>
+       <div 
+        ref={boardContainerRef} 
+        className="flex-1 relative overflow-hidden cursor-grab" 
+        onMouseDown={handleMouseDown} 
+        onMouseMove={handleMouseMove} 
+        onMouseUp={handleMouseUp} 
+        onMouseLeave={handleMouseUp} 
+        onWheel={handleWheel}
+      >
          <div
             className="w-full h-full bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]"
             style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`, transformOrigin: '0 0' }}
