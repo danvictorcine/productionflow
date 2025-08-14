@@ -200,7 +200,20 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
   const handleExportToExcel = () => toast({title: "Função de exportação para Excel em desenvolvimento"});
   const handleExportDayToExcel = () => toast({title: "Função de exportação para Excel em desenvolvimento"});
   const handleExportDayToPdf = async (dayToExport: ShootingDay) => toast({title: "Função de exportação para PDF em desenvolvimento"});
-  const handleUpdateNotes = (dayId: string, listName: string, list: any[]) => toast({title: "Função de atualização de notas em desenvolvimento"});
+
+  const handleUpdateNotes = async (dayId: string, listName: string, list: any[]) => {
+    try {
+        await firestoreApi.updateShootingDay(dayId, { [listName]: list });
+        toast({ title: 'Nota atualizada!' });
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao salvar nota',
+            description: 'Não foi possível salvar a alteração na nota.',
+        });
+        onDataRefresh(); // Revert local state on error
+    }
+  };
 
 
   return (
