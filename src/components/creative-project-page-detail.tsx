@@ -593,21 +593,19 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-      <div 
-        className="flex-1 overflow-hidden relative"
-      >
-        <div 
-          ref={boardContainerRef} 
-          className="absolute inset-0 cursor-grab" 
-          onMouseDown={handleMouseDown} 
-          onMouseMove={handleMouseMove} 
-          onMouseUp={handleMouseUp} 
+      <div className="flex-1 overflow-hidden relative">
+        <div
+          ref={boardContainerRef}
+          className="absolute inset-0 z-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] cursor-grab active:cursor-grabbing"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onWheel={handleWheel}
         >
-          <div 
-            className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75 z-10" 
-            style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} 
+          <div
+            className="w-full h-full"
+            style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`, transformOrigin: '0 0' }}
           >
             {items.map(item => (
               <Rnd
