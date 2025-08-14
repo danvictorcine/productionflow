@@ -98,8 +98,6 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
     onSelect: (itemId: string | null) => void;
 }) => {
     const colorInputRef = useRef<HTMLInputElement>(null);
-    const quillRef = useRef<any>(null);
-
 
     const handleChecklistUpdate = (updatedItems: ChecklistItem[]) => {
         onUpdate(item.id, { items: updatedItems });
@@ -153,7 +151,6 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                             </span>
                         </div>
                          <QuillEditor
-                            ref={quillRef}
                             theme="snow"
                             value={item.content}
                             onChange={handleContentChange}
@@ -593,7 +590,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden relative" ref={boardContainerRef}>
+      <div className="flex-1 relative overflow-hidden" ref={boardContainerRef}>
         <div
           className="absolute inset-0 z-10 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
