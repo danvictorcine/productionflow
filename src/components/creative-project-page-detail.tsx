@@ -203,7 +203,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                                          newItems[index].text = e.target.value;
                                          handleChecklistUpdate(newItems);
                                      }}
-                                     className="flex-1 h-8 border-none focus-visible:ring-0 bg-transparent"
+                                     className="flex-1 h-8 border-none bg-transparent focus-visible:ring-0"
                                      placeholder="Novo item..."
                                    />
                                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 data-[empty=true]:opacity-0" data-empty={!checklistItem.text} onClick={() => {
@@ -262,16 +262,18 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
             }
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture" onClick={() => onSelect(null)}/>;
-            case 'pdf':
+            case 'pdf': {
+                 const pdfUrl = item.content;
+                 const googleViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
                  return (
-                    <a href={item.content} target="_blank" rel="noopener noreferrer" className="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors p-4 group" onClick={() => onSelect(null)}>
-                        <FileText className="h-16 w-16 text-destructive" />
-                        <p className="mt-2 font-semibold text-center break-all">PDF</p>
-                        <p className="flex items-center text-sm text-primary group-hover:underline mt-1">
-                            Abrir em nova aba <ExternalLink className="ml-1 h-3 w-3" />
-                        </p>
-                    </a>
-                );
+                     <iframe
+                         src={googleViewerUrl}
+                         className="w-full h-full border-none"
+                         title={`PDF Viewer for ${item.id}`}
+                         onClick={() => onSelect(null)}
+                     ></iframe>
+                 );
+            }
             case 'video':
                  const youtubeUrl = getYoutubeEmbedUrl(item.content);
                  const vimeoUrl = getVimeoEmbedUrl(item.content);
@@ -635,9 +637,9 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
           <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)} className="tool-button"><Music className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Música</span></Button>
           <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)} className="tool-button"><MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span></Button>
           <div className="flex items-center gap-1 ml-auto">
-             <Button variant="ghost" size="sm" onClick={() => setIsProjectDialogOpen(true)} className="tool-button"><Edit className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Editar</span></Button>
             <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="sm" onClick={() => setIsProjectDialogOpen(true)} className="tool-button"><Edit className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Editar</span></Button>
           </div>
         </div>
       </div>
