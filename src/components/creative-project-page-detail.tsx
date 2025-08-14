@@ -592,7 +592,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
             </Button>
         </div>
       </div>
-      <div className="bg-background border-b z-40 shrink-0 p-2">
+      <div className="bg-background border-b z-30 shrink-0 p-2">
         <div className="flex items-center gap-1 flex-wrap">
           <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
@@ -613,9 +613,9 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-      <div className="flex-1 relative overflow-hidden cursor-grab z-10" ref={boardContainerRef}>
+      <div className="flex-1 relative overflow-hidden cursor-grab" ref={boardContainerRef}>
          <div
-            className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]"
+            className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] z-0"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -626,7 +626,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
                 className="w-full h-full"
                 style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`, transformOrigin: '0 0' }}
             >
-                <div className="relative min-w-full min-h-full">
+                <div className="relative min-w-full min-h-full" style={{ width: '5000px', height: '5000px' }}>
                     {items.map(item => (
                         <Rnd
                         key={item.id}
