@@ -18,6 +18,7 @@ import { CopyableError } from '@/components/copyable-error';
 import { useToast } from '@/hooks/use-toast';
 import { CreateEditUnifiedProjectDialog } from '@/components/create-edit-unified-project-dialog';
 import { AppFooter } from '@/components/app-footer';
+import { cn } from '@/lib/utils';
 
 function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     const params = useParams();
@@ -29,6 +30,8 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     const [project, setProject] = useState<UnifiedProject | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    
+    const isCreativePage = pathname.includes('/creative');
 
     useEffect(() => {
         if (!projectId || !user) return;
@@ -81,8 +84,8 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="flex flex-col min-h-screen w-full bg-background">
-            <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
+        <div className={cn("flex flex-col w-full bg-background", isCreativePage ? "h-screen" : "min-h-screen")}>
+            <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6 shrink-0">
                 <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
                     <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
                 </Link>
@@ -101,7 +104,7 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                 </div>
             </header>
 
-             <nav className="border-b bg-background">
+             <nav className="border-b bg-background shrink-0">
                 <div className="px-4 sm:px-6 lg:px-8">
                 <div className="flex -mb-px space-x-2 sm:space-x-4 overflow-x-auto">
                     {tabs.map((tab) => (
@@ -122,11 +125,11 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                 </div>
             </nav>
 
-            <main className="flex-1 flex flex-col">
+            <main className={cn("flex-1", isCreativePage && "overflow-hidden")}>
                 {children}
             </main>
             
-            <AppFooter />
+            {!isCreativePage && <AppFooter />}
 
             <CreateEditUnifiedProjectDialog
                 isOpen={isEditDialogOpen}
