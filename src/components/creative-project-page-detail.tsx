@@ -1,4 +1,3 @@
-
 // @/src/components/creative-project-page-detail.tsx
 'use client';
 
@@ -315,8 +314,8 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
     return (
         <div 
             className={cn(
-                "w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col transition-all duration-200 z-20",
-                 isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+                "w-full h-full bg-card rounded-lg shadow-md overflow-hidden relative group flex flex-col transition-all duration-200",
+                 isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background z-30" : "z-20"
             )}
         >
             <div className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-grab group-active:cursor-grabbing z-30 opacity-30 group-hover:opacity-100 transition-opacity">
@@ -637,5 +636,3 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     </div>
   );
 }
-
-    
