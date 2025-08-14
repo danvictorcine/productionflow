@@ -572,7 +572,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   const handleMouseUp = () => { isPanning.current = false; };
   
   return (
-    <div className="flex flex-col h-full w-full bg-muted/40 overflow-hidden">
+    <div className="h-full flex flex-col">
       <div className="bg-background border-b z-30 shrink-0 p-2">
         <div className="flex items-center gap-1 flex-wrap">
           <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
@@ -595,11 +595,11 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
       </div>
 
       <div 
-        className="flex-1 overflow-hidden"
+        className="flex-1 overflow-hidden relative"
       >
         <div 
           ref={boardContainerRef} 
-          className="relative h-full w-full cursor-grab" 
+          className="absolute inset-0 cursor-grab" 
           onMouseDown={handleMouseDown} 
           onMouseMove={handleMouseMove} 
           onMouseUp={handleMouseUp} 
@@ -637,3 +637,5 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     </div>
   );
 }
+
+    
