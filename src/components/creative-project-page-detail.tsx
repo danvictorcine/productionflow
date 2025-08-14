@@ -582,7 +582,6 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     <div className="flex flex-col h-screen">
       <div className="bg-background border-b z-30 shrink-0 p-2">
         <div className="flex items-center gap-1 flex-wrap">
-          <Button variant="ghost" size="sm" onClick={() => setIsProjectDialogOpen(true)} className="tool-button"><Edit className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Editar</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddPalette} className="tool-button"><Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Paleta</span></Button>
@@ -595,6 +594,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
           <Button variant="ghost" size="sm" onClick={() => setIsVideoDialogOpen(true)} className="tool-button"><Video className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Vídeo</span></Button>
           <Button variant="ghost" size="sm" onClick={() => setIsSpotifyDialogOpen(true)} className="tool-button"><Music className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Música</span></Button>
           <Button variant="ghost" size="sm" onClick={() => setIsLocationDialogOpen(true)} className="tool-button"><MapPin className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Local</span></Button>
+          <Button variant="ghost" size="sm" onClick={() => setIsProjectDialogOpen(true)} className="tool-button"><Edit className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Editar</span></Button>
           <div className="flex items-center gap-1 ml-auto">
             <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
