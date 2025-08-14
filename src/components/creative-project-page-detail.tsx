@@ -37,7 +37,7 @@ const LocationPicker = dynamic(() => import('@/components/location-picker').then
   loading: () => <Skeleton className="h-64 w-full" />,
 });
 
-const QuillEditor = dynamic(() => import('react-quill').then((mod) => mod.default), {
+const QuillEditor = dynamic(() => import('react-quill').then(mod => mod.default), {
     ssr: false,
     loading: () => <Skeleton className="h-full w-full rounded-b-md" />
 });
@@ -350,6 +350,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const storyboardUploadRef = useRef<HTMLInputElement>(null);
   const dirtyItemsRef = useRef(new Set<string>());
+  const boardContainerRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState<BoardItem[]>(initialItems);
   const [isUploading, setIsUploading] = useState(false);
@@ -384,10 +385,11 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     }
     
     try {
-      const offset = items.length * 20;
-      const newPosition = { x: 50 + offset, y: 50 + offset };
-      
-      const newItemData: any = { type, content, size, position: newPosition, ...extraData };
+      const boardRect = boardContainerRef.current?.getBoundingClientRect();
+      const newX = boardRect ? (-position.x + boardRect.width / 2) / scale - (Number(size.width) / 2) : 50;
+      const newY = boardRect ? (-position.y + boardRect.height / 2) / scale - (Number(size.height) / 2) : 50;
+
+      const newItemData: any = { type, content, size, position: { x: newX, y: newY }, ...extraData };
       await firestoreApi.addBoardItem(project.id, newItemData);
       
       onDataRefresh();
@@ -591,7 +593,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-      <div className="relative flex-1 cursor-grab" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+      <div ref={boardContainerRef} className="relative flex-1 cursor-grab" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
         <div 
           className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] transition-transform duration-75 z-10" 
           style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`}} 
