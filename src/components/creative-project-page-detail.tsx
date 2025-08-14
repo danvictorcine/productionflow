@@ -315,7 +315,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                  isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background z-30" : "z-20"
             )}
         >
-            <div className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-grab group-active:cursor-grabbing z-30 opacity-30 group-hover:opacity-100 transition-opacity">
+            <div className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-move z-10 opacity-30 group-hover:opacity-100 transition-opacity">
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="flex-grow min-h-0">
@@ -324,7 +324,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-0.5 right-0.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-30 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
+                className="absolute top-0.5 right-0.5 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-20 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
                 onClick={() => onDelete(item.id)}
             >
                 <X className="h-4 w-4" />
@@ -506,10 +506,11 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     }
     
     // Direct Firestore update for content changes with debounce
-    if (data.content || data.items) {
+    if (data.content || data.items || data.notes) {
         const contentUpdate: Partial<BoardItem> = {};
         if(data.content) contentUpdate.content = data.content;
         if(data.items) contentUpdate.items = data.items;
+        if(data.notes) contentUpdate.notes = data.notes;
         
         const debounceTimer = setTimeout(() => {
              firestoreApi.updateBoardItem(project.id, itemId, contentUpdate)
@@ -603,23 +604,25 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
             className="w-full h-full"
             style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`, transformOrigin: '0 0' }}
           >
-            {items.map(item => (
-              <Rnd
-                key={item.id}
-                size={{ width: item.size.width, height: item.size.height }}
-                position={{ x: item.position.x, y: item.position.y }}
-                onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y } })}
-                onResizeStop={(_e, _direction, ref, _delta, position) => { handleItemUpdate(item.id, { size: { width: ref.style.width, height: ref.style.height }, position }); }}
-                onClick={(e) => { e.stopPropagation(); setSelectedItemId(item.id); }}
-                minWidth={150}
-                minHeight={80}
-                className="z-20 rnd-item"
-                dragHandleClassName="drag-handle"
-                cancel=".note-editor-container, input, textarea, button, .ql-toolbar, .ql-editor"
-              >
-                <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} isSelected={selectedItemId === item.id} onSelect={setSelectedItemId} />
-              </Rnd>
-            ))}
+            <div className="relative min-w-full min-h-full">
+              {items.map(item => (
+                <Rnd
+                  key={item.id}
+                  size={{ width: item.size.width, height: item.size.height }}
+                  position={{ x: item.position.x, y: item.position.y }}
+                  onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y } })}
+                  onResizeStop={(_e, _direction, ref, _delta, position) => { handleItemUpdate(item.id, { size: { width: ref.style.width, height: ref.style.height }, position }); }}
+                  onClick={(e) => { e.stopPropagation(); setSelectedItemId(item.id); }}
+                  minWidth={150}
+                  minHeight={80}
+                  className="z-20 rnd-item"
+                  dragHandleClassName="drag-handle"
+                  cancel=".note-editor-container, input, textarea, button, .ql-toolbar, .ql-editor"
+                >
+                  <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} isSelected={selectedItemId === item.id} onSelect={setSelectedItemId} />
+                </Rnd>
+              ))}
+            </div>
           </div>
         </div>
       </div>
