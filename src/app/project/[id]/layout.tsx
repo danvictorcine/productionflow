@@ -1,3 +1,4 @@
+
 // @/src/app/project/[id]/layout.tsx
 'use client';
 

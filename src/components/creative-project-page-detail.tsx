@@ -579,7 +579,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   };
   
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex flex-col h-full">
       <div className="p-4 border-b bg-background z-40">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
@@ -613,38 +613,29 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
 
-      <div className="flex-1 relative overflow-hidden cursor-grab" ref={boardContainerRef}>
+      <div className="flex-1 relative overflow-hidden cursor-grab" ref={boardContainerRef} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onWheel={handleWheel}>
          <div
-            className="absolute inset-0 bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5] z-0"
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onWheel={handleWheel}
+            className="w-full h-full bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]"
+            style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`, transformOrigin: '0 0' }}
         >
-            <div
-                className="w-full h-full"
-                style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`, transformOrigin: '0 0' }}
-            >
-                <div className="relative min-w-full min-h-full" style={{ width: '5000px', height: '5000px' }}>
-                    {items.map(item => (
-                        <Rnd
-                        key={item.id}
-                        size={{ width: item.size.width, height: item.size.height }}
-                        position={{ x: item.position.x, y: item.position.y }}
-                        onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y } })}
-                        onResizeStop={(_e, _direction, ref, _delta, position) => { handleItemUpdate(item.id, { size: { width: ref.style.width, height: ref.style.height }, position }); }}
-                        onClick={(e) => { e.stopPropagation(); setSelectedItemId(item.id); }}
-                        minWidth={150}
-                        minHeight={80}
-                        className="z-20 rnd-item"
-                        dragHandleClassName="drag-handle"
-                        cancel=".note-editor-container, input, textarea, button, .ql-toolbar, .ql-editor"
-                        >
-                        <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} isSelected={selectedItemId === item.id} onSelect={setSelectedItemId} />
-                        </Rnd>
-                    ))}
-                </div>
+            <div className="relative min-w-full min-h-full" style={{ width: '5000px', height: '5000px' }}>
+                {items.map(item => (
+                    <Rnd
+                    key={item.id}
+                    size={{ width: item.size.width, height: item.size.height }}
+                    position={{ x: item.position.x, y: item.position.y }}
+                    onDragStop={(_e, d) => handleItemUpdate(item.id, { position: { x: d.x, y: d.y } })}
+                    onResizeStop={(_e, _direction, ref, _delta, position) => { handleItemUpdate(item.id, { size: { width: ref.style.width, height: ref.style.height }, position }); }}
+                    onClick={(e) => { e.stopPropagation(); setSelectedItemId(item.id); }}
+                    minWidth={150}
+                    minHeight={80}
+                    className="z-20 rnd-item"
+                    dragHandleClassName="drag-handle"
+                    cancel=".note-editor-container, input, textarea, button, .ql-toolbar, .ql-editor"
+                    >
+                    <BoardItemDisplay item={item} onDelete={handleDeleteItem} onUpdate={handleItemUpdate} isSelected={selectedItemId === item.id} onSelect={setSelectedItemId} />
+                    </Rnd>
+                ))}
             </div>
         </div>
       </div>
