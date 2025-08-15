@@ -106,7 +106,7 @@ export default function TransactionsTable({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-mono">
+                  <TableCell className="text-right">
                     {formatCurrency(t.amount)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{format(t.date, "d MMM, yyyy", { locale: ptBR })}</TableCell>
