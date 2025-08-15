@@ -12,7 +12,6 @@ import { useWeather } from "@/hooks/useWeather";
 import Link from "next/link";
 
 interface WeatherCardAnimatedProps {
-  weather: WeatherInfo;
   day: ShootingDay;
   isPublicView?: boolean;
   onRefreshWeather?: () => void;
@@ -65,7 +64,7 @@ const getWeatherDescription = (code: number): { text: string; icon: React.ReactN
 }
 
 export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeather, isFetchingWeather: isFetchingLegacy }: WeatherCardAnimatedProps) {
-    const { loading, current, forecast, attribution } = useWeather({
+    const { loading, current, forecast } = useWeather({
       lat: day.latitude,
       lon: day.longitude,
       targetDate: day.date,
@@ -207,21 +206,6 @@ export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeathe
                 {loading ? '--°' : `${displayTemp}°`}
             </span>
             
-            <div className="absolute left-0 bottom-0 p-1">
-                {attribution.length > 0 && (
-                    <p className="text-xs text-foreground/50">
-                        {attribution.map((attr, index) => (
-                            <React.Fragment key={attr.href}>
-                                <Link href={attr.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                                    {attr.label}
-                                </Link>
-                                {index < attribution.length - 1 && ' · '}
-                            </React.Fragment>
-                        ))}
-                    </p>
-                )}
-            </div>
-
             <div className="absolute right-0 bottom-2 space-y-2 text-xs font-semibold text-foreground/80 text-center">
                  <div className="flex flex-col items-center justify-center font-bold text-sm text-foreground">
                     <div className="flex items-center gap-1.5">

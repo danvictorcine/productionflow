@@ -1,8 +1,7 @@
-
 // @/src/components/shooting-day-card.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import type { Production, ShootingDay, Scene, ChecklistItem, LocationAddress, TeamMember } from "@/lib/types";
 import { format, isToday, isPast, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -38,6 +37,8 @@ import { useToast } from "@/hooks/use-toast";
 import { CopyableError } from "./copyable-error";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "./ui/input";
+import { useWeather } from "@/hooks/useWeather";
+import Link from "next/link";
 
 
 const DisplayMap = dynamic(() => import('../components/display-map').then(mod => mod.DisplayMap), {
@@ -361,7 +362,8 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false, onRefreshWeather }: ShootingDayCardProps) => {
     const { toast } = useToast();
     const [localDay, setLocalDay] = useState(day);
-    
+    const { attribution } = useWeather({ lat: day.latitude, lon: day.longitude, targetDate: day.date, tz: day.weather?.timezone });
+
     useEffect(() => {
         setLocalDay(day);
     }, [day]);
@@ -523,10 +525,9 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                             <div className="relative h-[235px] transition-all duration-500 ease-in-out group hover:scale-105">
                                 {isFetchingWeather ? (
                                     <Skeleton className="h-full w-full rounded-2xl" />
-                                ) : localDay.weather ? (
+                                ) : localDay.weather || (day.latitude && day.longitude) ? (
                                     <WeatherCardAnimated 
-                                        weather={localDay.weather} 
-                                        day={localDay as ShootingDay} 
+                                        day={day} 
                                         isPublicView={isPublicView}
                                         onRefreshWeather={onRefreshWeather}
                                         isFetchingWeather={isFetchingWeather}
@@ -583,6 +584,19 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                                 </Card>
                             </div>
                         </div>
+
+                         {attribution.length > 0 && (
+                            <div className="text-center text-xs text-muted-foreground">
+                                {attribution.map((attr, index) => (
+                                    <React.Fragment key={attr.href}>
+                                        <Link href={attr.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                            {attr.label}
+                                        </Link>
+                                        {index < attribution.length - 1 && ' · '}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        )}
 
                         <Separator />
                         
