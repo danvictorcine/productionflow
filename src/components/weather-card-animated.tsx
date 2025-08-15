@@ -74,13 +74,13 @@ export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeathe
     const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
     const [localTime, setLocalTime] = useState<string | null>(null);
 
-    const weatherState = current ? getWeatherState(parseInt(current.icon?.split('/').pop()?.replace('.png','') || '3')) : forecast?.days[0]?.weatherCode ? getWeatherState(forecast.days[0].weatherCode) : 'cloudy';
+    const weatherState = current ? getWeatherState(current.weatherCode) : forecast?.days[0]?.weatherCode ? getWeatherState(forecast.days[0].weatherCode) : 'cloudy';
 
-    const currentWeather = current ? { temp: Math.round(current.tempC), text: current.conditionText } : null;
+    const currentWeather = current ? { temp: Math.round(current.tempC), text: current.conditionText, code: current.weatherCode } : null;
     const forecastWeather = forecast?.days?.[0] ? { maxTemp: Math.round(forecast.days[0].tMaxC), code: forecast.days[0].weatherCode } : null;
     
     const displayTemp = currentWeather?.temp ?? forecastWeather?.maxTemp;
-    const displayDescription = currentWeather?.text ? { text: currentWeather.text, icon: <Sun className="w-4 h-4" /> } : forecastWeather?.code ? getWeatherDescription(forecastWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
+    const displayDescription = currentWeather?.code ? getWeatherDescription(currentWeather.code) : forecastWeather?.code ? getWeatherDescription(forecastWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
     
     const sunriseTime = forecast?.days?.[0]?.sunrise ? parseISO(forecast.days[0].sunrise) : null;
     const sunsetTime = forecast?.days?.[0]?.sunset ? parseISO(forecast.days[0].sunset) : null;
@@ -210,7 +210,7 @@ export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeathe
                  <div className="flex flex-col items-center justify-center font-bold text-sm text-foreground">
                     <div className="flex items-center gap-1.5">
                        {displayDescription.icon}
-                       <span>{displayDescription.text}</span>
+                       <span>{currentWeather?.text || displayDescription.text}</span>
                     </div>
                  </div>
                  {sunriseTime && sunsetTime && (
