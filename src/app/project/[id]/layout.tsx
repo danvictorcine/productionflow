@@ -114,7 +114,7 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                         className={`group inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors ${
                         pathname.startsWith(tab.href)
                             ? 'border-primary text-primary'
-                            : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
+                            : 'border-transparent text-foreground hover:border-primary hover:text-primary'
                         }`}
                     >
                         <tab.icon className="h-4 w-4" />
