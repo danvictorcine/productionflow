@@ -2,44 +2,38 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import type { WeatherInfo, ShootingDay, LocationAddress } from "@/lib/types";
-import { format, isToday, isFuture, parse, parseISO } from "date-fns";
+import type { ShootingDay, LocationAddress } from "@/lib/types";
+import { format, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Wind, Sunrise, Sunset, Hourglass, Cloud, Sun, CloudRain, Snowflake, RotateCw, Loader2 } from "lucide-react";
+import { Hourglass, Cloud, Sun, CloudRain, Snowflake, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "./ui/button";
 import { useWeather } from "@/hooks/useWeather";
 import Link from "next/link";
+import { Sunrise, Sunset } from "lucide-react";
+
 
 interface WeatherCardAnimatedProps {
   day: ShootingDay;
   isPublicView?: boolean;
-  onRefreshWeather?: () => void;
-  isFetchingWeather?: boolean;
 }
 
-const getWeatherState = (code: number) => {
-  // WeatherAPI codes: https://www.weatherapi.com/docs/weather_conditions.json
-  // Open-Meteo codes: https://open-meteo.com/en/docs
+const getWeatherState = (code?: number) => {
+  if (code === undefined) return 'cloudy';
   
-  // Mapping WeatherAPI codes to Open-Meteo categories for animation consistency
-  const sunnyCodes = [1000]; // WeatherAPI: Sunny/Clear
-  const rainyCodes = [1063, 1069, 1072, 1087, 1150, 1153, 1168, 1171, 1180, 1183, 1186, 1189, 1192, 1195, 1198, 1201, 1240, 1243, 1246, 1273, 1276]; // WeatherAPI: Rain/Sleet/Thunder
-  const snowyCodes = [1066, 1114, 1117, 1204, 1207, 1210, 1213, 1216, 1219, 1222, 1225, 1237, 1249, 1252, 1255, 1258, 1261, 1264, 1279, 1282]; // WeatherAPI: Snow/Blizzard
-  
-  // Open-Meteo codes (already handled in original function)
-  const omRainy = [45, 48, 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99];
-  const omSnowy = [71, 73, 75, 77, 85, 86];
-  const omSunny = [0, 1];
+  // Open-Meteo & WeatherAPI codes
+  const sunnyCodes = [0, 1, 1000];
+  const rainyCodes = [45, 48, 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99, 1063, 1069, 1072, 1087, 1150, 1153, 1168, 1171, 1180, 1183, 1186, 1189, 1192, 1195, 1198, 1201, 1240, 1243, 1246, 1273, 1276];
+  const snowyCodes = [71, 73, 75, 77, 85, 86, 1066, 1114, 1117, 1204, 1207, 1210, 1213, 1216, 1219, 1222, 1225, 1237, 1249, 1252, 1255, 1258, 1261, 1264, 1279, 1282];
 
-  if (sunnyCodes.includes(code) || omSunny.includes(code)) return "sunny";
-  if (rainyCodes.includes(code) || omRainy.includes(code)) return "rainy";
-  if (snowyCodes.includes(code) || omSnowy.includes(code)) return "snowy";
+  if (sunnyCodes.includes(code)) return "sunny";
+  if (rainyCodes.includes(code)) return "rainy";
+  if (snowyCodes.includes(code)) return "snowy";
   
   return "cloudy";
 };
 
-const getWeatherDescription = (code: number): { text: string; icon: React.ReactNode } => {
+const getWeatherDescription = (code?: number): { text: string; icon: React.ReactNode } => {
+    if (code === undefined) return { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
     switch(code) {
         // Open-Meteo Codes
         case 0: return { text: 'Céu Limpo', icon: <Sun className="w-4 h-4" /> };
@@ -67,7 +61,7 @@ const getWeatherDescription = (code: number): { text: string; icon: React.ReactN
     }
 }
 
-export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeather, isFetchingWeather: isFetchingLegacy }: WeatherCardAnimatedProps) {
+export function WeatherCardAnimated({ day, isPublicView = false }: WeatherCardAnimatedProps) {
     const { loading, current, forecast } = useWeather({
       lat: day.latitude,
       lon: day.longitude,
@@ -79,13 +73,13 @@ export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeathe
     const [localTime, setLocalTime] = useState<string | null>(null);
 
     const weatherCodeForAnimation = current?.weatherCode ?? forecast?.days[0]?.weatherCode;
-    const weatherState = weatherCodeForAnimation ? getWeatherState(weatherCodeForAnimation) : 'cloudy';
+    const weatherState = getWeatherState(weatherCodeForAnimation);
 
     const currentWeather = current ? { temp: Math.round(current.tempC), text: current.conditionText, code: current.weatherCode } : null;
     const forecastWeather = forecast?.days?.[0] ? { maxTemp: Math.round(forecast.days[0].tMaxC), code: forecast.days[0].weatherCode } : null;
     
     const displayTemp = currentWeather?.temp ?? forecastWeather?.maxTemp;
-    const displayDescription = currentWeather?.code ? { text: currentWeather.text, icon: getWeatherDescription(currentWeather.code).icon } : forecastWeather?.code ? getWeatherDescription(forecastWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
+    const displayDescription = getWeatherDescription(current?.weatherCode ?? forecastWeather?.code);
     
     const sunriseTime = forecast?.days?.[0]?.sunrise ? parseISO(forecast.days[0].sunrise) : null;
     const sunsetTime = forecast?.days?.[0]?.sunset ? parseISO(forecast.days[0].sunset) : null;
@@ -197,14 +191,6 @@ export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeathe
                 <span className="font-extrabold text-base leading-tight text-foreground/80 break-words">{formattedLocation}</span>
                 <p className="font-bold text-sm text-foreground/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
                 {localTime && <p className="font-bold text-sm text-foreground/50">{localTime}</p>}
-            </div>
-
-            <div className="absolute top-2 right-2 text-xs">
-                {!isPublicView && (
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onRefreshWeather} disabled={isFetchingLegacy || loading}>
-                        {isFetchingLegacy || loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCw className="h-3 w-3" />}
-                    </Button>
-                )}
             </div>
             
             <span className="absolute left-0 bottom-2 font-bold text-6xl text-foreground">

@@ -1,15 +1,13 @@
 // @/src/components/production-page-detail.tsx
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PlusCircle, Edit, Share2, Clapperboard, FileSpreadsheet, FileDown } from 'lucide-react';
-import { format, isToday, isFuture, parseISO, differenceInHours } from 'date-fns';
-import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-import type { Production, ShootingDay, TeamMember, WeatherInfo } from '@/lib/types';
+import type { Production, ShootingDay, TeamMember } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -27,7 +25,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CopyableError } from '@/components/copyable-error';
 import { Accordion } from '@/components/ui/accordion';
 import { ProductionInfoCard } from '@/components/production-info-card';
 import { TeamAndCastSection } from '@/components/team-and-cast-section';
@@ -52,10 +49,8 @@ const PdfExportPortal = ({ day, production }: { day: ProcessedShootingDay, produ
         <ShootingDayCard
           day={day}
           production={production}
-          isFetchingWeather={false}
           isExporting={true}
           isPublicView={true}
-          onRefreshWeather={() => {}}
         />
       </Accordion>
       <div className="mt-8 text-center text-sm text-muted-foreground">
@@ -72,10 +67,8 @@ interface ProductionPageDetailProps {
 }
 
 export default function ProductionPageDetail({ production, shootingDays, onDataRefresh }: ProductionPageDetailProps) {
-  const { user } = useAuth();
   const { toast } = useToast();
   
-  const [isFetchingWeather, setIsFetchingWeather] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
   const [dayToExportPdf, setDayToExportPdf] = useState<ProcessedShootingDay | null>(null);
 
@@ -86,10 +79,6 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
   const [dayToDelete, setDayToDelete] = useState<ProcessedShootingDay | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
-
-  const fetchAndUpdateWeather = useCallback(async (day: ShootingDay) => {
-    onDataRefresh();
-  }, [onDataRefresh]);
   
 
   const handleProductionSubmit = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
@@ -229,7 +218,6 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
                     key={day.id} 
                     day={day} 
                     production={production}
-                    isFetchingWeather={isFetchingWeather[day.id] ?? false}
                     onEdit={() => { setEditingShootingDay(day); setIsShootingDayDialogOpen(true); }}
                     onDelete={() => setDayToDelete(day)}
                     onExportExcel={() => handleExportDayToExcel()}
@@ -237,7 +225,6 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting}
                     onShare={() => handleShare('day', day.id, day)}
-                    onRefreshWeather={() => fetchAndUpdateWeather(day)}
                     />
                 ))
             )}

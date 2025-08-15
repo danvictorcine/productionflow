@@ -104,7 +104,7 @@ const ChecklistFormSection = ({ name, label, control }: { name: string, label: s
 }
 
 
-const ChecklistSection = ({ title, items, onListUpdate, isPublicView, icon: Icon, name }: { 
+const ChecklistSection = ({ name, label, items, onListUpdate, isPublicView, icon: Icon }: { 
     name: string;
     icon: React.ElementType;
     title: string;
@@ -313,7 +313,6 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
 interface ShootingDayCardProps {
   day: ShootingDay;
   production: Production;
-  isFetchingWeather: boolean;
   isExporting: boolean;
   isPublicView?: boolean;
   onEdit?: () => void;
@@ -322,7 +321,6 @@ interface ShootingDayCardProps {
   onExportExcel?: () => void;
   onExportPdf?: () => void;
   onUpdateNotes?: (dayId: string, listName: 'generalNotes', updatedList: ChecklistItem[]) => void;
-  onRefreshWeather?: () => void;
 }
 
 
@@ -359,7 +357,7 @@ const calculateDuration = (start?: string, end?: string): string | null => {
     }
 };
 
-export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false, onRefreshWeather }: ShootingDayCardProps) => {
+export const ShootingDayCard = ({ day, production, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     const { toast } = useToast();
     const [localDay, setLocalDay] = useState(day);
     const { attribution } = useWeather({ lat: day.latitude, lon: day.longitude, targetDate: day.date, tz: day.weather?.timezone });
@@ -410,7 +408,6 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
       }
     };
     
-    const sunriseTime = localDay.weather?.daily?.sunrise?.[0] ? parseISO(localDay.weather.daily.sunrise[0]) : null;
     const sunsetTime = localDay.weather?.daily?.sunset?.[0] ? parseISO(localDay.weather.daily.sunset[0]) : null;
     
     const totalDuration = calculateDuration(localDay.startTime, localDay.endTime);
@@ -523,14 +520,10 @@ export const ShootingDayCard = ({ day, production, isFetchingWeather, onEdit, on
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div className="relative h-[235px] transition-all duration-500 ease-in-out group hover:scale-105">
-                                {isFetchingWeather ? (
-                                    <Skeleton className="h-full w-full rounded-2xl" />
-                                ) : localDay.weather || (day.latitude && day.longitude) ? (
+                                {day.latitude && day.longitude ? (
                                     <WeatherCardAnimated 
                                         day={day} 
                                         isPublicView={isPublicView}
-                                        onRefreshWeather={onRefreshWeather}
-                                        isFetchingWeather={isFetchingWeather}
                                     />
                                 ) : (
                                     <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
