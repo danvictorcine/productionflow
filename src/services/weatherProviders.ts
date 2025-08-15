@@ -59,12 +59,19 @@ export async function getCurrentWeatherFromWeatherAPI({ lat, lon }: { lat: numbe
 
     const data = await response.json();
     const { current } = data;
+    
+    // Custom translation override
+    let conditionText = current.condition.text;
+    if (conditionText === "Possibilidade de chuva irregular") {
+        conditionText = "Possibilidade de Chuva";
+    }
+
 
     return {
       tempC: current.temp_c,
       windKmh: current.wind_kph,
       precipMm: current.precip_mm,
-      conditionText: current.condition.text,
+      conditionText: conditionText,
       weatherCode: current.condition.code,
       icon: current.condition.icon,
       source: 'weatherapi',
