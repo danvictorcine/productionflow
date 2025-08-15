@@ -39,6 +39,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "./ui/input";
 import { useWeather } from "@/hooks/useWeather";
 import Link from "next/link";
+import { DisplayMap } from "./display-map";
 
 
 const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType; title: string; content?: string | React.ReactNode }) => {
@@ -68,7 +69,7 @@ const ChecklistFormSection = ({ name, label, control }: { name: string, label: s
 
     return (
         <div>
-            <FormLabel>{label}</FormLabel>
+            <Label>{label}</Label>
             <div className="space-y-2 mt-2">
                 {fields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2">
@@ -282,9 +283,9 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
                         </AccordionTrigger>
                         <AccordionContent className="pt-2">
                             <div className="space-y-4 pt-2">
-                                <ChecklistSection name="equipment" icon={Truck} title="Equipamentos" items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (listName, list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
-                                <ChecklistSection name="costumes" icon={Shirt} title="Figurino" items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (listName, list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
-                                <ChecklistSection name="props" icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} onListUpdate={onUpdateSceneNotes ? (listName, list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
+                                <ChecklistSection title="Equipamentos" name="equipment" icon={Truck} items={scene.equipment} onListUpdate={onUpdateSceneNotes ? (listName, list) => onUpdateSceneNotes(scene.id, 'equipment', list) : undefined} isPublicView={isExporting} />
+                                <ChecklistSection title="Figurino" name="costumes" icon={Shirt} items={scene.costumes} onListUpdate={onUpdateSceneNotes ? (listName, list) => onUpdateSceneNotes(scene.id, 'costumes', list) : undefined} isPublicView={isExporting} />
+                                <ChecklistSection title="Objetos de Cena e Direção de Arte" name="props" icon={Star} items={scene.props} onListUpdate={onUpdateSceneNotes ? (listName, list) => onUpdateSceneNotes(scene.id, 'props', list) : undefined} isPublicView={isExporting} />
                             </div>
                         </AccordionContent>
                     </AccordionItem>
@@ -295,9 +296,9 @@ const SceneCard = ({ scene, isExporting, onUpdateSceneNotes }: {
              <>
                  <Separator className="my-3" />
                   <div className="space-y-4 pt-2">
-                      <ChecklistSection name="equipment" icon={Truck} title="Equipamentos" items={scene.equipment} isPublicView={true} />
-                      <ChecklistSection name="costumes" icon={Shirt} title="Figurino" items={scene.costumes} isPublicView={true} />
-                      <ChecklistSection name="props" icon={Star} title="Objetos de Cena e Direção de Arte" items={scene.props} isPublicView={true} />
+                      <ChecklistSection title="Equipamentos" name="equipment" icon={Truck} items={scene.equipment} isPublicView={true} />
+                      <ChecklistSection title="Figurino" name="costumes" icon={Shirt} items={scene.costumes} isPublicView={true} />
+                      <ChecklistSection title="Objetos de Cena e Direção de Arte" name="props" icon={Star} items={scene.props} isPublicView={true} />
                   </div>
              </>
          )}
