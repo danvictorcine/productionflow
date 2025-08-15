@@ -7,6 +7,7 @@ export interface CurrentWeather {
   windKmh: number;
   precipMm: number;
   conditionText?: string;
+  weatherCode: number;
   icon?: string;
   source: 'weatherapi';
   attribution: { label: string; href: string };
@@ -64,6 +65,7 @@ export async function getCurrentWeatherFromWeatherAPI({ lat, lon }: { lat: numbe
       windKmh: current.wind_kph,
       precipMm: current.precip_mm,
       conditionText: current.condition.text,
+      weatherCode: current.condition.code,
       icon: current.condition.icon,
       source: 'weatherapi',
       attribution: { label: 'Powered by WeatherAPI.com', href: 'https://www.weatherapi.com/' },

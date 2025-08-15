@@ -19,47 +19,51 @@ interface WeatherCardAnimatedProps {
 }
 
 const getWeatherState = (code: number) => {
-  if ([0, 1].includes(code)) return "sunny";
-  if ([45, 48, 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].includes(code)) return "rainy";
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return "snowy";
+  // WeatherAPI codes: https://www.weatherapi.com/docs/weather_conditions.json
+  // Open-Meteo codes: https://open-meteo.com/en/docs
+  
+  // Mapping WeatherAPI codes to Open-Meteo categories for animation consistency
+  const sunnyCodes = [1000]; // WeatherAPI: Sunny/Clear
+  const rainyCodes = [1063, 1069, 1072, 1087, 1150, 1153, 1168, 1171, 1180, 1183, 1186, 1189, 1192, 1195, 1198, 1201, 1240, 1243, 1246, 1273, 1276]; // WeatherAPI: Rain/Sleet/Thunder
+  const snowyCodes = [1066, 1114, 1117, 1204, 1207, 1210, 1213, 1216, 1219, 1222, 1225, 1237, 1249, 1252, 1255, 1258, 1261, 1264, 1279, 1282]; // WeatherAPI: Snow/Blizzard
+  
+  // Open-Meteo codes (already handled in original function)
+  const omRainy = [45, 48, 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99];
+  const omSnowy = [71, 73, 75, 77, 85, 86];
+  const omSunny = [0, 1];
+
+  if (sunnyCodes.includes(code) || omSunny.includes(code)) return "sunny";
+  if (rainyCodes.includes(code) || omRainy.includes(code)) return "rainy";
+  if (snowyCodes.includes(code) || omSnowy.includes(code)) return "snowy";
+  
   return "cloudy";
 };
 
 const getWeatherDescription = (code: number): { text: string; icon: React.ReactNode } => {
     switch(code) {
+        // Open-Meteo Codes
         case 0: return { text: 'Céu Limpo', icon: <Sun className="w-4 h-4" /> };
         case 1: return { text: 'Ensolarado', icon: <Sun className="w-4 h-4" /> };
         case 2: return { text: 'Parcialmente Nublado', icon: <Cloud className="w-4 h-4" /> };
         case 3: return { text: 'Nublado', icon: <Cloud className="w-4 h-4" /> };
-        case 45:
-        case 48:
-            return { text: 'Nevoeiro', icon: <Cloud className="w-4 h-4" /> };
-        case 51:
-        case 53:
-        case 55:
-            return { text: 'Garoa', icon: <CloudRain className="w-4 h-4" /> };
-        case 61:
-        case 63:
-        case 65:
-            return { text: 'Chuva', icon: <CloudRain className="w-4 h-4" /> };
-        case 80:
-        case 81:
-        case 82:
-            return { text: 'Pancadas de Chuva', icon: <CloudRain className="w-4 h-4" /> };
-        case 71:
-        case 73:
-        case 75:
-        case 77:
-            return { text: 'Neve', icon: <Snowflake className="w-4 h-4" /> };
-        case 85:
-        case 86:
-            return { text: 'Nevasca', icon: <Snowflake className="w-4 h-4" /> };
-        case 95:
-        case 96:
-        case 99:
-            return { text: 'Trovoada', icon: <CloudRain className="w-4 h-4" /> };
-        default:
-            return { text: 'Clima Indefinido', icon: <Cloud className="w-4 h-4" /> };
+        case 45: case 48: return { text: 'Nevoeiro', icon: <Cloud className="w-4 h-4" /> };
+        case 51: case 53: case 55: return { text: 'Garoa', icon: <CloudRain className="w-4 h-4" /> };
+        case 61: case 63: case 65: return { text: 'Chuva', icon: <CloudRain className="w-4 h-4" /> };
+        case 80: case 81: case 82: return { text: 'Pancadas de Chuva', icon: <CloudRain className="w-4 h-4" /> };
+        case 71: case 73: case 75: case 77: return { text: 'Neve', icon: <Snowflake className="w-4 h-4" /> };
+        case 85: case 86: return { text: 'Nevasca', icon: <Snowflake className="w-4 h-4" /> };
+        case 95: case 96: case 99: return { text: 'Trovoada', icon: <CloudRain className="w-4 h-4" /> };
+        
+        // WeatherAPI Codes (a subset for icon mapping)
+        case 1000: return { text: 'Ensolarado', icon: <Sun className="w-4 h-4" /> };
+        case 1003: return { text: 'Parcialmente Nublado', icon: <Cloud className="w-4 h-4" /> };
+        case 1006: return { text: 'Nublado', icon: <Cloud className="w-4 h-4" /> };
+        case 1009: return { text: 'Encoberto', icon: <Cloud className="w-4 h-4" /> };
+        case 1030: return { text: 'Névoa', icon: <Cloud className="w-4 h-4" /> };
+        case 1135: return { text: 'Nevoeiro', icon: <Cloud className="w-4 h-4" /> };
+        case 1183: case 1189: case 1195: return { text: 'Chuva Forte', icon: <CloudRain className="w-4 h-4" /> };
+        
+        default: return { text: 'Clima Indefinido', icon: <Cloud className="w-4 h-4" /> };
     }
 }
 
@@ -74,13 +78,14 @@ export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeathe
     const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
     const [localTime, setLocalTime] = useState<string | null>(null);
 
-    const weatherState = current ? getWeatherState(current.weatherCode) : forecast?.days[0]?.weatherCode ? getWeatherState(forecast.days[0].weatherCode) : 'cloudy';
+    const weatherCodeForAnimation = current?.weatherCode ?? forecast?.days[0]?.weatherCode;
+    const weatherState = weatherCodeForAnimation ? getWeatherState(weatherCodeForAnimation) : 'cloudy';
 
     const currentWeather = current ? { temp: Math.round(current.tempC), text: current.conditionText, code: current.weatherCode } : null;
     const forecastWeather = forecast?.days?.[0] ? { maxTemp: Math.round(forecast.days[0].tMaxC), code: forecast.days[0].weatherCode } : null;
     
     const displayTemp = currentWeather?.temp ?? forecastWeather?.maxTemp;
-    const displayDescription = currentWeather?.code ? getWeatherDescription(currentWeather.code) : forecastWeather?.code ? getWeatherDescription(forecastWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
+    const displayDescription = currentWeather?.code ? { text: currentWeather.text, icon: getWeatherDescription(currentWeather.code).icon } : forecastWeather?.code ? getWeatherDescription(forecastWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
     
     const sunriseTime = forecast?.days?.[0]?.sunrise ? parseISO(forecast.days[0].sunrise) : null;
     const sunsetTime = forecast?.days?.[0]?.sunset ? parseISO(forecast.days[0].sunset) : null;
@@ -210,7 +215,7 @@ export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeathe
                  <div className="flex flex-col items-center justify-center font-bold text-sm text-foreground">
                     <div className="flex items-center gap-1.5">
                        {displayDescription.icon}
-                       <span>{currentWeather?.text || displayDescription.text}</span>
+                       <span>{displayDescription.text}</span>
                     </div>
                  </div>
                  {sunriseTime && sunsetTime && (
