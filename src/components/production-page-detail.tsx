@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { PlusCircle, Edit, Share2, Clapperboard, FileSpreadsheet, FileDown } from 'lucide-react';
+import { PlusCircle, Edit, Share2, Clapperboard, FileSpreadsheet, FileDown, Copy } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
@@ -32,8 +32,6 @@ import { TeamAndCastSection } from '@/components/team-and-cast-section';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Copy } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 type ProcessedShootingDay = ShootingDay;
 
@@ -132,13 +130,23 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
     setMemberToDelete(null);
   };
   
-  const handleShare = async (day: ShootingDay) => {
+  const handleShareDay = async (day: ShootingDay) => {
     try {
       await firestoreApi.createOrUpdatePublicShootingDay(production, day);
       const url = `${window.location.origin}/share/day/${day.id}`;
       setShareLink(url);
     } catch (error) {
       toast({ variant: 'destructive', title: 'Erro ao compartilhar', description: 'Não foi possível gerar o link público.' });
+    }
+  };
+
+  const handleShareProduction = async () => {
+    try {
+        await firestoreApi.createOrUpdatePublicProduction(production, shootingDays);
+        const url = `${window.location.origin}/share/production/${production.id}`;
+        setShareLink(url);
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Erro ao compartilhar', description: 'Não foi possível gerar o link público para a produção.' });
     }
   };
 
@@ -244,6 +252,10 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
                 <PlusCircle className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Nova Ordem do Dia</span>
             </Button>
+             <Button onClick={handleShareProduction} variant="outline" size="sm">
+                <Share2 className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Compartilhar Produção</span>
+            </Button>
         </div>
       </div>
       <main className="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-6xl mx-auto space-y-6 overflow-y-auto">
@@ -283,7 +295,7 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
                     onExportPdf={() => handleExportDayToPdf(day)}
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting}
-                    onShare={() => handleShare(day)}
+                    onShare={() => handleShareDay(day)}
                     />
                 ))
             )}
@@ -335,7 +347,7 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
         <Sheet open={!!shareLink} onOpenChange={(open) => !open && setShareLink(null)}>
                 <SheetContent>
                     <SheetHeader>
-                        <SheetTitle>Compartilhar Ordem do Dia</SheetTitle>
+                        <SheetTitle>Compartilhar Produção</SheetTitle>
                         <SheetDescription>Qualquer pessoa com este link poderá ver as informações. As atualizações feitas serão refletidas publicamente.</SheetDescription>
                     </SheetHeader>
                     <div className="space-y-2 py-4">
