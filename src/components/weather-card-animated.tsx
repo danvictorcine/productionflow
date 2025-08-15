@@ -1,7 +1,7 @@
 // @/src/components/weather-card-animated.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { WeatherInfo, ShootingDay, LocationAddress } from "@/lib/types";
 import { format, isToday, isFuture, parse, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
