@@ -104,7 +104,7 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                 </div>
             </header>
 
-             <nav className="border-b bg-background shrink-0">
+             <nav className="sticky top-[60px] z-30 border-b bg-background shrink-0">
                 <div className="px-4 sm:px-6 lg:px-8">
                 <div className="flex -mb-px space-x-2 sm:space-x-4 overflow-x-auto">
                     {tabs.map((tab) => (
