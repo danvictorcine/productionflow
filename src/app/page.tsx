@@ -367,7 +367,7 @@ function HomePage() {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => setIsUnifiedProjectDialogOpen(true)} size="sm">
+          <Button onClick={() => setIsUnifiedProjectDialogOpen(true)} size="sm" variant="ghost">
             <PlusCircle className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Criar Novo</span>
           </Button>
