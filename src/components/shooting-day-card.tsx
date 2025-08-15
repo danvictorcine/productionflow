@@ -9,8 +9,8 @@ import {
   MoreVertical, Edit, Trash2, Calendar, MapPin, Clock,
   Users, FileText, Hospital, Radio, Utensils, Hash, Film, AlignLeft, FileSpreadsheet, FileDown, Share2, Hourglass, ChevronDown, AlignJustify, Truck, Star, Shirt, PlusCircle
 } from "lucide-react";
-import dynamic from 'next/dynamic';
-
+import Link from "next/link";
+import { useForm, useFieldArray } from 'react-hook-form';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
-import { Skeleton } from "./ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
-import { WeatherCardAnimated } from "./weather-card-animated";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { getInitials } from "@/lib/utils";
@@ -37,9 +35,9 @@ import { useToast } from "@/hooks/use-toast";
 import { CopyableError } from "./copyable-error";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "./ui/input";
-import { useWeather } from "@/hooks/useWeather";
-import Link from "next/link";
+import { FormControl, FormField, FormItem, FormMessage } from "./ui/form";
 import { DisplayMap } from "./display-map";
+import { WeatherCardAnimated } from "./weather-card-animated";
 
 
 const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType; title: string; content?: string | React.ReactNode }) => {
@@ -356,8 +354,7 @@ const calculateDuration = (start?: string, end?: string): string | null => {
 export const ShootingDayCard = ({ day, production, onEdit, onDelete, onShare, onExportExcel, onExportPdf, onUpdateNotes, isExporting, isPublicView = false }: ShootingDayCardProps) => {
     const { toast } = useToast();
     const [localDay, setLocalDay] = useState(day);
-    const { attribution } = useWeather({ lat: day.latitude, lon: day.longitude, targetDate: day.date, tz: day.weather?.timezone });
-
+    
     useEffect(() => {
         setLocalDay(day);
     }, [day]);
@@ -404,22 +401,11 @@ export const ShootingDayCard = ({ day, production, onEdit, onDelete, onShare, on
       }
     };
     
-    const sunsetTime = localDay.weather?.daily?.sunset?.[0] ? parseISO(localDay.weather.daily.sunset[0]) : null;
+    const sunsetTime = day.weather?.daily?.sunset?.[0] ? parseISO(day.weather.daily.sunset[0]) : null;
     
     const totalDuration = calculateDuration(localDay.startTime, localDay.endTime);
 
-    const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(() => {
-        if (!isToday(localDay.date) || !localDay.startTime || !localDay.endTime) return null;
-        const now = new Date();
-        const startTime = parse(localDay.startTime!, "HH:mm", localDay.date);
-        const endTime = parse(localDay.endTime!, "HH:mm", localDay.date);
-        if (now < startTime) return "A produção ainda não começou.";
-        if (now > endTime) return null;
-        const diff = endTime.getTime() - now.getTime();
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        return `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m restantes`;
-    });
+    const [remainingProductionTime, setRemainingProductionTime] = useState<string | null>(null);
     
     useEffect(() => {
         if (!isToday(localDay.date) || !localDay.startTime || !localDay.endTime) {
@@ -516,18 +502,10 @@ export const ShootingDayCard = ({ day, production, onEdit, onDelete, onShare, on
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div className="relative h-[235px] transition-all duration-500 ease-in-out group hover:scale-105">
-                                {day.latitude && day.longitude ? (
-                                    <WeatherCardAnimated 
-                                        day={day} 
-                                        isPublicView={isPublicView}
-                                    />
-                                ) : (
-                                    <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
-                                        <p className="text-sm font-semibold">Sem dados de clima</p>
-                                        <p className="text-xs text-muted-foreground mt-1">Edite a Ordem do Dia para buscar a previsão.</p>
-                                        {!isPublicView && <Button size="sm" variant="outline" className="mt-3" onClick={onEdit}>Editar</Button>}
-                                    </div>
-                                )}
+                                <WeatherCardAnimated 
+                                    day={day} 
+                                    isPublicView={isPublicView}
+                                />
                             </div>
                             <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105 rounded-2xl shadow-lg">
                                 {localDay.latitude && localDay.longitude ? (
@@ -573,20 +551,7 @@ export const ShootingDayCard = ({ day, production, onEdit, onDelete, onShare, on
                                 </Card>
                             </div>
                         </div>
-
-                         {attribution.length > 0 && (
-                            <div className="text-center text-xs text-muted-foreground">
-                                {attribution.map((attr, index) => (
-                                    <React.Fragment key={attr.href}>
-                                        <Link href={attr.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                                            {attr.label}
-                                        </Link>
-                                        {index < attribution.length - 1 && ' · '}
-                                    </React.Fragment>
-                                ))}
-                            </div>
-                        )}
-
+                        
                         <Separator />
                         
                         <div className="space-y-4">

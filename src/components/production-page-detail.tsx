@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { PlusCircle, Edit, Share2, Clapperboard, FileSpreadsheet, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 
 import type { Production, ShootingDay, TeamMember } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -131,11 +132,91 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
     setMemberToDelete(null);
   };
   
-  // SHARE AND EXPORT FUNCTIONS (simplified for brevity)
-  const handleShare = (type: 'day'|'production', id: string, day?: ShootingDay) => toast({title: "Função de compartilhamento em desenvolvimento"});
-  const handleExportToExcel = () => toast({title: "Função de exportação para Excel em desenvolvimento"});
-  const handleExportDayToExcel = () => toast({title: "Função de exportação para Excel em desenvolvimento"});
-  const handleExportDayToPdf = async (dayToExport: ShootingDay) => toast({title: "Função de exportação para PDF em desenvolvimento"});
+  const handleShare = async (day: ShootingDay) => {
+    try {
+      await firestoreApi.createOrUpdatePublicShootingDay(production, day);
+      const url = `${window.location.origin}/share/day/${day.id}`;
+      setShareLink(url);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro ao compartilhar', description: 'Não foi possível gerar o link público.' });
+    }
+  };
+
+  const handleExportDayToPdf = async (day: ShootingDay) => {
+    setDayToExportPdf(day);
+    setIsExporting(true);
+
+    toast({ title: "Gerando PDF...", description: "Isso pode levar alguns segundos." });
+
+    setTimeout(async () => {
+      const element = document.getElementById('pdf-export-content');
+      if (element) {
+        try {
+          const canvas = await html2canvas(element, { useCORS: true, scale: 2 });
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF({
+            orientation: canvas.width > canvas.height ? 'l' : 'p',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+          });
+          pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+          pdf.save(`Ordem_do_Dia_${production.name.replace(/\s+/g, '_')}.pdf`);
+          toast({ title: "PDF gerado com sucesso!" });
+        } catch (error) {
+          toast({ variant: "destructive", title: "Erro ao gerar PDF", description: "Não foi possível criar o arquivo." });
+        }
+      }
+      setDayToExportPdf(null);
+      setIsExporting(false);
+    }, 500); // Small delay to allow portal to render
+  };
+
+  const handleExportToExcel = async (day: ShootingDay) => {
+    toast({ title: 'Gerando Excel...' });
+    const wb = XLSX.utils.book_new();
+    
+    // Sheet 1: Informações Gerais
+    const generalInfo = [
+      ["Produção", production.name],
+      ["Tipo", production.type],
+      ["Diretor(a)", production.director],
+      ["Data", new Date(day.date).toLocaleDateString('pt-BR')],
+      ["Horário", `${day.startTime || ''} - ${day.endTime || ''}`],
+      ["Localização", day.location?.displayName],
+      ["Hospital", `${day.nearestHospital?.name || ''} - ${day.nearestHospital?.address || ''}`],
+    ];
+    const wsGeneral = XLSX.utils.aoa_to_sheet(generalInfo);
+    wsGeneral['!cols'] = [{wch: 20}, {wch: 60}];
+    XLSX.utils.book_append_sheet(wb, wsGeneral, 'Geral');
+
+    // Sheet 2: Horários de Chamada
+    const callTimesData = day.callTimes.map(ct => [ct.department, ct.time]);
+    const wsCallTimes = XLSX.utils.aoa_to_sheet([["Departamento/Pessoa", "Horário"], ...callTimesData]);
+    wsCallTimes['!cols'] = [{wch: 30}, {wch: 15}];
+    XLSX.utils.book_append_sheet(wb, wsCallTimes, 'Horários');
+
+    // Sheet 3: Cenas
+    const scenesData = day.scenes.flatMap(scene => [
+        ["CENA", scene.sceneNumber, scene.title, `(${scene.pages})`],
+        ["Descrição", scene.description],
+        ["Elenco", scene.presentInScene.map(p => p.name).join(', ')],
+        ["Local", scene.location?.displayName || ''],
+        [""], // Empty row for spacing
+    ]);
+    const wsScenes = XLSX.utils.aoa_to_sheet(scenesData);
+    wsScenes['!cols'] = [{wch: 15}, {wch: 15}, {wch: 40}, {wch: 20}];
+    XLSX.utils.book_append_sheet(wb, wsScenes, 'Cenas');
+
+    // Sheet 4: Equipe
+    const teamData = day.presentTeam.map(t => [t.name, t.role, t.contact || '']);
+    const wsTeam = XLSX.utils.aoa_to_sheet([["Nome", "Função", "Contato"], ...teamData]);
+    wsTeam['!cols'] = [{wch: 30}, {wch: 30}, {wch: 20}];
+    XLSX.utils.book_append_sheet(wb, wsTeam, 'Equipe Presente');
+
+    XLSX.writeFile(wb, `Ordem_do_Dia_${production.name.replace(/\s+/g, '_')}.xlsx`);
+    toast({ title: 'Excel gerado com sucesso!' });
+  };
+
 
   const handleUpdateNotes = async (dayId: string, listName: string, list: any[]) => {
     try {
@@ -163,28 +244,6 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
                 <PlusCircle className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Nova Ordem do Dia</span>
             </Button>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" aria-label="Opções de Compartilhamento e Exportação">
-                        <Share2 className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleShare('production', production.id)}>
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Compartilhar Produção Inteira
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleExportToExcel}>
-                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                        Exportar para Excel
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDayToPdf(shootingDays[0])} disabled={shootingDays.length === 0}>
-                        <FileDown className="mr-2 h-4 w-4" />
-                        Exportar Primeira Diária (PDF)
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
         </div>
       </div>
       <main className="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-6xl mx-auto space-y-6 overflow-y-auto">
@@ -220,11 +279,11 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
                     production={production}
                     onEdit={() => { setEditingShootingDay(day); setIsShootingDayDialogOpen(true); }}
                     onDelete={() => setDayToDelete(day)}
-                    onExportExcel={() => handleExportDayToExcel()}
+                    onExportExcel={() => handleExportToExcel(day)}
                     onExportPdf={() => handleExportDayToPdf(day)}
                     onUpdateNotes={handleUpdateNotes}
                     isExporting={isExporting}
-                    onShare={() => handleShare('day', day.id, day)}
+                    onShare={() => handleShare(day)}
                     />
                 ))
             )}
@@ -276,7 +335,7 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
         <Sheet open={!!shareLink} onOpenChange={(open) => !open && setShareLink(null)}>
                 <SheetContent>
                     <SheetHeader>
-                        <SheetTitle>Compartilhar Produção</SheetTitle>
+                        <SheetTitle>Compartilhar Ordem do Dia</SheetTitle>
                         <SheetDescription>Qualquer pessoa com este link poderá ver as informações. As atualizações feitas serão refletidas publicamente.</SheetDescription>
                     </SheetHeader>
                     <div className="space-y-2 py-4">
