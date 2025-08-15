@@ -188,13 +188,13 @@ export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeathe
         </div>
 
         <div className="relative z-20 flex flex-col h-full">
-            <div className="card-header">
+            <div className="card-header pr-8">
                 <span className="font-extrabold text-base leading-tight text-foreground/80 break-words">{formattedLocation}</span>
                 <p className="font-bold text-sm text-foreground/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
                 {localTime && <p className="font-bold text-sm text-foreground/50">{localTime}</p>}
             </div>
 
-            <div className="absolute top-2 left-3 text-xs">
+            <div className="absolute top-2 right-2 text-xs">
                 {!isPublicView && (
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onRefreshWeather} disabled={isFetchingLegacy || loading}>
                         {isFetchingLegacy || loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCw className="h-3 w-3" />}
