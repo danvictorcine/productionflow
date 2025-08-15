@@ -1,4 +1,3 @@
-
 // @/src/components/weather-card-animated.tsx
 "use client";
 
@@ -9,6 +8,8 @@ import { ptBR } from "date-fns/locale";
 import { Wind, Sunrise, Sunset, Hourglass, Cloud, Sun, CloudRain, Snowflake, RotateCw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { useWeather } from "@/hooks/useWeather";
+import Link from "next/link";
 
 interface WeatherCardAnimatedProps {
   weather: WeatherInfo;
@@ -63,85 +64,30 @@ const getWeatherDescription = (code: number): { text: string; icon: React.ReactN
     }
 }
 
-export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefreshWeather, isFetchingWeather }: WeatherCardAnimatedProps) {
+export function WeatherCardAnimated({ day, isPublicView = false, onRefreshWeather, isFetchingWeather: isFetchingLegacy }: WeatherCardAnimatedProps) {
+    const { loading, current, forecast, attribution } = useWeather({
+      lat: day.latitude,
+      lon: day.longitude,
+      targetDate: day.date,
+      tz: day.weather?.timezone,
+    });
+
     const [daylightStatus, setDaylightStatus] = useState<string | null>(null);
-    const [currentWeather, setCurrentWeather] = useState<{ temp: number; code: number; time?: string } | null>(null);
     const [localTime, setLocalTime] = useState<string | null>(null);
 
-    useEffect(() => {
-        const updateCurrentWeather = () => {
-            if (!weather.hourly?.time || !weather.daily) {
-                const temp = weather.daily?.temperature_2m_max?.[0];
-                const code = weather.daily?.weather_code?.[0];
-                if (temp !== undefined && code !== undefined) {
-                  setCurrentWeather({ temp: Math.round(temp), code });
-                }
-                return;
-            }
+    const weatherState = current ? getWeatherState(parseInt(current.icon?.split('/').pop()?.replace('.png','') || '3')) : forecast?.days[0]?.weatherCode ? getWeatherState(forecast.days[0].weatherCode) : 'cloudy';
 
-            if (isToday(day.date)) {
-                 const nowInTimezone = new Date(new Date().toLocaleString("en-US", { timeZone: weather.timezone }));
-                 const currentHour = nowInTimezone.getHours();
-                 const hourlyIndex = weather.hourly.time.findIndex(timeStr => {
-                     const hour = parseISO(timeStr).getHours();
-                     return hour === currentHour;
-                 });
-                
-                if (hourlyIndex !== -1) {
-                    const temp = weather.hourly.temperature_2m[hourlyIndex];
-                    const code = weather.hourly.weather_code[hourlyIndex];
-                    setCurrentWeather({ temp: Math.round(temp), code });
-                } else {
-                    const temp = weather.daily.temperature_2m_max[0];
-                    const code = weather.daily.weather_code[0];
-                    setCurrentWeather({ temp: Math.round(temp), code });
-                }
-                return;
-            }
-
-            if (isFuture(day.date) && day.startTime) {
-                const startHour = parseInt(day.startTime.split(':')[0], 10);
-                const dayDateStr = format(day.date, 'yyyy-MM-dd');
-                const targetTimeStr = `${dayDateStr}T${String(startHour).padStart(2, '0')}:00`;
-                
-                const hourlyIndex = weather.hourly.time.findIndex(time => time.startsWith(targetTimeStr));
-
-                if (hourlyIndex !== -1) {
-                    const temp = weather.hourly.temperature_2m[hourlyIndex];
-                    const code = weather.hourly.weather_code[hourlyIndex];
-                    setCurrentWeather({ temp: Math.round(temp), code, time: day.startTime });
-                } else {
-                    const temp = weather.daily.temperature_2m_max[0];
-                    const code = weather.daily.weather_code[0];
-                    setCurrentWeather({ temp: Math.round(temp), code, time: day.startTime });
-                }
-                return;
-            }
-
-            const temp = weather.daily?.temperature_2m_max?.[0];
-            const code = weather.daily?.weather_code?.[0];
-            if (temp !== undefined && code !== undefined) {
-              setCurrentWeather({ temp: Math.round(temp), code });
-            }
-        };
-
-        updateCurrentWeather();
-        
-        if (isToday(day.date)) {
-            const interval = setInterval(updateCurrentWeather, 60000); 
-            return () => clearInterval(interval);
-        }
-
-    }, [weather, day.date, day.startTime]);
-
-    const weatherState = currentWeather ? getWeatherState(currentWeather.code) : "cloudy";
-    const weatherDescription = currentWeather ? getWeatherDescription(currentWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
+    const currentWeather = current ? { temp: Math.round(current.tempC), text: current.conditionText } : null;
+    const forecastWeather = forecast?.days?.[0] ? { maxTemp: Math.round(forecast.days[0].tMaxC), code: forecast.days[0].weatherCode } : null;
     
-    const sunriseTime = weather.daily?.sunrise?.[0] ? parseISO(weather.daily.sunrise[0]) : null;
-    const sunsetTime = weather.daily?.sunset?.[0] ? parseISO(weather.daily.sunset[0]) : null;
+    const displayTemp = currentWeather?.temp ?? forecastWeather?.maxTemp;
+    const displayDescription = currentWeather?.text ? { text: currentWeather.text, icon: <Sun className="w-4 h-4" /> } : forecastWeather?.code ? getWeatherDescription(forecastWeather.code) : { text: 'Carregando...', icon: <Loader2 className="w-4 h-4 animate-spin" /> };
+    
+    const sunriseTime = forecast?.days?.[0]?.sunrise ? parseISO(forecast.days[0].sunrise) : null;
+    const sunsetTime = forecast?.days?.[0]?.sunset ? parseISO(forecast.days[0].sunset) : null;
     
     useEffect(() => {
-        if (!weather.timezone || !isToday(day.date)) {
+        if (!day.weather?.timezone || !isToday(day.date)) {
             setLocalTime(null);
             return;
         }
@@ -151,21 +97,21 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                 const timeString = new Date().toLocaleTimeString('pt-BR', {
                     hour: '2-digit',
                     minute: '2-digit',
-                    timeZone: weather.timezone,
+                    timeZone: day.weather.timezone,
                 });
                 setLocalTime(timeString);
             } catch (error) {
-                console.error("Invalid timezone:", weather.timezone);
-                setLocalTime(null); // Fallback if timezone is invalid
+                console.error("Invalid timezone:", day.weather.timezone);
+                setLocalTime(null);
             }
         };
 
         updateLocalTime();
-        const interval = setInterval(updateLocalTime, 60000); // Update every minute
+        const interval = setInterval(updateLocalTime, 60000);
 
         return () => clearInterval(interval);
 
-    }, [weather.timezone, day.date]);
+    }, [day.weather?.timezone, day.date]);
     
     useEffect(() => {
       const calculateDaylight = () => {
@@ -174,10 +120,9 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
             return;
         }
 
-        const weatherDate = parseISO(weather.date);
         const now = new Date();
 
-        if (isToday(weatherDate)) {
+        if (isToday(day.date)) {
             if (now < sunriseTime) {
                 setDaylightStatus(`Começa às ${format(sunriseTime, "HH:mm")}`);
             } else if (now > sunsetTime) {
@@ -199,7 +144,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
           const interval = setInterval(calculateDaylight, 60000);
           return () => clearInterval(interval);
       }
-    }, [weather.date, sunriseTime, sunsetTime, day.date]);
+    }, [day.date, sunriseTime, sunsetTime]);
 
 
   const formatLocationForCard = (location?: LocationAddress): string => {
@@ -215,7 +160,7 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
       return parts.join(', ');
     }
 
-    return weather.locationName;
+    return day.weather?.locationName || 'Localização';
   }
 
   const formattedLocation = formatLocationForCard(day.location);
@@ -249,16 +194,39 @@ export function WeatherCardAnimated({ weather, day, isPublicView = false, onRefr
                 <p className="font-bold text-sm text-foreground/50">{format(day.date, "dd 'de' MMMM", { locale: ptBR })}</p>
                 {localTime && <p className="font-bold text-sm text-foreground/50">{localTime}</p>}
             </div>
+
+            <div className="absolute top-2 left-3 text-xs">
+                {!isPublicView && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onRefreshWeather} disabled={isFetchingLegacy || loading}>
+                        {isFetchingLegacy || loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCw className="h-3 w-3" />}
+                    </Button>
+                )}
+            </div>
             
             <span className="absolute left-0 bottom-2 font-bold text-6xl text-foreground">
-                {currentWeather ? `${currentWeather.temp}°` : '--°'}
+                {loading ? '--°' : `${displayTemp}°`}
             </span>
+            
+            <div className="absolute left-0 bottom-0 p-1">
+                {attribution.length > 0 && (
+                    <p className="text-xs text-foreground/50">
+                        {attribution.map((attr, index) => (
+                            <React.Fragment key={attr.href}>
+                                <Link href={attr.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                    {attr.label}
+                                </Link>
+                                {index < attribution.length - 1 && ' · '}
+                            </React.Fragment>
+                        ))}
+                    </p>
+                )}
+            </div>
 
             <div className="absolute right-0 bottom-2 space-y-2 text-xs font-semibold text-foreground/80 text-center">
                  <div className="flex flex-col items-center justify-center font-bold text-sm text-foreground">
                     <div className="flex items-center gap-1.5">
-                       {weatherDescription.icon}
-                       <span>{weatherDescription.text}</span>
+                       {displayDescription.icon}
+                       <span>{displayDescription.text}</span>
                     </div>
                  </div>
                  {sunriseTime && sunsetTime && (
