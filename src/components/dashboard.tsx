@@ -446,20 +446,21 @@ export default function Dashboard({
   
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex-none p-4 border-b">
-         <div className="flex items-center gap-2">
-           <Button onClick={() => setEditDialogOpen(true)} variant="outline" size="sm">
+      <div className="flex-none p-2 border-b">
+         <div className="flex items-center gap-1">
+           <Button onClick={() => setEditDialogOpen(true)} variant="ghost" size="sm">
             <Edit className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Editar Orçamento</span>
           </Button>
-          <Button onClick={openAddSheet} size="sm">
+          <Button onClick={openAddSheet} variant="ghost" size="sm">
             <PlusCircle className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Adicionar Despesa</span>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" aria-label="Opções de Importação/Exportação">
-                  <FileSpreadsheet className="h-4 w-4" />
+              <Button variant="ghost" size="sm">
+                  <FileSpreadsheet className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Exportar</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

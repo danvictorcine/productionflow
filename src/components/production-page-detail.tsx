@@ -242,17 +242,17 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex-none p-4 border-b">
-         <div className="flex items-center gap-2">
-            <Button onClick={() => setIsProductionDialogOpen(true)} variant="outline" size="sm">
+      <div className="flex-none p-2 border-b">
+         <div className="flex items-center gap-1">
+            <Button onClick={() => setIsProductionDialogOpen(true)} variant="ghost" size="sm">
                 <Edit className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Editar Produção</span>
             </Button>
-            <Button onClick={() => { setEditingShootingDay(null); setIsShootingDayDialogOpen(true); }} size="sm">
+            <Button onClick={() => { setEditingShootingDay(null); setIsShootingDayDialogOpen(true); }} variant="ghost" size="sm">
                 <PlusCircle className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Nova Ordem do Dia</span>
             </Button>
-             <Button onClick={handleShareProduction} variant="outline" size="sm">
+             <Button onClick={handleShareProduction} variant="ghost" size="sm">
                 <Share2 className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Compartilhar Produção</span>
             </Button>
