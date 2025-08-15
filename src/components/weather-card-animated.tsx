@@ -5,10 +5,9 @@ import React, { useEffect, useState } from "react";
 import type { ShootingDay, LocationAddress } from "@/lib/types";
 import { format, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Hourglass, Cloud, Sun, CloudRain, Snowflake, Loader2 } from "lucide-react";
+import { Hourglass, Cloud, Sun, CloudRain, Snowflake, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWeather } from "@/hooks/useWeather";
-import Link from "next/link";
 import { Sunrise, Sunset } from "lucide-react";
 
 
@@ -20,16 +19,16 @@ interface WeatherCardAnimatedProps {
 const getWeatherState = (code?: number) => {
   if (code === undefined) return 'cloudy';
   
-  // Open-Meteo & WeatherAPI codes
+  // Combined codes from Open-Meteo & WeatherAPI
   const sunnyCodes = [0, 1, 1000];
   const rainyCodes = [45, 48, 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99, 1063, 1069, 1072, 1087, 1150, 1153, 1168, 1171, 1180, 1183, 1186, 1189, 1192, 1195, 1198, 1201, 1240, 1243, 1246, 1273, 1276];
   const snowyCodes = [71, 73, 75, 77, 85, 86, 1066, 1114, 1117, 1204, 1207, 1210, 1213, 1216, 1219, 1222, 1225, 1237, 1249, 1252, 1255, 1258, 1261, 1264, 1279, 1282];
-
+  
   if (sunnyCodes.includes(code)) return "sunny";
   if (rainyCodes.includes(code)) return "rainy";
   if (snowyCodes.includes(code)) return "snowy";
   
-  return "cloudy";
+  return "cloudy"; // Default to cloudy for partly cloudy, overcast etc.
 };
 
 const getWeatherDescription = (code?: number): { text: string; icon: React.ReactNode } => {
@@ -48,12 +47,13 @@ const getWeatherDescription = (code?: number): { text: string; icon: React.React
         case 85: case 86: return { text: 'Nevasca', icon: <Snowflake className="w-4 h-4" /> };
         case 95: case 96: case 99: return { text: 'Trovoada', icon: <CloudRain className="w-4 h-4" /> };
         
-        // WeatherAPI Codes (a subset for icon mapping)
+        // WeatherAPI Codes
         case 1000: return { text: 'Ensolarado', icon: <Sun className="w-4 h-4" /> };
-        case 1003: return { text: 'Parcialmente Nublado', icon: <Cloud className="w-4 h-4" /> };
+        case 1003: return { text: 'Parcialmente nublado', icon: <Cloud className="w-4 h-4" /> };
         case 1006: return { text: 'Nublado', icon: <Cloud className="w-4 h-4" /> };
         case 1009: return { text: 'Encoberto', icon: <Cloud className="w-4 h-4" /> };
         case 1030: return { text: 'Névoa', icon: <Cloud className="w-4 h-4" /> };
+        case 1063: return { text: 'Possibilidade de Chuva', icon: <CloudRain className="w-4 h-4" /> };
         case 1135: return { text: 'Nevoeiro', icon: <Cloud className="w-4 h-4" /> };
         case 1183: case 1189: case 1195: return { text: 'Chuva Forte', icon: <CloudRain className="w-4 h-4" /> };
         
@@ -62,7 +62,7 @@ const getWeatherDescription = (code?: number): { text: string; icon: React.React
 }
 
 export function WeatherCardAnimated({ day, isPublicView = false }: WeatherCardAnimatedProps) {
-    const { loading, current, forecast } = useWeather({
+    const { loading, current, forecast, fetchWeatherData } = useWeather({
       lat: day.latitude,
       lon: day.longitude,
       targetDate: day.date,
