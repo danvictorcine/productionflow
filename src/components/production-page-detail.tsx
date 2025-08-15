@@ -131,19 +131,6 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
     }
   }, [toast, onDataRefresh]);
   
-  useEffect(() => {
-    shootingDays.forEach(day => {
-        const dayDate = new Date(day.date);
-        const shouldFetch = isToday(dayDate) || isFuture(dayDate);
-        if (!shouldFetch) return;
-
-        const needsUpdate = !day.weather || !day.weather.lastUpdated || differenceInHours(new Date(), parseISO(day.weather.lastUpdated)) >= 1;
-
-        if (needsUpdate) {
-            fetchAndUpdateWeather(day);
-        }
-    });
-  }, [shootingDays, fetchAndUpdateWeather]);
 
   const handleProductionSubmit = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
     try {
