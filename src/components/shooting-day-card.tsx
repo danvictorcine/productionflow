@@ -41,11 +41,6 @@ import { useWeather } from "@/hooks/useWeather";
 import Link from "next/link";
 
 
-const DisplayMap = dynamic(() => import('../components/display-map').then(mod => mod.DisplayMap), {
-  ssr: false,
-  loading: () => <Skeleton className="h-full w-full rounded-lg" />,
-});
-
 const StaticDetailSection = ({ icon: Icon, title, content }: { icon: React.ElementType; title: string; content?: string | React.ReactNode }) => {
     if (!content && typeof content !== 'boolean') return null;
 
@@ -104,7 +99,7 @@ const ChecklistFormSection = ({ name, label, control }: { name: string, label: s
 }
 
 
-const ChecklistSection = ({ name, label, items, onListUpdate, isPublicView, icon: Icon }: { 
+const ChecklistSection = ({ name, icon: Icon, title, items, onListUpdate, isPublicView }: { 
     name: string;
     icon: React.ElementType;
     title: string;
@@ -652,7 +647,7 @@ export const ShootingDayCard = ({ day, production, onEdit, onDelete, onShare, on
                             </div>
                             
                              <div className="p-4 border rounded-lg space-y-2">
-                               <ChecklistSection name="generalNotes" icon={AlignJustify} title="Observações Gerais" items={localDay.generalNotes} onListUpdate={handleLocalUpdateNotes} isPublicView={isPublicView} />
+                               <ChecklistSection name="generalNotes" title="Observações Gerais" icon={AlignJustify} items={localDay.generalNotes} onListUpdate={handleLocalUpdateNotes} isPublicView={isPublicView} />
                                <StaticDetailSection icon={Users} title="Equipe Presente na Diária" content={
                                     localDay.presentTeam && localDay.presentTeam.length > 0 ? (
                                         <div className="flex flex-wrap gap-3 items-center">
