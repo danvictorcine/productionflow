@@ -45,7 +45,7 @@ export async function getCurrentWeatherFromWeatherAPI({ lat, lon }: { lat: numbe
     return null;
   }
 
-  const url = `https://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${lat},${lon}&aqi=no`;
+  const url = `https://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${lat},${lon}&aqi=no&lang=pt`;
   
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(API_TIMEOUT) });
