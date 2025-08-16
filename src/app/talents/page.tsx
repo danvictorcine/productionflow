@@ -146,7 +146,9 @@ function ManageTalentsPage() {
     async function onSubmit(values: FormValues) {
         setIsSaving(true);
         try {
-            await firestoreApi.saveTalents(values.talents);
+            // Remove a propriedade 'file' antes de salvar no Firestore
+            const talentsToSave = values.talents.map(({ file, ...rest }) => rest);
+            await firestoreApi.saveTalents(talentsToSave);
             toast({ title: 'Banco de Talentos atualizado com sucesso!' });
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
