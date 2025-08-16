@@ -1,118 +1,123 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check ownership
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // === User Profiles ===
-    match /users/{userId} {
-      allow read;
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-    }
-
-    // === Unified Projects (New Structure) ===
-    match /unified_projects/{projectId} {
-      allow read, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-      allow update: if isOwner(resource.data.userId);
-    }
-    
-    // === Talent Pool ===
-    match /talents/{talentId} {
-      allow read, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-      allow update: if isOwner(resource.data.userId);
-    }
-
-    // === Legacy Financial Projects ===
+    // Projects (Financial)
     match /projects/{projectId} {
-      allow read, delete: if isOwner(resource.data.userId);
-      // Deny new creations in the old collection
-      allow create: if false;
-      // Allow update ONLY to link to a unified project during migration
-      allow update: if isOwner(resource.data.userId) && request.resource.data.keys().hasOnly(['unifiedProjectId']);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
-    // === Legacy Financial Transactions ===
+    // Transactions (Financial)
     match /transactions/{transactionId} {
-      allow read, write: if isOwner(request.auth.uid);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
-
-    // === Legacy Productions (Call Sheets) ===
+    
+    // User profiles
+    match /users/{userId} {
+      allow read, update: if isOwner(userId);
+      allow create: if request.auth != null;
+    }
+    
+    // Productions (Call Sheet Projects)
     match /productions/{productionId} {
-      allow read, delete: if isOwner(resource.data.userId);
-      allow create: if false;
-      allow update: if isOwner(resource.data.userId) && request.resource.data.keys().hasOnly(['unifiedProjectId']);
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
     
-    // === Legacy Creative Projects (Moodboards) ===
-    match /creative_projects/{projectId} {
-      allow read, delete: if isOwner(resource.data.userId);
-      allow create: if false;
-      allow update: if isOwner(resource.data.userId) && request.resource.data.keys().hasOnly(['unifiedProjectId']);
-    }
-    
-    // === Legacy Storyboards ===
-    match /storyboards/{storyboardId} {
-      allow read, delete: if isOwner(resource.data.userId);
-      allow create: if false;
-      allow update: if isOwner(resource.data.userId) && request.resource.data.keys().hasOnly(['unifiedProjectId']);
+    // Shooting Days (Call Sheets)
+    match /shooting_days/{dayId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
     }
 
-    // === Sub-collections ===
-    match /{path=**}/shooting_days/{dayId} {
-      allow read, write: if isOwner(request.auth.uid);
-    }
-    
-    match /{path=**}/board_items/{itemId} {
-      allow read, write: if isOwner(request.auth.uid);
-    }
-    
-    match /{path=**}/storyboard_scenes/{sceneId} {
-      allow read, write: if isOwner(request.auth.uid);
-    }
-    
-    match /{path=**}/storyboard_panels/{panelId} {
-      allow read, write: if isOwner(request.auth.uid);
-    }
-    
-    // === Public, Read-Only Data ===
+    // Public Productions for sharing the whole project
     match /public_productions/{productionId} {
-        allow get;
-        allow list, write: if false;
+      allow read: if true;
+      allow create, update: if isOwner(request.resource.data.userId);
+      allow delete: if false; // Deletion is handled by app logic
     }
     
+    // Public Shooting Days for sharing individual days
     match /public_shooting_days/{dayId} {
-        allow get;
-        allow list, write: if false;
+      allow read: if true;
+      allow create, update: if isOwner(request.resource.data.production.userId);
+      allow delete: if false; // Deletion is handled by app logic
     }
     
-    // === Blog & Static Page Content ===
+    // Creative Projects (Moodboards)
+    match /creative_projects/{projectId} {
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // Board Items (Moodboard Items)
+    match /board_items/{itemId} {
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    // Storyboards
+    match /storyboards/{storyboardId} {
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    // Storyboard Scenes
+    match /storyboard_scenes/{sceneId} {
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // Storyboard Panels
+    match /storyboard_panels/{panelId} {
+       allow read, update, delete: if isOwner(resource.data.userId);
+       allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // Unified Projects
+    match /unified_projects/{unifiedProjectId} {
+        allow read, update, delete: if isOwner(resource.data.userId);
+        allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // Talent Pool
+    match /talents/{talentId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // Admin-only collections
+    function isAdmin() {
+      // Check for the existence of the user document and the isAdmin field.
+      // This is a safer way to check for admin privileges.
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     match /posts/{postId} {
-      allow read;
-      allow create, update, delete: if isOwner(request.auth.uid) && request.auth.token.isAdmin == true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /pages/{pageId} {
-      allow read;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
     
-    // === Team Members for "About" Page ===
     match /teamMembers/{memberId} {
-      allow read;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
     
-    // === General Settings (Theme, Beta Limits) ===
     match /settings/{settingId} {
-      allow read;
-      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+        allow read: if true;
+        allow write: if isAdmin();
     }
   }
 }
