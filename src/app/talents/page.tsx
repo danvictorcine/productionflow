@@ -81,12 +81,12 @@ function ManageTalentsPage() {
             
             form.reset({ talents });
 
-            const legacyProdTeam = productions.flatMap(p => p.team);
-            const legacyFinTeam = projects.flatMap(p => p.talents);
+            const legacyProdTeam = productions.flatMap(p => p.team || []);
+            const legacyFinTeam = projects.flatMap(p => p.talents || []);
             const combinedLegacy = [...legacyProdTeam, ...legacyFinTeam];
 
             const uniqueLegacy = combinedLegacy.filter((member, index, self) =>
-                index === self.findIndex((t) => (
+                member.name && member.role && index === self.findIndex((t) => (
                     t.name === member.name && t.role === member.role
                 ))
             );

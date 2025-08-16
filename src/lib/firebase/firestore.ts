@@ -1526,7 +1526,7 @@ export const saveTalents = async (talents: Omit<Talent, 'file'>[]) => {
   });
 
   talents.forEach(talent => {
-    const talentRef = doc(collectionRef, talent.id);
+    const talentRef = talent.id ? doc(collectionRef, talent.id) : doc(collectionRef);
     const { id, ...dataToSave } = talent;
     batch.set(talentRef, { ...dataToSave, userId }, { merge: true });
   });
@@ -1557,11 +1557,26 @@ export const migrateTeamToTalentPool = async (): Promise<void> => {
         getTalents()
     ]);
     
-    const legacyProdTeam: Talent[] = productions.flatMap(p => p.team);
-    const legacyFinTeam: Talent[] = projects.flatMap(p => p.talents);
-    const combinedLegacyTeam: Talent[] = [...legacyProdTeam, ...legacyFinTeam];
+    const legacyProdTeam: any[] = productions.flatMap(p => p.team || []);
+    const legacyFinTeam: any[] = projects.flatMap(p => p.talents || []);
+    const combinedLegacyTeam: any[] = [...legacyProdTeam, ...legacyFinTeam];
 
     const uniqueTalents = new Map<string, Talent>();
+
+    // Helper to create a clean talent object
+    const createCleanTalent = (member: any): Omit<Talent, 'id'> => ({
+      name: member.name || "Nome Desconhecido",
+      role: member.role || "Função Desconhecida",
+      paymentType: member.paymentType === 'daily' ? 'daily' : 'fixed',
+      fee: typeof member.fee === 'number' ? member.fee : undefined,
+      dailyRate: typeof member.dailyRate === 'number' ? member.dailyRate : undefined,
+      days: typeof member.days === 'number' ? member.days : undefined,
+      photoURL: member.photoURL || undefined,
+      contact: member.contact || undefined,
+      hasDietaryRestriction: member.hasDietaryRestriction === true,
+      dietaryRestriction: member.dietaryRestriction || undefined,
+      extraNotes: member.extraNotes || undefined,
+    });
 
     // Prioritize existing talents
     existingTalents.forEach(talent => {
@@ -1575,7 +1590,11 @@ export const migrateTeamToTalentPool = async (): Promise<void> => {
     combinedLegacyTeam.forEach(member => {
         const key = `${member.name.trim().toLowerCase()}-${member.role.trim().toLowerCase()}`;
         if (!uniqueTalents.has(key)) {
-            uniqueTalents.set(key, member);
+            const newTalent: Talent = {
+                id: doc(collection(db, 'talents')).id, // Generate a new ID
+                ...createCleanTalent(member),
+            };
+            uniqueTalents.set(key, newTalent);
         } else {
             // Merge info: if existing entry is missing info that the new one has, add it.
             const existing = uniqueTalents.get(key)!;
@@ -1585,20 +1604,13 @@ export const migrateTeamToTalentPool = async (): Promise<void> => {
                  existing.hasDietaryRestriction = member.hasDietaryRestriction;
                  existing.dietaryRestriction = member.dietaryRestriction;
             }
-             if (!existing.extraNotes && member.extraNotes) existing.extraNotes = member.extraNotes;
+            if (!existing.extraNotes && member.extraNotes) existing.extraNotes = member.extraNotes;
         }
     });
 
-    const talentsToSave = Array.from(uniqueTalents.values()).map(t => {
-        // Ensure every talent has a proper ID for saving
-        if (!t.id || t.id.startsWith('new-')) {
-          t.id = doc(collection(db, 'talents')).id;
-        }
-        return t;
-    });
-
+    const talentsToSave = Array.from(uniqueTalents.values());
+    
     if (talentsToSave.length > 0) {
-        // Use saveTalents which handles batch writing and deletion logic if needed in future
         await saveTalents(talentsToSave);
     }
 };
