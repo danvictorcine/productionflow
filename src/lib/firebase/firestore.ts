@@ -19,7 +19,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, BetaLimits, TeamMember, ChecklistItem, ExportedProjectData, UnifiedProject, DisplayableItem } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, BetaLimits, TeamMember, ChecklistItem, ExportedProjectData, UnifiedProject, DisplayableItem, Talent } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { DEFAULT_BETA_LIMITS } from '../app-config';
 
@@ -1497,6 +1497,55 @@ export const saveBetaLimits = async (limits: BetaLimits) => {
     const docRef = doc(db, 'settings', 'betaLimits');
     await setDoc(docRef, limits, { merge: true });
 }
+
+// === Talent Pool Functions ===
+
+export const getTalents = async (): Promise<Talent[]> => {
+  const userId = getUserId();
+  if (!userId) return [];
+  const q = query(collection(db, 'talents'), where('userId', '==', userId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Talent);
+};
+
+export const saveTalents = async (talents: Omit<Talent, 'file'>[]) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+
+  const batch = writeBatch(db);
+  const collectionRef = collection(db, 'talents');
+
+  const currentTalentsSnapshot = await getDocs(query(collectionRef, where('userId', '==', userId)));
+  const currentTalentIds = new Set(currentTalentsSnapshot.docs.map(doc => doc.id));
+  const newTalentIds = new Set(talents.map(t => t.id));
+
+  currentTalentIds.forEach(id => {
+    if (!newTalentIds.has(id)) {
+      batch.delete(doc(collectionRef, id));
+    }
+  });
+
+  talents.forEach(talent => {
+    const talentRef = doc(collectionRef, talent.id);
+    batch.set(talentRef, { ...talent, userId }, { merge: true });
+  });
+
+  await batch.commit();
+};
+
+export const uploadTalentPhoto = async (file: File): Promise<string> => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+  const timestamp = new Date().getTime();
+  const randomString = Math.random().toString(36).substring(2, 8);
+  const fileName = `${timestamp}-${randomString}-${file.name}`;
+  const filePath = `talent_photos/${userId}/${fileName}`;
+  const storageRef = ref(storage, filePath);
+  
+  await uploadBytes(storageRef, file);
+  return await getDownloadURL(storageRef);
+};
+
 
 // === Unified Project Functions ===
 
