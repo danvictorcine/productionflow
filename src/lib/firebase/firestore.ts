@@ -1,4 +1,5 @@
 
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -406,7 +407,7 @@ export const getProjectDataForExport = async (projectId: string, projectType: Di
             return { type: 'creative', creativeProject, boardItems };
         }
         case 'storyboard': {
-            const storyboard = await getStoryboard(storyboardId);
+            const storyboard = await getStoryboard(projectId);
             if (!storyboard) throw new Error("Storyboard não encontrado.");
             const scenes = await getStoryboardScenes(storyboard.id);
             const panels = await getStoryboardPanels(storyboard.id);
@@ -1514,7 +1515,16 @@ export const saveTalents = async (talents: Omit<Talent, 'file'>[]) => {
 
   talents.forEach(talent => {
     const talentRef = doc(collectionRef, talent.id);
-    const { id, ...dataToSave } = talent;
+    const { id, ...data } = talent;
+
+    // Create a clean object to save, removing any undefined fields
+    const dataToSave: Record<string, any> = {};
+    for (const key in data) {
+        if ((data as any)[key] !== undefined) {
+            dataToSave[key] = (data as any)[key];
+        }
+    }
+    
     batch.set(talentRef, { ...dataToSave, userId }, { merge: true });
   });
 
@@ -1698,50 +1708,44 @@ export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) =
     const batch = writeBatch(db);
 
     for (const legacy of legacyProjects) {
-        if (legacy.itemType === 'unified') continue;
+        if (legacy.itemType === 'unified' || (legacy as any).unifiedProjectId) continue;
 
         const unifiedProjectRef = doc(collection(db, 'unified_projects'));
         
-        let financialProjectId: string | undefined;
-        let productionProjectId: string | undefined;
-        let creativeProjectId: string | undefined;
-        let storyboardProjectId: string | undefined;
-        let legacyProjectRef: any;
-
-        switch (legacy.itemType) {
-            case 'financial':
-                financialProjectId = legacy.id;
-                legacyProjectRef = doc(db, 'projects', legacy.id);
-                break;
-            case 'production':
-                productionProjectId = legacy.id;
-                legacyProjectRef = doc(db, 'productions', legacy.id);
-                break;
-            case 'creative':
-                creativeProjectId = legacy.id;
-                legacyProjectRef = doc(db, 'creative_projects', legacy.id);
-                break;
-            case 'storyboard':
-                storyboardProjectId = legacy.id;
-                legacyProjectRef = doc(db, 'storyboards', legacy.id);
-                break;
-        }
-
-        const unifiedProjectData: Omit<UnifiedProject, 'id'> = {
+        const unifiedProjectData: Omit<UnifiedProject, 'id' | 'createdAt'> = {
             userId,
             name: legacy.name,
             description: (legacy as any).description || "",
-            createdAt: Timestamp.now(),
-            financialProjectId,
-            productionProjectId,
-            creativeProjectId,
-            storyboardProjectId,
+            financialProjectId: legacy.itemType === 'financial' ? legacy.id : undefined,
+            productionProjectId: legacy.itemType === 'production' ? legacy.id : undefined,
+            creativeProjectId: legacy.itemType === 'creative' ? legacy.id : undefined,
+            storyboardProjectId: legacy.itemType === 'storyboard' ? legacy.id : undefined,
         };
         
-        // This is safe to set because we ensure legacy.itemType is not 'unified'.
-        const validLegacyData = unifiedProjectData as any;
+        const cleanedData: Record<string, any> = {};
+        for (const key in unifiedProjectData) {
+            if ((unifiedProjectData as any)[key] !== undefined) {
+                cleanedData[key] = (unifiedProjectData as any)[key];
+            }
+        }
         
-        batch.set(unifiedProjectRef, validLegacyData);
+        batch.set(unifiedProjectRef, { ...cleanedData, createdAt: Timestamp.now() });
+        
+        let legacyProjectRef: any;
+        switch (legacy.itemType) {
+            case 'financial':
+                legacyProjectRef = doc(db, 'projects', legacy.id);
+                break;
+            case 'production':
+                legacyProjectRef = doc(db, 'productions', legacy.id);
+                break;
+            case 'creative':
+                legacyProjectRef = doc(db, 'creative_projects', legacy.id);
+                break;
+            case 'storyboard':
+                legacyProjectRef = doc(db, 'storyboards', legacy.id);
+                break;
+        }
         
         if (legacyProjectRef) {
             batch.update(legacyProjectRef, { unifiedProjectId: unifiedProjectRef.id });
