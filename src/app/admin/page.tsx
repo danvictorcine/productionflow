@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { AppFooter } from '@/components/app-footer';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Newspaper, Palette } from 'lucide-react';
+import { ArrowLeft, BookOpen, Newspaper, Palette, Users } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export default function AdminDashboard() {
@@ -60,6 +60,20 @@ export default function AdminDashboard() {
                                     Gerenciar Tema do Aplicativo
                                 </CardTitle>
                                 <CardDescription>Personalize as cores de todo o aplicativo, como botões, fundos e textos.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Button>Acessar</Button>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                    <Link href="/admin/talents" className="block">
+                        <Card className="hover:bg-muted/50 transition-colors h-full">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Users className="h-5 w-5 text-primary"/>
+                                    Banco de Talentos
+                                </CardTitle>
+                                <CardDescription>Gerencie sua equipe e contatos de forma centralizada para usar em todos os projetos.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Button>Acessar</Button>
