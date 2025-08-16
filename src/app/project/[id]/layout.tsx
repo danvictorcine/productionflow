@@ -63,10 +63,10 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     };
 
     const tabs = useMemo(() => [
-        { name: 'Financeiro', href: `/project/${projectId}/financial`, icon: DollarSign },
-        { name: 'Ordem do Dia', href: `/project/${projectId}/production`, icon: Clapperboard },
         { name: 'Moodboard', href: `/project/${projectId}/creative`, icon: Brush },
         { name: 'Storyboard', href: `/project/${projectId}/storyboard`, icon: ImageIcon },
+        { name: 'Financeiro', href: `/project/${projectId}/financial`, icon: DollarSign },
+        { name: 'Ordem do Dia', href: `/project/${projectId}/production`, icon: Clapperboard },
     ], [projectId]);
 
     if (isLoading) {
