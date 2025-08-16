@@ -3,70 +3,88 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Permite que usuários leiam e escrevam em seu próprio perfil.
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
+      allow read, update, delete: if isOwner(userId);
+      allow create: if request.auth.uid == userId;
     }
 
-    // Regra para a nova coleção de projetos unificados
-    match /unified_projects/{projectId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-
-    // Regras para sub-projetos e coleções legado
     match /projects/{projectId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
+      allow read, write: if isOwner(resource.data.userId);
     }
+    
     match /transactions/{transactionId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-    match /productions/{productionId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-    match /shooting_days/{dayId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-    match /creative_projects/{creativeId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-    match /board_items/{itemId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-    match /storyboards/{storyboardId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-     match /storyboard_scenes/{sceneId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-    match /storyboard_panels/{panelId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-    
-    // Regras para conteúdo (páginas, posts, etc.)
-    match /posts/{postId} {
-      // Qualquer um pode ler, apenas admins podem escrever/apagar
-      allow read: if true;
-      allow write, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    match /pages/{pageId} {
-       // Qualquer um pode ler, apenas admins podem escrever
-       allow read: if true;
-       allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    match /teamMembers/{memberId} {
-       // Qualquer um pode ler, apenas admins podem escrever
-       allow read: if true;
-       allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow read, write: if isOwner(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.userId);
     }
 
-    // Regras para configurações
-    match /settings/{docId} {
-      // Qualquer um pode ler o tema
-      allow read: if true;
-      // Apenas admins podem alterar configurações
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    match /productions/{productionId} {
+      allow read, write: if isOwner(resource.data.userId);
     }
+    
+    match /shooting_days/{dayId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /creative_projects/{projectId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /board_items/{itemId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /storyboards/{storyboardId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /storyboard_scenes/{sceneId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    match /storyboard_panels/{panelId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    match /public_productions/{productionId} {
+      allow get;
+      allow list: if false; // List access is disabled for public collections
+    }
+
+    match /public_shooting_days/{dayId} {
+        allow get;
+        allow list: if false;
+    }
+
+    match /posts/{postId} {
+      allow read;
+      allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    match /pages/{pageId} {
+        allow read;
+        allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    match /teamMembers/{memberId} {
+        allow read;
+        allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    match /settings/{settingId} {
+        allow read;
+        allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    match /talents/{talentId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    match /unified_projects/{projectId} {
+        allow read, write: if isOwner(resource.data.userId);
+    }
+
   }
 }
