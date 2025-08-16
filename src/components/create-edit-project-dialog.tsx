@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PlusCircle, Trash2, Calendar as CalendarIcon, Info } from "lucide-react";
-import { useEffect } from "react";
+import { PlusCircle, Trash2, Calendar as CalendarIcon, Info, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -28,7 +29,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import type { Project } from "@/lib/types";
+import type { Project, Talent } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -38,6 +39,21 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { getTalents } from "@/lib/firebase/firestore";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+  DialogFooter
+} from "./ui/dialog";
+import { ScrollArea } from "./ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { getInitials } from "@/lib/utils";
+import { Checkbox } from "./ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 
 
 const talentSchema = z.object({
@@ -116,6 +132,9 @@ interface CreateEditProjectDialogProps {
 
 export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }: CreateEditProjectDialogProps) {
   const isEditMode = !!project;
+  const [talentPool, setTalentPool] = useState<Talent[]>([]);
+  const [isTalentSelectorOpen, setIsTalentSelectorOpen] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -131,7 +150,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
     },
   });
   
-  const { formState: { errors }, control } = form;
+  const { formState: { errors }, control, setValue } = form;
 
   useEffect(() => {
     if (isOpen) {
@@ -157,8 +176,12 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
             installments: [],
           };
       form.reset(defaultValues);
+
+      getTalents()
+        .then(setTalentPool)
+        .catch(() => toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." }));
     }
-  }, [isOpen, isEditMode, project, form]);
+  }, [isOpen, isEditMode, project, form, toast]);
   
   const { fields: talentFields, append: appendTalent, remove: removeTalent } = useFieldArray({
     control: form.control,
@@ -181,17 +204,27 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
   }, [hasProductionCosts, form]);
 
   const handleSubmit = (values: ProjectFormValues) => {
-    const talentsWithIds = values.talents.map((t, index) => ({
-      ...t,
-      id: t.id || crypto.randomUUID(),
-    }));
-    const installmentsWithIds = values.installments.map((i, index) => ({
-      ...i,
-      id: i.id || crypto.randomUUID(),
-    }));
-    onSubmit({ ...values, talents: talentsWithIds, installments: installmentsWithIds });
+    onSubmit({ ...values });
   };
   
+  const handleSelectTalents = (selectedTalentIds: string[]) => {
+      selectedTalentIds.forEach(id => {
+          const talent = talentPool.find(t => t.id === id);
+          if (talent && !talentFields.some(field => field.id === talent.id)) {
+              appendTalent({
+                  id: talent.id,
+                  name: talent.name,
+                  role: talent.role,
+                  paymentType: 'fixed',
+                  fee: 0,
+                  dailyRate: 0,
+                  days: 0,
+              });
+          }
+      });
+      setIsTalentSelectorOpen(false);
+  }
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent className="sm:max-w-2xl flex flex-col">
@@ -433,7 +466,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                           <div key={field.id} className="grid grid-cols-1 gap-4 rounded-md border p-4">
                             <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
                                 <FormField control={control} name={`talents.${index}.name`} render={({ field }) => (
-                                    <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do Talento" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do Talento" {...field} readOnly /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                 <FormField control={control} name={`talents.${index}.role`} render={({ field }) => (
                                     <FormItem><FormLabel className="text-xs">Função</FormLabel><FormControl><Input placeholder="ex: Ator Principal" {...field} /></FormControl><FormMessage /></FormItem>
@@ -488,15 +521,25 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                           </div>
                         )
                       })}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => appendTalent({ id: crypto.randomUUID(), name: "", role: "", paymentType: "fixed", fee: 0 })}
-                      >
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adicionar Talento
-                      </Button>
+                       <Dialog open={isTalentSelectorOpen} onOpenChange={setIsTalentSelectorOpen}>
+                         <DialogTrigger asChild>
+                           <Button type="button" variant="outline" size="sm">
+                              <Users className="mr-2 h-4 w-4" />
+                              Adicionar Talento do Banco
+                           </Button>
+                         </DialogTrigger>
+                         <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle>Selecionar Talentos</DialogTitle>
+                                <DialogDescription>Selecione os talentos do seu banco de contatos para adicionar ao projeto.</DialogDescription>
+                            </DialogHeader>
+                            <TalentSelector
+                                talentPool={talentPool}
+                                selectedTalents={talentFields}
+                                onSelect={handleSelectTalents}
+                            />
+                         </DialogContent>
+                       </Dialog>
                     </div>
                   </div>
               </div>
@@ -510,4 +553,51 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
       </SheetContent>
     </Sheet>
   );
+}
+
+function TalentSelector({ talentPool, selectedTalents, onSelect }: { talentPool: Talent[], selectedTalents: any[], onSelect: (ids: string[]) => void }) {
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    
+    const handleCheckboxChange = (id: string, checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(sid => sid !== id));
+        }
+    }
+    
+    return (
+        <div className="space-y-4">
+             <ScrollArea className="h-72">
+                 <div className="p-4 space-y-2">
+                     {talentPool.map(talent => {
+                        const isInProject = selectedTalents.some(t => t.id === talent.id);
+                        return (
+                            <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50")}>
+                                <Checkbox
+                                    id={`talent-${talent.id}`}
+                                    checked={selectedIds.includes(talent.id)}
+                                    onCheckedChange={(checked) => handleCheckboxChange(talent.id, !!checked)}
+                                    disabled={isInProject}
+                                />
+                                <label htmlFor={`talent-${talent.id}`} className={cn("flex items-center gap-3 text-sm font-medium leading-none", isInProject ? "cursor-not-allowed" : "cursor-pointer")}>
+                                     <Avatar className="h-9 w-9">
+                                        <AvatarImage src={talent.photoURL} alt={talent.name} />
+                                        <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p>{talent.name}</p>
+                                        <p className="text-xs text-muted-foreground">{talent.role}</p>
+                                    </div>
+                                </label>
+                            </div>
+                        )
+                    })}
+                 </div>
+             </ScrollArea>
+             <DialogFooter>
+                 <Button onClick={() => onSelect(selectedIds)}>Adicionar Selecionados</Button>
+             </DialogFooter>
+        </div>
+    )
 }

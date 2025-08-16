@@ -6,10 +6,9 @@ import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PlusCircle, Trash2, Camera, User as UserIcon, Loader2 } from "lucide-react";
-import imageCompression from 'browser-image-compression';
+import { PlusCircle, Trash2, Users } from "lucide-react";
 
-import type { Production, TeamMember } from "@/lib/types";
+import type { Production, TeamMember, Talent } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -35,14 +34,15 @@ import { Textarea } from "./ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import * as firestoreApi from '@/lib/firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
-import { CopyableError } from "./copyable-error";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { ScrollArea } from "./ui/scroll-area";
+import { getInitials, cn } from "@/lib/utils";
 
 const teamMemberSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Nome é obrigatório."),
   role: z.string().min(1, "Função é obrigatória."),
   photoURL: z.string().optional(),
-  file: z.instanceof(File).optional(),
   contact: z.string().optional(),
   hasDietaryRestriction: z.boolean().optional().default(false),
   dietaryRestriction: z.string().optional(),
@@ -71,7 +71,8 @@ interface CreateEditProductionDialogProps {
 export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, production }: CreateEditProductionDialogProps) {
   const isEditMode = !!production;
   const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
+  const [talentPool, setTalentPool] = useState<Talent[]>([]);
+  const [isTalentSelectorOpen, setIsTalentSelectorOpen] = useState(false);
 
   const form = useForm<ProductionFormValues>({
     resolver: zodResolver(productionFormSchema),
@@ -86,15 +87,13 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
     },
   });
 
-  const { control, watch, setValue } = form;
+  const { control, watch } = form;
 
   const { fields: teamFields, append: appendTeam, remove: removeTeam } = useFieldArray({
     control: form.control,
     name: "team",
   });
   
-  const watchedTeam = watch('team');
-
   useEffect(() => {
     if (isOpen) {
       const defaultValues = isEditMode
@@ -117,61 +116,36 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
             team: [],
           };
       form.reset(defaultValues);
+
+      firestoreApi.getTalents()
+        .then(setTalentPool)
+        .catch(() => toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." }));
     }
-  }, [isOpen, isEditMode, production, form]);
+  }, [isOpen, isEditMode, production, form, toast]);
   
-  const handlePhotoUpload = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
-        if (!event.target.files?.[0]) return;
-        
-        const file = event.target.files[0];
-        setValue(`team.${index}.file`, file);
-        setIsUploading(prev => ({ ...prev, [index]: true }));
-
-        try {
-            const options = { maxSizeMB: 0.5, maxWidthOrHeight: 256, useWebWorker: true };
-            const compressedFile = await imageCompression(file, options);
-            const url = await firestoreApi.uploadProductionTeamMemberPhoto(compressedFile);
-            
-            setValue(`team.${index}.photoURL`, url, { shouldDirty: true });
-            toast({ title: 'Foto enviada com sucesso!' });
-        } catch (error) {
-            const errorTyped = error as { code?: string; message: string };
-            toast({
-                variant: 'destructive',
-                title: 'Erro de Upload',
-                description: <CopyableError userMessage="Não foi possível enviar a foto." errorCode={errorTyped.code || errorTyped.message} />,
-            });
-        } finally {
-            setIsUploading(prev => ({ ...prev, [index]: false }));
-        }
-    };
-
 
   const handleSubmit = (values: ProductionFormValues) => {
-    const sanitizedTeam = values.team.map((member) => {
-      const { file, ...rest } = member;
-      return {
-        ...rest,
-        id: member.id.startsWith('new-') ? '' : member.id,
-        contact: member.contact || "",
-        photoURL: member.photoURL || "",
-        dietaryRestriction: member.dietaryRestriction || "",
-        extraNotes: member.extraNotes || "",
-      };
-    });
-
-    const dataToSubmit = {
-      name: values.name,
-      type: values.type,
-      director: values.director,
-      responsibleProducer: values.responsibleProducer || "",
-      client: values.client || "",
-      producer: values.producer || "",
-      team: sanitizedTeam.map(({ id, ...rest }) => ({...rest, id: id || crypto.randomUUID() })),
-    };
-    
-    onSubmit(dataToSubmit);
+    onSubmit(values);
   };
+  
+  const handleSelectTalents = (selectedTalentIds: string[]) => {
+    selectedTalentIds.forEach(id => {
+        const talent = talentPool.find(t => t.id === id);
+        if (talent && !teamFields.some(field => field.id === talent.id)) {
+            appendTeam({
+                id: talent.id,
+                name: talent.name,
+                role: talent.role,
+                photoURL: talent.photoURL,
+                contact: talent.contact,
+                hasDietaryRestriction: talent.hasDietaryRestriction,
+                dietaryRestriction: talent.dietaryRestriction,
+                extraNotes: talent.extraNotes,
+            });
+        }
+    });
+    setIsTalentSelectorOpen(false);
+  }
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -277,30 +251,20 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                     <div className="space-y-3 mt-2">
                       {teamFields.map((field, index) => {
                         const hasRestriction = watch(`team.${index}.hasDietaryRestriction`);
-                        const photoURL = watchedTeam[index]?.photoURL;
-                        const file = watchedTeam[index]?.file;
-                        let previewUrl = photoURL;
-                        if (file && !photoURL?.startsWith('https://firebasestorage')) {
-                            previewUrl = URL.createObjectURL(file);
-                        }
 
                         return (
                           <div key={field.id} className="items-start gap-4 rounded-md border p-4">
                             <div className="flex items-center gap-4 mb-4">
                                <div className="relative group">
                                   <Avatar className="h-20 w-20">
-                                      <AvatarImage src={previewUrl} alt="Foto" className="object-cover" />
-                                      <AvatarFallback><UserIcon /></AvatarFallback>
+                                      <AvatarImage src={field.photoURL} alt="Foto" className="object-cover" />
+                                      <AvatarFallback>{getInitials(field.name)}</AvatarFallback>
                                   </Avatar>
-                                  <label htmlFor={`photo-upload-${index}`} className="absolute inset-0 bg-black/40 flex items-center justify-center text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                      {isUploading[index] ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-                                  </label>
-                                  <input id={`photo-upload-${index}`} type="file" className="hidden" accept="image/png, image/jpeg" onChange={(e) => handlePhotoUpload(index, e)} disabled={isUploading[index]} />
                                 </div>
                                <div className="grid grid-cols-1 items-end gap-3 flex-1">
                                 <div className="flex items-end gap-2">
                                   <FormField control={form.control} name={`team.${index}.name`} render={({ field }) => (
-                                    <FormItem className="flex-1"><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do membro" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem className="flex-1"><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do membro" {...field} readOnly /></FormControl><FormMessage /></FormItem>
                                   )}/>
                                   <Button type="button" variant="ghost" size="icon" onClick={() => removeTeam(index)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
                                 </div>
@@ -372,21 +336,84 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                           </div>
                         )
                       })}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ id: `new-${Date.now()}`, name: "", role: "", photoURL: "", contact: "", hasDietaryRestriction: false, dietaryRestriction: "", extraNotes: "" })}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adicionar Membro
-                      </Button>
+                      <Dialog open={isTalentSelectorOpen} onOpenChange={setIsTalentSelectorOpen}>
+                         <DialogTrigger asChild>
+                           <Button type="button" variant="outline" size="sm">
+                              <Users className="mr-2 h-4 w-4" />
+                              Adicionar Talento do Banco
+                           </Button>
+                         </DialogTrigger>
+                         <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle>Selecionar Talentos</DialogTitle>
+                                <DialogDescription>Selecione os talentos do seu banco de contatos para adicionar à equipe desta produção.</DialogDescription>
+                            </DialogHeader>
+                            <TalentSelector
+                                talentPool={talentPool}
+                                selectedTeam={teamFields}
+                                onSelect={handleSelectTalents}
+                            />
+                         </DialogContent>
+                       </Dialog>
                     </div>
                   </div>
                 </div>
             </div>
             <SheetFooter className="flex-shrink-0 border-t p-4 pt-6">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={Object.values(isUploading).some(v => v)}>{isEditMode ? "Salvar Alterações" : "Criar Produção"}</Button>
+              <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Produção"}</Button>
             </SheetFooter>
           </form>
         </Form>
       </SheetContent>
     </Sheet>
   );
+}
+
+
+function TalentSelector({ talentPool, selectedTeam, onSelect }: { talentPool: Talent[], selectedTeam: any[], onSelect: (ids: string[]) => void }) {
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    
+    const handleCheckboxChange = (id: string, checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(sid => sid !== id));
+        }
+    }
+    
+    return (
+        <div className="space-y-4">
+             <ScrollArea className="h-72">
+                 <div className="p-4 space-y-2">
+                     {talentPool.map(talent => {
+                        const isInProject = selectedTeam.some(t => t.id === talent.id);
+                        return (
+                            <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50")}>
+                                <Checkbox
+                                    id={`talent-prod-${talent.id}`}
+                                    checked={selectedIds.includes(talent.id)}
+                                    onCheckedChange={(checked) => handleCheckboxChange(talent.id, !!checked)}
+                                    disabled={isInProject}
+                                />
+                                <label htmlFor={`talent-prod-${talent.id}`} className={cn("flex items-center gap-3 text-sm font-medium leading-none", isInProject ? "cursor-not-allowed" : "cursor-pointer")}>
+                                     <Avatar className="h-9 w-9">
+                                        <AvatarImage src={talent.photoURL} alt={talent.name} />
+                                        <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p>{talent.name}</p>
+                                        <p className="text-xs text-muted-foreground">{talent.role}</p>
+                                    </div>
+                                </label>
+                            </div>
+                        )
+                    })}
+                 </div>
+             </ScrollArea>
+             <DialogFooter>
+                 <Button onClick={() => onSelect(selectedIds)}>Adicionar Selecionados</Button>
+             </DialogFooter>
+        </div>
+    )
 }

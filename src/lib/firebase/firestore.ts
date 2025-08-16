@@ -1,3 +1,4 @@
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -405,7 +406,7 @@ export const getProjectDataForExport = async (projectId: string, projectType: Di
             return { type: 'creative', creativeProject, boardItems };
         }
         case 'storyboard': {
-            const storyboard = await getStoryboard(projectId);
+            const storyboard = await getStoryboard(storyboardId);
             if (!storyboard) throw new Error("Storyboard não encontrado.");
             const scenes = await getStoryboardScenes(storyboard.id);
             const panels = await getStoryboardPanels(storyboard.id);
@@ -530,20 +531,6 @@ export const deleteProductionAndDays = async (productionId: string) => {
 
   await batch.commit();
 };
-
-export const uploadProductionTeamMemberPhoto = async (file: File): Promise<string> => {
-  const userId = getUserId();
-  if (!userId) throw new Error("Usuário não autenticado.");
-  const timestamp = new Date().getTime();
-  const randomString = Math.random().toString(36).substring(2, 8);
-  const fileName = `${timestamp}-${randomString}-${file.name}`;
-  const filePath = `production_team_photos/${userId}/${fileName}`;
-  const storageRef = ref(storage, filePath);
-  
-  await uploadBytes(storageRef, file);
-  return await getDownloadURL(storageRef);
-};
-
 
 // === Shooting Day Functions ===
 
@@ -1526,7 +1513,7 @@ export const saveTalents = async (talents: Omit<Talent, 'file'>[]) => {
   });
 
   talents.forEach(talent => {
-    const talentRef = talent.id ? doc(collectionRef, talent.id) : doc(collectionRef);
+    const talentRef = doc(collectionRef, talent.id);
     const { id, ...dataToSave } = talent;
     batch.set(talentRef, { ...dataToSave, userId }, { merge: true });
   });
@@ -1588,6 +1575,7 @@ export const migrateTeamToTalentPool = async (): Promise<void> => {
 
     // Process legacy members, merging data if a more complete record is found
     combinedLegacyTeam.forEach(member => {
+        if (!member.name || !member.role) return;
         const key = `${member.name.trim().toLowerCase()}-${member.role.trim().toLowerCase()}`;
         if (!uniqueTalents.has(key)) {
             const newTalent: Talent = {
@@ -1710,7 +1698,8 @@ export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) =
     const batch = writeBatch(db);
 
     for (const legacy of legacyProjects) {
-        // Criar um novo projeto unificado para cada projeto legado
+        if (legacy.itemType === 'unified') continue;
+
         const unifiedProjectRef = doc(collection(db, 'unified_projects'));
         
         let financialProjectId: string | undefined;
@@ -1748,9 +1737,12 @@ export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) =
             creativeProjectId,
             storyboardProjectId,
         };
-        batch.set(unifiedProjectRef, unifiedProjectData);
         
-        // Atualizar o projeto legado para conter a referência ao novo projeto unificado
+        // This is safe to set because we ensure legacy.itemType is not 'unified'.
+        const validLegacyData = unifiedProjectData as any;
+        
+        batch.set(unifiedProjectRef, validLegacyData);
+        
         if (legacyProjectRef) {
             batch.update(legacyProjectRef, { unifiedProjectId: unifiedProjectRef.id });
         }
