@@ -111,11 +111,12 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                     <Link
                         key={tab.name}
                         href={tab.href}
-                        className={`group inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-3 text-sm font-bold transition-colors ${
-                        pathname.startsWith(tab.href)
-                            ? 'border-primary text-primary'
-                            : 'border-transparent text-foreground hover:border-primary hover:text-primary'
-                        }`}
+                        className={cn(
+                            'group inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-3 text-sm transition-colors',
+                            pathname.startsWith(tab.href)
+                            ? 'border-primary text-primary font-bold'
+                            : 'border-transparent text-foreground font-medium hover:border-primary hover:text-primary'
+                        )}
                     >
                         <tab.icon className="h-4 w-4" />
                         {tab.name}
