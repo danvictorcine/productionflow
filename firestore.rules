@@ -2,89 +2,103 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
 
+    // Regra Geral: Nega leitura e escrita por padrão para tudo.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Usuários podem ler seu próprio perfil e admins podem ler qualquer perfil.
     match /users/{userId} {
-      allow read, update, delete: if isOwner(userId);
-      allow create: if request.auth.uid == userId;
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow list: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    // Projetos (financeiro)
     match /projects/{projectId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     
+    // Transações
     match /transactions/{transactionId} {
-      allow read, write: if isOwner(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.userId);
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
+    // Produções (Ordem do Dia)
     match /productions/{productionId} {
-      allow read, write: if isOwner(resource.data.userId);
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     
+    // Ordens do Dia (Shooting Days)
     match /shooting_days/{dayId} {
-      allow read, write: if isOwner(resource.data.userId);
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
+    // Moodboards (Creative Projects)
     match /creative_projects/{projectId} {
-      allow read, write: if isOwner(resource.data.userId);
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-
+    
+    // Itens do Moodboard
     match /board_items/{itemId} {
-      allow read, write: if isOwner(resource.data.userId);
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
+    // Storyboards
     match /storyboards/{storyboardId} {
-      allow read, write: if isOwner(resource.data.userId);
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-
+    
+    // Cenas do Storyboard
     match /storyboard_scenes/{sceneId} {
-      allow read, write: if isOwner(resource.data.userId);
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-
+    
+    // Painéis do Storyboard
     match /storyboard_panels/{panelId} {
-      allow read, write: if isOwner(resource.data.userId);
-    }
-    
-    match /public_productions/{productionId} {
-      allow get;
-      allow list: if false; // List access is disabled for public collections
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    match /public_shooting_days/{dayId} {
-        allow get;
-        allow list: if false;
-    }
-
+    // Blog (Leitura pública, escrita apenas para admins)
     match /posts/{postId} {
-      allow read;
-      allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    match /pages/{pageId} {
-        allow read;
-        allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    match /teamMembers/{memberId} {
-        allow read;
-        allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    match /settings/{settingId} {
-        allow read;
-        allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    match /talents/{talentId} {
-      allow read, write: if isOwner(resource.data.userId);
+        allow read: if true;
+        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
     
-    match /unified_projects/{projectId} {
-        allow read, write: if isOwner(resource.data.userId);
+    // Páginas (Quem Somos, Contato, etc. - Leitura pública, escrita apenas para admins)
+    match /pages/{pageId} {
+      allow read: if true;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Membros da Equipe (página Quem Somos - Leitura pública, escrita apenas para admins)
+    match /teamMembers/{memberId} {
+        allow read: if true;
+        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Configurações do Tema e Limites (Leitura pública, escrita apenas para admins)
+    match /settings/{settingId} {
+       allow read: if true;
+       allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    // Compartilhamento Público
+    match /public_productions/{productionId} {
+      allow read: if true;
+    }
+    match /public_shooting_days/{dayId} {
+      allow read: if true;
+    }
+
+    // Banco de Talentos: Usuários podem gerenciar seus próprios talentos
+    match /talents/{talentId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Projetos Unificados
+    match /unified_projects/{projectId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
   }
 }
