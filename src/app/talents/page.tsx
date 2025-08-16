@@ -1,13 +1,13 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, PlusCircle, Trash2, Camera, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, PlusCircle, Trash2, Camera, User as UserIcon, AlertTriangle } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 import { AppFooter } from '@/components/app-footer';
@@ -15,7 +15,7 @@ import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import * as firestoreApi from '@/lib/firebase/firestore';
-import type { Talent } from '@/lib/types';
+import type { Talent, Production, Project } from '@/lib/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -52,6 +52,8 @@ function ManageTalentsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
+    const [isMigrating, setIsMigrating] = useState(false);
+    const [legacyTeamMembers, setLegacyTeamMembers] = useState<any[]>([]);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -68,21 +70,47 @@ function ManageTalentsPage() {
 
     const watchedTalents = watch('talents');
 
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [talents, productions, projects] = await Promise.all([
+                firestoreApi.getTalents(),
+                firestoreApi.getProductions(),
+                firestoreApi.getProjects(),
+            ]);
+            
+            form.reset({ talents });
+
+            const legacyProdTeam = productions.flatMap(p => p.team);
+            const legacyFinTeam = projects.flatMap(p => p.talents);
+            const combinedLegacy = [...legacyProdTeam, ...legacyFinTeam];
+
+            const uniqueLegacy = combinedLegacy.filter((member, index, self) =>
+                index === self.findIndex((t) => (
+                    t.name === member.name && t.role === member.role
+                ))
+            );
+            
+            const talentsInPool = new Set(talents.map(t => `${t.name}-${t.role}`));
+            const membersToMigrate = uniqueLegacy.filter(m => !talentsInPool.has(`${m.name}-${m.role}`));
+
+            setLegacyTeamMembers(membersToMigrate);
+
+        } catch (error) {
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao carregar talentos',
+                description: <CopyableError userMessage="Não foi possível carregar os dados." errorCode={errorTyped.code || errorTyped.message} />,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        firestoreApi.getTalents()
-            .then(talents => {
-                form.reset({ talents });
-            })
-            .catch((error) => {
-                const errorTyped = error as { code?: string; message: string };
-                toast({
-                    variant: 'destructive',
-                    title: 'Erro ao carregar talentos',
-                    description: <CopyableError userMessage="Não foi possível carregar os dados." errorCode={errorTyped.code || errorTyped.message} />,
-                });
-            })
-            .finally(() => setIsLoading(false));
-    }, [form, toast]);
+        fetchData();
+    }, []);
 
     const handlePhotoUpload = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files?.[0]) return;
@@ -131,6 +159,27 @@ function ManageTalentsPage() {
             setIsSaving(false);
         }
     }
+    
+    const handleMigration = async () => {
+        setIsMigrating(true);
+        try {
+            await firestoreApi.migrateTeamToTalentPool();
+            toast({
+                title: 'Migração Concluída!',
+                description: 'Todas as equipes dos seus projetos foram adicionadas ao Banco de Talentos.',
+            });
+            await fetchData(); // Refresh data after migration
+        } catch (error) {
+             const errorTyped = error as { code?: string; message: string };
+             toast({
+                variant: 'destructive',
+                title: 'Erro na Migração',
+                description: <CopyableError userMessage="Não foi possível migrar as equipes." errorCode={errorTyped.code || errorTyped.message} />,
+            });
+        } finally {
+            setIsMigrating(false);
+        }
+    }
 
     if (isLoading) {
         return (
@@ -166,6 +215,21 @@ function ManageTalentsPage() {
                             Adicione, remova e edite os contatos da sua equipe. Estes contatos estarão disponíveis para serem selecionados em todos os seus projetos, tanto no financeiro quanto na ordem do dia.
                           </AlertDescription>
                         </Alert>
+                        
+                         {legacyTeamMembers.length > 0 && (
+                            <Alert variant="default" className="border-amber-500/50 text-amber-900 dark:text-amber-300 [&>svg]:text-amber-500">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>Migração de Equipes</AlertTitle>
+                                <AlertDescription className="text-amber-700 dark:text-amber-400">
+                                    Encontramos {legacyTeamMembers.length} membro(s) de equipe em seus projetos antigos que ainda não estão no Banco de Talentos. Clique para importá-los.
+                                </AlertDescription>
+                                <Button type="button" onClick={handleMigration} disabled={isMigrating} className="mt-3 bg-amber-500 hover:bg-amber-600 text-white">
+                                    {isMigrating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    Migrar Equipes Antigas
+                                </Button>
+                            </Alert>
+                        )}
+
                         <div className="space-y-4">
                             {fields.map((field, index) => {
                                 const photoURL = watchedTalents[index]?.photoURL;

@@ -1527,7 +1527,8 @@ export const saveTalents = async (talents: Omit<Talent, 'file'>[]) => {
 
   talents.forEach(talent => {
     const talentRef = doc(collectionRef, talent.id);
-    batch.set(talentRef, { ...talent, userId }, { merge: true });
+    const { id, ...dataToSave } = talent;
+    batch.set(talentRef, { ...dataToSave, userId }, { merge: true });
   });
 
   await batch.commit();
@@ -1544,6 +1545,62 @@ export const uploadTalentPhoto = async (file: File): Promise<string> => {
   
   await uploadBytes(storageRef, file);
   return await getDownloadURL(storageRef);
+};
+
+export const migrateTeamToTalentPool = async (): Promise<void> => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
+
+    const [productions, projects, existingTalents] = await Promise.all([
+        getProductions(),
+        getProjects(),
+        getTalents()
+    ]);
+    
+    const legacyProdTeam: Talent[] = productions.flatMap(p => p.team);
+    const legacyFinTeam: Talent[] = projects.flatMap(p => p.talents);
+    const combinedLegacyTeam: Talent[] = [...legacyProdTeam, ...legacyFinTeam];
+
+    const uniqueTalents = new Map<string, Talent>();
+
+    // Prioritize existing talents
+    existingTalents.forEach(talent => {
+        const key = `${talent.name.trim().toLowerCase()}-${talent.role.trim().toLowerCase()}`;
+        if (!uniqueTalents.has(key)) {
+            uniqueTalents.set(key, talent);
+        }
+    });
+
+    // Process legacy members, merging data if a more complete record is found
+    combinedLegacyTeam.forEach(member => {
+        const key = `${member.name.trim().toLowerCase()}-${member.role.trim().toLowerCase()}`;
+        if (!uniqueTalents.has(key)) {
+            uniqueTalents.set(key, member);
+        } else {
+            // Merge info: if existing entry is missing info that the new one has, add it.
+            const existing = uniqueTalents.get(key)!;
+            if (!existing.contact && member.contact) existing.contact = member.contact;
+            if (!existing.photoURL && member.photoURL) existing.photoURL = member.photoURL;
+            if (existing.hasDietaryRestriction === undefined && member.hasDietaryRestriction !== undefined) {
+                 existing.hasDietaryRestriction = member.hasDietaryRestriction;
+                 existing.dietaryRestriction = member.dietaryRestriction;
+            }
+             if (!existing.extraNotes && member.extraNotes) existing.extraNotes = member.extraNotes;
+        }
+    });
+
+    const talentsToSave = Array.from(uniqueTalents.values()).map(t => {
+        // Ensure every talent has a proper ID for saving
+        if (!t.id || t.id.startsWith('new-')) {
+          t.id = doc(collection(db, 'talents')).id;
+        }
+        return t;
+    });
+
+    if (talentsToSave.length > 0) {
+        // Use saveTalents which handles batch writing and deletion logic if needed in future
+        await saveTalents(talentsToSave);
+    }
 };
 
 
