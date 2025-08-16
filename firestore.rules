@@ -3,72 +3,116 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if the user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of the document
+    // Helper function to check ownership
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
 
-    // Rule for the users collection
+    // === User Profiles ===
     match /users/{userId} {
-      // Users can only read their own profile, admins can read any profile
-      allow read: if isOwner(userId) || isOwner(request.resource.data.uid) || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-      // Users can only create and update their own profile
-      allow create, update: if isOwner(userId);
-    }
-    
-    // Rule for settings collection (used for theme, beta limits, etc.)
-    match /settings/{docId} {
-        // Allow anyone to read settings (like theme)
-        allow read: if true;
-        // Only admins can write to settings
-        allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow read;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
     }
 
-    // Rules for all project-related collections
-    match /{collection}/{docId} {
-      allow read, write: if isAuthenticated() && isOwner(resource.data.userId);
+    // === Unified Projects (New Structure) ===
+    match /unified_projects/{projectId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+      allow update: if isOwner(resource.data.userId);
     }
     
-    // Rules for public-facing data (shared productions and shooting days)
+    // === Talent Pool ===
+    match /talents/{talentId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+      allow update: if isOwner(resource.data.userId);
+    }
+
+    // === Legacy Financial Projects ===
+    match /projects/{projectId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      // Deny new creations in the old collection
+      allow create: if false;
+      // Allow update ONLY to link to a unified project during migration
+      allow update: if isOwner(resource.data.userId) && request.resource.data.keys().hasOnly(['unifiedProjectId']);
+    }
+
+    // === Legacy Financial Transactions ===
+    match /transactions/{transactionId} {
+      allow read, write: if isOwner(request.auth.uid);
+    }
+
+    // === Legacy Productions (Call Sheets) ===
+    match /productions/{productionId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if false;
+      allow update: if isOwner(resource.data.userId) && request.resource.data.keys().hasOnly(['unifiedProjectId']);
+    }
+    
+    // === Legacy Creative Projects (Moodboards) ===
+    match /creative_projects/{projectId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if false;
+      allow update: if isOwner(resource.data.userId) && request.resource.data.keys().hasOnly(['unifiedProjectId']);
+    }
+    
+    // === Legacy Storyboards ===
+    match /storyboards/{storyboardId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if false;
+      allow update: if isOwner(resource.data.userId) && request.resource.data.keys().hasOnly(['unifiedProjectId']);
+    }
+
+    // === Sub-collections ===
+    match /{path=**}/shooting_days/{dayId} {
+      allow read, write: if isOwner(request.auth.uid);
+    }
+    
+    match /{path=**}/board_items/{itemId} {
+      allow read, write: if isOwner(request.auth.uid);
+    }
+    
+    match /{path=**}/storyboard_scenes/{sceneId} {
+      allow read, write: if isOwner(request.auth.uid);
+    }
+    
+    match /{path=**}/storyboard_panels/{panelId} {
+      allow read, write: if isOwner(request.auth.uid);
+    }
+    
+    // === Public, Read-Only Data ===
     match /public_productions/{productionId} {
-      allow read: if true;
-      allow write: if isAuthenticated() && isOwner(request.resource.data.userId);
+        allow get;
+        allow list, write: if false;
     }
     
     match /public_shooting_days/{dayId} {
-        allow read: if true;
-        allow write: if isAuthenticated() && isOwner(request.resource.data.day.userId);
+        allow get;
+        allow list, write: if false;
     }
     
-    // Rules for blog posts
+    // === Blog & Static Page Content ===
     match /posts/{postId} {
-        allow read: if true; // Everyone can read posts
-        allow create, update, delete: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow read;
+      allow create, update, delete: if isOwner(request.auth.uid) && request.auth.token.isAdmin == true;
     }
-    
-    // Rules for static pages content (about, contact, etc.)
+
     match /pages/{pageId} {
-        allow read: if true;
-        allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow read;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
     }
     
-     // Rules for the "teamMembers" collection (for the "About Us" page)
+    // === Team Members for "About" Page ===
     match /teamMembers/{memberId} {
-      allow read: if true; // Everyone can read team members
-      // Only admins can create, update, or delete team members
-      allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow read;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
     }
-
-    // Rules for the global "talents" collection
-    match /talents/{talentId} {
-      // User can only interact with their own talents.
-      allow read, create, update, delete: if isOwner(request.resource.data.userId);
+    
+    // === General Settings (Theme, Beta Limits) ===
+    match /settings/{settingId} {
+      allow read;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
     }
-
   }
 }
