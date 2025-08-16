@@ -16,6 +16,7 @@ import {
   Folder,
   AlertTriangle,
   Loader2,
+  Users,
 } from 'lucide-react';
 
 import type { Project, Production, CreativeProject, Storyboard, UnifiedProject, DisplayableItem } from '@/lib/types';
@@ -55,11 +56,13 @@ import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { AppFooter } from '@/components/app-footer';
 import { Alert } from '@/components/ui/alert';
+import { useRouter } from 'next/navigation';
 
 
 function HomePage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [items, setItems] = useState<DisplayableItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -367,6 +370,10 @@ function HomePage() {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <Button onClick={() => router.push('/talents')} size="sm" variant="ghost">
+            <Users className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Banco de Talentos</span>
+          </Button>
           <Button onClick={() => setIsUnifiedProjectDialogOpen(true)} size="sm" variant="ghost">
             <PlusCircle className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Criar Novo</span>

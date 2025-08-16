@@ -66,20 +66,6 @@ export default function AdminDashboard() {
                             </CardContent>
                         </Card>
                     </Link>
-                    <Link href="/admin/talents" className="block">
-                        <Card className="hover:bg-muted/50 transition-colors h-full">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Users className="h-5 w-5 text-primary"/>
-                                    Banco de Talentos
-                                </CardTitle>
-                                <CardDescription>Gerencie sua equipe e contatos de forma centralizada para usar em todos os projetos.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Button>Acessar</Button>
-                            </CardContent>
-                        </Card>
-                    </Link>
                 </div>
             </main>
             <AppFooter />

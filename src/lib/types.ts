@@ -11,15 +11,26 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
 
 export type ExpenseCategory = string;
 
+// Este tipo agora é usado para o Banco de Talentos GLOBAL
+// e também para a equipe dentro de um projeto financeiro.
 export type Talent = {
   id: string;
   name: string;
   role: string;
-  paymentType: 'fixed' | 'daily';
-  fee?: number; // For fixed payment
-  dailyRate?: number; // For daily payment
-  days?: number; // For daily payment
+  paymentType?: 'fixed' | 'daily';
+  fee?: number; 
+  dailyRate?: number; 
+  days?: number; 
+  photoURL?: string;
+  contact?: string;
+  // Campos adicionais que estavam em TeamMember
+  hasDietaryRestriction?: boolean;
+  dietaryRestriction?: string;
+  extraNotes?: string;
+  // Campo para upload
+  file?: File;
 };
+
 
 export type Installment = {
   id: string;
