@@ -1,3 +1,4 @@
+
 // @/src/components/create-edit-production-dialog.tsx
 "use client";
 
@@ -415,8 +416,8 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
             await firestoreApi.saveTalents([talentToSave]);
             toast({ title: "Talento criado com sucesso!" });
             form.reset();
-            setView('select');
             onTalentCreated(); // Refreshes the talent pool
+            setView('select'); // Switch back to select view
         } catch (error) {
             toast({ variant: 'destructive', title: "Erro", description: "Não foi possível criar o novo talento." });
         }
