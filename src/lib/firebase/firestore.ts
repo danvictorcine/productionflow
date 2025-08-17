@@ -1496,6 +1496,21 @@ export const getTalents = async (): Promise<Talent[]> => {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Talent);
 };
 
+export const addTalent = async (talent: Omit<Talent, 'id'>): Promise<string> => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
+    const talentRef = doc(collection(db, 'talents'));
+    const dataToSave: Record<string, any> = {};
+    for (const key in talent) {
+        if ((talent as any)[key] !== undefined) {
+            dataToSave[key] = (talent as any)[key];
+        }
+    }
+    await setDoc(talentRef, { ...dataToSave, userId }, { merge: true });
+    return talentRef.id;
+};
+
+
 export const saveTalents = async (talents: Omit<Talent, 'file'>[]) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
