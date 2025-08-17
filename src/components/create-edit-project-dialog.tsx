@@ -151,13 +151,16 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
     },
   });
   
-  const { formState: { errors }, control, setValue } = form;
+  const { formState: { errors }, control } = form;
   
   const fetchTalents = async () => {
-    firestoreApi.getTalents()
-        .then(setTalentPool)
-        .catch(() => toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." }));
-  }
+    try {
+        const talents = await firestoreApi.getTalents();
+        setTalentPool(talents);
+    } catch (error) {
+        toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." });
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -186,7 +189,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
 
       fetchTalents();
     }
-  }, [isOpen, isEditMode, project, form, toast]);
+  }, [isOpen, isEditMode, project, form]);
   
   const { fields: talentFields, append: appendTalent, remove: removeTalent } = useFieldArray({
     control: form.control,
@@ -569,7 +572,7 @@ type NewTalentFormValues = z.infer<typeof newTalentFormSchema>;
 
 function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated }: { 
     talentPool: Talent[], 
-    selectedTalents: (Talent & {id: string})[], // react-hook-form's `fields` have a specific id
+    selectedTalents: Talent[],
     onSelect: (ids: string[]) => void,
     onTalentCreated: () => void 
 }) {
@@ -601,8 +604,8 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
             await firestoreApi.saveTalents([talentToSave]);
             toast({ title: "Talento criado com sucesso!" });
             form.reset();
-            onTalentCreated(); // Refreshes the talent pool
-            setView('select'); // Switch back to select view
+            onTalentCreated(); 
+            setView('select'); 
         } catch (error) {
             toast({ variant: 'destructive', title: "Erro", description: "Não foi possível criar o novo talento." });
         }

@@ -95,9 +95,12 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
   });
   
   const fetchTalents = async () => {
-    firestoreApi.getTalents()
-        .then(setTalentPool)
-        .catch(() => toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." }));
+    try {
+        const talents = await firestoreApi.getTalents();
+        setTalentPool(talents);
+    } catch (error) {
+        toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." });
+    }
   }
 
   useEffect(() => {
@@ -125,7 +128,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
       
       fetchTalents();
     }
-  }, [isOpen, isEditMode, production, form, toast]);
+  }, [isOpen, isEditMode, production, form]);
   
 
   const handleSubmit = (values: ProductionFormValues) => {
@@ -384,7 +387,7 @@ type NewTalentFormValues = z.infer<typeof newTalentFormSchema>;
 
 function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }: { 
     talentPool: Talent[], 
-    selectedTeam: (TeamMember & { id: string })[], 
+    selectedTeam: TeamMember[], 
     onSelect: (ids: string[]) => void,
     onTalentCreated: () => void 
 }) {
@@ -416,8 +419,8 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
             await firestoreApi.saveTalents([talentToSave]);
             toast({ title: "Talento criado com sucesso!" });
             form.reset();
-            onTalentCreated(); // Refreshes the talent pool
-            setView('select'); // Switch back to select view
+            onTalentCreated();
+            setView('select');
         } catch (error) {
             toast({ variant: 'destructive', title: "Erro", description: "Não foi possível criar o novo talento." });
         }
