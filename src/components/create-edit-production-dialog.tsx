@@ -149,7 +149,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-2xl flex flex-col">
+      <SheetContent className="sm:max-w-2xl flex flex-col z-[9998]">
         <SheetHeader>
           <SheetTitle>{isEditMode ? "Editar Produção" : "Criar Nova Produção"}</SheetTitle>
           <SheetDescription>

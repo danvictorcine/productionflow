@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm, useFieldArray } from "react-hook-form";
@@ -227,7 +228,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-2xl flex flex-col">
+      <SheetContent className="sm:max-w-2xl flex flex-col z-[9998]">
         <SheetHeader>
           <SheetTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</SheetTitle>
           <SheetDescription>
