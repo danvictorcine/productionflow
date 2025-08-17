@@ -573,14 +573,14 @@ function TalentSelector({ talentPool, selectedTalents, onSelect }: { talentPool:
                      {talentPool.map(talent => {
                         const isInProject = selectedTalents.some(t => t.id === talent.id);
                         return (
-                            <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50")}>
+                            <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50 cursor-not-allowed")}>
                                 <Checkbox
                                     id={`talent-${talent.id}`}
                                     checked={selectedIds.includes(talent.id)}
                                     onCheckedChange={(checked) => handleCheckboxChange(talent.id, !!checked)}
                                     disabled={isInProject}
                                 />
-                                <label htmlFor={`talent-${talent.id}`} className={cn("flex items-center gap-3 text-sm font-medium leading-none", isInProject ? "cursor-not-allowed" : "cursor-pointer")}>
+                                <label htmlFor={`talent-${talent.id}`} className={cn("flex items-center gap-3 text-sm font-medium leading-none w-full", isInProject ? "cursor-not-allowed" : "cursor-pointer")}>
                                      <Avatar className="h-9 w-9">
                                         <AvatarImage src={talent.photoURL} alt={talent.name} />
                                         <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
