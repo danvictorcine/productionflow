@@ -1,4 +1,5 @@
 
+
 // @/src/components/create-edit-production-dialog.tsx
 "use client";
 
@@ -94,6 +95,12 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
     name: "team",
   });
   
+  const fetchTalents = async () => {
+    firestoreApi.getTalents()
+        .then(setTalentPool)
+        .catch(() => toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." }));
+  }
+
   useEffect(() => {
     if (isOpen) {
       const defaultValues = isEditMode
@@ -116,10 +123,8 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
             team: [],
           };
       form.reset(defaultValues);
-
-      firestoreApi.getTalents()
-        .then(setTalentPool)
-        .catch(() => toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." }));
+      
+      fetchTalents();
     }
   }, [isOpen, isEditMode, production, form, toast]);
   
@@ -352,6 +357,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                                 talentPool={talentPool}
                                 selectedTeam={teamFields}
                                 onSelect={handleSelectTalents}
+                                onTalentCreated={fetchTalents}
                             />
                          </DialogContent>
                        </Dialog>
@@ -371,15 +377,70 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
 }
 
 
-function TalentSelector({ talentPool, selectedTeam, onSelect }: { talentPool: Talent[], selectedTeam: TeamMember[], onSelect: (ids: string[]) => void }) {
+const newTalentFormSchema = z.object({
+  name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
+  role: z.string().min(2, { message: "A função deve ter pelo menos 2 caracteres." }),
+});
+type NewTalentFormValues = z.infer<typeof newTalentFormSchema>;
+
+function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }: { 
+    talentPool: Talent[], 
+    selectedTeam: (TeamMember & { id: string })[], 
+    onSelect: (ids: string[]) => void,
+    onTalentCreated: () => void 
+}) {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [view, setView] = useState<'select' | 'create'>('select');
+    const { toast } = useToast();
     
+    const form = useForm<NewTalentFormValues>({
+        resolver: zodResolver(newTalentFormSchema),
+        defaultValues: { name: "", role: "" },
+    });
+
     const handleCheckboxChange = (id: string, checked: boolean) => {
         if (checked) {
             setSelectedIds(prev => [...prev, id]);
         } else {
             setSelectedIds(prev => prev.filter(sid => sid !== id));
         }
+    }
+    
+    const handleCreateNewTalent = async (values: NewTalentFormValues) => {
+        const newTalentId = crypto.randomUUID();
+        const talentToSave: Talent = {
+            id: newTalentId,
+            name: values.name,
+            role: values.role,
+        };
+        try {
+            await firestoreApi.saveTalents([talentToSave]);
+            toast({ title: "Talento criado com sucesso!" });
+            form.reset();
+            setView('select');
+            onTalentCreated(); // Refreshes the talent pool
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Erro", description: "Não foi possível criar o novo talento." });
+        }
+    };
+
+    if (view === 'create') {
+        return (
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleCreateNewTalent)} className="space-y-4">
+                    <FormField control={form.control} name="name" render={({ field }) => (
+                        <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="role" render={({ field }) => (
+                        <FormItem><FormLabel>Função Padrão</FormLabel><FormControl><Input placeholder="Ex: Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={() => setView('select')}>Cancelar</Button>
+                        <Button type="submit">Salvar Talento</Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        );
     }
     
     return (
@@ -411,7 +472,10 @@ function TalentSelector({ talentPool, selectedTeam, onSelect }: { talentPool: Ta
                     })}
                  </div>
              </ScrollArea>
-             <DialogFooter>
+             <DialogFooter className="justify-between">
+                 <Button type="button" variant="outline" onClick={() => setView('create')}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Criar Novo
+                 </Button>
                  <Button onClick={() => onSelect(selectedIds)}>Adicionar Selecionados</Button>
              </DialogFooter>
         </div>
