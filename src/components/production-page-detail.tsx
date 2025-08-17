@@ -32,6 +32,7 @@ import { TeamAndCastSection } from '@/components/team-and-cast-section';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CopyableError } from './copyable-error';
 
 type ProcessedShootingDay = ShootingDay;
 
@@ -87,7 +88,12 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
       setIsProductionDialogOpen(false);
       toast({ title: 'Produção atualizada com sucesso!' });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao atualizar produção.' });
+      const errorTyped = error as { code?: string; message: string };
+      toast({ 
+          variant: 'destructive', 
+          title: 'Erro ao Atualizar Produção',
+          description: <CopyableError userMessage="Não foi possível salvar a produção." errorCode={errorTyped.code || 'UNKNOWN_UPDATE_ERROR'} />
+      });
     }
   };
 

@@ -478,11 +478,25 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
     throw new Error("Permission denied to update this production.");
   }
   
-  const batch = writeBatch(db);
-  batch.update(productionRef, data);
-
+  // Clean undefined fields from team members to prevent Firestore errors
+  const cleanedData: Record<string, any> = { ...data };
   if (data.team) {
-    const updatedTeamMap = new Map(data.team.map(member => [member.id, member]));
+    cleanedData.team = data.team.map(member => {
+        const cleanedMember: Record<string, any> = {};
+        for (const key in member) {
+            if ((member as any)[key] !== undefined) {
+                cleanedMember[key] = (member as any)[key];
+            }
+        }
+        return cleanedMember;
+    });
+  }
+
+  const batch = writeBatch(db);
+  batch.update(productionRef, cleanedData);
+
+  if (cleanedData.team) {
+    const updatedTeamMap = new Map(cleanedData.team.map((member: TeamMember) => [member.id, member]));
     const daysQuery = query(collection(db, 'shooting_days'), where('productionId', '==', productionId), where('userId', '==', userId));
     const daysSnapshot = await getDocs(daysQuery);
 
