@@ -343,7 +343,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                               Adicionar Talento do Banco
                            </Button>
                          </DialogTrigger>
-                         <DialogContent className="sm:max-w-[425px]">
+                         <DialogContent className="sm:max-w-[425px] z-[9999]">
                             <DialogHeader>
                                 <DialogTitle>Selecionar Talentos</DialogTitle>
                                 <DialogDescription>Selecione os talentos do seu banco de contatos para adicionar à equipe desta produção.</DialogDescription>
@@ -371,7 +371,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
 }
 
 
-function TalentSelector({ talentPool, selectedTeam, onSelect }: { talentPool: Talent[], selectedTeam: any[], onSelect: (ids: string[]) => void }) {
+function TalentSelector({ talentPool, selectedTeam, onSelect }: { talentPool: Talent[], selectedTeam: TeamMember[], onSelect: (ids: string[]) => void }) {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     
     const handleCheckboxChange = (id: string, checked: boolean) => {

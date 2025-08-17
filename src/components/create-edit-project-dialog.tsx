@@ -528,7 +528,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                               Adicionar Talento do Banco
                            </Button>
                          </DialogTrigger>
-                         <DialogContent className="sm:max-w-[425px]">
+                         <DialogContent className="sm:max-w-[425px] z-[9999]">
                             <DialogHeader>
                                 <DialogTitle>Selecionar Talentos</DialogTitle>
                                 <DialogDescription>Selecione os talentos do seu banco de contatos para adicionar ao projeto.</DialogDescription>
@@ -555,7 +555,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
   );
 }
 
-function TalentSelector({ talentPool, selectedTalents, onSelect }: { talentPool: Talent[], selectedTalents: any[], onSelect: (ids: string[]) => void }) {
+function TalentSelector({ talentPool, selectedTalents, onSelect }: { talentPool: Talent[], selectedTalents: Talent[], onSelect: (ids: string[]) => void }) {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     
     const handleCheckboxChange = (id: string, checked: boolean) => {
