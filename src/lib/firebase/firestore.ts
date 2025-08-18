@@ -102,6 +102,12 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
   }
   
   const dataToUpdate: Record<string, any> = { ...projectData };
+  if (projectData.talents) {
+    dataToUpdate.talents = projectData.talents.map(talent => {
+        const { file, ...rest } = talent;
+        return rest;
+    });
+  }
   if (projectData.installments) {
     dataToUpdate.installments = projectData.installments.map(inst => ({
       ...inst,
@@ -1543,30 +1549,18 @@ export const deleteTalent = async (talentId: string): Promise<void> => {
     const userId = getUserId();
     if (!userId) throw new Error("Usuário não autenticado.");
 
-    // Check if talent is used in any productions
-    const productionsQuery = query(collection(db, 'productions'), where('userId', '==', userId), where('team', 'array-contains', { id: talentId }));
-    const productionsSnapshot = await getDocs(productionsQuery);
-    if (!productionsSnapshot.empty) {
-        throw new Error("Este talento não pode ser excluído pois está em uso em uma ou mais produções.");
-    }
-
-    // Check if talent is used in any financial projects
-    const projectsQuery = query(collection(db, 'projects'), where('userId', '==', userId), where('talents', 'array-contains', { id: talentId }));
-    const projectsSnapshot = await getDocs(projectsQuery);
-    if (!projectsSnapshot.empty) {
-        throw new Error("Este talento não pode ser excluído pois está em uso em um ou mais projetos financeiros.");
-    }
-    
-    // If not in use, proceed with deletion
-    const talentRef = doc(db, 'talents', talentId);
-    
-    // The security rules should be sufficient, but we can double check ownership here if needed
+    const talentRef = doc(db, "talents", talentId);
     const talentDoc = await getDoc(talentRef);
-    if (talentDoc.exists() && talentDoc.data().userId === userId) {
-        await deleteDoc(talentRef);
-    } else {
+
+    if (!talentDoc.exists() || talentDoc.data().userId !== userId) {
         throw new Error("Permission denied or talent not found.");
     }
+
+    if (talentDoc.data().photoURL) {
+      await deleteImageFromUrl(talentDoc.data().photoURL);
+    }
+    
+    await deleteDoc(talentRef);
 };
 
 export const uploadTalentPhoto = async (file: File): Promise<string> => {
@@ -1796,3 +1790,4 @@ export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) =
     
     await batch.commit();
 }
+    
