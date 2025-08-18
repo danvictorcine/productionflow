@@ -1,3 +1,4 @@
+
 // @/src/components/storyboard-page-detail.tsx
 'use client';
 
@@ -329,8 +330,8 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
 
     return (
         <DndProvider backend={dndBackend}>
-            <div className="flex flex-col h-full w-full bg-muted/40 overflow-hidden">
-                <div className="bg-background border-b z-30 shrink-0 p-2">
+            <div className="flex flex-col h-full w-full bg-muted/40">
+                <div className="bg-background border-b z-10 shrink-0 p-2">
                      <div className="flex items-center gap-1">
                         <Button onClick={() => { setEditingScene(null); setIsSceneDialogOpen(true); }} variant="ghost" size="sm">
                             <PlusCircle className="h-4 w-4 md:mr-2" />

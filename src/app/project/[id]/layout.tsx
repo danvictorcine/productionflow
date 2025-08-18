@@ -33,6 +33,7 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     
     const isCreativePage = pathname.includes('/creative');
+    const isStoryboardPage = pathname.includes('/storyboard');
 
     useEffect(() => {
         if (!projectId || !user) return;
@@ -85,7 +86,7 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className={cn("flex flex-col w-full bg-background", isCreativePage ? "h-screen" : "min-h-screen")}>
+        <div className={cn("flex flex-col w-full bg-background", (isCreativePage || isStoryboardPage) ? "h-screen" : "min-h-screen")}>
             <header className="sticky top-0 z-40 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6 shrink-0">
                 <Link href="/" className="flex items-center gap-2" aria-label="Voltar para Projetos">
                     <Button variant="outline" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
@@ -131,11 +132,11 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                 </div>
             </nav>
 
-            <main className={cn("flex-1", isCreativePage && "overflow-hidden")}>
+            <main className={cn("flex-1", (isCreativePage || isStoryboardPage) && "overflow-hidden")}>
                 {children}
             </main>
             
-            {!isCreativePage && <AppFooter />}
+            {!(isCreativePage || isStoryboardPage) && <AppFooter />}
 
             <CreateEditUnifiedProjectDialog
                 isOpen={isEditDialogOpen}
