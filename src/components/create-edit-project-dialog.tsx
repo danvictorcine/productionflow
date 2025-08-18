@@ -587,9 +587,11 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
     });
     
     const filteredTalentPool = useMemo(() => {
-        return talentPool.filter(talent => 
-            talent.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        return talentPool
+            .filter(talent => 
+                talent.name.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .sort((a, b) => a.name.localeCompare(b.name));
     }, [talentPool, searchTerm]);
 
     const handleCheckboxChange = (id: string, checked: boolean) => {

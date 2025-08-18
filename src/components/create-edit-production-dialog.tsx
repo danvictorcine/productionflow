@@ -402,9 +402,11 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
     });
     
     const filteredTalentPool = useMemo(() => {
-        return talentPool.filter(talent => 
-            talent.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        return talentPool
+            .filter(talent => 
+                talent.name.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .sort((a, b) => a.name.localeCompare(b.name));
     }, [talentPool, searchTerm]);
 
     const handleCheckboxChange = (id: string, checked: boolean) => {
@@ -475,7 +477,7 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
                                 />
                                 <label htmlFor={`talent-prod-${talent.id}`} className={cn("flex items-center gap-3 text-sm font-medium leading-none w-full", isInProject ? "cursor-not-allowed" : "cursor-pointer")}>
                                      <Avatar className="h-9 w-9">
-                                        <AvatarImage src={talent.photoURL} alt={talent.name} />
+                                        <AvatarImage src={talent.photoURL || undefined} alt={talent.name} />
                                         <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
                                     </Avatar>
                                     <div>
