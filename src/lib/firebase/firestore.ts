@@ -1505,7 +1505,7 @@ export const saveBetaLimits = async (limits: BetaLimits) => {
 export const getTalents = async (): Promise<Talent[]> => {
   const userId = getUserId();
   if (!userId) return [];
-  const q = query(collection(db, 'talents'), where('userId', '==', userId), orderBy('name', 'asc'));
+  const q = query(collection(db, 'talents'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Talent);
 };

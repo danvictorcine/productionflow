@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
@@ -77,7 +77,7 @@ function ManageTalentsPage() {
         },
     });
 
-    const { control, handleSubmit, setValue, watch, trigger, formState: { dirtyFields, isSubmitting } } = form;
+    const { control, handleSubmit, setValue, watch, trigger, formState: { dirtyFields, isSubmitting }, getValues } = form;
     const { fields, prepend, remove } = useFieldArray({
         control,
         name: "talents",
@@ -85,7 +85,7 @@ function ManageTalentsPage() {
 
     const watchedTalents = watch('talents');
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
             const [talents, productions, projects] = await Promise.all([
@@ -94,6 +94,8 @@ function ManageTalentsPage() {
                 firestoreApi.getProjects(),
             ]);
             
+            // Sort talents by name client-side
+            talents.sort((a, b) => a.name.localeCompare(b.name));
             form.reset({ talents });
 
             const legacyProdTeam = productions.flatMap(p => p.team || []);
@@ -121,11 +123,12 @@ function ManageTalentsPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [form, toast]);
+
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
     const handlePhotoUpload = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files?.[0]) return;
@@ -161,16 +164,19 @@ function ManageTalentsPage() {
     async function onSaveTalent(index: number) {
         setIsSaving(prev => ({ ...prev, [index]: true }));
         const talentData = watch(`talents.${index}`);
+        
+        const isFormValid = await trigger(`talents.${index}`);
+        if (!isFormValid) {
+            toast({ variant: 'destructive', title: "Erro de Validação", description: "Por favor, corrija os erros antes de salvar."});
+            setIsSaving(prev => ({ ...prev, [index]: false }));
+            return;
+        }
+
         const { file, ...dataToSave } = talentData;
 
         try {
             await firestoreApi.saveSingleTalent(dataToSave);
-            // Reset the specific dirty fields for this talent
-            const fieldsToReset = Object.keys(dirtyFields.talents?.[index] || {});
-            fieldsToReset.forEach(fieldName => {
-                setValue(`talents.${index}.${fieldName as keyof Talent}`, getValues(`talents.${index}.${fieldName as keyof Talent}`), { shouldDirty: false });
-            });
-            form.reset(watch(), { keepValues: true }); // Resets dirty state globally but keeps values
+            form.reset(watch(), { keepValues: true, keepDirty: false });
             toast({ title: `${dataToSave.name} salvo com sucesso!` });
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
@@ -328,7 +334,7 @@ function ManageTalentsPage() {
             </header>
             <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                  <Form {...form}>
-                    <div className="space-y-8">
+                    <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
                         <Alert>
                           <UserIcon className="h-4 w-4" />
                           <AlertTitle>Gerenciando seu Banco de Talentos</AlertTitle>
@@ -381,7 +387,7 @@ function ManageTalentsPage() {
                                     .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
                             </div>
                         </div>
-                    </div>
+                    </form>
                 </Form>
                  <AlertDialog open={!!talentToDelete} onOpenChange={(open) => !open && setTalentToDelete(null)}>
                     <AlertDialogContent>
