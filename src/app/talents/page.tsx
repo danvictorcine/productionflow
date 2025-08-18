@@ -7,7 +7,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, PlusCircle, Trash2, Camera, User as UserIcon, AlertTriangle, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Loader2, PlusCircle, Trash2, Camera, User as UserIcon, AlertTriangle, ChevronDown, Search } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 import { AppFooter } from '@/components/app-footer';
@@ -55,6 +55,7 @@ function ManageTalentsPage() {
     const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
     const [isMigrating, setIsMigrating] = useState(false);
     const [legacyTeamMembers, setLegacyTeamMembers] = useState<any[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -184,6 +185,18 @@ function ManageTalentsPage() {
         }
     }
 
+    const filteredFields = useMemo(() => {
+        if (!searchTerm) {
+            return fields.map((field, index) => ({ field, originalIndex: index }));
+        }
+        return fields
+            .map((field, index) => ({ field, originalIndex: index }))
+            .filter(({ originalIndex }) =>
+                watchedTalents[originalIndex]?.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+    }, [searchTerm, fields, watchedTalents]);
+
+
     if (isLoading) {
         return (
              <div className="p-8 space-y-4">
@@ -192,6 +205,63 @@ function ManageTalentsPage() {
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-10 w-24" />
             </div>
+        );
+    }
+    
+    const renderTalentCard = (field: any, originalIndex: number) => {
+        const photoURL = watchedTalents[originalIndex]?.photoURL;
+        const file = watchedTalents[originalIndex]?.file;
+        let previewUrl = photoURL;
+        if (file && !photoURL?.startsWith('https://firebasestorage')) {
+            previewUrl = URL.createObjectURL(file);
+        }
+        const hasRestriction = watch(`talents.${originalIndex}.hasDietaryRestriction`);
+        
+        return (
+            <Accordion type="single" collapsible key={field.id} className="w-full">
+                <AccordionItem value={field.id} className="border-b-0">
+                    <div className="border rounded-lg bg-card group">
+                        <AccordionTrigger className="p-3 hover:no-underline">
+                            <div className="flex items-center gap-4 flex-1">
+                                <Avatar className="h-12 w-12">
+                                    <AvatarImage src={previewUrl} alt="Foto do talento" className="object-cover" />
+                                    <AvatarFallback className="text-xl"><UserIcon /></AvatarFallback>
+                                </Avatar>
+                                <p className="font-semibold">{watchedTalents[originalIndex]?.name || "Novo Talento"}</p>
+                            </div>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); remove(originalIndex); }}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                        </AccordionTrigger>
+                        <AccordionContent className="p-4 pt-0">
+                            <div className="space-y-4 pt-4 border-t">
+                                <div className="relative group">
+                                    <Avatar className="h-32 w-32 mx-auto mb-4">
+                                        <AvatarImage src={previewUrl} alt="Foto do talento" className="object-cover" />
+                                        <AvatarFallback className="text-4xl"><UserIcon /></AvatarFallback>
+                                    </Avatar>
+                                    <label 
+                                        htmlFor={`photo-upload-${originalIndex}`}
+                                        className="absolute inset-0 mx-auto h-32 w-32 bg-black/40 flex items-center justify-center text-white rounded-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                                    >
+                                        {isUploading[originalIndex] ? <Loader2 className="h-6 w-6 animate-spin" /> : <Camera className="h-6 w-6" />}
+                                    </label>
+                                    <input id={`photo-upload-${originalIndex}`} type="file" className="hidden" accept="image/png, image/jpeg" onChange={(e) => handlePhotoUpload(originalIndex, e)} disabled={isUploading[originalIndex]} />
+                                </div>
+                                <FormField control={control} name={`talents.${originalIndex}.name`} render={({ field }) => (<FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                <FormField control={control} name={`talents.${originalIndex}.role`} render={({ field }) => (<FormItem><FormLabel>Função Padrão</FormLabel><FormControl><Input placeholder="Ex: Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                <FormField control={control} name={`talents.${originalIndex}.contact`} render={({ field }) => (<FormItem><FormLabel>Contato (Telefone/Email)</FormLabel><FormControl><Input placeholder="Informação de contato" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                <div className="space-y-3 pt-3 border-t">
+                                    <FormField control={control} name={`talents.${originalIndex}.hasDietaryRestriction`} render={({ field }) => (<FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Possui restrição alimentar?</FormLabel></FormItem>)}/>
+                                    {hasRestriction && (<FormField control={control} name={`talents.${originalIndex}.dietaryRestriction`} render={({ field }) => (<FormItem><FormLabel className="text-xs">Qual restrição/alergia?</FormLabel><FormControl><Input placeholder="ex: Glúten, lactose, amendoim..." {...field} /></FormControl><FormMessage /></FormItem>)}/>)}
+                                    <FormField control={control} name={`talents.${originalIndex}.extraNotes`} render={({ field }) => (<FormItem><FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel><FormControl><Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} /></FormControl><FormMessage /></FormItem>)}/>
+                                </div>
+                            </div>
+                        </AccordionContent>
+                    </div>
+                </AccordionItem>
+            </Accordion>
         );
     }
     
@@ -218,6 +288,16 @@ function ManageTalentsPage() {
                             Adicione, remova e edite os contatos da sua equipe. Estes contatos estarão disponíveis para serem selecionados em todos os seus projetos, tanto no financeiro quanto na ordem do dia.
                           </AlertDescription>
                         </Alert>
+
+                         <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Pesquisar talento por nome..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
                         
                          {legacyTeamMembers.length > 0 && (
                             <Alert variant="default" className="border-amber-500/50 text-amber-900 dark:text-amber-300 [&>svg]:text-amber-500">
@@ -233,126 +313,18 @@ function ManageTalentsPage() {
                             </Alert>
                         )}
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                             {/* Column 1 */}
                             <div className="flex flex-col gap-4">
-                                {fields.filter((_, index) => index % 2 === 0).map((field, realIndex) => {
-                                    const index = realIndex * 2; // Calculate the original index in the 'fields' array
-                                    const photoURL = watchedTalents[index]?.photoURL;
-                                    const file = watchedTalents[index]?.file;
-                                    let previewUrl = photoURL;
-                                    if (file && !photoURL?.startsWith('https://firebasestorage')) {
-                                        previewUrl = URL.createObjectURL(file);
-                                    }
-                                    const hasRestriction = watch(`talents.${index}.hasDietaryRestriction`);
-                                    
-                                    return (
-                                        <Accordion type="single" collapsible key={field.id}>
-                                            <AccordionItem value={field.id} className="border-b-0">
-                                                <div className="border rounded-lg bg-card group">
-                                                    <AccordionTrigger className="p-3 hover:no-underline">
-                                                        <div className="flex items-center gap-4 flex-1">
-                                                            <Avatar className="h-12 w-12">
-                                                                <AvatarImage src={previewUrl} alt="Foto do talento" className="object-cover" />
-                                                                <AvatarFallback className="text-xl"><UserIcon /></AvatarFallback>
-                                                            </Avatar>
-                                                            <p className="font-semibold">{field.name || "Novo Talento"}</p>
-                                                        </div>
-                                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); remove(index); }}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                                    </AccordionTrigger>
-                                                    <AccordionContent className="p-4 pt-0">
-                                                        <div className="space-y-4 pt-4 border-t">
-                                                            <div className="relative group">
-                                                                <Avatar className="h-32 w-32 mx-auto mb-4">
-                                                                    <AvatarImage src={previewUrl} alt="Foto do talento" className="object-cover" />
-                                                                    <AvatarFallback className="text-4xl"><UserIcon /></AvatarFallback>
-                                                                </Avatar>
-                                                                <label 
-                                                                    htmlFor={`photo-upload-${index}`}
-                                                                    className="absolute inset-0 mx-auto h-32 w-32 bg-black/40 flex items-center justify-center text-white rounded-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                                                >
-                                                                    {isUploading[index] ? <Loader2 className="h-6 w-6 animate-spin" /> : <Camera className="h-6 w-6" />}
-                                                                </label>
-                                                                <input id={`photo-upload-${index}`} type="file" className="hidden" accept="image/png, image/jpeg" onChange={(e) => handlePhotoUpload(index, e)} disabled={isUploading[index]} />
-                                                            </div>
-                                                            <FormField control={control} name={`talents.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                            <FormField control={control} name={`talents.${index}.role`} render={({ field }) => (<FormItem><FormLabel>Função Padrão</FormLabel><FormControl><Input placeholder="Ex: Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                            <FormField control={control} name={`talents.${index}.contact`} render={({ field }) => (<FormItem><FormLabel>Contato (Telefone/Email)</FormLabel><FormControl><Input placeholder="Informação de contato" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                            <div className="space-y-3 pt-3 border-t">
-                                                                <FormField control={control} name={`talents.${index}.hasDietaryRestriction`} render={({ field }) => (<FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Possui restrição alimentar?</FormLabel></FormItem>)}/>
-                                                                {hasRestriction && (<FormField control={control} name={`talents.${index}.dietaryRestriction`} render={({ field }) => (<FormItem><FormLabel className="text-xs">Qual restrição/alergia?</FormLabel><FormControl><Input placeholder="ex: Glúten, lactose, amendoim..." {...field} /></FormControl><FormMessage /></FormItem>)}/>)}
-                                                                <FormField control={control} name={`talents.${index}.extraNotes`} render={({ field }) => (<FormItem><FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel><FormControl><Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} /></FormControl><FormMessage /></FormItem>)}/>
-                                                            </div>
-                                                        </div>
-                                                    </AccordionContent>
-                                                </div>
-                                            </AccordionItem>
-                                        </Accordion>
-                                    )
-                                })}
+                                {filteredFields
+                                    .filter((_, index) => index % 2 === 0)
+                                    .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
                             </div>
                             {/* Column 2 */}
-                            <div className="flex flex-col gap-4">
-                                {fields.filter((_, index) => index % 2 !== 0).map((field, realIndex) => {
-                                    const index = realIndex * 2 + 1; // Calculate the original index in the 'fields' array
-                                    const photoURL = watchedTalents[index]?.photoURL;
-                                    const file = watchedTalents[index]?.file;
-                                    let previewUrl = photoURL;
-                                    if (file && !photoURL?.startsWith('https://firebasestorage')) {
-                                        previewUrl = URL.createObjectURL(file);
-                                    }
-                                    const hasRestriction = watch(`talents.${index}.hasDietaryRestriction`);
-                                    
-                                    return (
-                                        <Accordion type="single" collapsible key={field.id}>
-                                            <AccordionItem value={field.id} className="border-b-0">
-                                                <div className="border rounded-lg bg-card group">
-                                                    <AccordionTrigger className="p-3 hover:no-underline">
-                                                        <div className="flex items-center gap-4 flex-1">
-                                                            <Avatar className="h-12 w-12">
-                                                                <AvatarImage src={previewUrl} alt="Foto do talento" className="object-cover" />
-                                                                <AvatarFallback className="text-xl"><UserIcon /></AvatarFallback>
-                                                            </Avatar>
-                                                            <p className="font-semibold">{field.name || "Novo Talento"}</p>
-                                                        </div>
-                                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); remove(index); }}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                                    </AccordionTrigger>
-                                                    <AccordionContent className="p-4 pt-0">
-                                                        <div className="space-y-4 pt-4 border-t">
-                                                            <div className="relative group">
-                                                                <Avatar className="h-32 w-32 mx-auto mb-4">
-                                                                    <AvatarImage src={previewUrl} alt="Foto do talento" className="object-cover" />
-                                                                    <AvatarFallback className="text-4xl"><UserIcon /></AvatarFallback>
-                                                                </Avatar>
-                                                                <label 
-                                                                    htmlFor={`photo-upload-${index}`}
-                                                                    className="absolute inset-0 mx-auto h-32 w-32 bg-black/40 flex items-center justify-center text-white rounded-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                                                                >
-                                                                    {isUploading[index] ? <Loader2 className="h-6 w-6 animate-spin" /> : <Camera className="h-6 w-6" />}
-                                                                </label>
-                                                                <input id={`photo-upload-${index}`} type="file" className="hidden" accept="image/png, image/jpeg" onChange={(e) => handlePhotoUpload(index, e)} disabled={isUploading[index]} />
-                                                            </div>
-                                                            <FormField control={control} name={`talents.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                            <FormField control={control} name={`talents.${index}.role`} render={({ field }) => (<FormItem><FormLabel>Função Padrão</FormLabel><FormControl><Input placeholder="Ex: Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                            <FormField control={control} name={`talents.${index}.contact`} render={({ field }) => (<FormItem><FormLabel>Contato (Telefone/Email)</FormLabel><FormControl><Input placeholder="Informação de contato" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                            <div className="space-y-3 pt-3 border-t">
-                                                                <FormField control={control} name={`talents.${index}.hasDietaryRestriction`} render={({ field }) => (<FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Possui restrição alimentar?</FormLabel></FormItem>)}/>
-                                                                {hasRestriction && (<FormField control={control} name={`talents.${index}.dietaryRestriction`} render={({ field }) => (<FormItem><FormLabel className="text-xs">Qual restrição/alergia?</FormLabel><FormControl><Input placeholder="ex: Glúten, lactose, amendoim..." {...field} /></FormControl><FormMessage /></FormItem>)}/>)}
-                                                                <FormField control={control} name={`talents.${index}.extraNotes`} render={({ field }) => (<FormItem><FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel><FormControl><Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} /></FormControl><FormMessage /></FormItem>)}/>
-                                                            </div>
-                                                        </div>
-                                                    </AccordionContent>
-                                                </div>
-                                            </AccordionItem>
-                                        </Accordion>
-                                    )
-                                })}
+                             <div className="flex flex-col gap-4">
+                                {filteredFields
+                                    .filter((_, index) => index % 2 !== 0)
+                                    .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
                             </div>
                         </div>
 
