@@ -239,10 +239,10 @@ function ManageTalentsPage() {
         }
         return fields
             .map((field, index) => ({ field, originalIndex: index }))
-            .filter(({ originalIndex }) =>
-                watchedTalents[originalIndex]?.name.toLowerCase().includes(searchTerm.toLowerCase())
+            .filter(({ field }) =>
+                field.name.toLowerCase().includes(searchTerm.toLowerCase())
             );
-    }, [searchTerm, fields, watchedTalents]);
+    }, [searchTerm, fields]);
 
 
     if (isLoading) {
@@ -282,7 +282,7 @@ function ManageTalentsPage() {
                                 </Avatar>
                                 <p className="font-semibold">{talentData.name || "Novo Talento"}</p>
                             </div>
-                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); setTalentToDelete({ id: talentData.id, name: talentData.name }); }}>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); setTalentToDelete({ id: field.id, name: field.name }); }}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                             <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
