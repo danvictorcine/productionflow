@@ -223,7 +223,7 @@ function ManageTalentsPage() {
              toast({
                 variant: 'destructive',
                 title: 'Erro ao Excluir',
-                description: <CopyableError userMessage="Não foi possível excluir o talento." errorCode={errorTyped.code || errorTyped.message} />,
+                description: <CopyableError userMessage="Não foi possível excluir o talento." errorCode={errorTyped.message || errorTyped.code || 'UNKNOWN_ERROR'} />,
             });
         } finally {
             setTalentToDelete(null);

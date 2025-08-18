@@ -1,5 +1,3 @@
-
-
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -670,6 +668,7 @@ export const createOrUpdatePublicProduction = async (production: Production, day
   const docRef = doc(db, 'public_productions', production.id);
   await setDoc(docRef, publicData, { merge: true });
 };
+
 
 export const getPublicProduction = async (productionId: string): Promise<(Production & { days: ShootingDay[] }) | null> => {
     const docRef = doc(db, 'public_productions', productionId);
@@ -1540,18 +1539,34 @@ export const saveSingleTalent = async (talent: Talent) => {
   await setDoc(talentRef, { ...dataToSave, userId }, { merge: true });
 };
 
-export const deleteTalent = async (talentId: string) => {
-  const userId = getUserId();
-  if (!userId) throw new Error("Usuário não autenticado.");
-  
-  const talentRef = doc(db, 'talents', talentId);
-  const talentSnap = await getDoc(talentRef);
+export const deleteTalent = async (talentId: string): Promise<void> => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
 
-  if (!talentSnap.exists() || talentSnap.data().userId !== userId) {
-    throw new Error("Permission denied to delete this talent.");
-  }
+    // Check if talent is used in any productions
+    const productionsQuery = query(collection(db, 'productions'), where('userId', '==', userId), where('team', 'array-contains', { id: talentId }));
+    const productionsSnapshot = await getDocs(productionsQuery);
+    if (!productionsSnapshot.empty) {
+        throw new Error("Este talento não pode ser excluído pois está em uso em uma ou mais produções.");
+    }
 
-  await deleteDoc(talentRef);
+    // Check if talent is used in any financial projects
+    const projectsQuery = query(collection(db, 'projects'), where('userId', '==', userId), where('talents', 'array-contains', { id: talentId }));
+    const projectsSnapshot = await getDocs(projectsQuery);
+    if (!projectsSnapshot.empty) {
+        throw new Error("Este talento não pode ser excluído pois está em uso em um ou mais projetos financeiros.");
+    }
+    
+    // If not in use, proceed with deletion
+    const talentRef = doc(db, 'talents', talentId);
+    
+    // The security rules should be sufficient, but we can double check ownership here if needed
+    const talentDoc = await getDoc(talentRef);
+    if (talentDoc.exists() && talentDoc.data().userId === userId) {
+        await deleteDoc(talentRef);
+    } else {
+        throw new Error("Permission denied or talent not found.");
+    }
 };
 
 export const uploadTalentPhoto = async (file: File): Promise<string> => {
