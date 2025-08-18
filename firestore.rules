@@ -88,8 +88,8 @@ service cloud.firestore {
 
     // Talent Pool
     match /talents/{talentId} {
-      allow read, update, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow read, update, create: if isOwner(request.resource.data.userId) || (resource.data != null && isOwner(resource.data.userId));
+      allow delete: if isOwner(get(/databases/$(database)/documents/talents/$(talentId)).data.userId);
     }
 
     // Admin-only collections
