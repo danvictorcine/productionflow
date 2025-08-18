@@ -118,28 +118,33 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
 };
 
 export const deleteProject = async (projectId: string) => {
-    const userId = getUserId();
-    if (!userId) throw new Error("Usuário não autenticado.");
-    const batch = writeBatch(db);
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+  const batch = writeBatch(db);
 
-    const projectRef = doc(db, 'projects', projectId);
-    const docSnap = await getDoc(projectRef);
-    if (!docSnap.exists() || docSnap.data().userId !== userId) {
-        throw new Error("Permission denied to delete this project.");
-    }
-    batch.delete(projectRef);
+  // 1. Get the project document
+  const projectRef = doc(db, 'projects', projectId);
+  const docSnap = await getDoc(projectRef);
+  if (!docSnap.exists() || docSnap.data().userId !== userId) {
+    throw new Error("Permission denied to delete this project.");
+  }
+  
+  // 2. Delete the project document itself
+  batch.delete(projectRef);
 
-    const transQuery = query(
-        collection(db, 'transactions'),
-        where('projectId', '==', projectId),
-        where('userId', '==', userId)
-    );
-    const transSnapshot = await getDocs(transQuery);
-    transSnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-    });
-
-    await batch.commit();
+  // 3. Delete associated transactions
+  const transQuery = query(
+    collection(db, 'transactions'),
+    where('projectId', '==', projectId),
+    where('userId', '==', userId)
+  );
+  const transSnapshot = await getDocs(transQuery);
+  transSnapshot.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  
+  // 4. Commit all deletions in one batch
+  await batch.commit();
 };
 
 
@@ -1549,23 +1554,25 @@ export const saveSingleTalent = async (talent: Talent) => {
 };
 
 export const deleteTalent = async (talentId: string): Promise<void> => {
-    const userId = getUserId();
-    if (!userId) throw new Error("Usuário não autenticado.");
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
 
-    const talentRef = doc(db, "talents", talentId);
-    
-    const talentDoc = await getDoc(talentRef);
-    if (!talentDoc.exists() || talentDoc.data().userId !== userId) {
-        throw new Error("Permission denied or talent not found.");
-    }
-    
-    if (talentDoc.data().photoURL) {
-        await deleteImageFromUrl(talentDoc.data().photoURL).catch(err => {
-            console.error("Failed to delete talent photo, but proceeding with Firestore deletion:", err);
-        });
-    }
+  const talentRef = doc(db, "talents", talentId);
+  const talentDoc = await getDoc(talentRef);
 
-    await deleteDoc(talentRef);
+  if (!talentDoc.exists() || talentDoc.data().userId !== userId) {
+    throw new Error("Permission denied or talent not found.");
+  }
+
+  // Se o talento tiver uma foto, exclua-a do Storage.
+  if (talentDoc.data().photoURL) {
+    await deleteImageFromUrl(talentDoc.data().photoURL).catch(err => {
+      console.error("Failed to delete talent photo, but proceeding with Firestore deletion:", err);
+    });
+  }
+
+  // Exclua o documento do talento no Firestore.
+  await deleteDoc(talentRef);
 };
 
 
@@ -1796,4 +1803,3 @@ export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) =
     
     await batch.commit();
 }
-    
