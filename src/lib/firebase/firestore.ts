@@ -1556,8 +1556,10 @@ export const saveSingleTalent = async (talent: Talent) => {
 export const deleteTalent = async (talentId: string): Promise<void> => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
+  
   const talentRef = doc(db, "talents", talentId);
-  // A verificação de propriedade é feita pelas regras de segurança do Firestore
+  // As regras de segurança do Firestore farão a verificação de propriedade
+  // antes de permitir a exclusão. Não é necessário ler o documento primeiro.
   await deleteDoc(talentRef);
 };
 

@@ -67,7 +67,7 @@ function ManageTalentsPage() {
     const [isMigrating, setIsMigrating] = useState(false);
     const [legacyTeamMembers, setLegacyTeamMembers] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [talentToDelete, setTalentToDelete] = useState<{ talent: Talent, index: number } | null>(null);
+    const [talentToDelete, setTalentToDelete] = useState<{ id: string; name: string } | null>(null);
 
 
     const form = useForm<FormValues>({
@@ -215,8 +215,11 @@ function ManageTalentsPage() {
         if (!talentToDelete) return;
         
         try {
-            await firestoreApi.deleteTalent(talentToDelete.talent.id);
-            remove(talentToDelete.index);
+            await firestoreApi.deleteTalent(talentToDelete.id);
+            const indexToRemove = fields.findIndex(field => field.id === talentToDelete.id);
+            if (indexToRemove > -1) {
+              remove(indexToRemove);
+            }
             toast({ title: "Talento removido com sucesso!" });
         } catch (error) {
              const errorTyped = error as { code?: string; message: string };
@@ -276,7 +279,7 @@ function ManageTalentsPage() {
                                 </Avatar>
                                 <p className="font-semibold">{watchedTalents[originalIndex]?.name || "Novo Talento"}</p>
                             </div>
-                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); setTalentToDelete({ talent: field, index: originalIndex }); }}>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); setTalentToDelete({ id: field.id, name: field.name }); }}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                             <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -394,7 +397,7 @@ function ManageTalentsPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o talento "{talentToDelete?.talent.name}" do seu Banco de Talentos.
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o talento "{talentToDelete?.name}" do seu Banco de Talentos.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
