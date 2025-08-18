@@ -1510,9 +1510,12 @@ export const saveBetaLimits = async (limits: BetaLimits) => {
 export const getTalents = async (): Promise<Talent[]> => {
   const userId = getUserId();
   if (!userId) return [];
+  // Ordena os talentos pelo nome
   const q = query(collection(db, 'talents'), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Talent);
+  const talents = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Talent);
+  // A ordenação agora é feita no lado do cliente
+  return talents;
 };
 
 export const addTalent = async (talent: Omit<Talent, 'id'>): Promise<string> => {
@@ -1550,18 +1553,21 @@ export const deleteTalent = async (talentId: string): Promise<void> => {
     if (!userId) throw new Error("Usuário não autenticado.");
 
     const talentRef = doc(db, "talents", talentId);
+    
     const talentDoc = await getDoc(talentRef);
-
     if (!talentDoc.exists() || talentDoc.data().userId !== userId) {
         throw new Error("Permission denied or talent not found.");
     }
-
-    if (talentDoc.data().photoURL) {
-      await deleteImageFromUrl(talentDoc.data().photoURL);
-    }
     
+    if (talentDoc.data().photoURL) {
+        await deleteImageFromUrl(talentDoc.data().photoURL).catch(err => {
+            console.error("Failed to delete talent photo, but proceeding with Firestore deletion:", err);
+        });
+    }
+
     await deleteDoc(talentRef);
 };
+
 
 export const uploadTalentPhoto = async (file: File): Promise<string> => {
   const userId = getUserId();
