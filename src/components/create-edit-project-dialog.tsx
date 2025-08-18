@@ -61,6 +61,7 @@ const talentSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Nome do talento é obrigatório."),
   role: z.string().min(1, "Função é obrigatória."),
+  photoURL: z.string().optional(),
   paymentType: z.enum(['fixed', 'daily']).default('fixed'),
   fee: z.coerce.number().optional(),
   dailyRate: z.coerce.number().optional(),
@@ -156,6 +157,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
   const fetchTalents = async () => {
     try {
         const talents = await firestoreApi.getTalents();
+        talents.sort((a, b) => a.name.localeCompare(b.name));
         setTalentPool(talents);
     } catch (error) {
         toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." });
@@ -223,6 +225,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   id: talent.id,
                   name: talent.name,
                   role: talent.role,
+                  photoURL: talent.photoURL,
                   paymentType: 'fixed',
                   fee: 0,
                   dailyRate: 0,
@@ -473,8 +476,20 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                         return (
                           <div key={field.id} className="grid grid-cols-1 gap-4 rounded-md border p-4">
                             <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-                                <FormField control={control} name={`talents.${index}.name`} render={({ field }) => (
-                                    <FormItem><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do Talento" {...field} readOnly /></FormControl><FormMessage /></FormItem>
+                                <FormField control={control} name={`talents.${index}.name`} render={({ field: nameField }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs">Nome</FormLabel>
+                                        <div className="flex items-center gap-2">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarImage src={form.watch(`talents.${index}.photoURL`)} alt={nameField.value} />
+                                                <AvatarFallback>{getInitials(nameField.value)}</AvatarFallback>
+                                            </Avatar>
+                                            <FormControl>
+                                                <Input placeholder="Nome do Talento" {...nameField} readOnly />
+                                            </FormControl>
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
                                 )}/>
                                 <FormField control={control} name={`talents.${index}.role`} render={({ field }) => (
                                     <FormItem><FormLabel className="text-xs">Função</FormLabel><FormControl><Input placeholder="ex: Ator Principal" {...field} /></FormControl><FormMessage /></FormItem>
@@ -590,8 +605,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
         return talentPool
             .filter(talent => 
                 talent.name.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-            .sort((a, b) => a.name.localeCompare(b.name));
+            );
     }, [talentPool, searchTerm]);
 
     const handleCheckboxChange = (id: string, checked: boolean) => {
@@ -662,7 +676,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
                                 />
                                 <label htmlFor={`talent-${talent.id}`} className={cn("flex items-center gap-3 text-sm font-medium leading-none w-full", isInProject ? "cursor-not-allowed" : "cursor-pointer")}>
                                      <Avatar className="h-9 w-9">
-                                        <AvatarImage src={talent.photoURL} alt={talent.name} />
+                                        <AvatarImage src={talent.photoURL || undefined} alt={talent.name} />
                                         <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
                                     </Avatar>
                                     <div>

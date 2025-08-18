@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import type { Talent, Transaction } from "@/lib/types";
 import { MoreHorizontal, Trash2, Edit, Banknote, Check, Undo2, CalendarDays } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getInitials } from "@/lib/utils";
 
 import {
   Table,
@@ -33,6 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from './ui/badge';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface TalentsTableProps {
   talents: Talent[];
@@ -84,14 +85,22 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                   return (
                     <TableRow key={talent.id}>
                       <TableCell className="font-medium">
-                        <p>{talent.name}</p>
-                        <p className="text-xs text-muted-foreground md:hidden">{talent.role}</p>
-                         <p className="text-xs text-muted-foreground md:hidden mt-1">
-                            {isFixedFee
-                              ? formatCurrency(talent.fee || 0)
-                              : `${formatCurrency(talent.dailyRate || 0)}/diária`
-                            }
-                        </p>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarImage src={talent.photoURL || undefined} alt={talent.name} />
+                            <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p>{talent.name}</p>
+                            <p className="text-xs text-muted-foreground md:hidden">{talent.role}</p>
+                            <p className="text-xs text-muted-foreground md:hidden mt-1">
+                                {isFixedFee
+                                  ? formatCurrency(talent.fee || 0)
+                                  : `${formatCurrency(talent.dailyRate || 0)}/diária`
+                                }
+                            </p>
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{talent.role}</TableCell>
                       <TableCell className="text-right hidden md:table-cell">
