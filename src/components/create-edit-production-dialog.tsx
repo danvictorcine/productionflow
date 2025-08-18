@@ -6,7 +6,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PlusCircle, Trash2, Users, Search } from "lucide-react";
+import { PlusCircle, Trash2, Users, Search, ChevronDown } from "lucide-react";
 
 import type { Production, TeamMember, Talent } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { ScrollArea } from "./ui/scroll-area";
 import { getInitials, cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 
 const teamMemberSchema = z.object({
   id: z.string(),
@@ -97,6 +98,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
   const fetchTalents = async () => {
     try {
         const talents = await firestoreApi.getTalents();
+        talents.sort((a, b) => a.name.localeCompare(b.name));
         setTalentPool(talents);
     } catch (error) {
         toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." });
@@ -255,92 +257,59 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                   <div>
                     <h3 className="text-lg font-semibold">Equipe & Elenco</h3>
                     <p className="text-sm text-muted-foreground">Cadastre todos os envolvidos na produção. Esta lista será usada para montar a Ordem do Dia.</p>
-                    <div className="space-y-3 mt-2">
+                    <div className="space-y-3 mt-4">
                       {teamFields.map((field, index) => {
                         const hasRestriction = watch(`team.${index}.hasDietaryRestriction`);
 
                         return (
-                          <div key={field.id} className="items-start gap-4 rounded-md border p-4">
-                            <div className="flex items-center gap-4 mb-4">
-                               <div className="relative group">
-                                  <Avatar className="h-20 w-20">
-                                      <AvatarImage src={field.photoURL} alt="Foto" className="object-cover" />
-                                      <AvatarFallback>{getInitials(field.name)}</AvatarFallback>
-                                  </Avatar>
+                           <Collapsible key={field.id} className="group border rounded-lg bg-card">
+                                <div className="p-3 flex items-center justify-between">
+                                    <CollapsibleTrigger asChild>
+                                        <div className="flex-1 flex items-center gap-4 cursor-pointer">
+                                             <Avatar className="h-12 w-12">
+                                                <AvatarImage src={field.photoURL || undefined} alt={field.name} className="object-cover" />
+                                                <AvatarFallback>{getInitials(field.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-semibold">{field.name || "Novo Talento"}</p>
+                                                <p className="text-sm text-muted-foreground">{field.role || "Função não definida"}</p>
+                                            </div>
+                                        </div>
+                                    </CollapsibleTrigger>
+                                     <div className="flex items-center gap-1">
+                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => removeTeam(index)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                        <CollapsibleTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                            </Button>
+                                        </CollapsibleTrigger>
+                                     </div>
                                 </div>
-                               <div className="grid grid-cols-1 items-end gap-3 flex-1">
-                                <div className="flex items-end gap-2">
-                                  <FormField control={form.control} name={`team.${index}.name`} render={({ field }) => (
-                                    <FormItem className="flex-1"><FormLabel className="text-xs">Nome</FormLabel><FormControl><Input placeholder="Nome do membro" {...field} readOnly /></FormControl><FormMessage /></FormItem>
-                                  )}/>
-                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeTeam(index)} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
-                                </div>
-                                <FormField control={form.control} name={`team.${index}.role`} render={({ field }) => (
-                                  <FormItem><FormLabel className="text-xs">Função</FormLabel><FormControl><Input placeholder="ex: Ator, Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                              </div>
-                            </div>
-                             <div className="space-y-4">
-                                <FormField
-                                  control={control}
-                                  name={`team.${index}.contact`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="text-xs">Contato (Telefone) <span className="text-muted-foreground">(Opcional)</span></FormLabel>
-                                      <FormControl>
-                                        <Input placeholder="ex: (75) 99123-4567" {...field} />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                               <FormField
-                                control={control}
-                                name={`team.${index}.hasDietaryRestriction`}
-                                render={({ field }) => (
-                                  <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="font-normal text-sm">
-                                      Possui restrição alimentar?
-                                    </FormLabel>
-                                  </FormItem>
-                                )}
-                              />
-                              {hasRestriction && (
-                                <FormField
-                                  control={control}
-                                  name={`team.${index}.dietaryRestriction`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="text-xs">Qual restrição/alergia?</FormLabel>
-                                      <FormControl>
-                                        <Input placeholder="ex: Glúten, lactose, amendoim..." {...field} />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                              )}
-                               <FormField
-                                control={control}
-                                name={`team.${index}.extraNotes`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel>
-                                    <FormControl>
-                                      <Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                          </div>
+
+                                <CollapsibleContent className="px-4 pb-4 pt-0">
+                                    <div className="pt-4 border-t space-y-4">
+                                        <FormField control={form.control} name={`team.${index}.role`} render={({ field }) => (
+                                          <FormItem><FormLabel>Função no Projeto</FormLabel><FormControl><Input placeholder="ex: Ator, Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={control} name={`team.${index}.contact`} render={({ field }) => (
+                                          <FormItem><FormLabel>Contato (Telefone)</FormLabel><FormControl><Input placeholder="ex: (75) 99123-4567" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                       <FormField control={control} name={`team.${index}.hasDietaryRestriction`} render={({ field }) => (
+                                          <FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Possui restrição alimentar?</FormLabel></FormItem>
+                                        )}/>
+                                        {hasRestriction && (
+                                          <FormField control={control} name={`team.${index}.dietaryRestriction`} render={({ field }) => (
+                                            <FormItem><FormLabel className="text-xs">Qual restrição/alergia?</FormLabel><FormControl><Input placeholder="ex: Glúten, lactose, amendoim..." {...field} /></FormControl><FormMessage /></FormItem>
+                                          )}/>
+                                        )}
+                                       <FormField control={control} name={`team.${index}.extraNotes`} render={({ field }) => (
+                                          <FormItem><FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel><FormControl><Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
                         )
                       })}
                       <Dialog open={isTalentSelectorOpen} onOpenChange={setIsTalentSelectorOpen}>
@@ -405,8 +374,7 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
         return talentPool
             .filter(talent => 
                 talent.name.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-            .sort((a, b) => a.name.localeCompare(b.name));
+            );
     }, [talentPool, searchTerm]);
 
     const handleCheckboxChange = (id: string, checked: boolean) => {
