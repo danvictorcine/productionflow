@@ -65,7 +65,7 @@ function ManageTalentsPage() {
     });
 
     const { control, handleSubmit, setValue, watch, trigger } = form;
-    const { fields, append, remove } = useFieldArray({
+    const { fields, prepend, remove } = useFieldArray({
         control,
         name: "talents",
     });
@@ -300,7 +300,7 @@ function ManageTalentsPage() {
                                 />
                             </div>
                             <div className="flex items-center gap-2">
-                               <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), name: '', role: '', photoURL: '', contact: '' })}>
+                               <Button type="button" variant="outline" onClick={() => prepend({ id: crypto.randomUUID(), name: '', role: '', photoURL: '', contact: '' })}>
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     Adicionar Talento
                                 </Button>
@@ -325,7 +325,7 @@ function ManageTalentsPage() {
                             </Alert>
                         )}
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                             {/* Column 1 */}
                             <div className="flex flex-col gap-4">
                                 {filteredFields
