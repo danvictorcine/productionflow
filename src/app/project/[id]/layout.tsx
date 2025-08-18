@@ -124,7 +124,7 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                         )}
                     >
                         <tab.icon className="h-4 w-4" />
-                        {tab.name}
+                        <span className="truncate">{tab.name}</span>
                     </Link>
                     ))}
                 </div>
