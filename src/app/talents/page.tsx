@@ -7,7 +7,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, PlusCircle, Trash2, Camera, User as UserIcon, AlertTriangle, ChevronDown, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, PlusCircle, Trash2, Camera, User as UserIcon, AlertTriangle, ChevronDown, Search, Save } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 import { AppFooter } from '@/components/app-footer';
@@ -62,7 +62,7 @@ function ManageTalentsPage() {
     const { toast } = useToast();
     
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
+    const [isSaving, setIsSaving] = useState<Record<number, boolean>>({});
     const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
     const [isMigrating, setIsMigrating] = useState(false);
     const [legacyTeamMembers, setLegacyTeamMembers] = useState<any[]>([]);
@@ -77,7 +77,7 @@ function ManageTalentsPage() {
         },
     });
 
-    const { control, handleSubmit, setValue, watch, trigger } = form;
+    const { control, handleSubmit, setValue, watch, trigger, formState: { dirtyFields, isSubmitting } } = form;
     const { fields, prepend, remove } = useFieldArray({
         control,
         name: "talents",
@@ -131,7 +131,7 @@ function ManageTalentsPage() {
         if (!event.target.files?.[0]) return;
         
         const file = event.target.files[0];
-        setValue(`talents.${index}.file`, file);
+        setValue(`talents.${index}.file`, file, { shouldDirty: true });
 
         setIsUploading(prev => ({ ...prev, [index]: true }));
 
@@ -158,12 +158,20 @@ function ManageTalentsPage() {
         }
     };
 
-    async function onSubmit(values: FormValues) {
-        setIsSaving(true);
+    async function onSaveTalent(index: number) {
+        setIsSaving(prev => ({ ...prev, [index]: true }));
+        const talentData = watch(`talents.${index}`);
+        const { file, ...dataToSave } = talentData;
+
         try {
-            const talentsToSave = values.talents.map(({ file, ...rest }) => rest);
-            await firestoreApi.saveTalents(talentsToSave);
-            toast({ title: 'Banco de Talentos atualizado com sucesso!' });
+            await firestoreApi.saveSingleTalent(dataToSave);
+            // Reset the specific dirty fields for this talent
+            const fieldsToReset = Object.keys(dirtyFields.talents?.[index] || {});
+            fieldsToReset.forEach(fieldName => {
+                setValue(`talents.${index}.${fieldName as keyof Talent}`, getValues(`talents.${index}.${fieldName as keyof Talent}`), { shouldDirty: false });
+            });
+            form.reset(watch(), { keepValues: true }); // Resets dirty state globally but keeps values
+            toast({ title: `${dataToSave.name} salvo com sucesso!` });
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({
@@ -172,7 +180,7 @@ function ManageTalentsPage() {
                 description: <CopyableError userMessage="Não foi possível salvar as alterações." errorCode={errorTyped.code || errorTyped.message} />,
             });
         } finally {
-            setIsSaving(false);
+            setIsSaving(prev => ({ ...prev, [index]: false }));
         }
     }
     
@@ -197,11 +205,23 @@ function ManageTalentsPage() {
         }
     }
     
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (!talentToDelete) return;
-        remove(talentToDelete.index);
-        setTalentToDelete(null);
-        toast({ title: "Talento removido com sucesso!" });
+        
+        try {
+            await firestoreApi.deleteTalent(talentToDelete.talent.id);
+            remove(talentToDelete.index);
+            toast({ title: "Talento removido com sucesso!" });
+        } catch (error) {
+             const errorTyped = error as { code?: string; message: string };
+             toast({
+                variant: 'destructive',
+                title: 'Erro ao Excluir',
+                description: <CopyableError userMessage="Não foi possível excluir o talento." errorCode={errorTyped.code || errorTyped.message} />,
+            });
+        } finally {
+            setTalentToDelete(null);
+        }
     };
 
     const filteredFields = useMemo(() => {
@@ -235,6 +255,8 @@ function ManageTalentsPage() {
             previewUrl = URL.createObjectURL(file);
         }
         const hasRestriction = watch(`talents.${originalIndex}.hasDietaryRestriction`);
+        const isDirty = !!dirtyFields.talents?.[originalIndex];
+        const isCurrentlySaving = isSaving[originalIndex];
         
         return (
             <Accordion type="single" collapsible key={field.id} className="w-full">
@@ -276,6 +298,13 @@ function ManageTalentsPage() {
                                     {hasRestriction && (<FormField control={control} name={`talents.${originalIndex}.dietaryRestriction`} render={({ field }) => (<FormItem><FormLabel className="text-xs">Qual restrição/alergia?</FormLabel><FormControl><Input placeholder="ex: Glúten, lactose, amendoim..." {...field} /></FormControl><FormMessage /></FormItem>)}/>)}
                                     <FormField control={control} name={`talents.${originalIndex}.extraNotes`} render={({ field }) => (<FormItem><FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel><FormControl><Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} /></FormControl><FormMessage /></FormItem>)}/>
                                 </div>
+                                <div className="pt-4 border-t flex justify-end">
+                                    <Button type="button" onClick={() => onSaveTalent(originalIndex)} disabled={!isDirty || isCurrentlySaving || isUploading[originalIndex]}>
+                                        {isCurrentlySaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        <Save className="mr-2 h-4 w-4" />
+                                        Salvar Alterações
+                                    </Button>
+                                </div>
                             </div>
                         </AccordionContent>
                     </div>
@@ -299,7 +328,7 @@ function ManageTalentsPage() {
             </header>
             <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                  <Form {...form}>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                    <div className="space-y-8">
                         <Alert>
                           <UserIcon className="h-4 w-4" />
                           <AlertTitle>Gerenciando seu Banco de Talentos</AlertTitle>
@@ -323,10 +352,6 @@ function ManageTalentsPage() {
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     Adicionar Talento
                                 </Button>
-                                <Button type="submit" disabled={isSaving || Object.values(isUploading).some(v => v)}>
-                                    {(isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Salvar Alterações
-                                </Button>
                             </div>
                         </div>
                         
@@ -344,8 +369,8 @@ function ManageTalentsPage() {
                             </Alert>
                         )}
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                           <div className="flex flex-col gap-4">
                                 {filteredFields
                                     .filter((_, index) => index % 2 === 0)
                                     .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
@@ -356,7 +381,7 @@ function ManageTalentsPage() {
                                     .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </Form>
                  <AlertDialog open={!!talentToDelete} onOpenChange={(open) => !open && setTalentToDelete(null)}>
                     <AlertDialogContent>

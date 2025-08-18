@@ -1505,7 +1505,7 @@ export const saveBetaLimits = async (limits: BetaLimits) => {
 export const getTalents = async (): Promise<Talent[]> => {
   const userId = getUserId();
   if (!userId) return [];
-  const q = query(collection(db, 'talents'), where('userId', '==', userId));
+  const q = query(collection(db, 'talents'), where('userId', '==', userId), orderBy('name', 'asc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Talent);
 };
@@ -1524,40 +1524,31 @@ export const addTalent = async (talent: Omit<Talent, 'id'>): Promise<string> => 
     return talentRef.id;
 };
 
-
-export const saveTalents = async (talents: Omit<Talent, 'file'>[]) => {
+export const saveSingleTalent = async (talent: Talent) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
+  const talentRef = doc(db, 'talents', talent.id);
+  const { id, file, ...data } = talent;
 
-  const batch = writeBatch(db);
-  const collectionRef = collection(db, 'talents');
-
-  const currentTalentsSnapshot = await getDocs(query(collectionRef, where('userId', '==', userId)));
-  const currentTalentIds = new Set(currentTalentsSnapshot.docs.map(doc => doc.id));
-  const newTalentIds = new Set(talents.map(t => t.id));
-
-  currentTalentIds.forEach(id => {
-    if (!newTalentIds.has(id)) {
-      batch.delete(doc(collectionRef, id));
+  const dataToSave: Record<string, any> = {};
+  for (const key in data) {
+    if ((data as any)[key] !== undefined) {
+      dataToSave[key] = (data as any)[key];
     }
-  });
+  }
 
-  talents.forEach(talent => {
-    const talentRef = doc(collectionRef, talent.id);
-    const { id, ...data } = talent;
+  await setDoc(talentRef, { ...dataToSave, userId }, { merge: true });
+};
 
-    // Create a clean object to save, removing any undefined fields
-    const dataToSave: Record<string, any> = {};
-    for (const key in data) {
-        if ((data as any)[key] !== undefined) {
-            dataToSave[key] = (data as any)[key];
-        }
-    }
-    
-    batch.set(talentRef, { ...dataToSave, userId }, { merge: true });
-  });
-
-  await batch.commit();
+export const deleteTalent = async (talentId: string) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+  const talentRef = doc(db, 'talents', talentId);
+  const talentDoc = await getDoc(talentRef);
+  if (!talentDoc.exists() || talentDoc.data().userId !== userId) {
+      throw new Error("Permission denied.");
+  }
+  await deleteDoc(talentRef);
 };
 
 export const uploadTalentPhoto = async (file: File): Promise<string> => {
@@ -1637,9 +1628,13 @@ export const migrateTeamToTalentPool = async (): Promise<void> => {
 
     const talentsToSave = Array.from(uniqueTalents.values());
     
-    if (talentsToSave.length > 0) {
-        await saveTalents(talentsToSave);
-    }
+    const batch = writeBatch(db);
+    talentsToSave.forEach(talent => {
+        const docRef = doc(db, 'talents', talent.id);
+        const { file, ...dataToSave } = talent;
+        batch.set(docRef, { ...dataToSave, userId }, { merge: true });
+    });
+    await batch.commit();
 };
 
 
