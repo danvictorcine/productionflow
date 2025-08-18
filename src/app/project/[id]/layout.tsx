@@ -111,20 +111,20 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
 
              <nav className="sticky top-[60px] z-30 border-b bg-background/95 backdrop-blur-sm shrink-0">
                 <div className="px-2 sm:px-6 lg:px-8">
-                <div className="flex justify-center -mb-px">
+                <div className="flex -mb-px">
                     {tabs.map((tab) => (
                     <Link
                         key={tab.name}
                         href={tab.href}
                         className={cn(
-                            'group inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-2 py-3 text-sm transition-colors',
+                            'group inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-3 text-sm transition-colors',
                             pathname.startsWith(tab.href)
                             ? 'border-primary text-primary font-bold'
-                            : 'border-transparent text-foreground font-medium hover:border-primary hover:text-primary'
+                            : 'border-transparent text-foreground font-medium hover:border-primary/80 hover:text-primary/80'
                         )}
                     >
                         <tab.icon className="h-4 w-4" />
-                        <span className="truncate">{tab.name}</span>
+                        <span className="hidden md:inline truncate">{tab.name}</span>
                     </Link>
                     ))}
                 </div>
