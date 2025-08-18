@@ -15,7 +15,7 @@ import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import * as firestoreApi from '@/lib/firebase/firestore';
-import type { Talent, Production, Project } from '@/lib/types';
+import type { Talent } from '@/lib/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,6 +27,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import AuthGuard from '@/components/auth-guard';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 const talentSchema = z.object({
     id: z.string(),
@@ -56,6 +67,8 @@ function ManageTalentsPage() {
     const [isMigrating, setIsMigrating] = useState(false);
     const [legacyTeamMembers, setLegacyTeamMembers] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [talentToDelete, setTalentToDelete] = useState<{ talent: Talent, index: number } | null>(null);
+
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -148,7 +161,6 @@ function ManageTalentsPage() {
     async function onSubmit(values: FormValues) {
         setIsSaving(true);
         try {
-            // Remove a propriedade 'file' antes de salvar no Firestore
             const talentsToSave = values.talents.map(({ file, ...rest }) => rest);
             await firestoreApi.saveTalents(talentsToSave);
             toast({ title: 'Banco de Talentos atualizado com sucesso!' });
@@ -172,7 +184,7 @@ function ManageTalentsPage() {
                 title: 'Migração Concluída!',
                 description: 'Todas as equipes dos seus projetos foram adicionadas ao Banco de Talentos.',
             });
-            await fetchData(); // Refresh data after migration
+            await fetchData();
         } catch (error) {
              const errorTyped = error as { code?: string; message: string };
              toast({
@@ -184,6 +196,13 @@ function ManageTalentsPage() {
             setIsMigrating(false);
         }
     }
+    
+    const handleConfirmDelete = () => {
+        if (!talentToDelete) return;
+        remove(talentToDelete.index);
+        setTalentToDelete(null);
+        toast({ title: "Talento removido com sucesso!" });
+    };
 
     const filteredFields = useMemo(() => {
         if (!searchTerm) {
@@ -229,7 +248,7 @@ function ManageTalentsPage() {
                                 </Avatar>
                                 <p className="font-semibold">{watchedTalents[originalIndex]?.name || "Novo Talento"}</p>
                             </div>
-                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); remove(originalIndex); }}>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); setTalentToDelete({ talent: field, index: originalIndex }); }}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                             <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -325,23 +344,39 @@ function ManageTalentsPage() {
                             </Alert>
                         )}
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                            {/* Column 1 */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-4">
                                 {filteredFields
                                     .filter((_, index) => index % 2 === 0)
                                     .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
                             </div>
-                            {/* Column 2 */}
                              <div className="flex flex-col gap-4">
                                 {filteredFields
                                     .filter((_, index) => index % 2 !== 0)
                                     .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
                             </div>
                         </div>
-
                     </form>
                 </Form>
+                 <AlertDialog open={!!talentToDelete} onOpenChange={(open) => !open && setTalentToDelete(null)}>
+                    <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o talento "{talentToDelete?.talent.name}" do seu Banco de Talentos.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                        onClick={handleConfirmDelete}
+                        className="bg-destructive hover:bg-destructive/90"
+                        >
+                        Excluir
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </main>
             <AppFooter />
         </div>
