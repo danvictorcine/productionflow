@@ -4,8 +4,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useParams, usePathname } from 'next/navigation';
-import { ArrowLeft, Edit, Folder, DollarSign, Clapperboard, Brush, Image as ImageIcon } from 'lucide-react';
+import { useParams, usePathname, useRouter } from 'next/navigation';
+import { ArrowLeft, Edit, Folder, DollarSign, Clapperboard, Brush, Image as ImageIcon, Users } from 'lucide-react';
 
 import type { UnifiedProject } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     const params = useParams();
     const pathname = usePathname();
+    const router = useRouter();
     const projectId = params.id as string;
     const { toast } = useToast();
     const { user } = useAuth();
@@ -96,6 +97,10 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                     <h1 className="text-lg md:text-xl font-bold text-primary truncate">{project.name}</h1>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
+                    <Button onClick={() => router.push('/talents')} variant="ghost" size="sm">
+                        <Users className="h-4 w-4 md:mr-2" />
+                        <span className="hidden md:inline">Banco de Talentos</span>
+                    </Button>
                     <Button onClick={() => setIsEditDialogOpen(true)} variant="ghost" size="sm">
                         <Edit className="h-4 w-4 md:mr-2" />
                         <span className="hidden md:inline">Editar Projeto</span>
