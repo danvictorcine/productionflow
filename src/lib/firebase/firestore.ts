@@ -1544,10 +1544,9 @@ export const deleteTalent = async (talentId: string) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
   const talentRef = doc(db, 'talents', talentId);
-  const talentDoc = await getDoc(talentRef);
-  if (!talentDoc.exists() || talentDoc.data().userId !== userId) {
-      throw new Error("Permission denied.");
-  }
+  // The client-side permission check is removed to rely on Firestore rules,
+  // which prevents a "permission-denied" error on the pre-delete getDoc() call
+  // if rules are properly configured to only allow reads on owned documents.
   await deleteDoc(talentRef);
 };
 
