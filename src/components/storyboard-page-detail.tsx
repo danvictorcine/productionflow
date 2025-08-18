@@ -294,7 +294,7 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
                         <div><h2 className="text-xl font-bold">{scene.title}</h2><p className="text-muted-foreground">{scene.description}</p></div>
                         {!isExporting && (<DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}><Edit className="mr-2 h-4 w-4" /> Editar Cena</DropdownMenuItem><DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setSceneToDelete(scene)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Cena</DropdownMenuItem></DropdownMenuContent></DropdownMenu>)}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
                             <PanelCard key={panel.id} panel={panel} aspectRatio={scene.aspectRatio} index={panelIndex} onDelete={handleDeletePanel} onUpdateNotes={handleUpdatePanelNotes} movePanel={movePanel} onDropPanel={handleDropPanel} isExporting={isExporting} />
                         ))}
