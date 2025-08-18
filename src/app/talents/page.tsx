@@ -213,7 +213,7 @@ function ManageTalentsPage() {
     
     const handleConfirmDelete = async () => {
         if (!talentToDelete) return;
-        
+
         try {
             await firestoreApi.deleteTalent(talentToDelete.id);
             const indexToRemove = fields.findIndex(field => field.id === talentToDelete.id);
@@ -257,8 +257,11 @@ function ManageTalentsPage() {
     }
     
     const renderTalentCard = (field: any, originalIndex: number) => {
-        const photoURL = watchedTalents[originalIndex]?.photoURL;
-        const file = watchedTalents[originalIndex]?.file;
+        const talentData = watchedTalents[originalIndex];
+        if (!talentData) return null;
+
+        const photoURL = talentData.photoURL;
+        const file = talentData.file;
         let previewUrl = photoURL;
         if (file && !photoURL?.startsWith('https://firebasestorage')) {
             previewUrl = URL.createObjectURL(file);
@@ -277,9 +280,9 @@ function ManageTalentsPage() {
                                     <AvatarImage src={previewUrl} alt="Foto do talento" className="object-cover" />
                                     <AvatarFallback className="text-xl"><UserIcon /></AvatarFallback>
                                 </Avatar>
-                                <p className="font-semibold">{watchedTalents[originalIndex]?.name || "Novo Talento"}</p>
+                                <p className="font-semibold">{talentData.name || "Novo Talento"}</p>
                             </div>
-                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); setTalentToDelete({ id: field.id, name: field.name }); }}>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); setTalentToDelete({ id: talentData.id, name: talentData.name }); }}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                             <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />

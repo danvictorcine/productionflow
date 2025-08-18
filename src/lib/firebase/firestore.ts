@@ -416,7 +416,7 @@ export const getProjectDataForExport = async (projectId: string, projectType: Di
             return { type: 'creative', creativeProject, boardItems };
         }
         case 'storyboard': {
-            const storyboard = await getStoryboard(projectId);
+            const storyboard = await getStoryboard(storyboardId);
             if (!storyboard) throw new Error("Storyboard não encontrado.");
             const scenes = await getStoryboardScenes(storyboard.id);
             const panels = await getStoryboardPanels(storyboard.id);
