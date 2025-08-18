@@ -7,7 +7,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, PlusCircle, Trash2, Camera, User as UserIcon, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Loader2, PlusCircle, Trash2, Camera, User as UserIcon, AlertTriangle, ChevronDown } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 import { AppFooter } from '@/components/app-footer';
@@ -26,6 +26,7 @@ import { getInitials } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import AuthGuard from '@/components/auth-guard';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const talentSchema = z.object({
     id: z.string(),
@@ -207,7 +208,7 @@ function ManageTalentsPage() {
                     <UserNav />
                 </div>
             </header>
-            <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                  <Form {...form}>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                         <Alert>
@@ -232,7 +233,7 @@ function ManageTalentsPage() {
                             </Alert>
                         )}
 
-                        <div className="space-y-4">
+                        <Accordion type="multiple" className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                             {fields.map((field, index) => {
                                 const photoURL = watchedTalents[index]?.photoURL;
                                 const file = watchedTalents[index]?.file;
@@ -243,34 +244,36 @@ function ManageTalentsPage() {
                                 const hasRestriction = watch(`talents.${index}.hasDietaryRestriction`);
                                 
                                 return (
-                                <div key={field.id} className="flex items-start gap-4 p-4 border rounded-lg bg-card">
-                                    <div className="flex-1 space-y-4">
-                                        <div className="flex flex-col sm:flex-row items-center gap-6">
-                                            <div className="relative group">
-                                                <Avatar className="h-32 w-32">
+                                <AccordionItem key={field.id} value={field.id} className="border-b-0">
+                                    <div className="border rounded-lg bg-card group">
+                                         <AccordionTrigger className="p-3 hover:no-underline">
+                                             <div className="flex items-center gap-4 flex-1">
+                                                <Avatar className="h-12 w-12">
                                                     <AvatarImage src={previewUrl} alt="Foto do talento" className="object-cover" />
-                                                    <AvatarFallback className="text-4xl"><UserIcon /></AvatarFallback>
+                                                    <AvatarFallback className="text-xl"><UserIcon /></AvatarFallback>
                                                 </Avatar>
-                                                <label 
-                                                    htmlFor={`photo-upload-${index}`}
-                                                    className="absolute inset-0 bg-black/40 flex items-center justify-center text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                                >
-                                                    {isUploading[index] ? (
-                                                        <Loader2 className="h-6 w-6 animate-spin" />
-                                                    ) : (
-                                                        <Camera className="h-6 w-6" />
-                                                    )}
-                                                </label>
-                                                <input
-                                                    id={`photo-upload-${index}`}
-                                                    type="file"
-                                                    className="hidden"
-                                                    accept="image/png, image/jpeg"
-                                                    onChange={(e) => handlePhotoUpload(index, e)}
-                                                    disabled={isUploading[index]}
-                                                />
-                                            </div>
-                                            <div className="space-y-4 flex-1 w-full">
+                                                <p className="font-semibold">{field.name || "Novo Talento"}</p>
+                                             </div>
+                                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); remove(index); }}>
+                                                <Trash2 className="h-4 w-4" />
+                                             </Button>
+                                             <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                         </AccordionTrigger>
+                                        <AccordionContent className="p-4 pt-0">
+                                            <div className="space-y-4 pt-4 border-t">
+                                                <div className="relative group">
+                                                    <Avatar className="h-32 w-32 mx-auto mb-4">
+                                                        <AvatarImage src={previewUrl} alt="Foto do talento" className="object-cover" />
+                                                        <AvatarFallback className="text-4xl"><UserIcon /></AvatarFallback>
+                                                    </Avatar>
+                                                    <label 
+                                                        htmlFor={`photo-upload-${index}`}
+                                                        className="absolute inset-0 mx-auto h-32 w-32 bg-black/40 flex items-center justify-center text-white rounded-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                                                    >
+                                                        {isUploading[index] ? <Loader2 className="h-6 w-6 animate-spin" /> : <Camera className="h-6 w-6" />}
+                                                    </label>
+                                                    <input id={`photo-upload-${index}`} type="file" className="hidden" accept="image/png, image/jpeg" onChange={(e) => handlePhotoUpload(index, e)} disabled={isUploading[index]} />
+                                                </div>
                                                 <FormField
                                                     control={control}
                                                     name={`talents.${index}.name`}
@@ -293,7 +296,7 @@ function ManageTalentsPage() {
                                                         </FormItem>
                                                     )}
                                                 />
-                                                  <FormField
+                                                <FormField
                                                     control={control}
                                                     name={`talents.${index}.contact`}
                                                     render={({ field }) => (
@@ -304,62 +307,48 @@ function ManageTalentsPage() {
                                                         </FormItem>
                                                     )}
                                                 />
-                                            </div>
-                                        </div>
-                                         <div className="space-y-3 pt-3 border-t">
-                                              <FormField
-                                                control={control}
-                                                name={`talents.${index}.hasDietaryRestriction`}
-                                                render={({ field }) => (
-                                                <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                                                    <FormControl>
-                                                    <Checkbox
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
+                                                <div className="space-y-3 pt-3 border-t">
+                                                    <FormField
+                                                        control={control}
+                                                        name={`talents.${index}.hasDietaryRestriction`}
+                                                        render={({ field }) => (
+                                                            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                                                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                                <FormLabel className="font-normal text-sm">Possui restrição alimentar?</FormLabel>
+                                                            </FormItem>
+                                                        )}
                                                     />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal text-sm">
-                                                    Possui restrição alimentar?
-                                                    </FormLabel>
-                                                </FormItem>
-                                                )}
-                                            />
-                                            {hasRestriction && (
-                                                <FormField
-                                                control={control}
-                                                name={`talents.${index}.dietaryRestriction`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                    <FormLabel className="text-xs">Qual restrição/alergia?</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="ex: Glúten, lactose, amendoim..." {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                                />
-                                            )}
-                                            <FormField
-                                                control={control}
-                                                name={`talents.${index}.extraNotes`}
-                                                render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel>
-                                                    <FormControl>
-                                                    <Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                                )}
-                                            />
-                                         </div>
+                                                    {hasRestriction && (
+                                                        <FormField
+                                                            control={control}
+                                                            name={`talents.${index}.dietaryRestriction`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel className="text-xs">Qual restrição/alergia?</FormLabel>
+                                                                    <FormControl><Input placeholder="ex: Glúten, lactose, amendoim..." {...field} /></FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    )}
+                                                    <FormField
+                                                        control={control}
+                                                        name={`talents.${index}.extraNotes`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel>
+                                                                <FormControl><Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} /></FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </AccordionContent>
                                     </div>
-                                    <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => remove(index)}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                </AccordionItem>
                             )})}
-                        </div>
+                        </Accordion>
                         <div className="flex items-center gap-4">
                             <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), name: '', role: '', photoURL: '', contact: '' })}>
                                 <PlusCircle className="mr-2 h-4 w-4" />
