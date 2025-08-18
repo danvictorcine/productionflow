@@ -1556,26 +1556,10 @@ export const saveSingleTalent = async (talent: Talent) => {
 export const deleteTalent = async (talentId: string): Promise<void> => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-
   const talentRef = doc(db, "talents", talentId);
-  
-  // A verificação de propriedade acontece aqui, através da regra de segurança.
-  // Se o usuário não for o dono, o getDoc() falhará.
-  const talentDoc = await getDoc(talentRef);
-
-  if (!talentDoc.exists() || talentDoc.data().userId !== userId) {
-    throw new Error("Permission denied or talent not found.");
-  }
-  
-  if (talentDoc.data().photoURL) {
-    await deleteImageFromUrl(talentDoc.data().photoURL).catch(err => {
-      console.error("Failed to delete talent photo, but proceeding with Firestore deletion:", err);
-    });
-  }
-  
+  // A verificação de propriedade é feita pelas regras de segurança do Firestore
   await deleteDoc(talentRef);
 };
-
 
 export const uploadTalentPhoto = async (file: File): Promise<string> => {
   const userId = getUserId();
