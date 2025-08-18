@@ -357,7 +357,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                             </DialogHeader>
                             <TalentSelector
                                 talentPool={talentPool}
-                                selectedTeam={teamFields}
+                                selectedTeam={teamFields as TeamMember[]}
                                 onSelect={handleSelectTalents}
                                 onTalentCreated={fetchTalents}
                             />

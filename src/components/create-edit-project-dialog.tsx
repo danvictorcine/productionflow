@@ -543,7 +543,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                             </DialogHeader>
                             <TalentSelector
                                 talentPool={talentPool}
-                                selectedTalents={talentFields}
+                                selectedTalents={talentFields as Talent[]}
                                 onSelect={handleSelectTalents}
                                 onTalentCreated={fetchTalents}
                             />
