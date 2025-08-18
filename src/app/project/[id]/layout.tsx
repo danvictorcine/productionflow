@@ -110,14 +110,14 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
             </header>
 
              <nav className="sticky top-[60px] z-30 border-b bg-background/95 backdrop-blur-sm shrink-0">
-                <div className="px-4 sm:px-6 lg:px-8">
-                <div className="flex -mb-px space-x-2 sm:space-x-4">
+                <div className="px-2 sm:px-6 lg:px-8">
+                <div className="flex justify-center -mb-px">
                     {tabs.map((tab) => (
                     <Link
                         key={tab.name}
                         href={tab.href}
                         className={cn(
-                            'group inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-3 text-sm transition-colors',
+                            'group inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-2 py-3 text-sm transition-colors',
                             pathname.startsWith(tab.href)
                             ? 'border-primary text-primary font-bold'
                             : 'border-transparent text-foreground font-medium hover:border-primary hover:text-primary'
