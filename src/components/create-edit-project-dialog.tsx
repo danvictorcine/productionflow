@@ -5,8 +5,8 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PlusCircle, Trash2, Calendar as CalendarIcon, Info, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { PlusCircle, Trash2, Calendar as CalendarIcon, Info, Users, Search } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -536,7 +536,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                               Adicionar Talento do Banco
                            </Button>
                          </DialogTrigger>
-                         <DialogContent className="sm:max-w-[425px] z-[9999]">
+                         <DialogContent className="sm:max-w-md z-[9999]">
                             <DialogHeader>
                                 <DialogTitle>Selecionar Talentos</DialogTitle>
                                 <DialogDescription>Selecione os talentos do seu banco de contatos para adicionar ao projeto.</DialogDescription>
@@ -577,6 +577,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
     onTalentCreated: () => void 
 }) {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [searchTerm, setSearchTerm] = useState("");
     const [view, setView] = useState<'select' | 'create'>('select');
     const { toast } = useToast();
     
@@ -584,6 +585,12 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
         resolver: zodResolver(newTalentFormSchema),
         defaultValues: { name: "", role: "" },
     });
+    
+    const filteredTalentPool = useMemo(() => {
+        return talentPool.filter(talent => 
+            talent.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [talentPool, searchTerm]);
 
     const handleCheckboxChange = (id: string, checked: boolean) => {
         if (checked) {
@@ -630,9 +637,18 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
     
     return (
         <div className="space-y-4">
+             <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Pesquisar por nome..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                />
+            </div>
              <ScrollArea className="h-72">
                  <div className="p-4 space-y-2">
-                     {talentPool.map(talent => {
+                     {filteredTalentPool.map(talent => {
                         const isInProject = selectedTalents.some(t => t.id === talent.id);
                         return (
                             <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50")}>
