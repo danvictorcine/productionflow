@@ -1,4 +1,3 @@
-
 // @/src/components/storyboard-page-detail.tsx
 'use client';
 
@@ -124,10 +123,7 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
     const [sceneToDelete, setSceneToDelete] = useState<StoryboardScene | null>(null);
     const [sceneForUpload, setSceneForUpload] = useState<string | null>(null);
     
-    const [scale, setScale] = useState(1);
-    const [position, setPosition] = useState({ x: 0, y: 0 });
-    const isPanning = useRef(false);
-    const startPanPoint = useRef({ x: 0, y: 0 });
+    const [gridCols, setGridCols] = useState(4);
     const isMobile = useIsMobile();
     const dndBackend = isMobile ? TouchBackend : HTML5Backend;
 
@@ -282,7 +278,22 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
         }, 500);
     };
     
-    const handleZoom = (dir: 'in' | 'out') => setScale(s => Math.min(Math.max(0.1, s + (dir === 'in' ? 0.15 : -0.15)), 2));
+    const handleZoom = (dir: 'in' | 'out') => {
+        if (dir === 'in') {
+            setGridCols(cols => Math.max(1, cols - 1));
+        } else {
+            setGridCols(cols => Math.min(6, cols + 1));
+        }
+    };
+    
+    const gridColsClass = {
+        1: 'lg:grid-cols-1',
+        2: 'lg:grid-cols-2',
+        3: 'lg:grid-cols-3',
+        4: 'lg:grid-cols-4',
+        5: 'lg:grid-cols-5',
+        6: 'lg:grid-cols-6',
+    }[gridCols] || 'lg:grid-cols-4';
 
     if (isLoading) { return <div className="p-8"><Skeleton className="h-64 w-full" /></div>; }
 
@@ -295,7 +306,7 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
                         <div><h2 className="text-xl font-bold">{scene.title}</h2><p className="text-muted-foreground">{scene.description}</p></div>
                         {!isExporting && (<DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => { setEditingScene(scene); setIsSceneDialogOpen(true); }}><Edit className="mr-2 h-4 w-4" /> Editar Cena</DropdownMenuItem><DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setSceneToDelete(scene)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Cena</DropdownMenuItem></DropdownMenuContent></DropdownMenu>)}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4", gridColsClass)}>
                         {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
                             <PanelCard key={panel.id} panel={panel} aspectRatio={scene.aspectRatio} index={panelIndex} onDelete={handleDeletePanel} onUpdateNotes={handleUpdatePanelNotes} movePanel={movePanel} onDropPanel={handleDropPanel} isExporting={isExporting} />
                         ))}
@@ -349,16 +360,14 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
                                 <DropdownMenuItem onClick={() => handleExport('pdf')}>Exportar como PDF</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        {!isMobile && (
-                            <div className="flex items-center gap-1 ml-auto">
-                                <Button variant="outline" size="icon" onClick={() => handleZoom('out')} className="h-9 w-9">
-                                    <ZoomOut className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="icon" onClick={() => handleZoom('in')} className="h-9 w-9">
-                                    <ZoomIn className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        )}
+                        <div className="flex items-center gap-1 ml-auto">
+                            <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-9 w-9" disabled={gridCols >= 6}>
+                                <ZoomOut className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-9 w-9" disabled={gridCols <= 1}>
+                                <ZoomIn className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
                 <div className="flex-1 flex flex-col overflow-auto">{isMobile ? mobileView : desktopView}</div>
