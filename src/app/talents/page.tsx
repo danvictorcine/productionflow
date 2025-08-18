@@ -288,15 +288,27 @@ function ManageTalentsPage() {
                             Adicione, remova e edite os contatos da sua equipe. Estes contatos estarão disponíveis para serem selecionados em todos os seus projetos, tanto no financeiro quanto na ordem do dia.
                           </AlertDescription>
                         </Alert>
-
-                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Pesquisar talento por nome..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10"
-                            />
+                        
+                         <div className="flex items-center justify-between gap-4">
+                            <div className="relative flex-grow">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Pesquisar talento por nome..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                               <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), name: '', role: '', photoURL: '', contact: '' })}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Adicionar Talento
+                                </Button>
+                                <Button type="submit" disabled={isSaving || Object.values(isUploading).some(v => v)}>
+                                    {(isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Salvar Alterações
+                                </Button>
+                            </div>
                         </div>
                         
                          {legacyTeamMembers.length > 0 && (
@@ -313,7 +325,7 @@ function ManageTalentsPage() {
                             </Alert>
                         )}
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Column 1 */}
                             <div className="flex flex-col gap-4">
                                 {filteredFields
@@ -328,17 +340,6 @@ function ManageTalentsPage() {
                             </div>
                         </div>
 
-
-                        <div className="flex items-center gap-4">
-                            <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), name: '', role: '', photoURL: '', contact: '' })}>
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Adicionar Talento
-                            </Button>
-                            <Button type="submit" disabled={isSaving || Object.values(isUploading).some(v => v)}>
-                                {(isSaving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Salvar Alterações
-                            </Button>
-                        </div>
                     </form>
                 </Form>
             </main>
