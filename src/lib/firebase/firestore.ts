@@ -1558,8 +1558,12 @@ export const deleteTalent = async (talentId: string): Promise<void> => {
   if (!userId) throw new Error("Usuário não autenticado.");
   
   const talentRef = doc(db, "talents", talentId);
-  // As regras de segurança do Firestore farão a verificação de propriedade
-  // antes de permitir a exclusão. Não é necessário ler o documento primeiro.
+  const talentSnap = await getDoc(talentRef);
+
+  if (!talentSnap.exists() || talentSnap.data().userId !== userId) {
+      throw new Error("Permission denied or talent not found.");
+  }
+
   await deleteDoc(talentRef);
 };
 
