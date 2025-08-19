@@ -22,6 +22,7 @@ import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfI
 import { ptBR } from 'date-fns/locale';
 import { Progress } from './ui/progress';
 import { Resizable } from 're-resizable';
+import { CopyableError } from './copyable-error';
 
 interface GanttChartProps {
   projectId: string;
@@ -43,6 +44,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
     setIsLoading(true);
     try {
       const fetchedTasks = await firestoreApi.getGanttTasks(projectId);
+      // Ordenação agora feita no cliente
+      fetchedTasks.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
       setTasks(fetchedTasks);
 
       if (fetchedTasks.length > 0) {
@@ -56,8 +59,17 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
       }
 
     } catch (error) {
-      console.error(error);
-      toast({ variant: 'destructive', title: 'Erro ao buscar tarefas.' });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao buscar tarefas',
+        description: (
+          <CopyableError
+            userMessage="Não foi possível carregar o cronograma."
+            errorCode={errorTyped.code || errorTyped.message}
+          />
+        ),
+      });
     } finally {
       setIsLoading(false);
     }

@@ -1809,7 +1809,9 @@ export const getGanttTasks = async (projectId: string): Promise<GanttTask[]> => 
   const userId = getUserId();
   if (!userId) return [];
   const tasksRef = collection(db, `unified_projects/${projectId}/schedule`);
-  const q = query(tasksRef, where('userId', '==', userId), orderBy('startDate', 'asc'));
+  // O orderBy foi removido para evitar a necessidade de um índice composto em coleções vazias.
+  // A ordenação agora é feita no lado do cliente.
+  const q = query(tasksRef, where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
