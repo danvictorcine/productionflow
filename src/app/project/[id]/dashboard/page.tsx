@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Users, Clapperboard, DollarSign, ArrowRight, GanttChartSquare } from 'lucide-react';
-import { re-resizable } from 're-resizable';
 
 import type { Project, Production, ShootingDay, UnifiedProject, Talent, Transaction } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
