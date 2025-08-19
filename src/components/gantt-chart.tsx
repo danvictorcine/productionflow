@@ -31,13 +31,23 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
   
   const [viewMode, setViewMode] = useState<'day' | 'month'>('day');
 
+  const parseDateInUTC = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    // Important: Use Date.UTC to create a timestamp, then create a Date object from it.
+    // This avoids local timezone interpretation of the "YYYY-MM-DD" string.
+    return new Date(Date.UTC(year, month - 1, day));
+  };
+
+
   const dateRange = useMemo(() => {
     if (tasks.length === 0) {
         const today = new Date();
         return { start: startOfMonth(today), end: endOfMonth(today) };
     }
-    const startDates = tasks.map(t => new Date(t.startDate));
-    const endDates = tasks.map(t => new Date(t.endDate));
+    // Use the UTC parser here as well to be consistent
+    const startDates = tasks.map(t => parseDateInUTC(t.startDate));
+    const endDates = tasks.map(t => parseDateInUTC(t.endDate));
+
     const minDate = new Date(Math.min(...startDates.map(d => d.getTime())));
     const maxDate = new Date(Math.max(...endDates.map(d => d.getTime())));
     
@@ -86,7 +96,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
       fetchData();
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
-      toast({
+       toast({
         variant: 'destructive',
         title: 'Erro ao Salvar Tarefa',
         description: <CopyableError userMessage="Não foi possível salvar a tarefa no cronograma." errorCode={errorTyped.code || errorTyped.message} />,
@@ -138,11 +148,6 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
   const MONTH_WIDTH = 120;
   
   const totalWidth = viewMode === 'day' ? days.length * DAY_WIDTH : months.length * MONTH_WIDTH;
-
-  const parseDateInUTC = (dateString: string) => {
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(Date.UTC(year, month - 1, day));
-  };
 
   const renderDayHeader = () => {
     const monthGroups = months.map(monthStart => {
@@ -232,7 +237,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
         </div>
       ) : (
         <Card className="overflow-x-auto relative">
-           <div className="sticky top-0 z-10 p-2 bg-background/80 backdrop-blur-sm flex justify-end gap-2">
+           <div className="sticky left-0 z-20 p-2 bg-background/80 backdrop-blur-sm flex justify-end gap-2">
               <div className="mr-auto">
                 <Button variant={viewMode === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('day')}>Dia</Button>
                 <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('month')}>Mês</Button>
@@ -249,11 +254,11 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                    {phaseOrder.map(phase => (
                         groupedTasks[phase] && (
                             <div key={phase} className="group/phase">
-                                <div className="flex h-[41px] items-center bg-muted/50 border-b">
-                                    <div className="w-[300px] flex-shrink-0 border-r p-2">
+                                <div className="flex items-center h-10 border-b bg-muted/50">
+                                    <div className="w-[300px] flex-shrink-0 border-r p-2 h-full flex items-center">
                                         <p className="font-bold text-primary">{phase === 'Pre' ? 'Pré-Produção' : phase === 'Prod' ? 'Produção' : 'Pós-Produção'}</p>
                                     </div>
-                                    <div className="flex-1" style={{ width: `${totalWidth}px` }} />
+                                    <div className="flex-1" />
                                 </div>
                                 {groupedTasks[phase].map(task => {
                                     const { left, width } = getTaskPositionAndWidth(task);
