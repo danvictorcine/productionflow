@@ -177,7 +177,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                             {days.map(day => (
                                 <div key={day.toISOString()} className="text-center border-r p-1 text-xs text-muted-foreground">
                                     <p>{format(day, 'dd')}</p>
-                                    <p className="font-semibold">{format(day, 'EEE', { locale: ptBR })}</p>
+                                    <p className="font-semibold">{format(day, 'EEEEE', { locale: ptBR })}</p>
                                 </div>
                             ))}
                         </div>
