@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { GanttTaskForm } from './gantt-task-form';
-import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, eachMonthOfInterval, startOfWeek, endOfWeek, differenceInMonths } from 'date-fns';
+import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, eachMonthOfInterval, differenceInMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from './ui/progress';
 import { Resizable } from 're-resizable';
@@ -33,8 +33,6 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
 
   const parseDateInUTC = (dateString: string) => {
     const [year, month, day] = dateString.split('-').map(Number);
-    // Important: Use Date.UTC to create a timestamp, then create a Date object from it.
-    // This avoids local timezone interpretation of the "YYYY-MM-DD" string.
     return new Date(Date.UTC(year, month - 1, day));
   };
 
@@ -44,7 +42,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
         const today = new Date();
         return { start: startOfMonth(today), end: endOfMonth(today) };
     }
-    // Use the UTC parser here as well to be consistent
+    
     const startDates = tasks.map(t => parseDateInUTC(t.startDate));
     const endDates = tasks.map(t => parseDateInUTC(t.endDate));
 
@@ -52,8 +50,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
     const maxDate = new Date(Math.max(...endDates.map(d => d.getTime())));
     
     return {
-        start: startOfWeek(startOfMonth(minDate), { weekStartsOn: 1 }),
-        end: endOfWeek(endOfMonth(maxDate), { weekStartsOn: 1 })
+        start: startOfMonth(minDate),
+        end: endOfMonth(maxDate)
     };
   }, [tasks]);
   
