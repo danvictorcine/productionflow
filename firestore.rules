@@ -84,14 +84,16 @@ service cloud.firestore {
     match /unified_projects/{unifiedProjectId} {
         allow read, update, delete: if isOwner(resource.data.userId);
         allow create: if isOwner(request.resource.data.userId);
+        
+        // Gantt Chart Tasks
+        match /schedule/{taskId} {
+            allow read, create, update, delete: if isOwner(get(/databases/$(database)/documents/unified_projects/$(unifiedProjectId)).data.userId);
+        }
     }
 
     // Talent Pool
     match /talents/{talentId} {
-      // Unifying the rule for simplicity and correctness.
-      // A user can read, create, update, or delete a talent document if they are the owner.
-      // For read (list), the query from the client MUST include `where('userId', '==', request.auth.uid)`.
-      allow read, write: if isOwner(resource.data.userId) || isOwner(request.resource.data.userId);
+      allow read, create, update, delete: if isOwner(request.auth.uid);
     }
 
     // Admin-only collections
