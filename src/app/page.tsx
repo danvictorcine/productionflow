@@ -305,7 +305,7 @@ function HomePage() {
                     </div>
                     <div>
                       <CardTitle>{item.name}</CardTitle>
-                      <CardDescription>Projeto Unificado</CardDescription>
+                      <CardDescription className="line-clamp-2">{item.description || 'Sem descrição'}</CardDescription>
                     </div>
                   </CardHeader>
                   <CardContent className="mt-auto">
