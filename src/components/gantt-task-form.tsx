@@ -107,6 +107,7 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
   }, [isOpen, isEditMode, task, form]);
 
   const handleSubmit = (values: FormValues) => {
+    // This is the correct place to format the dates
     const dataToSubmit = {
       ...values,
       startDate: format(values.startDate, 'yyyy-MM-dd'),

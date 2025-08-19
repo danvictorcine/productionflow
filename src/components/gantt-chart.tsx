@@ -90,7 +90,12 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
       }
       fetchData();
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao salvar tarefa.' });
+      const errorTyped = error as { code?: string; message: string };
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Salvar Tarefa',
+        description: <CopyableError userMessage="Não foi possível salvar a tarefa no cronograma." errorCode={errorTyped.code || errorTyped.message} />,
+      });
     }
     setIsFormOpen(false);
     setEditingTask(null);
