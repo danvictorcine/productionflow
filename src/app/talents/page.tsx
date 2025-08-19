@@ -162,7 +162,7 @@ function ManageTalentsPage() {
 
     async function onSaveTalent(index: number) {
         setIsSaving(prev => ({ ...prev, [index]: true }));
-        const talentData = watch(`talents.${index}`);
+        const talentData = getValues(`talents.${index}`);
         
         const isFormValid = await trigger(`talents.${index}`);
         if (!isFormValid) {
@@ -170,14 +170,20 @@ function ManageTalentsPage() {
             setIsSaving(prev => ({ ...prev, [index]: false }));
             return;
         }
-
+        
         const { file, ...dataToSave } = talentData;
 
         try {
             await firestoreApi.saveSingleTalent(dataToSave);
-            // Use setValue to update the form state without resetting the field array IDs
-            // This is crucial to keep the state consistent for delete operations
-            setValue(`talents.${index}`, dataToSave, { shouldDirty: false });
+            
+            // This is the crucial part: update the form state without a full reset.
+            // This keeps the `dirtyFields` state accurate and other field `id`s consistent.
+            Object.keys(dataToSave).forEach(key => {
+                const formKey = `talents.${index}.${key}` as const;
+                const value = dataToSave[key as keyof typeof dataToSave];
+                setValue(formKey, value, { shouldDirty: false });
+            });
+            
             toast({ title: `${dataToSave.name} salvo com sucesso!` });
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
@@ -217,11 +223,8 @@ function ManageTalentsPage() {
         const { id: firestoreId } = talentToDelete;
         try {
             await firestoreApi.deleteTalent(firestoreId);
-            const indexToRemove = fields.findIndex(field => field.id === firestoreId);
-            if (indexToRemove > -1) {
-              remove(indexToRemove);
-            }
             toast({ title: "Talento removido com sucesso!" });
+            await fetchData(); // Refresh data after deletion
         } catch (error) {
              const errorTyped = error as { code?: string; message: string };
              toast({
