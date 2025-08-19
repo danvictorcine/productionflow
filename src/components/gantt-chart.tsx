@@ -1,7 +1,7 @@
 // @/src/components/gantt-chart.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { GanttTask } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -10,19 +10,13 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { GanttTaskForm } from './gantt-task-form';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, eachMonthOfInterval, startOfWeek, endOfWeek, differenceInMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from './ui/progress';
 import { Resizable } from 're-resizable';
 import { CopyableError } from './copyable-error';
+import { cn } from '@/lib/utils';
+
 
 interface GanttChartProps {
   projectId: string;
@@ -35,29 +29,30 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
   const [editingTask, setEditingTask] = useState<GanttTask | null>(null);
   const { toast } = useToast();
   
-  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>({
-    start: startOfMonth(new Date()),
-    end: endOfMonth(new Date()),
-  });
+  const [viewMode, setViewMode] = useState<'day' | 'month'>('day');
+
+  const dateRange = useMemo(() => {
+    if (tasks.length === 0) {
+        const today = new Date();
+        return { start: startOfMonth(today), end: endOfMonth(today) };
+    }
+    const startDates = tasks.map(t => new Date(t.startDate));
+    const endDates = tasks.map(t => new Date(t.endDate));
+    const minDate = new Date(Math.min(...startDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...endDates.map(d => d.getTime())));
+    
+    return {
+        start: startOfWeek(startOfMonth(minDate), { weekStartsOn: 1 }),
+        end: endOfWeek(endOfMonth(maxDate), { weekStartsOn: 1 })
+    };
+  }, [tasks]);
   
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const fetchedTasks = await firestoreApi.getGanttTasks(projectId);
-      // Ordenação agora feita no cliente
       fetchedTasks.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
       setTasks(fetchedTasks);
-
-      if (fetchedTasks.length > 0) {
-        const startDates = fetchedTasks.map(t => new Date(t.startDate));
-        const endDates = fetchedTasks.map(t => new Date(t.endDate));
-        const minDate = new Date(Math.min(...startDates.map(d => d.getTime())));
-        const maxDate = new Date(Math.max(...endDates.map(d => d.getTime())));
-        setDateRange({ start: startOfMonth(minDate), end: endOfMonth(maxDate) });
-      } else {
-         setDateRange({ start: startOfMonth(new Date()), end: endOfMonth(new Date()) });
-      }
-
     } catch (error) {
       const errorTyped = error as { code?: string; message: string };
       toast({
@@ -136,8 +131,80 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
     setIsFormOpen(true);
   };
 
+  // Timeline rendering logic
   const days = eachDayOfInterval(dateRange);
-  const CELL_WIDTH = 40; // width of a day cell in pixels
+  const months = eachMonthOfInterval(dateRange);
+  const DAY_WIDTH = 35;
+  const MONTH_WIDTH = 120;
+  
+  const totalWidth = viewMode === 'day' ? days.length * DAY_WIDTH : months.length * MONTH_WIDTH;
+
+
+  const renderDayHeader = () => {
+    const monthGroups = months.map(monthStart => {
+        const monthEnd = endOfMonth(monthStart);
+        const daysInMonth = eachDayOfInterval({start: monthStart, end: monthEnd});
+        return { month: monthStart, days: daysInMonth };
+    });
+
+    return (
+        <div className="flex sticky top-0 z-10 bg-background">
+            <div className="w-[300px] flex-shrink-0 border-r border-b p-2">
+                <p className="font-semibold">Tarefas</p>
+            </div>
+            <div className="flex-1 grid grid-cols-1 border-b">
+                 {monthGroups.map(({ month, days: monthDays }) => (
+                    <div key={format(month, 'yyyy-MM')} className="flex flex-col" style={{ width: `${monthDays.length * DAY_WIDTH}px`}}>
+                        <div className="text-center font-semibold p-1 border-r border-b text-sm">
+                            {format(month, 'MMMM yyyy', { locale: ptBR })}
+                        </div>
+                        <div className="grid" style={{ gridTemplateColumns: `repeat(${monthDays.length}, ${DAY_WIDTH}px)` }}>
+                            {monthDays.map(day => (
+                                <div key={day.toISOString()} className="text-center border-r p-1 text-xs text-muted-foreground">
+                                    <p>{format(day, 'dd')}</p>
+                                    <p className="font-semibold">{format(day, 'EEEEE', { locale: ptBR })}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+
+  const renderMonthHeader = () => (
+      <div className="flex sticky top-0 z-10 bg-background">
+          <div className="w-[300px] flex-shrink-0 border-r border-b p-2">
+              <p className="font-semibold">Tarefas</p>
+          </div>
+          <div className="flex-1 grid border-b" style={{ gridTemplateColumns: `repeat(${months.length}, ${MONTH_WIDTH}px)` }}>
+              {months.map(month => (
+                  <div key={month.toISOString()} className="text-center border-r p-2 font-semibold text-sm">
+                      {format(month, 'MMMM yyyy', { locale: ptBR })}
+                  </div>
+              ))}
+          </div>
+      </div>
+  );
+
+  const getTaskPositionAndWidth = (task: GanttTask) => {
+    const startDate = new Date(task.startDate);
+    const endDate = new Date(task.endDate);
+
+    if (viewMode === 'day') {
+        const offsetDays = differenceInDays(startDate, dateRange.start);
+        const durationDays = differenceInDays(endDate, startDate) + 1;
+        return { left: offsetDays * DAY_WIDTH, width: durationDays * DAY_WIDTH };
+    } else { // month view
+        const startMonthIndex = differenceInMonths(startOfMonth(startDate), dateRange.start);
+        const endMonthIndex = differenceInMonths(startOfMonth(endDate), dateRange.start);
+        const durationMonths = (endMonthIndex - startMonthIndex) + 1;
+        return { left: startMonthIndex * MONTH_WIDTH, width: durationMonths * MONTH_WIDTH };
+    }
+  };
+
 
   if (isLoading) {
     return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
@@ -161,29 +228,18 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
         </div>
       ) : (
         <Card className="overflow-x-auto relative">
-           <div className="sticky top-0 z-10 p-2 bg-background/80 backdrop-blur-sm flex justify-end">
+           <div className="sticky top-0 z-10 p-2 bg-background/80 backdrop-blur-sm flex justify-end gap-2">
+              <div className="mr-auto">
+                <Button variant={viewMode === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('day')}>Dia</Button>
+                <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('month')}>Mês</Button>
+              </div>
               <Button onClick={openNewTaskForm} size="sm">
                 <PlusCircle className="mr-2 h-4 w-4" /> Nova Tarefa
               </Button>
             </div>
-            <div className="p-4" style={{ width: `${Math.max(1000, 300 + days.length * CELL_WIDTH)}px`}}>
-                {/* Header */}
-                <div className="flex sticky top-0 z-10 bg-background">
-                    <div className="w-[300px] flex-shrink-0 border-r border-b p-2">
-                        <p className="font-semibold">Tarefas</p>
-                    </div>
-                    <div className="flex-1 grid grid-cols-1 border-b">
-                        <div className="grid" style={{ gridTemplateColumns: `repeat(${days.length}, ${CELL_WIDTH}px)` }}>
-                            {days.map(day => (
-                                <div key={day.toISOString()} className="text-center border-r p-1 text-xs text-muted-foreground">
-                                    <p>{format(day, 'dd')}</p>
-                                    <p className="font-semibold">{format(day, 'EEEEE', { locale: ptBR })}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
+            <div style={{ width: `${Math.max(1000, 300 + totalWidth)}px`}}>
+                {viewMode === 'day' ? renderDayHeader() : renderMonthHeader()}
+                
                 {/* Body */}
                 <div className="flex">
                     <div className="w-[300px] flex-shrink-0 border-r"> {/* Task Names Column */}
@@ -192,7 +248,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                 <div key={phase}>
                                     <p className="font-bold text-primary p-2 bg-muted/50">{phase === 'Pre' ? 'Pré-Produção' : phase === 'Prod' ? 'Produção' : 'Pós-Produção'}</p>
                                     {groupedTasks[phase].map(task => (
-                                        <div key={task.id} className="h-[60px] flex items-center p-2 border-b hover:bg-muted/30 cursor-pointer" onClick={() => openEditForm(task)}>
+                                        <div key={task.id} className="h-[50px] flex items-center p-2 border-b hover:bg-muted/30 cursor-pointer" onClick={() => openEditForm(task)}>
                                             <p className="text-sm font-medium truncate">{task.title}</p>
                                         </div>
                                     ))}
@@ -207,26 +263,23 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                 <div key={phase}>
                                     <div className="h-[41px] bg-muted/50 border-b"></div> {/* Phase Header Placeholder */}
                                     {groupedTasks[phase].map(task => {
-                                        const startDate = new Date(task.startDate);
-                                        const endDate = new Date(task.endDate);
-                                        const offsetDays = differenceInDays(startDate, dateRange.start);
-                                        const durationDays = differenceInDays(endDate, startDate) + 1;
-                                        
-                                        const left = offsetDays * CELL_WIDTH;
-                                        const width = durationDays * CELL_WIDTH;
+                                        const { left, width } = getTaskPositionAndWidth(task);
                                         
                                         return (
-                                            <div key={task.id} className="h-[60px] relative border-b">
+                                            <div key={task.id} className="h-[50px] relative border-b">
                                                <div className="absolute top-1/2 -translate-y-1/2 h-8" style={{ left: `${left}px` }}>
                                                   <Resizable
                                                       size={{ width: `${width}px`, height: '32px' }}
-                                                      minWidth={CELL_WIDTH}
+                                                      minWidth={viewMode === 'day' ? DAY_WIDTH : MONTH_WIDTH}
                                                       enable={{ right: true }}
+                                                      handleClasses={{ right: "absolute right-0 top-0 h-full w-2 cursor-ew-resize"}}
                                                       onResizeStop={(e, direction, ref, d) => {
-                                                          const newWidth = parseFloat(ref.style.width);
-                                                          const newDuration = Math.round(newWidth / CELL_WIDTH);
-                                                          const newEndDate = addDays(startDate, newDuration - 1);
-                                                          handleResize(task.id, newEndDate);
+                                                        if (viewMode === 'day') {
+                                                            const newWidth = parseFloat(ref.style.width);
+                                                            const newDuration = Math.round(newWidth / DAY_WIDTH);
+                                                            const newEndDate = addDays(new Date(task.startDate), newDuration - 1);
+                                                            handleResize(task.id, newEndDate);
+                                                        }
                                                       }}
                                                       className="relative"
                                                   >
