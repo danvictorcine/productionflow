@@ -152,7 +152,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
             <div className="w-[300px] flex-shrink-0 border-r border-b p-2">
                 <p className="font-semibold">Tarefas</p>
             </div>
-            <div className="flex-1 grid grid-cols-1 border-b">
+            <div className="flex flex-1 border-b">
                  {monthGroups.map(({ month, days: monthDays }) => (
                     <div key={format(month, 'yyyy-MM')} className="flex flex-col" style={{ width: `${monthDays.length * DAY_WIDTH}px`}}>
                         <div className="text-center font-semibold p-1 border-r border-b text-sm">
