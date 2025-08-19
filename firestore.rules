@@ -88,11 +88,7 @@ service cloud.firestore {
 
     // Talent Pool
     match /talents/{talentId} {
-      // Allow read/update if the user is the owner.
-      allow read, update: if isOwner(resource.data.userId);
-      // Allow creation if the user is authenticated and is the owner.
-      allow create: if isOwner(request.resource.data.userId);
-      // Allow deletion if the user is the owner (checked on the server).
+      allow read, update, create: if isOwner(request.resource.data.userId);
       allow delete: if isOwner(get(/databases/$(database)/documents/talents/$(talentId)).data.userId);
     }
 

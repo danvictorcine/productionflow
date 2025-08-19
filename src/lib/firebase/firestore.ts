@@ -1558,8 +1558,11 @@ export const deleteTalent = async (talentId: string): Promise<void> => {
   if (!userId) throw new Error("Usuário não autenticado.");
 
   const talentRef = doc(db, 'talents', talentId);
-  // The security rule will handle the permission check.
-  // We just attempt the delete operation.
+  const talentSnap = await getDoc(talentRef);
+  if (!talentSnap.exists() || talentSnap.data().userId !== userId) {
+      throw new Error("Permission denied or talent not found.");
+  }
+
   await deleteDoc(talentRef);
 };
 
