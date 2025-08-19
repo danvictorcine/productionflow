@@ -1,10 +1,10 @@
-
 // @/src/app/project/[id]/dashboard/page.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Users, Clapperboard, DollarSign, ArrowRight } from 'lucide-react';
+import { Users, Clapperboard, DollarSign, ArrowRight, GanttChartSquare } from 'lucide-react';
+import { re-resizable } from 're-resizable';
 
 import type { Project, Production, ShootingDay, UnifiedProject, Talent, Transaction } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -17,6 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getInitials } from '@/lib/utils';
 import Link from 'next/link';
+import GanttChart from '@/components/gantt-chart';
+
 
 interface DashboardData {
   team: Talent[];
@@ -141,13 +143,14 @@ function ProjectDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8">
+      <div className="p-8 space-y-8">
         <Skeleton className="h-8 w-1/2 mb-6" />
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Skeleton className="h-48" />
           <Skeleton className="h-48" />
           <Skeleton className="h-48" />
         </div>
+        <Skeleton className="h-96 w-full" />
       </div>
     );
   }
@@ -221,8 +224,28 @@ function ProjectDashboardPage() {
              <div className="text-center text-muted-foreground py-4">Nenhum orçamento criado</div>
           )}
         </DashboardCard>
-
       </div>
+
+       <Card>
+          <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                  <GanttChartSquare className="h-5 w-5 text-muted-foreground" />
+                  Cronograma do Projeto
+              </CardTitle>
+              <CardDescription>
+                  Visualize e gerencie as fases e tarefas do seu projeto.
+              </CardDescription>
+          </CardHeader>
+          <CardContent>
+              {project.financialProjectId ? (
+                <GanttChart projectId={project.financialProjectId} />
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  Crie um módulo financeiro para este projeto para habilitar o cronograma.
+                </div>
+              )}
+          </CardContent>
+      </Card>
     </div>
   );
 }

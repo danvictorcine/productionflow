@@ -19,7 +19,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { sendPasswordResetEmail, updateProfile as updateAuthProfile } from "firebase/auth";
-import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, BetaLimits, TeamMember, ChecklistItem, ExportedProjectData, UnifiedProject, DisplayableItem, Talent } from '@/lib/types';
+import type { Project, Transaction, UserProfile, Production, ShootingDay, Post, PageContent, LoginFeature, CreativeProject, BoardItem, LoginPageContent, TeamMemberAbout, ThemeSettings, Storyboard, StoryboardScene, StoryboardPanel, BetaLimits, TeamMember, ChecklistItem, ExportedProjectData, UnifiedProject, DisplayableItem, Talent, GanttTask } from '@/lib/types';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { DEFAULT_BETA_LIMITS } from '../app-config';
 
@@ -143,7 +143,14 @@ export const deleteProject = async (projectId: string) => {
     batch.delete(doc.ref);
   });
   
-  // 4. Commit all deletions in one batch
+  // 4. Delete schedule tasks
+  const tasksQuery = query(collection(db, `projects/${projectId}/schedule`));
+  const tasksSnapshot = await getDocs(tasksQuery);
+  tasksSnapshot.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  
+  // 5. Commit all deletions in one batch
   await batch.commit();
 };
 
@@ -1794,3 +1801,49 @@ export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) =
     
     await batch.commit();
 }
+
+
+// === Gantt Chart Task Functions ===
+
+export const getGanttTasks = async (projectId: string): Promise<GanttTask[]> => {
+  const userId = getUserId();
+  if (!userId) return [];
+  const tasksRef = collection(db, `projects/${projectId}/schedule`);
+  const q = query(tasksRef, where('userId', '==', userId), orderBy('startDate', 'asc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  })) as GanttTask[];
+};
+
+export const addGanttTask = async (projectId: string, task: Omit<GanttTask, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+  const docRef = await addDoc(collection(db, `projects/${projectId}/schedule`), {
+    ...task,
+    userId,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  });
+  return docRef.id;
+};
+
+export const updateGanttTask = async (projectId: string, taskId: string, taskUpdate: Partial<Omit<GanttTask, 'id' | 'userId'>>) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+  const taskRef = doc(db, `projects/${projectId}/schedule`, taskId);
+  // We can add a check here if needed, but Firestore rules should enforce ownership
+  await updateDoc(taskRef, {
+    ...taskUpdate,
+    updatedAt: Timestamp.now(),
+  });
+};
+
+export const deleteGanttTask = async (projectId: string, taskId: string) => {
+  const userId = getUserId();
+  if (!userId) throw new Error("Usuário não autenticado.");
+  const taskRef = doc(db, `projects/${projectId}/schedule`, taskId);
+  // Firestore rules will enforce ownership
+  await deleteDoc(taskRef);
+};

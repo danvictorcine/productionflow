@@ -364,3 +364,18 @@ export type DisplayableItem =
   | (CreativeProject & { itemType: 'creative'; unifiedProjectId?: undefined }) // Projetos antigos
   | (Storyboard & { itemType: 'storyboard'; unifiedProjectId?: undefined }) // Projetos antigos
   | (UnifiedProject & { itemType: 'unified' }); // Novos projetos
+  
+// === Gantt Chart Types ===
+export type GanttTask = {
+  id: string;
+  userId: string;
+  phase: 'Pre' | 'Prod' | 'Post';
+  title: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  progress: number; // 0-100
+  assignees?: string[];
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
