@@ -235,12 +235,12 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
         </div>
       ) : (
         <Card className="overflow-x-auto relative">
-           <div className="sticky left-0 z-20 p-2 bg-background/80 backdrop-blur-sm flex justify-end gap-2">
-              <div className="mr-auto">
+           <div className="sticky left-0 z-20 p-2 bg-background/80 backdrop-blur-sm flex justify-between items-center">
+              <div className="flex items-center gap-2">
                 <Button variant={viewMode === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('day')}>Dia</Button>
                 <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('month')}>Mês</Button>
               </div>
-              <Button onClick={openNewTaskForm} size="sm">
+              <Button onClick={openNewTaskForm} size="sm" variant="ghost">
                 <PlusCircle className="mr-2 h-4 w-4" /> Nova Tarefa
               </Button>
             </div>
@@ -256,7 +256,6 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                     <div className="w-[300px] flex-shrink-0 border-r p-2 h-full flex items-center">
                                         <p className="font-bold text-primary">{phase === 'Pre' ? 'Pré-Produção' : phase === 'Prod' ? 'Produção' : 'Pós-Produção'}</p>
                                     </div>
-                                    <div className="flex-1" />
                                 </div>
                                 {groupedTasks[phase].map(task => {
                                     const { left, width } = getTaskPositionAndWidth(task);
