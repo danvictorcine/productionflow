@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Folder, DollarSign, Clapperboard, Brush, Image as ImageIcon, Users } from 'lucide-react';
+import { ArrowLeft, Edit, Folder, DollarSign, Clapperboard, Brush, Image as ImageIcon, Users, LayoutDashboard } from 'lucide-react';
 
 import type { UnifiedProject } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -65,6 +65,7 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     };
 
     const tabs = useMemo(() => [
+        { name: 'Dashboard', href: `/project/${projectId}/dashboard`, icon: LayoutDashboard },
         { name: 'Moodboard', href: `/project/${projectId}/creative`, icon: Brush },
         { name: 'Storyboard', href: `/project/${projectId}/storyboard`, icon: ImageIcon },
         { name: 'Financeiro', href: `/project/${projectId}/financial`, icon: DollarSign },
