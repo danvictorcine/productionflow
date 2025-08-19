@@ -154,7 +154,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
             </div>
             <div className="flex flex-1 border-b">
                  {monthGroups.map(({ month, days: monthDays }) => (
-                    <div key={format(month, 'yyyy-MM')} className="flex flex-col" style={{ width: `${monthDays.length * DAY_WIDTH}px`}}>
+                    <div key={format(month, 'yyyy-MM')} style={{ width: `${monthDays.length * DAY_WIDTH}px`}}>
                         <div className="text-center font-semibold p-1 border-r border-b text-sm">
                             {format(month, 'MMMM yyyy', { locale: ptBR })}
                         </div>
@@ -241,33 +241,24 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                 {viewMode === 'day' ? renderDayHeader() : renderMonthHeader()}
                 
                 {/* Body */}
-                <div className="flex">
-                    <div className="w-[300px] flex-shrink-0 border-r"> {/* Task Names Column */}
-                        {phaseOrder.map(phase => (
-                            groupedTasks[phase] && (
-                                <div key={phase}>
-                                    <p className="font-bold text-primary p-2 bg-muted/50">{phase === 'Pre' ? 'Pré-Produção' : phase === 'Prod' ? 'Produção' : 'Pós-Produção'}</p>
-                                    {groupedTasks[phase].map(task => (
-                                        <div key={task.id} className="h-[50px] flex items-center p-2 border-b hover:bg-muted/30 cursor-pointer" onClick={() => openEditForm(task)}>
-                                            <p className="text-sm font-medium truncate">{task.title}</p>
-                                        </div>
-                                    ))}
+                <div>
+                   {phaseOrder.map(phase => (
+                        groupedTasks[phase] && (
+                            <div key={phase} className="group/phase">
+                                <div className="flex h-[41px] items-center bg-muted/50 border-b">
+                                    <div className="w-[300px] flex-shrink-0 border-r p-2">
+                                        <p className="font-bold text-primary">{phase === 'Pre' ? 'Pré-Produção' : phase === 'Prod' ? 'Produção' : 'Pós-Produção'}</p>
+                                    </div>
                                 </div>
-                            )
-                        ))}
-                    </div>
-
-                    <div className="flex-1 relative"> {/* Timeline Column */}
-                       {phaseOrder.map(phase => (
-                            groupedTasks[phase] && (
-                                <div key={phase}>
-                                    <div className="h-[41px] bg-muted/50 border-b"></div> {/* Phase Header Placeholder */}
-                                    {groupedTasks[phase].map(task => {
-                                        const { left, width } = getTaskPositionAndWidth(task);
-                                        
-                                        return (
-                                            <div key={task.id} className="h-[50px] relative border-b">
-                                               <div className="absolute top-1/2 -translate-y-1/2 h-8" style={{ left: `${left}px` }}>
+                                {groupedTasks[phase].map(task => {
+                                    const { left, width } = getTaskPositionAndWidth(task);
+                                    return (
+                                        <div key={task.id} className="flex h-[50px] items-center">
+                                            <div className="w-[300px] flex-shrink-0 border-r p-2 h-full flex items-center hover:bg-muted/30 cursor-pointer" onClick={() => openEditForm(task)}>
+                                                <p className="text-sm font-medium truncate">{task.title}</p>
+                                            </div>
+                                            <div className="flex-1 relative h-full border-b">
+                                                <div className="absolute top-1/2 -translate-y-1/2 h-8" style={{ left: `${left}px` }}>
                                                   <Resizable
                                                       size={{ width: `${width}px`, height: '32px' }}
                                                       minWidth={viewMode === 'day' ? DAY_WIDTH : MONTH_WIDTH}
@@ -290,12 +281,12 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                                   </Resizable>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            )
-                        ))}
-                    </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )
+                    ))}
                 </div>
             </div>
       </Card>
