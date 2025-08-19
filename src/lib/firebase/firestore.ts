@@ -1534,13 +1534,13 @@ export const addTalent = async (talent: Omit<Talent, 'id'>): Promise<string> => 
     const userId = getUserId();
     if (!userId) throw new Error("Usuário não autenticado.");
     const talentRef = doc(collection(db, 'talents'));
-    const dataToSave: Record<string, any> = {};
+    const dataToSave: Record<string, any> = { userId };
     for (const key in talent) {
         if ((talent as any)[key] !== undefined) {
             dataToSave[key] = (talent as any)[key];
         }
     }
-    await setDoc(talentRef, { ...dataToSave, userId }, { merge: true });
+    await setDoc(talentRef, dataToSave, { merge: true });
     return talentRef.id;
 };
 
@@ -1550,14 +1550,14 @@ export const saveSingleTalent = async (talent: Talent) => {
   const talentRef = doc(db, 'talents', talent.id);
   const { id, file, ...data } = talent;
 
-  const dataToSave: Record<string, any> = {};
+  const dataToSave: Record<string, any> = { userId };
   for (const key in data) {
     if ((data as any)[key] !== undefined) {
       dataToSave[key] = (data as any)[key];
     }
   }
 
-  await setDoc(talentRef, { ...dataToSave, userId }, { merge: true });
+  await setDoc(talentRef, dataToSave, { merge: true });
 };
 
 export const deleteTalent = async (talentId: string): Promise<void> => {
@@ -1805,10 +1805,10 @@ export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) =
 
 // === Gantt Chart Task Functions ===
 
-export const getGanttTasks = async (projectId: string): Promise<GanttTask[]> => {
+export const getGanttTasks = async (financialProjectId: string): Promise<GanttTask[]> => {
   const userId = getUserId();
   if (!userId) return [];
-  const tasksRef = collection(db, `projects/${projectId}/schedule`);
+  const tasksRef = collection(db, `projects/${financialProjectId}/schedule`);
   const q = query(tasksRef, where('userId', '==', userId), orderBy('startDate', 'asc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
@@ -1817,10 +1817,10 @@ export const getGanttTasks = async (projectId: string): Promise<GanttTask[]> => 
   })) as GanttTask[];
 };
 
-export const addGanttTask = async (projectId: string, task: Omit<GanttTask, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> => {
+export const addGanttTask = async (financialProjectId: string, task: Omit<GanttTask, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-  const docRef = await addDoc(collection(db, `projects/${projectId}/schedule`), {
+  const docRef = await addDoc(collection(db, `projects/${financialProjectId}/schedule`), {
     ...task,
     userId,
     createdAt: Timestamp.now(),
@@ -1829,21 +1829,19 @@ export const addGanttTask = async (projectId: string, task: Omit<GanttTask, 'id'
   return docRef.id;
 };
 
-export const updateGanttTask = async (projectId: string, taskId: string, taskUpdate: Partial<Omit<GanttTask, 'id' | 'userId'>>) => {
+export const updateGanttTask = async (financialProjectId: string, taskId: string, taskUpdate: Partial<Omit<GanttTask, 'id' | 'userId'>>) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-  const taskRef = doc(db, `projects/${projectId}/schedule`, taskId);
-  // We can add a check here if needed, but Firestore rules should enforce ownership
+  const taskRef = doc(db, `projects/${financialProjectId}/schedule`, taskId);
   await updateDoc(taskRef, {
     ...taskUpdate,
     updatedAt: Timestamp.now(),
   });
 };
 
-export const deleteGanttTask = async (projectId: string, taskId: string) => {
+export const deleteGanttTask = async (financialProjectId: string, taskId: string) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-  const taskRef = doc(db, `projects/${projectId}/schedule`, taskId);
-  // Firestore rules will enforce ownership
+  const taskRef = doc(db, `projects/${financialProjectId}/schedule`, taskId);
   await deleteDoc(taskRef);
 };
