@@ -77,7 +77,7 @@ function ManageTalentsPage() {
         },
     });
 
-    const { control, handleSubmit, setValue, watch, trigger, formState: { dirtyFields, isSubmitting }, getValues } = form;
+    const { control, handleSubmit, setValue, watch, trigger, formState: { dirtyFields, isSubmitting }, getValues, reset } = form;
     const { fields, prepend, remove } = useFieldArray({
         control,
         name: "talents",
@@ -94,9 +94,8 @@ function ManageTalentsPage() {
                 firestoreApi.getProjects(),
             ]);
             
-            // Sort talents by name client-side
             talents.sort((a, b) => a.name.localeCompare(b.name));
-            form.reset({ talents });
+            reset({ talents });
 
             const legacyProdTeam = productions.flatMap(p => p.team || []);
             const legacyFinTeam = projects.flatMap(p => p.talents || []);
@@ -123,7 +122,7 @@ function ManageTalentsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [form, toast]);
+    }, [reset, toast]);
 
 
     useEffect(() => {
@@ -176,7 +175,9 @@ function ManageTalentsPage() {
 
         try {
             await firestoreApi.saveSingleTalent(dataToSave);
-            form.reset(watch(), { keepValues: true, keepDirty: false });
+            // Use setValue to update the form state without resetting the field array IDs
+            // This is crucial to keep the state consistent for delete operations
+            setValue(`talents.${index}`, dataToSave, { shouldDirty: false });
             toast({ title: `${dataToSave.name} salvo com sucesso!` });
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
@@ -213,10 +214,10 @@ function ManageTalentsPage() {
     
     const handleConfirmDelete = async () => {
         if (!talentToDelete) return;
-
+        const { id: firestoreId } = talentToDelete;
         try {
-            await firestoreApi.deleteTalent(talentToDelete.id);
-            const indexToRemove = fields.findIndex(field => field.id === talentToDelete.id);
+            await firestoreApi.deleteTalent(firestoreId);
+            const indexToRemove = fields.findIndex(field => field.id === firestoreId);
             if (indexToRemove > -1) {
               remove(indexToRemove);
             }
@@ -282,7 +283,7 @@ function ManageTalentsPage() {
                                 </Avatar>
                                 <p className="font-semibold">{talentData.name || "Novo Talento"}</p>
                             </div>
-                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); setTalentToDelete({ id: field.id, name: field.name }); }}>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); setTalentToDelete({ id: talentData.id, name: talentData.name }); }}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                             <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
