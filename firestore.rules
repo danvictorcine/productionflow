@@ -88,10 +88,10 @@ service cloud.firestore {
 
     // Talent Pool
     match /talents/{talentId} {
-      // Allow a user to list their own talents
-      allow list: if request.auth != null && request.auth.uid == request.query.resource.data.userId;
-      // Allow a user to get, create, update, or delete their own talent document.
-      allow get, create, update, delete: if isOwner(request.auth.uid);
+      // Unifying the rule for simplicity and correctness.
+      // A user can read, create, update, or delete a talent document if they are the owner.
+      // For read (list), the query from the client MUST include `where('userId', '==', request.auth.uid)`.
+      allow read, write: if isOwner(resource.data.userId) || isOwner(request.resource.data.userId);
     }
 
     // Admin-only collections
