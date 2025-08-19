@@ -1805,10 +1805,10 @@ export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) =
 
 // === Gantt Chart Task Functions ===
 
-export const getGanttTasks = async (financialProjectId: string): Promise<GanttTask[]> => {
+export const getGanttTasks = async (projectId: string): Promise<GanttTask[]> => {
   const userId = getUserId();
   if (!userId) return [];
-  const tasksRef = collection(db, `projects/${financialProjectId}/schedule`);
+  const tasksRef = collection(db, `unified_projects/${projectId}/schedule`);
   const q = query(tasksRef, where('userId', '==', userId), orderBy('startDate', 'asc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
@@ -1817,10 +1817,10 @@ export const getGanttTasks = async (financialProjectId: string): Promise<GanttTa
   })) as GanttTask[];
 };
 
-export const addGanttTask = async (financialProjectId: string, task: Omit<GanttTask, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> => {
+export const addGanttTask = async (projectId: string, task: Omit<GanttTask, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-  const docRef = await addDoc(collection(db, `projects/${financialProjectId}/schedule`), {
+  const docRef = await addDoc(collection(db, `unified_projects/${projectId}/schedule`), {
     ...task,
     userId,
     createdAt: Timestamp.now(),
@@ -1829,19 +1829,19 @@ export const addGanttTask = async (financialProjectId: string, task: Omit<GanttT
   return docRef.id;
 };
 
-export const updateGanttTask = async (financialProjectId: string, taskId: string, taskUpdate: Partial<Omit<GanttTask, 'id' | 'userId'>>) => {
+export const updateGanttTask = async (projectId: string, taskId: string, taskUpdate: Partial<Omit<GanttTask, 'id' | 'userId'>>) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-  const taskRef = doc(db, `projects/${financialProjectId}/schedule`, taskId);
+  const taskRef = doc(db, `unified_projects/${projectId}/schedule`, taskId);
   await updateDoc(taskRef, {
     ...taskUpdate,
     updatedAt: Timestamp.now(),
   });
 };
 
-export const deleteGanttTask = async (financialProjectId: string, taskId: string) => {
+export const deleteGanttTask = async (projectId: string, taskId: string) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
-  const taskRef = doc(db, `projects/${financialProjectId}/schedule`, taskId);
+  const taskRef = doc(db, `unified_projects/${projectId}/schedule`, taskId);
   await deleteDoc(taskRef);
 };

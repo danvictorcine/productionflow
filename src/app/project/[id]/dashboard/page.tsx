@@ -236,13 +236,7 @@ function ProjectDashboardPage() {
               </CardDescription>
           </CardHeader>
           <CardContent>
-              {data.financialProjectId ? (
-                <GanttChart projectId={data.financialProjectId} />
-              ) : (
-                <div className="text-center text-muted-foreground py-8">
-                  Crie um módulo financeiro para este projeto para habilitar o cronograma.
-                </div>
-              )}
+              <GanttChart projectId={projectId} />
           </CardContent>
       </Card>
     </div>
