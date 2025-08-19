@@ -139,6 +139,10 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
   
   const totalWidth = viewMode === 'day' ? days.length * DAY_WIDTH : months.length * MONTH_WIDTH;
 
+  const parseDateInUTC = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
+  };
 
   const renderDayHeader = () => {
     const monthGroups = months.map(monthStart => {
@@ -158,9 +162,9 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                         <div className="text-center font-semibold p-1 border-r border-b text-sm">
                             {format(month, 'MMMM yyyy', { locale: ptBR })}
                         </div>
-                        <div className="grid" style={{ gridTemplateColumns: `repeat(${monthDays.length}, ${DAY_WIDTH}px)` }}>
+                        <div className="flex">
                             {monthDays.map(day => (
-                                <div key={day.toISOString()} className="text-center border-r p-1 text-xs text-muted-foreground">
+                                <div key={day.toISOString()} className="text-center border-r p-1 text-xs text-muted-foreground" style={{ width: `${DAY_WIDTH}px` }}>
                                     <p>{format(day, 'dd')}</p>
                                     <p className="font-semibold">{format(day, 'EEEEE', { locale: ptBR })}</p>
                                 </div>
@@ -190,8 +194,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
   );
 
   const getTaskPositionAndWidth = (task: GanttTask) => {
-    const startDate = new Date(task.startDate);
-    const endDate = new Date(task.endDate);
+    const startDate = parseDateInUTC(task.startDate);
+    const endDate = parseDateInUTC(task.endDate);
 
     if (viewMode === 'day') {
         const offsetDays = differenceInDays(startDate, dateRange.start);
@@ -241,7 +245,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                 {viewMode === 'day' ? renderDayHeader() : renderMonthHeader()}
                 
                 {/* Body */}
-                <div>
+                <div className="relative">
                    {phaseOrder.map(phase => (
                         groupedTasks[phase] && (
                             <div key={phase} className="group/phase">
@@ -249,6 +253,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                     <div className="w-[300px] flex-shrink-0 border-r p-2">
                                         <p className="font-bold text-primary">{phase === 'Pre' ? 'Pré-Produção' : phase === 'Prod' ? 'Produção' : 'Pós-Produção'}</p>
                                     </div>
+                                    <div className="flex-1" style={{ width: `${totalWidth}px` }} />
                                 </div>
                                 {groupedTasks[phase].map(task => {
                                     const { left, width } = getTaskPositionAndWidth(task);
@@ -268,7 +273,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                                         if (viewMode === 'day') {
                                                             const newWidth = parseFloat(ref.style.width);
                                                             const newDuration = Math.round(newWidth / DAY_WIDTH);
-                                                            const newEndDate = addDays(new Date(task.startDate), newDuration - 1);
+                                                            const newEndDate = addDays(parseDateInUTC(task.startDate), newDuration - 1);
                                                             handleResize(task.id, newEndDate);
                                                         }
                                                       }}
