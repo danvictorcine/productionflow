@@ -276,6 +276,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                           <div className="h-10 border-b bg-muted/50"></div>
                           {groupedTasks[phase] && groupedTasks[phase].map(task => {
                               const { left, width } = getTaskPositionAndWidth(task);
+                              const solidColor = task.color ? task.color.replace('/20', '') : 'bg-primary';
                               return (
                                   <div key={task.id} className="relative h-[50px] border-b">
                                       <div className="absolute top-1/2 -translate-y-1/2 h-8" style={{ left: `${left}px` }}>
@@ -294,10 +295,10 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                             }}
                                             className="relative"
                                         >
-                                            <div className={cn("absolute inset-0 border border-primary rounded-md flex items-center justify-between px-2 overflow-hidden", task.color ? task.color : 'bg-primary/20')}>
+                                            <div className={cn("absolute inset-0 border rounded-md flex items-center justify-between px-2 overflow-hidden", task.color ? task.color : 'bg-primary/20', solidColor)} style={{ borderColor: `var(--tw-${solidColor})`}}>
                                                 <p className="text-xs font-semibold text-primary-foreground truncate">{task.title}</p>
                                             </div>
-                                            <Progress value={task.progress} className="absolute bottom-0 left-0 h-1 w-full" />
+                                            <Progress value={task.progress} className={cn("absolute bottom-0 left-0 h-1 w-full", solidColor)} indicatorClassName={solidColor} />
                                         </Resizable>
                                       </div>
                                   </div>
