@@ -189,6 +189,22 @@ function FinancialProjectPageDetail() {
         toast({ title: 'Categoria atualizada!' });
     };
 
+    const handleDeleteModule = async () => {
+        if (!unifiedProject?.financialProjectId) return;
+        try {
+            await api.deleteFinancialSubProject(unifiedProject.financialProjectId, unifiedProject.id);
+            toast({ title: "Módulo Financeiro excluído com sucesso!" });
+            fetchProjectData();
+        } catch(error) {
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao excluir módulo',
+                description: <CopyableError userMessage="Não foi possível excluir o módulo financeiro." errorCode={errorTyped.code || errorTyped.message} />,
+            });
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="p-8 space-y-6">
@@ -235,6 +251,7 @@ function FinancialProjectPageDetail() {
             onAddCategory={handleAddCategory}
             onUpdateCategory={handleUpdateCategory}
             onDeleteCategory={handleDeleteCategory}
+            onDeleteModule={handleDeleteModule}
         />
     );
 }

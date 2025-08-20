@@ -1,9 +1,10 @@
+
 // @/src/components/production-page-detail.tsx
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { PlusCircle, Edit, Share2, Clapperboard, FileSpreadsheet, FileDown, Copy } from 'lucide-react';
+import { PlusCircle, Edit, Share2, Clapperboard, FileSpreadsheet, FileDown, Copy, Trash2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
@@ -64,9 +65,10 @@ interface ProductionPageDetailProps {
     production: Production;
     shootingDays: ShootingDay[];
     onDataRefresh: () => void;
+    onDeleteModule: () => void;
 }
 
-export default function ProductionPageDetail({ production, shootingDays, onDataRefresh }: ProductionPageDetailProps) {
+export default function ProductionPageDetail({ production, shootingDays, onDataRefresh, onDeleteModule }: ProductionPageDetailProps) {
   const { toast } = useToast();
   
   const [isExporting, setIsExporting] = useState(false);
@@ -79,6 +81,7 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
   const [dayToDelete, setDayToDelete] = useState<ProcessedShootingDay | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
 
   const handleProductionSubmit = async (data: Omit<Production, 'id' | 'userId' | 'createdAt'>) => {
@@ -262,6 +265,10 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
                 <Share2 className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Compartilhar Produção</span>
             </Button>
+            <Button onClick={() => setIsDeleteDialogOpen(true)} variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                <Trash2 className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Excluir Módulo</span>
+            </Button>
         </div>
       </div>
       <main className="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-6xl mx-auto space-y-6 overflow-y-auto">
@@ -349,6 +356,23 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+        
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir Módulo de Ordem do Dia?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o módulo e todos os seus dados associados (ordens do dia, equipes, etc.). O projeto principal permanecerá.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDeleteModule} className="bg-destructive hover:bg-destructive/90">
+                      Sim, Excluir
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <Sheet open={!!shareLink} onOpenChange={(open) => !open && setShareLink(null)}>
                 <SheetContent>

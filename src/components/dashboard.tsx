@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import Link from 'next/link';
 import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
-import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, FileText, Upload, ClipboardList, DollarSign, CheckCircle } from "lucide-react";
+import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, FileText, Upload, ClipboardList, DollarSign, CheckCircle, Trash2 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ImportTransactionsDialog } from "./import-transactions-dialog";
 import { PayDailyRateDialog } from "./pay-daily-rate-dialog";
 import { ManageCategoriesDialog } from "./manage-categories-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog";
 
 
 interface DashboardProps {
@@ -51,6 +52,7 @@ interface DashboardProps {
   onAddCategory: (name: string) => Promise<void>;
   onUpdateCategory: (oldName: string, newName: string) => Promise<void>;
   onDeleteCategory: (name: string) => Promise<boolean>;
+  onDeleteModule?: () => void;
 }
 
 export default function Dashboard({ 
@@ -64,12 +66,14 @@ export default function Dashboard({
     onAddCategory,
     onUpdateCategory,
     onDeleteCategory,
+    onDeleteModule
 }: DashboardProps) {
   const [isAddSheetOpen, setAddSheetOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isDailyPaymentOpen, setDailyPaymentOpen] = useState(false);
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedTalent, setSelectedTalent] = useState<Talent | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -479,6 +483,12 @@ export default function Dashboard({
                 </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          {onDeleteModule && (
+              <Button onClick={() => setIsDeleteDialogOpen(true)} variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Excluir Módulo</span>
+              </Button>
+          )}
         </div>
       </div>
 
@@ -631,6 +641,22 @@ export default function Dashboard({
             onUndo={handleUndoDailyPayment}
         />
       )}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Excluir Módulo Financeiro?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o módulo financeiro e todos os seus dados associados (orçamento, transações, etc.). O projeto principal permanecerá.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={onDeleteModule} className="bg-destructive hover:bg-destructive/90">
+                    Sim, Excluir
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

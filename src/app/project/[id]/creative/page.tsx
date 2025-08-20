@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Brush, PlusCircle } from 'lucide-react';
+import { Brush, PlusCircle, Trash2 } from 'lucide-react';
 
 import type { CreativeProject, BoardItem, UnifiedProject } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { Button } from '@/components/ui/button';
 import CreativeProjectPageDetail from '@/components/creative-project-page-detail';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 
 function CreativeProjectUnifiedPage() {
@@ -27,6 +28,7 @@ function CreativeProjectUnifiedPage() {
   const [creativeProject, setCreativeProject] = useState<CreativeProject | null>(null);
   const [boardItems, setBoardItems] = useState<BoardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const fetchCreativeData = useCallback(async () => {
     if (!unifiedProjectId || !user) return;
@@ -92,6 +94,22 @@ function CreativeProjectUnifiedPage() {
     }
   };
 
+  const handleDeleteModule = async () => {
+    if (!unifiedProject?.creativeProjectId) return;
+    try {
+        await firestoreApi.deleteCreativeSubProject(unifiedProject.creativeProjectId, unifiedProject.id);
+        toast({ title: "Módulo Moodboard excluído com sucesso!" });
+        fetchCreativeData();
+    } catch(error) {
+        const errorTyped = error as { code?: string; message: string };
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao excluir módulo',
+            description: <CopyableError userMessage="Não foi possível excluir o módulo de moodboard." errorCode={errorTyped.code || errorTyped.message} />,
+        });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 space-y-6">
@@ -121,11 +139,30 @@ function CreativeProjectUnifiedPage() {
   }
 
   return (
-    <CreativeProjectPageDetail
-      project={creativeProject}
-      initialItems={boardItems}
-      onDataRefresh={fetchCreativeData}
-    />
+    <>
+      <CreativeProjectPageDetail
+        project={creativeProject}
+        initialItems={boardItems}
+        onDataRefresh={fetchCreativeData}
+        onDeleteModule={() => setIsDeleteDialogOpen(true)}
+      />
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Excluir Módulo Moodboard?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o moodboard e todos os seus itens. O projeto principal permanecerá.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteModule} className="bg-destructive hover:bg-destructive/90">
+                    Sim, Excluir
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

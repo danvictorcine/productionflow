@@ -79,6 +79,23 @@ function StoryboardProjectUnifiedPage() {
             setIsLoading(false);
         }
     };
+    
+    const handleDeleteModule = async () => {
+        if (!unifiedProject?.storyboardProjectId) return;
+        try {
+            await api.deleteStoryboardSubProject(unifiedProject.storyboardProjectId, unifiedProject.id);
+            toast({ title: "Módulo Storyboard excluído com sucesso!" });
+            fetchStoryboardData();
+        } catch(error) {
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao excluir módulo',
+                description: <CopyableError userMessage="Não foi possível excluir o módulo de storyboard." errorCode={errorTyped.code || errorTyped.message} />,
+            });
+        }
+    };
+
 
     if (isLoading) {
         return (
@@ -111,6 +128,7 @@ function StoryboardProjectUnifiedPage() {
         <StoryboardPageDetail
             storyboard={storyboard}
             onDataRefresh={fetchStoryboardData}
+            onDeleteModule={handleDeleteModule}
         />
     );
 }

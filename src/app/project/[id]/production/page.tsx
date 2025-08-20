@@ -90,6 +90,22 @@ function ProductionProjectPageDetail() {
             setIsLoading(false);
         }
     };
+    
+    const handleDeleteModule = async () => {
+        if (!unifiedProject?.productionProjectId) return;
+        try {
+            await api.deleteProductionSubProject(unifiedProject.productionProjectId, unifiedProject.id);
+            toast({ title: "Módulo de Ordem do Dia excluído com sucesso!" });
+            fetchProductionData();
+        } catch(error) {
+            const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao excluir módulo',
+                description: <CopyableError userMessage="Não foi possível excluir o módulo de ordem do dia." errorCode={errorTyped.code || errorTyped.message} />,
+            });
+        }
+    };
 
     if (isLoading) {
         return (
@@ -123,6 +139,7 @@ function ProductionProjectPageDetail() {
             production={production}
             shootingDays={shootingDays}
             onDataRefresh={fetchProductionData}
+            onDeleteModule={handleDeleteModule}
         />
     );
 }

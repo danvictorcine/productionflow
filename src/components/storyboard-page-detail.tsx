@@ -1,3 +1,4 @@
+
 // @/src/components/storyboard-page-detail.tsx
 'use client';
 
@@ -102,9 +103,10 @@ PanelCard.displayName = 'PanelCard';
 interface StoryboardPageDetailProps {
     storyboard: Storyboard;
     onDataRefresh: () => void;
+    onDeleteModule: () => void;
 }
 
-export default function StoryboardPageDetail({ storyboard, onDataRefresh }: StoryboardPageDetailProps) {
+export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDeleteModule }: StoryboardPageDetailProps) {
     const { user } = useAuth();
     const { toast } = useToast();
     const imageUploadRef = useRef<HTMLInputElement>(null);
@@ -122,6 +124,7 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
     const [editingScene, setEditingScene] = useState<StoryboardScene | null>(null);
     const [sceneToDelete, setSceneToDelete] = useState<StoryboardScene | null>(null);
     const [sceneForUpload, setSceneForUpload] = useState<string | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     
     const [gridCols, setGridCols] = useState(4);
     const isMobile = useIsMobile();
@@ -367,6 +370,10 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
                             <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-9 w-9" disabled={gridCols <= 1}>
                                 <ZoomIn className="h-4 w-4" />
                             </Button>
+                             <Button variant="ghost" size="sm" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                                <Trash2 className="h-4 w-4 md:mr-2" />
+                                <span className="hidden md:inline">Excluir</span>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -381,6 +388,22 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh }: Stor
                 />
                 <AlertDialog open={!!sceneToDelete} onOpenChange={(open) => !open && setSceneToDelete(null)}>
                     <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir Cena?</AlertDialogTitle><AlertDialogDescription>Tem certeza que deseja excluir a cena "{sceneToDelete?.title}"? Todos os quadros dentro dela serão perdidos. Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleSceneDelete} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                </AlertDialog>
+                <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                  <AlertDialogContent>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir Módulo Storyboard?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              Esta ação não pode ser desfeita. Isso excluirá permanentemente o storyboard e todos os seus dados associados (cenas, quadros, etc.). O projeto principal permanecerá.
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={onDeleteModule} className="bg-destructive hover:bg-destructive/90">
+                              Sim, Excluir
+                          </AlertDialogAction>
+                      </AlertDialogFooter>
+                  </AlertDialogContent>
                 </AlertDialog>
                 <input ref={imageUploadRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} disabled={isUploading}/>
             </div>

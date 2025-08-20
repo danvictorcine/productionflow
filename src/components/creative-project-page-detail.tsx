@@ -1,3 +1,4 @@
+
 // @/src/components/creative-project-page-detail.tsx
 'use client';
 
@@ -341,9 +342,10 @@ interface CreativeProjectPageDetailProps {
     project: CreativeProject;
     initialItems: BoardItem[];
     onDataRefresh: () => void;
+    onDeleteModule: () => void;
 }
 
-export default function CreativeProjectPageDetail({ project, initialItems, onDataRefresh }: CreativeProjectPageDetailProps) {
+export default function CreativeProjectPageDetail({ project, initialItems, onDataRefresh, onDeleteModule }: CreativeProjectPageDetailProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const imageUploadRef = useRef<HTMLInputElement>(null);
@@ -640,6 +642,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
             <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
             <Button variant="ghost" size="sm" onClick={() => setIsProjectDialogOpen(true)} className="tool-button"><Edit className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Editar</span></Button>
+            <Button variant="ghost" size="sm" onClick={onDeleteModule} className="tool-button text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Excluir</span></Button>
           </div>
         </div>
       </div>
