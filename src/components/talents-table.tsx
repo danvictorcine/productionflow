@@ -113,7 +113,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                           {isFixedFee ? (
                               talentTransactions.length > 0 && talentTransactions[0].status === 'paid' ? (
                                   <div className="group relative w-[120px] h-9 mx-auto">
-                                    <Button size="sm" variant="outline" className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none rounded-md" aria-hidden="true" tabIndex={-1}>
+                                    <Button size="sm" className="absolute inset-0 w-full h-full bg-green-600 hover:bg-green-700 text-white transition-opacity group-hover:opacity-0 pointer-events-none rounded-md" aria-hidden="true" tabIndex={-1}>
                                       <Check className="mr-1 h-4 w-4" /> Pago
                                     </Button>
                                     <Button size="sm" variant="ghost" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md" onClick={() => onUndoPayment(talentTransactions[0].id)} aria-label={`Desfazer pagamento de ${talent.name}`}>
