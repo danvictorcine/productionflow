@@ -1,4 +1,5 @@
-// @/components/theme-loader.tsx
+
+// @/src/components/theme-loader.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -49,7 +50,6 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
       --chart-5: ${theme.chart5};
       --brand-icon: ${theme.brandIcon};
       --brand-text: ${theme.brandText};
-      --brand-login: ${theme.brandLogin};
     }
 
     .dark {
@@ -79,7 +79,6 @@ const ThemeInjector = ({ theme }: { theme: ThemeSettings | null }) => {
       --chart-5: ${theme.chart5};
       --brand-icon: ${theme.brandIcon};
       --brand-text: ${generateInverseVariant(theme.brandText)};
-      --brand-login: ${theme.brandLogin};
     }
   `;
 

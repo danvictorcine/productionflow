@@ -319,7 +319,6 @@ export type ThemeSettings = {
   chart5: string;
   brandIcon: string;
   brandText: string;
-  brandLogin: string;
 };
 
 // === Beta Limits Settings ===

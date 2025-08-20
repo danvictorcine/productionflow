@@ -20,7 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import AdminGuard from '@/components/admin-guard';
 import { ProductionFlowIcon } from '@/components/production-flow-icon';
 
-const defaultColors: ThemeSettings = {
+const defaultColors: Omit<ThemeSettings, 'brandLogin'> = {
     primary: '231 48% 48%',
     secondary: '240 4.8% 95.9%',
     accent: '174 100% 29.4%',
@@ -36,7 +36,6 @@ const defaultColors: ThemeSettings = {
     chart5: '231 48% 88%',
     brandIcon: '231 48% 48%',
     brandText: '240 10% 3.9%',
-    brandLogin: '231 48% 48%',
 };
 
 function hslToHex(h: number, s: number, l: number): string {
@@ -177,7 +176,7 @@ function ManageThemePageDetail() {
 
     const coreColors = ['background', 'foreground', 'card', 'border', 'primary', 'secondary', 'accent', 'destructive'] as const;
     const chartColors = ['chart1', 'chart2', 'chart3', 'chart4', 'chart5'] as const;
-    const brandColors = ['brandIcon', 'brandText', 'brandLogin'] as const;
+    const brandColors = ['brandIcon', 'brandText'] as const;
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -255,20 +254,6 @@ function ManageThemePageDetail() {
                                             <div className="flex items-center gap-2">
                                                 <Controller name="brandText" control={control} render={({ field }) => (<ColorPicker value={field.value} onChange={field.onChange} />)}/>
                                                 <Controller name="brandText" control={control} render={({ field }) => (<input {...field} className="w-40 p-2 border rounded-md font-mono text-sm bg-muted" readOnly />)} />
-                                            </div>
-                                        </div>
-                                     </div>
-                                     <div className="space-y-3">
-                                        <h4 className="text-sm font-medium">Tela de Carregamento</h4>
-                                         <div className="flex items-center justify-center p-4 rounded-lg bg-muted">
-                                            <ProductionFlowIcon className="h-7 w-7" style={{color: `hsl(${watchedColors.brandLogin})`}} />
-                                            <p className="text-lg font-semibold tracking-tighter ml-2" style={{color: `hsl(${watchedColors.brandLogin})`}}>ProductionFlow</p>
-                                        </div>
-                                        <div key="brandLogin" className="flex items-center justify-between">
-                                            <label htmlFor="brandLogin" className="capitalize font-medium">Cor Unificada</label>
-                                            <div className="flex items-center gap-2">
-                                                <Controller name="brandLogin" control={control} render={({ field }) => (<ColorPicker value={field.value} onChange={field.onChange} />)}/>
-                                                <Controller name="brandLogin" control={control} render={({ field }) => (<input {...field} className="w-40 p-2 border rounded-md font-mono text-sm bg-muted" readOnly />)} />
                                             </div>
                                         </div>
                                      </div>
