@@ -230,7 +230,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
 
 
   return (
-    <div className="w-full">
+    <div className="w-full relative" ref={containerRef}>
          {tooltipData && (
             <div
             className="absolute z-30 p-2 text-xs bg-popover text-popover-foreground rounded-md shadow-lg pointer-events-none"
@@ -257,7 +257,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                   <PlusCircle className="mr-2 h-4 w-4" /> Nova Tarefa
                 </Button>
               </div>
-            <div className="flex" ref={containerRef}>
+            <div className="flex">
               {/* Task List Column (Fixed) */}
               <div className="w-[150px] md:w-[300px] flex-shrink-0 border-r">
                   <div className="h-[69px] border-b p-2 flex items-center sticky top-0 bg-background z-10">
