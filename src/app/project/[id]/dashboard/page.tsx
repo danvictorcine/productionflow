@@ -55,8 +55,8 @@ const DashboardCard = ({
        <CardFooter>
           <Button asChild variant="ghost" size="sm" className="-ml-4">
             <Link href={footerLink}>
+              <ArrowRight className="mr-2 h-4 w-4" />
               {footerText}
-              <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
        </CardFooter>
