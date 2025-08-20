@@ -299,8 +299,8 @@ function HomePage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                <Link href={`/project/${item.id}`} className="flex flex-col flex-grow">
-                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10">
+                <Link href={`/project/${item.id}`} className="flex flex-col flex-grow p-6">
+                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10 p-0">
                     <div className="p-3 rounded-full bg-primary/10">
                       <Folder className="h-6 w-6 text-primary" />
                     </div>
@@ -309,9 +309,6 @@ function HomePage() {
                       <CardDescription className="line-clamp-2">{item.description || 'Sem descrição'}</CardDescription>
                     </div>
                   </CardHeader>
-                  <CardContent className="mt-auto">
-                    <Button className="w-full">Gerenciar</Button>
-                  </CardContent>
                 </Link>
               </Card>
             );
