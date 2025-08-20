@@ -1,4 +1,3 @@
-
 // @/src/components/storyboard-page-detail.tsx
 'use client';
 
@@ -20,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { CreateEditStoryboardSceneDialog } from '@/components/create-edit-storyboard-scene-dialog';
+import { CreateEditStoryboardDialog } from '@/components/create-edit-storyboard-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardTitle, CardDescription, CardHeader } from '@/components/ui/card';
@@ -121,6 +121,7 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDele
     
     // Dialog states
     const [isSceneDialogOpen, setIsSceneDialogOpen] = useState(false);
+    const [isStoryboardDialogOpen, setIsStoryboardDialogOpen] = useState(false);
     const [editingScene, setEditingScene] = useState<StoryboardScene | null>(null);
     const [sceneToDelete, setSceneToDelete] = useState<StoryboardScene | null>(null);
     const [sceneForUpload, setSceneForUpload] = useState<string | null>(null);
@@ -170,6 +171,18 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDele
             setEditingScene(null);
         }
     };
+    
+    const handleStoryboardSubmit = async (data: Omit<Storyboard, 'id' | 'userId' | 'createdAt'>) => {
+        try {
+            await firestoreApi.updateStoryboard(storyboard.id, data);
+            toast({ title: 'Storyboard atualizado!' });
+            onDataRefresh();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Erro ao Salvar Storyboard' });
+        } finally {
+            setIsStoryboardDialogOpen(false);
+        }
+    }
 
     const handleSceneDelete = async () => {
         if (!sceneToDelete) return;
@@ -370,6 +383,9 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDele
                             <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-9 w-9" disabled={gridCols <= 1}>
                                 <ZoomIn className="h-4 w-4" />
                             </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setIsStoryboardDialogOpen(true)} className="h-9 w-9">
+                                <Edit className="h-4 w-4" />
+                            </Button>
                              <Button variant="ghost" size="icon" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
                                 <Trash2 className="h-4 w-4" />
                                  <span className="sr-only">Excluir Módulo</span>
@@ -385,6 +401,12 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDele
                   onSubmit={handleSceneSubmit} 
                   scene={editingScene}
                   defaultAspectRatio={storyboard.aspectRatio}
+                />
+                <CreateEditStoryboardDialog
+                    isOpen={isStoryboardDialogOpen}
+                    setIsOpen={setIsStoryboardDialogOpen}
+                    onSubmit={handleStoryboardSubmit}
+                    storyboard={storyboard}
                 />
                 <AlertDialog open={!!sceneToDelete} onOpenChange={(open) => !open && setSceneToDelete(null)}>
                     <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir Cena?</AlertDialogTitle><AlertDialogDescription>Tem certeza que deseja excluir a cena "{sceneToDelete?.title}"? Todos os quadros dentro dela serão perdidos. Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleSceneDelete} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
