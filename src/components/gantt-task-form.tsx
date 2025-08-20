@@ -62,7 +62,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const taskColorOptions = [
-  { label: 'Padrão', value: 'bg-primary/20', colorClass: 'bg-primary/20' },
+  { label: 'Padrão', value: 'bg-primary', colorClass: 'bg-primary' },
   { label: 'Azul', value: 'bg-blue-500', colorClass: 'bg-blue-500' },
   { label: 'Verde', value: 'bg-green-500', colorClass: 'bg-green-500' },
   { label: 'Amarelo', value: 'bg-yellow-500', colorClass: 'bg-yellow-500' },
@@ -91,7 +91,7 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
       endDate: new Date(),
       progress: 0,
       notes: "",
-      color: "bg-primary/20",
+      color: "bg-primary",
     },
   });
 
@@ -105,7 +105,7 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
             endDate: new Date(task.endDate),
             progress: task.progress,
             notes: task.notes || "",
-            color: task.color || 'bg-primary/20'
+            color: task.color || 'bg-primary'
           }
         : {
             title: "",
@@ -114,7 +114,7 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
             endDate: new Date(),
             progress: 0,
             notes: "",
-            color: 'bg-primary/20',
+            color: 'bg-primary',
           };
       form.reset(defaultValues);
     }
@@ -223,7 +223,7 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
                           key={option.value}
                           type="button"
                           className={cn(
-                            "h-8 w-8 rounded-full border-2",
+                            "h-8 w-8 rounded-full border-2 flex items-center justify-center",
                             option.colorClass,
                             field.value === option.value ? 'border-primary' : 'border-transparent'
                           )}
