@@ -1,3 +1,4 @@
+
 // src/app/project/[id]/storyboard/page.tsx
 'use client';
 

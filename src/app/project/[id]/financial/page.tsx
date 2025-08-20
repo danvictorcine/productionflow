@@ -1,3 +1,4 @@
+
 // src/app/project/[id]/financial/page.tsx
 'use client';
 

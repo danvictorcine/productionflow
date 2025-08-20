@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Folder, DollarSign, Clapperboard, Brush, Image as ImageIcon, Users, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, Edit, Folder, DollarSign, Clapperboard, Brush, Image as ImageIcon, LayoutDashboard, Trash2 } from 'lucide-react';
 
 import type { UnifiedProject } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -19,6 +19,17 @@ import { useToast } from '@/hooks/use-toast';
 import { CreateEditUnifiedProjectDialog } from '@/components/create-edit-unified-project-dialog';
 import { AppFooter } from '@/components/app-footer';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     const params = useParams();
@@ -31,30 +42,38 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     const [project, setProject] = useState<UnifiedProject | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [moduleToDelete, setModuleToDelete] = useState<'financial' | 'production' | 'creative' | 'storyboard' | null>(null);
+
     
     const isCreativePage = pathname.includes('/creative');
     const isStoryboardPage = pathname.includes('/storyboard');
 
-    useEffect(() => {
+    const fetchProject = useCallback(async () => {
         if (!projectId || !user) return;
         setIsLoading(true);
-        firestoreApi.getUnifiedProject(projectId)
-            .then(data => {
-                if (data) {
-                    setProject(data);
-                } else {
-                    toast({ variant: 'destructive', title: 'Erro', description: 'Projeto não encontrado.' });
-                }
-            })
-            .catch(error => {
-                toast({
-                    variant: 'destructive',
-                    title: 'Erro ao carregar projeto',
-                    description: <CopyableError userMessage="Não foi possível carregar os dados do projeto." errorCode={error.code || error.message} />,
-                });
-            })
-            .finally(() => setIsLoading(false));
-    }, [projectId, user, toast]);
+        try {
+            const data = await firestoreApi.getUnifiedProject(projectId);
+            if (data) {
+                setProject(data);
+            } else {
+                toast({ variant: 'destructive', title: 'Erro', description: 'Projeto não encontrado.' });
+                router.push('/');
+            }
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao carregar projeto',
+                description: <CopyableError userMessage="Não foi possível carregar os dados do projeto." errorCode={(error as Error).message} />,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [projectId, user, toast, router]);
+
+    useEffect(() => {
+        fetchProject();
+    }, [fetchProject]);
 
     const handleProjectUpdate = async (data: Omit<UnifiedProject, 'id' | 'userId' | 'createdAt'>) => {
         if (!project) return;
@@ -63,6 +82,60 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
         toast({ title: 'Projeto atualizado com sucesso!' });
         setIsEditDialogOpen(false);
     };
+    
+    const handleConfirmDeleteModule = async () => {
+        if (!moduleToDelete || !project) return;
+        
+        setIsDeleting(true);
+        try {
+            let deletePromise;
+            switch(moduleToDelete) {
+                case 'financial':
+                    if(project.financialProjectId) deletePromise = firestoreApi.deleteFinancialSubProject(project.financialProjectId, project.id);
+                    break;
+                case 'production':
+                    if(project.productionProjectId) deletePromise = firestoreApi.deleteProductionSubProject(project.productionProjectId, project.id);
+                    break;
+                case 'creative':
+                    if(project.creativeProjectId) deletePromise = firestoreApi.deleteCreativeSubProject(project.creativeProjectId, project.id);
+                    break;
+                case 'storyboard':
+                    if(project.storyboardProjectId) deletePromise = firestoreApi.deleteStoryboardSubProject(project.storyboardProjectId, project.id);
+                    break;
+            }
+
+            if (deletePromise) {
+                await deletePromise;
+                toast({ title: "Módulo excluído com sucesso!" });
+                await fetchProject(); // Re-fetch project data to update state
+            }
+        } catch (error) {
+             toast({ variant: 'destructive', title: 'Erro ao excluir módulo', description: (error as Error).message });
+        } finally {
+            setIsDeleting(false);
+            setModuleToDelete(null);
+        }
+    }
+    
+    const currentTab = useMemo(() => {
+        if (pathname.includes('/financial')) return { key: 'financial', name: 'Financeiro' };
+        if (pathname.includes('/production')) return { key: 'production', name: 'Ordem do Dia' };
+        if (pathname.includes('/creative')) return { key: 'creative', name: 'Moodboard' };
+        if (pathname.includes('/storyboard')) return { key: 'storyboard', name: 'Storyboard' };
+        return null;
+    }, [pathname]);
+
+    const canDeleteCurrentModule = useMemo(() => {
+        if (!currentTab || !project) return false;
+        switch(currentTab.key) {
+            case 'financial': return !!project.financialProjectId;
+            case 'production': return !!project.productionProjectId;
+            case 'creative': return !!project.creativeProjectId;
+            case 'storyboard': return !!project.storyboardProjectId;
+            default: return false;
+        }
+    }, [currentTab, project]);
+
 
     const tabs = useMemo(() => [
         { name: 'Dashboard', href: `/project/${projectId}/dashboard`, icon: LayoutDashboard },
@@ -99,10 +172,12 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                     <h1 className="text-lg md:text-xl font-bold text-primary truncate">{project.name}</h1>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
-                    <Button onClick={() => router.push('/talents')} variant="ghost" size="sm">
-                        <Users className="h-4 w-4 md:mr-2" />
-                        <span className="hidden md:inline">Banco de Talentos</span>
-                    </Button>
+                    {canDeleteCurrentModule && currentTab && (
+                       <Button onClick={() => setModuleToDelete(currentTab.key as any)} variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Excluir Módulo</span>
+                       </Button>
+                    )}
                     <Button onClick={() => setIsEditDialogOpen(true)} variant="ghost" size="sm">
                         <Edit className="h-4 w-4 md:mr-2" />
                         <span className="hidden md:inline">Editar Projeto</span>
@@ -145,6 +220,28 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                 onSubmit={handleProjectUpdate}
                 project={project}
             />
+            
+            <AlertDialog open={!!moduleToDelete} onOpenChange={(open) => !open && setModuleToDelete(null)}>
+                 <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir Módulo '{currentTab?.name}'?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. Isso excluirá permanentemente o módulo e todos os seus dados associados (orçamento, ordens do dia, etc.). O projeto principal permanecerá.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmDeleteModule}
+                            className="bg-destructive hover:bg-destructive/90"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Sim, Excluir
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

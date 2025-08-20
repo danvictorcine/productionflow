@@ -48,6 +48,7 @@ function CreativeProjectUnifiedPage() {
           const itemsData = await firestoreApi.getBoardItems(cProject.id);
           setBoardItems(itemsData);
         } else {
+          // Sub-projeto foi excluído, resetar o estado
           setCreativeProject(null);
           setBoardItems([]);
         }

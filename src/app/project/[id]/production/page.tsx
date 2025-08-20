@@ -1,3 +1,4 @@
+
 // src/app/project/[id]/production/page.tsx
 'use client';
 
@@ -40,9 +41,14 @@ function ProductionProjectPageDetail() {
 
             if (uProject.productionProjectId) {
                 const productionData = await api.getProduction(uProject.productionProjectId);
-                const shootingDaysData = await api.getShootingDays(uProject.productionProjectId);
-                setProduction(productionData);
-                setShootingDays(shootingDaysData);
+                if (productionData) {
+                    const shootingDaysData = await api.getShootingDays(uProject.productionProjectId);
+                    setProduction(productionData);
+                    setShootingDays(shootingDaysData);
+                } else {
+                    setProduction(null);
+                    setShootingDays([]);
+                }
             } else {
                 setProduction(null);
                 setShootingDays([]);

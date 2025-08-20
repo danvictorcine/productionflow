@@ -1,3 +1,4 @@
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -124,18 +125,15 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
   if (projectData.talents) {
       for (const talent of projectData.talents) {
           const talentRef = doc(db, 'talents', talent.id);
-          // O `role` no projeto financeiro é o `paymentType` + cachê. A "função" real fica no talent pool.
-          // Portanto, não sincronizamos o `role` do projeto para o pool.
           const { id, role, paymentType, fee, dailyRate, days, ...talentPoolData } = talent;
           
-          const cleanedTalentData: Record<string, any> = { userId };
-          for (const key in talentPoolData) {
-            if ((talentPoolData as any)[key] !== undefined) {
-              cleanedTalentData[key] = (talentPoolData as any)[key];
-            }
+          const dataToSync: Record<string, any> = { userId };
+           for (const key in talentPoolData) {
+              if ((talentPoolData as any)[key] !== undefined) {
+                  dataToSync[key] = (talentPoolData as any)[key];
+              }
           }
-
-          batch.set(talentRef, cleanedTalentData, { merge: true });
+          batch.set(talentRef, dataToSync, { merge: true });
       }
   }
 
@@ -548,7 +546,6 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
                   dataToSync[key] = (talentPoolData as any)[key];
               }
           }
-          // Merge with existing talent data to preserve the original 'role'
           batch.set(talentRef, dataToSync, { merge: true });
       }
   }
@@ -1856,6 +1853,26 @@ export const deleteUnifiedProject = async (projectId: string) => {
   batch.delete(unifiedProjectRef);
   await batch.commit();
 };
+
+export const deleteFinancialSubProject = async (financialProjectId: string, unifiedProjectId: string) => {
+    await deleteProject(financialProjectId);
+    await updateUnifiedProject(unifiedProjectId, { financialProjectId: deleteField() as any });
+}
+
+export const deleteProductionSubProject = async (productionProjectId: string, unifiedProjectId: string) => {
+    await deleteProductionAndDays(productionProjectId);
+    await updateUnifiedProject(unifiedProjectId, { productionProjectId: deleteField() as any });
+}
+
+export const deleteCreativeSubProject = async (creativeProjectId: string, unifiedProjectId: string) => {
+    await deleteCreativeProjectAndItems(creativeProjectId);
+    await updateUnifiedProject(unifiedProjectId, { creativeProjectId: deleteField() as any });
+}
+
+export const deleteStoryboardSubProject = async (storyboardProjectId: string, unifiedProjectId: string) => {
+    await deleteStoryboardAndPanels(storyboardProjectId);
+    await updateUnifiedProject(unifiedProjectId, { storyboardProjectId: deleteField() as any });
+}
 
 export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) => {
     const userId = getUserId();
