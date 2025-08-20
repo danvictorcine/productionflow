@@ -641,7 +641,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
           <div className="flex items-center gap-1 ml-auto">
             <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} className="h-8 w-8 tool-button"><ZoomOut className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-8 w-8 tool-button"><ZoomIn className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="sm" onClick={() => setIsProjectDialogOpen(true)} className="tool-button"><Edit className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Editar</span></Button>
+            <Button variant="ghost" size="icon" onClick={() => setIsProjectDialogOpen(true)} className="tool-button h-8 w-8"><Edit className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" onClick={onDeleteModule} className="tool-button text-destructive hover:text-destructive hover:bg-destructive/10">
                 <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Excluir Módulo</span>
