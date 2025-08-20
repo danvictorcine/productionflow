@@ -2,10 +2,10 @@
 // @/src/app/project/[id]/layout.tsx
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Folder, DollarSign, Clapperboard, Brush, Image as ImageIcon, LayoutDashboard, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Folder, DollarSign, Clapperboard, Brush, Image as ImageIcon, LayoutDashboard, Trash2, Loader2 } from 'lucide-react';
 
 import type { UnifiedProject } from '@/lib/types';
 import * as firestoreApi from '@/lib/firebase/firestore';
