@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AdminGuard from '@/components/admin-guard';
+import { ProductionFlowIcon } from '@/components/production-flow-icon';
 
 const defaultColors: ThemeSettings = {
     primary: '231 48% 48%',
@@ -46,7 +47,7 @@ function hslToHex(h: number, s: number, l: number): string {
     const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
     return Math.round(255 * color).toString(16).padStart(2, '0');
   };
-  return `#${f(0)}${f(8)}${f(4)}`;
+  return `#${f(0)}$f(8)}$f(4)}`;
 }
 
 function hslStringToHex(hslString: string): string {
@@ -239,10 +240,7 @@ function ManageThemePageDetail() {
                                      <div className="space-y-3">
                                         <h4 className="text-sm font-medium">App e Página de Login</h4>
                                          <div className="flex items-center justify-center p-4 rounded-lg bg-muted">
-                                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
-                                                <rect width="32" height="32" rx="6" style={{fill: `hsl(${watchedColors.brandIcon})`}}/>
-                                                <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
-                                            </svg>
+                                            <ProductionFlowIcon className="h-7 w-7" style={{ color: `hsl(${watchedColors.brandIcon})` }} />
                                             <p className="text-lg font-semibold tracking-tighter ml-2" style={{color: `hsl(${watchedColors.brandText})`}}>ProductionFlow</p>
                                         </div>
                                         <div key="brandIcon" className="flex items-center justify-between">
@@ -263,10 +261,7 @@ function ManageThemePageDetail() {
                                      <div className="space-y-3">
                                         <h4 className="text-sm font-medium">Tela de Carregamento</h4>
                                          <div className="flex items-center justify-center p-4 rounded-lg bg-muted">
-                                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
-                                                <rect width="32" height="32" rx="6" style={{fill: `hsl(${watchedColors.brandLogin})`}}/>
-                                                <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))" style={{opacity: 0.8}}/>
-                                            </svg>
+                                            <ProductionFlowIcon className="h-7 w-7" style={{color: `hsl(${watchedColors.brandLogin})`}} />
                                             <p className="text-lg font-semibold tracking-tighter ml-2" style={{color: `hsl(${watchedColors.brandLogin})`}}>ProductionFlow</p>
                                         </div>
                                         <div key="brandLogin" className="flex items-center justify-between">

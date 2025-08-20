@@ -115,10 +115,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
           <div className="flex flex-col items-center gap-4">
-             <div className="flex items-center justify-center gap-2">
-                <ProductionFlowIcon className="h-8 w-8" style={{color: "hsl(var(--brand-login, var(--primary)))"}}/>
+             <div className="flex items-center justify-center gap-2" style={{color: "hsl(var(--brand-login, var(--primary)))"}}>
+                <ProductionFlowIcon className="h-8 w-8" />
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-login, var(--primary)))"}}>ProductionFlow</h1>
+                  <h1 className="text-2xl font-bold tracking-tighter">ProductionFlow</h1>
                   <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
                 </div>
              </div>
