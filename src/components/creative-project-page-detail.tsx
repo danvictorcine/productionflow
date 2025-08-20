@@ -624,7 +624,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-background border-b z-30 shrink-0 p-2">
+      <div className="bg-background border-b z-30 shrink-0 px-4 sm:px-6 md:px-8 py-2">
         <div className="flex items-center gap-1 flex-wrap">
           <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>

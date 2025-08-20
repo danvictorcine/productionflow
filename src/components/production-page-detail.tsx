@@ -251,7 +251,7 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex-none p-2 border-b">
+      <div className="flex-none border-b px-4 sm:px-6 md:px-8 py-2">
          <div className="flex items-center gap-1">
             <Button onClick={() => { setEditingShootingDay(null); setIsShootingDayDialogOpen(true); }} variant="ghost" size="sm">
                 <PlusCircle className="h-4 w-4 md:mr-2" />
