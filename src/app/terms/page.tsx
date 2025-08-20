@@ -83,7 +83,7 @@ export default function TermsPage() {
     <>
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
         <Link href="/" className="flex items-center gap-2" aria-label="Voltar">
-          <Button variant="outline" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>

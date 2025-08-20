@@ -289,7 +289,7 @@ function SettingsPageDetail() {
     <div className="flex flex-col min-h-screen w-full bg-background">
        <header className="sticky top-0 z-10 flex h-[60px] items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur-sm px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold" aria-label="Voltar para Projetos">
-            <Button variant="outline" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
                 <span className="sr-only">Voltar para Projetos</span>
             </Button>
