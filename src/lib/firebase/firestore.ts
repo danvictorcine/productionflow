@@ -493,6 +493,8 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
   if (!productionDoc.exists() || productionDoc.data().userId !== userId) {
     throw new Error("Permission denied to update this production.");
   }
+
+  const batch = writeBatch(db);
   
   // Clean undefined fields from team members to prevent Firestore errors
   const cleanedData: Record<string, any> = { ...data };
@@ -507,10 +509,27 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
         return cleanedMember;
     });
   }
-
-  const batch = writeBatch(db);
+  
+  // 1. Update the production document itself
   batch.update(productionRef, cleanedData);
 
+  // 2. If team data is being updated, sync changes back to the main talent pool
+  if (data.team) {
+      for (const member of data.team) {
+          const talentRef = doc(db, 'talents', member.id);
+          // Prepare data for talent pool (it shouldn't contain project-specific roles)
+          const { id, role, ...talentData } = member;
+          const talentDataToSave: Record<string, any> = { userId };
+          for (const key in talentData) {
+              if ((talentData as any)[key] !== undefined) {
+                  talentDataToSave[key] = (talentData as any)[key];
+              }
+          }
+          batch.set(talentRef, talentDataToSave, { merge: true });
+      }
+  }
+
+  // 3. Sync updated team info to all shooting days within this production
   if (cleanedData.team) {
     const updatedTeamMap = new Map(cleanedData.team.map((member: TeamMember) => [member.id, member]));
     const daysQuery = query(collection(db, 'shooting_days'), where('productionId', '==', productionId), where('userId', '==', userId));
@@ -519,18 +538,26 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
     daysSnapshot.forEach(dayDoc => {
       const dayData = dayDoc.data() as ShootingDay;
       let dayNeedsUpdate = false;
-      const updatedPresentTeam = (dayData.presentTeam || []).map(member => updatedTeamMap.get(member.id)).filter(Boolean) as TeamMember[];
-      if (JSON.stringify(updatedPresentTeam) !== JSON.stringify(dayData.presentTeam || [])) {
-        dayNeedsUpdate = true;
-      }
+      
+      const updatedPresentTeam = (dayData.presentTeam || []).map(member => {
+          const updatedMember = updatedTeamMap.get(member.id);
+          if (updatedMember && JSON.stringify(member) !== JSON.stringify(updatedMember)) {
+              dayNeedsUpdate = true;
+              return updatedMember;
+          }
+          return member;
+      }).filter(Boolean) as TeamMember[];
       
       const updatedScenes = (dayData.scenes || []).map(scene => {
-          const updatedPresentInScene = (scene.presentInScene || []).map(member => updatedTeamMap.get(member.id)).filter(Boolean) as TeamMember[];
-          if (JSON.stringify(updatedPresentInScene) !== JSON.stringify(scene.presentInScene || [])) {
-              dayNeedsUpdate = true;
-              return {...scene, presentInScene: updatedPresentInScene};
-          }
-          return scene;
+          const updatedPresentInScene = (scene.presentInScene || []).map(member => {
+              const updatedMember = updatedTeamMap.get(member.id);
+              if (updatedMember && JSON.stringify(member) !== JSON.stringify(updatedMember)) {
+                  dayNeedsUpdate = true;
+                  return updatedMember;
+              }
+              return member;
+          }).filter(Boolean) as TeamMember[];
+          return {...scene, presentInScene: updatedPresentInScene};
       });
 
       if (dayNeedsUpdate) {
@@ -541,6 +568,7 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
   
   await batch.commit();
 };
+
 
 
 export const deleteProductionAndDays = async (productionId: string) => {

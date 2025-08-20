@@ -1,4 +1,3 @@
-
 // @/src/components/create-edit-production-dialog.tsx
 "use client";
 
@@ -256,7 +255,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
 
                   <div>
                     <h3 className="text-lg font-semibold">Equipe & Elenco</h3>
-                    <p className="text-sm text-muted-foreground">Cadastre todos os envolvidos na produção. Esta lista será usada para montar a Ordem do Dia.</p>
+                    <p className="text-sm text-muted-foreground">Cadastre todos os envolvidos na produção. Alterações feitas aqui serão sincronizadas com seu Banco de Talentos.</p>
                     <div className="space-y-3 mt-4">
                       {teamFields.map((field, index) => {
                         const hasRestriction = watch(`team.${index}.hasDietaryRestriction`);
@@ -290,6 +289,9 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
 
                                 <CollapsibleContent className="px-4 pb-4 pt-0">
                                     <div className="pt-4 border-t space-y-4">
+                                        <FormField control={form.control} name={`team.${index}.name`} render={({ field }) => (
+                                          <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
                                         <FormField control={form.control} name={`team.${index}.role`} render={({ field }) => (
                                           <FormItem><FormLabel>Função no Projeto</FormLabel><FormControl><Input placeholder="ex: Ator, Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
                                         )}/>
