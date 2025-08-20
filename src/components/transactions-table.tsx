@@ -122,8 +122,7 @@ export default function TransactionsTable({
                         <div className="group relative w-[120px] h-9 mx-auto">
                             <Button
                                 size="sm"
-                                variant="outline"
-                                className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none rounded-md"
+                                className="absolute inset-0 w-full h-full bg-green-600 hover:bg-green-700 text-white transition-opacity group-hover:opacity-0 pointer-events-none rounded-md"
                                 aria-hidden="true"
                                 tabIndex={-1}
                             >
