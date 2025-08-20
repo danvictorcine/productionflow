@@ -12,7 +12,6 @@ import { PlusCircle, Loader2 } from 'lucide-react';
 import { GanttTaskForm } from './gantt-task-form';
 import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, eachMonthOfInterval, differenceInMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Progress } from './ui/progress';
 import { Resizable } from 're-resizable';
 import { CopyableError } from './copyable-error';
 import { cn } from '@/lib/utils';
@@ -277,6 +276,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                           {groupedTasks[phase] && groupedTasks[phase].map(task => {
                               const { left, width } = getTaskPositionAndWidth(task);
                               const solidColor = task.color ? task.color.replace('/20', '') : 'bg-primary';
+                              const bgColor = task.color || 'bg-primary/20';
+
                               return (
                                   <div key={task.id} className="relative h-[50px] border-b">
                                       <div className="absolute top-1/2 -translate-y-1/2 h-8" style={{ left: `${left}px` }}>
@@ -295,10 +296,13 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                             }}
                                             className="relative"
                                         >
-                                            <div className={cn("absolute inset-0 border rounded-md flex items-center justify-between px-2 overflow-hidden", task.color ? task.color : 'bg-primary/20', solidColor)} style={{ borderColor: `var(--tw-${solidColor})`}}>
-                                                <p className="text-xs font-semibold text-primary-foreground truncate">{task.title}</p>
+                                           <div className={cn("absolute inset-0 rounded-md overflow-hidden border", bgColor)} style={{ borderColor: `var(--tw-${solidColor})` }}>
+                                                <div className={cn("h-full", solidColor)} style={{ width: `${task.progress}%` }}>
+                                                    <div className="absolute inset-0 flex items-center justify-start px-2">
+                                                        <p className="text-xs font-semibold text-primary-foreground truncate">{task.title}</p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <Progress value={task.progress} className={cn("absolute bottom-0 left-0 h-1 w-full", solidColor)} indicatorClassName={solidColor} />
                                         </Resizable>
                                       </div>
                                   </div>
