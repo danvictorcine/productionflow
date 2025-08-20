@@ -237,7 +237,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
             </div>
           <div className="flex">
             {/* Task List Column (Fixed) */}
-            <div className="w-[200px] md:w-[300px] flex-shrink-0 border-r">
+            <div className="w-[150px] md:w-[300px] flex-shrink-0 border-r">
                 <div className="h-[69px] border-b p-2 flex items-center sticky top-0 bg-background z-10">
                   <p className="font-semibold">Tarefas</p>
                 </div>
