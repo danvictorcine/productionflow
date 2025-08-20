@@ -237,7 +237,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
             </div>
           <div className="flex">
             {/* Task List Column (Fixed) */}
-            <div className="w-[300px] flex-shrink-0 border-r">
+            <div className="w-[200px] md:w-[300px] flex-shrink-0 border-r">
                 <div className="h-[69px] border-b p-2 flex items-center sticky top-0 bg-background z-10">
                   <p className="font-semibold">Tarefas</p>
                 </div>
@@ -265,7 +265,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                     {phaseOrder.map(phase => (
                         groupedTasks[phase] && (
                             <div key={`${phase}-timeline`}>
-                                <div className="h-10 border-b bg-muted/50"></div>
+                                <div className="flex items-center h-10 border-b bg-muted/50 p-2"></div>
                                 {groupedTasks[phase].map(task => {
                                     const { left, width } = getTaskPositionAndWidth(task);
                                     return (
