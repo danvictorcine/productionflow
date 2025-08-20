@@ -1,4 +1,5 @@
 
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -125,7 +126,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
   if (projectData.talents) {
       for (const talent of projectData.talents) {
           const talentRef = doc(db, 'talents', talent.id);
-          const { id, role, paymentType, fee, dailyRate, days, ...talentPoolData } = talent;
+          const { id, paymentType, fee, dailyRate, days, ...talentPoolData } = talent;
           
           const dataToSync: Record<string, any> = { userId };
            for (const key in talentPoolData) {
@@ -993,7 +994,6 @@ export const addStoryboard = async (data: Omit<Storyboard, 'id' | 'userId' | 'cr
   if (!userId) throw new Error("Usuário não autenticado.");
   const docRef = await addDoc(collection(db, 'storyboards'), {
     ...data,
-    aspectRatio: data.aspectRatio || '16:9',
     userId,
     createdAt: Timestamp.now(),
   });
@@ -1293,6 +1293,7 @@ export const migratePanelsToScene = async (storyboardId: string, panels: Storybo
         description: "Quadros importados de um projeto antigo.",
         order: 0,
         createdAt: new Date(),
+        aspectRatio: '16:9',
     };
     batch.set(sceneRef, {
       ...newScene,

@@ -41,10 +41,9 @@ interface CreateEditStoryboardSceneDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: Omit<StoryboardScene, 'id' | 'storyboardId' | 'userId' | 'order' | 'createdAt'>) => void;
   scene?: StoryboardScene | null;
-  defaultAspectRatio?: '16:9' | '4:3';
 }
 
-export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, scene, defaultAspectRatio }: CreateEditStoryboardSceneDialogProps) {
+export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, scene }: CreateEditStoryboardSceneDialogProps) {
   const isEditMode = !!scene;
 
   const form = useForm<FormValues>({
@@ -52,7 +51,7 @@ export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, s
     defaultValues: {
       title: "",
       description: "",
-      aspectRatio: defaultAspectRatio || '16:9',
+      aspectRatio: '16:9',
     },
   });
 
@@ -62,16 +61,16 @@ export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, s
         ? {
             title: scene.title,
             description: scene.description || "",
-            aspectRatio: scene.aspectRatio || defaultAspectRatio || '16:9',
+            aspectRatio: scene.aspectRatio || '16:9',
           }
         : {
             title: "",
             description: "",
-            aspectRatio: defaultAspectRatio || '16:9',
+            aspectRatio: '16:9' as const,
           };
       form.reset(defaultValues);
     }
-  }, [isOpen, isEditMode, scene, form, defaultAspectRatio]);
+  }, [isOpen, isEditMode, scene, form]);
 
   const handleSubmit = (values: FormValues) => {
     onSubmit({

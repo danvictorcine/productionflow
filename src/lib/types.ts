@@ -275,7 +275,6 @@ export type Storyboard = {
   userId: string;
   name: string;
   description?: string;
-  aspectRatio: '16:9' | '4:3';
   createdAt: Date;
   unifiedProjectId?: string; // Link para o novo modelo
 };

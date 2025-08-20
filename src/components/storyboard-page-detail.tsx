@@ -400,7 +400,6 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDele
                   setIsOpen={setIsSceneDialogOpen} 
                   onSubmit={handleSceneSubmit} 
                   scene={editingScene}
-                  defaultAspectRatio={storyboard.aspectRatio}
                 />
                 <CreateEditStoryboardDialog
                     isOpen={isStoryboardDialogOpen}
