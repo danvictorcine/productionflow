@@ -2,12 +2,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, Trash2, Check } from "lucide-react";
 
 import type { GanttTask } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -53,12 +53,23 @@ const formSchema = z.object({
   endDate: z.date({ required_error: "A data de término é obrigatória." }),
   progress: z.number().min(0).max(100),
   notes: z.string().optional(),
+  color: z.string().optional(),
 }).refine(data => data.endDate >= data.startDate, {
   message: "A data de término não pode ser anterior à data de início.",
   path: ["endDate"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const taskColorOptions = [
+  { label: 'Padrão', value: 'bg-primary/20', colorClass: 'bg-primary/20' },
+  { label: 'Azul', value: 'bg-blue-500', colorClass: 'bg-blue-500' },
+  { label: 'Verde', value: 'bg-green-500', colorClass: 'bg-green-500' },
+  { label: 'Amarelo', value: 'bg-yellow-500', colorClass: 'bg-yellow-500' },
+  { label: 'Laranja', value: 'bg-orange-500', colorClass: 'bg-orange-500' },
+  { label: 'Vermelho', value: 'bg-red-500', colorClass: 'bg-red-500' },
+  { label: 'Roxo', value: 'bg-purple-500', colorClass: 'bg-purple-500' },
+];
 
 interface GanttTaskFormProps {
   isOpen: boolean;
@@ -80,6 +91,7 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
       endDate: new Date(),
       progress: 0,
       notes: "",
+      color: "bg-primary/20",
     },
   });
 
@@ -93,6 +105,7 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
             endDate: new Date(task.endDate),
             progress: task.progress,
             notes: task.notes || "",
+            color: task.color || 'bg-primary/20'
           }
         : {
             title: "",
@@ -101,13 +114,13 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
             endDate: new Date(),
             progress: 0,
             notes: "",
+            color: 'bg-primary/20',
           };
       form.reset(defaultValues);
     }
   }, [isOpen, isEditMode, task, form]);
 
   const handleSubmit = (values: FormValues) => {
-    // This is the correct place to format the dates
     const dataToSubmit = {
       ...values,
       startDate: format(values.startDate, 'yyyy-MM-dd'),
@@ -197,6 +210,34 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
                   </FormItem>
                 )}/>
             </div>
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cor da Tarefa</FormLabel>
+                  <FormControl>
+                    <div className="flex flex-wrap gap-2">
+                      {taskColorOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={cn(
+                            "h-8 w-8 rounded-full border-2",
+                            option.colorClass,
+                            field.value === option.value ? 'border-primary' : 'border-transparent'
+                          )}
+                          onClick={() => field.onChange(option.value)}
+                        >
+                        {field.value === option.value && <Check className="h-4 w-4 text-primary-foreground" />}
+                        <span className="sr-only">{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
              <FormField control={form.control} name="progress" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Progresso ({field.value}%)</FormLabel>

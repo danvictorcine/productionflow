@@ -22,6 +22,13 @@ interface GanttChartProps {
   projectId: string;
 }
 
+// Function to parse date strings in UTC to avoid timezone issues
+const parseDateInUTC = (dateString: string) => {
+    // Appending 'T00:00:00Z' makes it explicit that the date is in UTC
+    return new Date(`${dateString}T00:00:00Z`);
+};
+
+
 const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
   const [tasks, setTasks] = useState<GanttTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,13 +37,6 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
   const { toast } = useToast();
   
   const [viewMode, setViewMode] = useState<'day' | 'month'>('day');
-
-  const parseDateInUTC = (dateString: string) => {
-    const [year, month, day] = dateString.split('-').map(Number);
-    // Month is 0-indexed in JS Date, so subtract 1
-    return new Date(Date.UTC(year, month - 1, day));
-  };
-
 
   const dateRange = useMemo(() => {
     if (tasks.length === 0) {
@@ -272,41 +272,39 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                 {renderTimelineHeader()}
                 <div className="relative">
                     {phaseOrder.map(phase => (
-                        groupedTasks[phase] && (
-                            <React.Fragment key={`${phase}-timeline`}>
-                                <div className="h-10 border-b bg-muted/50"></div>
-                                {groupedTasks[phase].map(task => {
-                                    const { left, width } = getTaskPositionAndWidth(task);
-                                    return (
-                                        <div key={task.id} className="relative h-[50px] border-b">
-                                            <div className="absolute top-1/2 -translate-y-1/2 h-8" style={{ left: `${left}px` }}>
-                                              <Resizable
-                                                  size={{ width: `${width}px`, height: '32px' }}
-                                                  minWidth={viewMode === 'day' ? DAY_WIDTH : MONTH_WIDTH}
-                                                  enable={{ right: true }}
-                                                  handleClasses={{ right: "absolute right-0 top-0 h-full w-2 cursor-ew-resize"}}
-                                                  onResizeStop={(e, direction, ref, d) => {
-                                                    if (viewMode === 'day') {
-                                                        const newWidth = parseFloat(ref.style.width);
-                                                        const newDuration = Math.round(newWidth / DAY_WIDTH);
-                                                        const newEndDate = addDays(parseDateInUTC(task.startDate), newDuration - 1);
-                                                        handleResize(task.id, newEndDate);
-                                                    }
-                                                  }}
-                                                  className="relative"
-                                              >
-                                                  <div className="absolute inset-0 bg-primary/20 border border-primary rounded-md flex items-center justify-between px-2 overflow-hidden">
-                                                      <p className="text-xs font-semibold text-primary-foreground truncate">{task.title}</p>
-                                                  </div>
-                                                  <Progress value={task.progress} className="absolute bottom-0 left-0 h-1 w-full" />
-                                              </Resizable>
+                      <React.Fragment key={`${phase}-timeline`}>
+                          <div className="h-10 border-b bg-muted/50"></div>
+                          {groupedTasks[phase] && groupedTasks[phase].map(task => {
+                              const { left, width } = getTaskPositionAndWidth(task);
+                              return (
+                                  <div key={task.id} className="relative h-[50px] border-b">
+                                      <div className="absolute top-1/2 -translate-y-1/2 h-8" style={{ left: `${left}px` }}>
+                                        <Resizable
+                                            size={{ width: `${width}px`, height: '32px' }}
+                                            minWidth={viewMode === 'day' ? DAY_WIDTH : MONTH_WIDTH}
+                                            enable={{ right: true }}
+                                            handleClasses={{ right: "absolute right-0 top-0 h-full w-2 cursor-ew-resize"}}
+                                            onResizeStop={(e, direction, ref, d) => {
+                                              if (viewMode === 'day') {
+                                                  const newWidth = parseFloat(ref.style.width);
+                                                  const newDuration = Math.round(newWidth / DAY_WIDTH);
+                                                  const newEndDate = addDays(parseDateInUTC(task.startDate), newDuration - 1);
+                                                  handleResize(task.id, newEndDate);
+                                              }
+                                            }}
+                                            className="relative"
+                                        >
+                                            <div className={cn("absolute inset-0 border border-primary rounded-md flex items-center justify-between px-2 overflow-hidden", task.color ? task.color : 'bg-primary/20')}>
+                                                <p className="text-xs font-semibold text-primary-foreground truncate">{task.title}</p>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                            </React.Fragment>
-                        )
-                    ))}
+                                            <Progress value={task.progress} className="absolute bottom-0 left-0 h-1 w-full" />
+                                        </Resizable>
+                                      </div>
+                                  </div>
+                              );
+                          })}
+                      </React.Fragment>
+                  ))}
                 </div>
               </div>
             </div>

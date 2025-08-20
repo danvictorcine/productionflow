@@ -363,7 +363,7 @@ export type DisplayableItem =
   | (Production & { itemType: 'production'; unifiedProjectId?: undefined }) // Projetos antigos
   | (CreativeProject & { itemType: 'creative'; unifiedProjectId?: undefined }) // Projetos antigos
   | (Storyboard & { itemType: 'storyboard'; unifiedProjectId?: undefined }) // Projetos antigos
-  | (UnifiedProject & { itemType: 'unified' }); // Novos projetos
+  | (UnifiedProject & { itemType: 'unified' });
   
 // === Gantt Chart Types ===
 export type GanttTask = {
@@ -376,6 +376,7 @@ export type GanttTask = {
   progress: number; // 0-100
   assignees?: string[];
   notes?: string;
+  color?: string; // Tailwind bg color class, e.g., 'bg-blue-500'
   createdAt: Date;
   updatedAt: Date;
 };
