@@ -24,7 +24,8 @@ interface GanttChartProps {
 // Function to parse date strings in UTC to avoid timezone issues
 const parseDateInUTC = (dateString: string) => {
     // Appending 'T00:00:00Z' makes it explicit that the date is in UTC
-    return new Date(`${dateString}T00:00:00Z`);
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
 };
 
 
@@ -296,11 +297,10 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                             }}
                                             className="relative"
                                         >
-                                           <div className={cn("absolute inset-0 rounded-md overflow-hidden border", bgColor)} style={{ borderColor: `var(--tw-${solidColor})` }}>
-                                                <div className={cn("h-full", solidColor)} style={{ width: `${task.progress}%` }}>
-                                                    <div className="absolute inset-0 flex items-center justify-start px-2">
-                                                        <p className="text-xs font-semibold text-primary-foreground truncate">{task.title}</p>
-                                                    </div>
+                                           <div className={cn("absolute inset-0 rounded-md overflow-hidden", bgColor)}>
+                                                <div className={cn("h-full", solidColor)} style={{ width: `${task.progress}%` }}></div>
+                                                <div className="absolute inset-0 flex items-center justify-start px-2">
+                                                    <p className="text-xs font-semibold text-primary-foreground truncate">{task.title}</p>
                                                 </div>
                                             </div>
                                         </Resizable>
