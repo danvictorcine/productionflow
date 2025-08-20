@@ -15,6 +15,7 @@ import { ptBR } from 'date-fns/locale';
 import { Resizable } from 're-resizable';
 import { CopyableError } from './copyable-error';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 interface GanttChartProps {
@@ -225,131 +226,130 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
 
 
   return (
-    <div className="w-full">
-      {tasks.length === 0 ? (
-        <div className="text-center p-8">
-          <p className="text-sm text-muted-foreground">Nenhuma tarefa no cronograma. Clique em ‘+ Tarefa’ para começar.</p>
-           <Button onClick={openNewTaskForm} className="mt-4">
-                <PlusCircle className="mr-2 h-4 w-4" /> Nova Tarefa
-            </Button>
-        </div>
-      ) : (
-        <Card>
-           <div className="p-2 border-b flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Button variant={viewMode === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('day')}>Dia</Button>
-                <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('month')}>Mês</Button>
-              </div>
-              <Button onClick={openNewTaskForm} size="sm" variant="ghost">
-                <PlusCircle className="mr-2 h-4 w-4" /> Nova Tarefa
+    <TooltipProvider>
+      <div className="w-full">
+        {tasks.length === 0 ? (
+          <div className="text-center p-8">
+            <p className="text-sm text-muted-foreground">Nenhuma tarefa no cronograma. Clique em ‘+ Tarefa’ para começar.</p>
+            <Button onClick={openNewTaskForm} className="mt-4">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Nova Tarefa
               </Button>
-            </div>
-          <div className="flex">
-            {/* Task List Column (Fixed) */}
-            <div className="w-[150px] md:w-[300px] flex-shrink-0 border-r">
-                <div className="h-[69px] border-b p-2 flex items-center sticky top-0 bg-background z-10">
-                  <p className="font-semibold">Tarefas</p>
+          </div>
+        ) : (
+          <Card>
+            <div className="p-2 border-b flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Button variant={viewMode === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('day')}>Dia</Button>
+                  <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('month')}>Mês</Button>
                 </div>
-                {phaseOrder.map(phase => (
-                  groupedTasks[phase] && (
-                    <div key={phase}>
-                      <div className="flex items-center h-10 border-b bg-muted/50 p-2">
-                        <p className="font-bold text-primary">{phaseLabels[phase]}</p>
-                      </div>
-                      {groupedTasks[phase].map(task => (
-                        <div key={task.id} className="flex h-[50px] items-center border-b p-2 hover:bg-muted/30 cursor-pointer" onClick={() => openEditForm(task)}>
-                          <p className="text-sm font-medium truncate">{task.title}</p>
+                <Button onClick={openNewTaskForm} size="sm" variant="ghost">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Nova Tarefa
+                </Button>
+              </div>
+            <div className="flex">
+              {/* Task List Column (Fixed) */}
+              <div className="w-[150px] md:w-[300px] flex-shrink-0 border-r">
+                  <div className="h-[69px] border-b p-2 flex items-center sticky top-0 bg-background z-10">
+                    <p className="font-semibold">Tarefas</p>
+                  </div>
+                  {phaseOrder.map(phase => (
+                    groupedTasks[phase] && (
+                      <div key={phase}>
+                        <div className="flex items-center h-10 border-b bg-muted/50 p-2">
+                          <p className="font-bold text-primary">{phaseLabels[phase]}</p>
                         </div>
-                      ))}
-                    </div>
-                  )
-                ))}
-            </div>
-
-            {/* Timeline Column (Scrollable) */}
-            <div className="flex-1 overflow-x-auto">
-              <div style={{ width: `${totalWidth}px`, minWidth: '100%' }}>
-                {renderTimelineHeader()}
-                <div className="relative">
-                    {phaseOrder.map(phase => (
-                      <React.Fragment key={`${phase}-timeline`}>
-                          <div className="h-10 border-b bg-muted/50"></div>
-                          {groupedTasks[phase] && groupedTasks[phase].map(task => {
-                              const { left, width } = getTaskPositionAndWidth(task);
-                              const solidColor = task.color ? task.color : 'bg-primary';
-
-                              // This logic converts tailwind bg color classes to actual colors for the style attribute
-                              // It's a bit of a hack but necessary for dynamic colors with opacity.
-                              let bgColorRgb;
-                              switch (solidColor) {
-                                  case 'bg-blue-500': bgColorRgb = '59, 130, 246'; break;
-                                  case 'bg-green-500': bgColorRgb = '34, 197, 94'; break;
-                                  case 'bg-yellow-500': bgColorRgb = '234, 179, 8'; break;
-                                  case 'bg-orange-500': bgColorRgb = '249, 115, 22'; break;
-                                  case 'bg-red-500': bgColorRgb = '239, 68, 68'; break;
-                                  case 'bg-purple-500': bgColorRgb = '139, 92, 246'; break;
-                                  default: bgColorRgb = '31, 41, 55'; // bg-primary fallback
-                              }
-
-                              return (
-                                  <div key={task.id} className="relative h-[50px] border-b">
-                                      <div className="absolute top-1/2 -translate-y-1/2 h-8" style={{ left: `${left}px` }}>
-                                        <Resizable
-                                            size={{ width: `${width}px`, height: '32px' }}
-                                            minWidth={viewMode === 'day' ? DAY_WIDTH : MONTH_WIDTH}
-                                            enable={{ right: true }}
-                                            handleClasses={{ right: "absolute right-0 top-0 h-full w-2 cursor-ew-resize"}}
-                                            onResizeStop={(e, direction, ref, d) => {
-                                              if (viewMode === 'day') {
-                                                  const newWidth = parseFloat(ref.style.width);
-                                                  const newDuration = Math.round(newWidth / DAY_WIDTH);
-                                                  const newEndDate = addDays(parseDateInUTC(task.startDate), newDuration - 1);
-                                                  handleResize(task.id, newEndDate);
-                                              }
-                                            }}
-                                            className="relative"
-                                        >
-                                           <div 
-                                                className="absolute inset-0 rounded-md overflow-hidden"
-                                                style={{ backgroundColor: `rgba(${bgColorRgb}, 0.2)` }}
-                                           >
-                                                <div 
-                                                    className={cn("h-full rounded-md", solidColor)} 
-                                                    style={{ width: `${task.progress}%` }}
-                                                ></div>
-                                                <div className="absolute inset-0 flex items-center justify-start px-2">
-                                                    <p 
-                                                      className="text-xs font-semibold text-primary-foreground truncate"
-                                                      style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)' }}
-                                                    >
-                                                      {task.title}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </Resizable>
-                                      </div>
-                                  </div>
-                              );
-                          })}
-                      </React.Fragment>
+                        {groupedTasks[phase].map(task => (
+                          <div key={task.id} className="flex h-[50px] items-center border-b p-2 hover:bg-muted/30 cursor-pointer" onClick={() => openEditForm(task)}>
+                            <p className="text-sm font-medium truncate">{task.title}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )
                   ))}
+              </div>
+
+              {/* Timeline Column (Scrollable) */}
+              <div className="flex-1 overflow-x-auto">
+                <div style={{ width: `${totalWidth}px`, minWidth: '100%' }}>
+                  {renderTimelineHeader()}
+                  <div className="relative">
+                      {phaseOrder.map(phase => (
+                        <React.Fragment key={`${phase}-timeline`}>
+                            <div className="h-10 border-b bg-muted/50"></div>
+                            {groupedTasks[phase] && groupedTasks[phase].map(task => {
+                                const { left, width } = getTaskPositionAndWidth(task);
+                                const solidColor = task.color ? task.color : 'bg-primary';
+
+                                let bgColorRgb;
+                                switch (solidColor) {
+                                    case 'bg-blue-500': bgColorRgb = '59, 130, 246'; break;
+                                    case 'bg-green-500': bgColorRgb = '34, 197, 94'; break;
+                                    case 'bg-yellow-500': bgColorRgb = '234, 179, 8'; break;
+                                    case 'bg-orange-500': bgColorRgb = '249, 115, 22'; break;
+                                    case 'bg-red-500': bgColorRgb = '239, 68, 68'; break;
+                                    case 'bg-purple-500': bgColorRgb = '139, 92, 246'; break;
+                                    default: bgColorRgb = '99, 102, 241'; break; // primary fallback
+                                }
+
+                                return (
+                                    <div key={task.id} className="relative h-[50px] border-b">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="absolute top-1/2 -translate-y-1/2 h-8" style={{ left: `${left}px` }}>
+                                            <Resizable
+                                                size={{ width: `${width}px`, height: '32px' }}
+                                                minWidth={viewMode === 'day' ? DAY_WIDTH : MONTH_WIDTH}
+                                                enable={{ right: true }}
+                                                handleClasses={{ right: "absolute right-0 top-0 h-full w-2 cursor-ew-resize"}}
+                                                onResizeStop={(e, direction, ref, d) => {
+                                                  if (viewMode === 'day') {
+                                                      const newWidth = parseFloat(ref.style.width);
+                                                      const newDuration = Math.round(newWidth / DAY_WIDTH);
+                                                      const newEndDate = addDays(parseDateInUTC(task.startDate), newDuration - 1);
+                                                      handleResize(task.id, newEndDate);
+                                                  }
+                                                }}
+                                                className="relative"
+                                            >
+                                              <div 
+                                                  className="absolute inset-0 rounded-md overflow-hidden"
+                                                  style={{ backgroundColor: `rgba(${bgColorRgb}, 0.2)` }}
+                                              >
+                                                  <div 
+                                                      className={cn("h-full rounded-md", solidColor)} 
+                                                      style={{ width: `${task.progress}%` }}
+                                                  ></div>
+                                              </div>
+                                            </Resizable>
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>{task.title}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </div>
+                                );
+                            })}
+                        </React.Fragment>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-      </Card>
-      )}
+        </Card>
+        )}
 
-      {isFormOpen && (
-        <GanttTaskForm
-            isOpen={isFormOpen}
-            setIsOpen={setIsFormOpen}
-            onSubmit={handleFormSubmit}
-            onDelete={handleDeleteTask}
-            task={editingTask}
-        />
-      )}
-    </div>
+        {isFormOpen && (
+          <GanttTaskForm
+              isOpen={isFormOpen}
+              setIsOpen={setIsFormOpen}
+              onSubmit={handleFormSubmit}
+              onDelete={handleDeleteTask}
+              task={editingTask}
+          />
+        )}
+      </div>
+    </TooltipProvider>
   );
 };
 
