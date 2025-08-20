@@ -370,9 +370,9 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDele
                             <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-9 w-9" disabled={gridCols <= 1}>
                                 <ZoomIn className="h-4 w-4" />
                             </Button>
-                             <Button variant="ghost" size="sm" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                                <Trash2 className="h-4 w-4 md:mr-2" />
-                                <span className="hidden md:inline">Excluir</span>
+                             <Button variant="ghost" size="icon" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                                <Trash2 className="h-4 w-4" />
+                                 <span className="sr-only">Excluir Módulo</span>
                             </Button>
                         </div>
                     </div>
