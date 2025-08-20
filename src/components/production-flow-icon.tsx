@@ -14,7 +14,8 @@ export const ProductionFlowIcon = ({ className, ...props }: React.SVGProps<SVGSV
       {...props}
     >
       <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))" />
-      <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))" />
+      <path d="M10 8H13L16.5 16L13 24H10L13.5 16L10 8Z" fill="hsl(var(--primary-foreground))" opacity="0.7"/>
+      <path d="M16 8H19L22.5 16L19 24H16L19.5 16L16 8Z" fill="hsl(var(--primary-foreground))" />
     </svg>
   );
 };
