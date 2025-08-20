@@ -171,20 +171,16 @@ function ManageTalentsPage() {
             return;
         }
         
-        const { file, ...dataToSave } = talentData;
-
         try {
-            await firestoreApi.saveSingleTalent(dataToSave);
+            await firestoreApi.saveSingleTalent(talentData);
             
-            // This is the crucial part: update the form state without a full reset.
-            // This keeps the `dirtyFields` state accurate and other field `id`s consistent.
-            Object.keys(dataToSave).forEach(key => {
-                const formKey = `talents.${index}.${key}` as const;
-                const value = dataToSave[key as keyof typeof dataToSave];
-                setValue(formKey, value, { shouldDirty: false });
+            const formKeyPrefix = `talents.${index}` as const;
+            Object.keys(talentData).forEach(key => {
+                const typedKey = key as keyof typeof talentData;
+                setValue(`${formKeyPrefix}.${typedKey}`, talentData[typedKey], { shouldDirty: false });
             });
             
-            toast({ title: `${dataToSave.name} salvo com sucesso!` });
+            toast({ title: `${talentData.name} salvo com sucesso! As informações serão atualizadas em todos os projetos.` });
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({

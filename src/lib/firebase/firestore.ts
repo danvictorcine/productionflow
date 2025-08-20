@@ -1547,17 +1547,76 @@ export const addTalent = async (talent: Omit<Talent, 'id'>): Promise<string> => 
 export const saveSingleTalent = async (talent: Talent) => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
+  
+  const batch = writeBatch(db);
+  
+  // 1. Update the main talent document
   const talentRef = doc(db, 'talents', talent.id);
   const { id, file, ...data } = talent;
-
-  const dataToSave: Record<string, any> = { userId };
+  const talentDataToSave: Record<string, any> = { userId };
   for (const key in data) {
     if ((data as any)[key] !== undefined) {
-      dataToSave[key] = (data as any)[key];
+        talentDataToSave[key] = (data as any)[key];
     }
   }
+  batch.set(talentRef, talentDataToSave, { merge: true });
 
-  await setDoc(talentRef, dataToSave, { merge: true });
+  // 2. Find all projects (financial and production) for the user
+  const productionsQuery = query(collection(db, 'productions'), where('userId', '==', userId));
+  const projectsQuery = query(collection(db, 'projects'), where('userId', '==', userId));
+  
+  const [productionsSnapshot, projectsSnapshot] = await Promise.all([
+    getDocs(productionsQuery),
+    getDocs(projectsQuery)
+  ]);
+
+  const memberUpdatePayload = {
+      name: talent.name,
+      role: talent.role,
+      photoURL: talent.photoURL,
+      contact: talent.contact,
+      hasDietaryRestriction: talent.hasDietaryRestriction,
+      dietaryRestriction: talent.dietaryRestriction,
+      extraNotes: talent.extraNotes,
+  };
+
+  // Helper to update a team array
+  const updateTeamArray = (team: any[] | undefined): { updatedTeam: any[], needsUpdate: boolean } => {
+    if (!team) return { updatedTeam: [], needsUpdate: false };
+    let needsUpdate = false;
+    const updatedTeam = team.map(member => {
+        if (member.id === talent.id) {
+            needsUpdate = true;
+            // For financial 'talents', preserve payment info
+            if ('paymentType' in member) {
+                return { ...member, ...memberUpdatePayload };
+            }
+            return { ...member, ...memberUpdatePayload };
+        }
+        return member;
+    });
+    return { updatedTeam, needsUpdate };
+  }
+
+  // 3. Iterate through productions and update teams
+  productionsSnapshot.forEach(prodDoc => {
+    const production = prodDoc.data() as Production;
+    const { updatedTeam, needsUpdate } = updateTeamArray(production.team);
+    if (needsUpdate) {
+      batch.update(prodDoc.ref, { team: updatedTeam });
+    }
+  });
+
+  // 4. Iterate through financial projects and update talents
+  projectsSnapshot.forEach(projDoc => {
+    const project = projDoc.data() as Project;
+    const { updatedTeam, needsUpdate } = updateTeamArray(project.talents);
+    if (needsUpdate) {
+      batch.update(projDoc.ref, { talents: updatedTeam });
+    }
+  });
+
+  await batch.commit();
 };
 
 export const deleteTalent = async (talentId: string): Promise<void> => {
