@@ -229,9 +229,9 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
       {tasks.length === 0 ? (
         <div className="text-center p-8">
           <p className="text-sm text-muted-foreground">Nenhuma tarefa no cronograma. Clique em ‘+ Tarefa’ para começar.</p>
-          <Button onClick={openNewTaskForm} className="mt-4">
-            <PlusCircle className="mr-2 h-4 w-4" /> Nova Tarefa
-          </Button>
+           <Button onClick={openNewTaskForm} className="mt-4">
+                <PlusCircle className="mr-2 h-4 w-4" /> Nova Tarefa
+            </Button>
         </div>
       ) : (
         <Card>
@@ -268,7 +268,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
 
             {/* Timeline Column (Scrollable) */}
             <div className="flex-1 overflow-x-auto">
-              <div style={{ width: `${totalWidth}px` }}>
+              <div style={{ width: `${totalWidth}px`, minWidth: '100%' }}>
                 {renderTimelineHeader()}
                 <div className="relative">
                     {phaseOrder.map(phase => (
