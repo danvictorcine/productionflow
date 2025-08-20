@@ -228,7 +228,7 @@ function ProjectDashboardPage() {
        <Card>
           <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                  <GanttChartSquare className="h-5 w-5 text-muted-foreground" />
+                  <GanttChartSquare className="h-5 w-5 text-primary" />
                   Cronograma do Projeto
               </CardTitle>
               <CardDescription>
