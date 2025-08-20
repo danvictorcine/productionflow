@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ProductionFlowIcon } from '@/components/production-flow-icon';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
@@ -166,10 +167,7 @@ export default function SignupPage() {
       <div className="flex flex-col items-center justify-center p-8 relative bg-muted lg:flex">
         <div className="mx-auto w-full max-w-md space-y-4 text-center">
             <div className="flex items-center justify-center gap-3">
-              <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
-                  <rect width="32" height="32" rx="6" fill="hsl(var(--brand-login))"/>
-                  <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
-              </svg>
+              <ProductionFlowIcon className="h-10 w-10" />
               <div className="flex items-center gap-2">
                 <h1 className="text-4xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-login))"}}>ProductionFlow</h1>
                 <Badge variant="outline" className="text-xs font-normal">BETA</Badge>

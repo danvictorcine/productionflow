@@ -10,6 +10,7 @@ import { getUserProfile, updateUserProfile } from '@/lib/firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ProductionFlowIcon } from '@/components/production-flow-icon';
 
 
 export type AppUser = User & UserProfile;
@@ -115,10 +116,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       <div className="flex items-center justify-center min-h-screen bg-background">
           <div className="flex flex-col items-center gap-4">
              <div className="flex items-center justify-center gap-2">
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" style={{color: "hsl(var(--brand-login, var(--primary)))"}}>
-                    <rect width="32" height="32" rx="6" fill="currentColor"/>
-                    <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))" style={{opacity: 0.8}}/>
-                </svg>
+                <ProductionFlowIcon className="h-8 w-8" />
                 <div className="flex items-center gap-2">
                   <h1 className="text-2xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-login, var(--primary)))"}}>ProductionFlow</h1>
                   <Badge variant="outline" className="text-xs font-normal">BETA</Badge>

@@ -38,6 +38,7 @@ import {
 import { CopyableError } from '@/components/copyable-error';
 import { Badge } from '@/components/ui/badge';
 import { getInitials } from '@/lib/utils';
+import { ProductionFlowIcon } from '@/components/production-flow-icon';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
@@ -296,10 +297,7 @@ function SettingsPageDetail() {
         <h1 className="text-lg md:text-xl font-bold">Configurações da Conta</h1>
         <div className="ml-auto flex items-center gap-2">
           <div className="hidden md:flex items-center gap-2">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
-                  <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))"/>
-                  <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
-              </svg>
+              <ProductionFlowIcon className="h-7 w-7" />
               <p className="text-lg font-semibold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</p>
               <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
           </div>

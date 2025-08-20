@@ -36,6 +36,7 @@ import { AppFooter } from '@/components/app-footer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { ProductionFlowIcon } from '@/components/production-flow-icon';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -208,10 +209,7 @@ export default function LoginPage() {
             <div className="z-20 w-full h-full flex flex-col items-center justify-center overflow-y-auto">
                 <div className="mx-auto w-full max-w-md space-y-4 text-center">
                     <div className="flex items-center justify-center gap-3">
-                        <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 flex-shrink-0">
-                            <rect width="32" height="32" rx="6" style={{fill: `hsl(var(--brand-icon))`}}/>
-                            <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))" style={{opacity: 0.8}}/>
-                        </svg>
+                        <ProductionFlowIcon className="h-10 w-10 flex-shrink-0" />
                         <h1 className={cn("text-4xl font-bold tracking-tighter", showBackground ? "text-white" : "text-foreground")} style={{color: showBackground ? 'white' : 'hsl(var(--brand-text))'}}>ProductionFlow</h1>
                         <Badge variant="outline" className={cn(showBackground && "bg-black/20 text-white border-white/50")}>BETA</Badge>
                     </div>

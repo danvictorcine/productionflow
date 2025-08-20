@@ -13,6 +13,7 @@ import { Accordion } from '@/components/ui/accordion';
 import { ProductionInfoCard } from '@/components/production-info-card';
 import { ShootingDayCard } from '@/components/shooting-day-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProductionFlowIcon } from '@/components/production-flow-icon';
 
 export default function PublicProductionPage() {
   const params = useParams();
@@ -88,10 +89,7 @@ export default function PublicProductionPage() {
     <div className="flex flex-col min-h-screen bg-muted/20">
       <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
         <div className="flex items-center gap-2">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
-            <rect width="32" height="32" rx="6" fill="hsl(var(--brand-icon))"/>
-            <path d="M22 16L12 22V10L22 16Z" fill="hsl(var(--primary-foreground))"/>
-          </svg>
+          <ProductionFlowIcon className="h-7 w-7" />
           <p className="text-lg font-semibold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</p>
           <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
         </div>
