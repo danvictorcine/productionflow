@@ -48,7 +48,7 @@ import {
 
 const formSchema = z.object({
   title: z.string().min(2, "O título deve ter pelo menos 2 caracteres."),
-  phase: z.enum(['Pre', 'Prod', 'Post'], { required_error: "A fase é obrigatória." }),
+  phase: z.enum(['Desenvolvimento', 'Pre', 'Prod', 'Post', 'Distribuição'], { required_error: "A fase é obrigatória." }),
   startDate: z.date({ required_error: "A data de início é obrigatória." }),
   endDate: z.date({ required_error: "A data de término é obrigatória." }),
   progress: z.number().min(0).max(100),
@@ -75,7 +75,7 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
-      phase: "Pre",
+      phase: "Desenvolvimento",
       startDate: new Date(),
       endDate: new Date(),
       progress: 0,
@@ -96,7 +96,7 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
           }
         : {
             title: "",
-            phase: 'Pre' as const,
+            phase: 'Desenvolvimento' as const,
             startDate: new Date(),
             endDate: new Date(),
             progress: 0,
@@ -147,9 +147,11 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Selecione a fase" /></SelectTrigger></FormControl>
                         <SelectContent>
+                            <SelectItem value="Desenvolvimento">Desenvolvimento</SelectItem>
                             <SelectItem value="Pre">Pré-Produção</SelectItem>
                             <SelectItem value="Prod">Produção</SelectItem>
                             <SelectItem value="Post">Pós-Produção</SelectItem>
+                            <SelectItem value="Distribuição">Distribuição</SelectItem>
                         </SelectContent>
                     </Select>
                   <FormMessage />

@@ -369,7 +369,7 @@ export type DisplayableItem =
 export type GanttTask = {
   id: string;
   userId: string;
-  phase: 'Pre' | 'Prod' | 'Post';
+  phase: 'Desenvolvimento' | 'Pre' | 'Prod' | 'Post' | 'Distribuição';
   title: string;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD

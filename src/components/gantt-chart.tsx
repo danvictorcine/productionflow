@@ -213,7 +213,16 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
     return acc;
   }, {} as Record<GanttTask['phase'], GanttTask[]>);
   
-  const phaseOrder: GanttTask['phase'][] = ['Pre', 'Prod', 'Post'];
+  const phaseOrder: GanttTask['phase'][] = ['Desenvolvimento', 'Pre', 'Prod', 'Post', 'Distribuição'];
+
+  const phaseLabels: Record<GanttTask['phase'], string> = {
+    Desenvolvimento: 'Desenvolvimento',
+    Pre: 'Pré-Produção',
+    Prod: 'Produção',
+    Post: 'Pós-Produção',
+    Distribuição: 'Distribuição',
+  };
+
 
   return (
     <div className="w-full">
@@ -245,7 +254,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                   groupedTasks[phase] && (
                     <div key={phase}>
                       <div className="flex items-center h-10 border-b bg-muted/50 p-2">
-                        <p className="font-bold text-primary">{phase === 'Pre' ? 'Pré-Produção' : phase === 'Prod' ? 'Produção' : 'Pós-Produção'}</p>
+                        <p className="font-bold text-primary">{phaseLabels[phase]}</p>
                       </div>
                       {groupedTasks[phase].map(task => (
                         <div key={task.id} className="flex h-[50px] items-center border-b p-2 hover:bg-muted/30 cursor-pointer" onClick={() => openEditForm(task)}>
@@ -264,8 +273,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                 <div className="relative">
                     {phaseOrder.map(phase => (
                         groupedTasks[phase] && (
-                            <div key={`${phase}-timeline`}>
-                                <div className="flex items-center h-10 border-b bg-muted/50 p-2"></div>
+                            <React.Fragment key={`${phase}-timeline`}>
+                                <div className="h-10 border-b bg-muted/50"></div>
                                 {groupedTasks[phase].map(task => {
                                     const { left, width } = getTaskPositionAndWidth(task);
                                     return (
@@ -295,7 +304,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                         </div>
                                     );
                                 })}
-                            </div>
+                            </React.Fragment>
                         )
                     ))}
                 </div>
