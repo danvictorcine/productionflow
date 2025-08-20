@@ -276,8 +276,21 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                           <div className="h-10 border-b bg-muted/50"></div>
                           {groupedTasks[phase] && groupedTasks[phase].map(task => {
                               const { left, width } = getTaskPositionAndWidth(task);
-                              const solidColor = task.color ? task.color.replace('/20', '') : 'bg-primary';
-                              const bgColor = task.color || 'bg-primary/20';
+                              const solidColor = task.color ? task.color : 'bg-primary';
+
+                              // This logic converts tailwind bg color classes to actual colors for the style attribute
+                              // It's a bit of a hack but necessary for dynamic colors with opacity.
+                              // A better solution would be to store hex codes in the DB.
+                              let bgColorRgb;
+                              switch (solidColor) {
+                                  case 'bg-blue-500': bgColorRgb = '59, 130, 246'; break;
+                                  case 'bg-green-500': bgColorRgb = '34, 197, 94'; break;
+                                  case 'bg-yellow-500': bgColorRgb = '234, 179, 8'; break;
+                                  case 'bg-orange-500': bgColorRgb = '249, 115, 22'; break;
+                                  case 'bg-red-500': bgColorRgb = '239, 68, 68'; break;
+                                  case 'bg-purple-500': bgColorRgb = '139, 92, 246'; break;
+                                  default: bgColorRgb = '31, 41, 55'; // bg-primary fallback
+                              }
 
                               return (
                                   <div key={task.id} className="relative h-[50px] border-b">
@@ -297,8 +310,14 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                             }}
                                             className="relative"
                                         >
-                                           <div className={cn("absolute inset-0 rounded-md overflow-hidden", bgColor)}>
-                                                <div className={cn("h-full", solidColor)} style={{ width: `${task.progress}%` }}></div>
+                                           <div 
+                                                className="absolute inset-0 rounded-md overflow-hidden"
+                                                style={{ backgroundColor: `rgba(${bgColorRgb}, 0.2)` }}
+                                           >
+                                                <div 
+                                                    className={cn("h-full", solidColor)} 
+                                                    style={{ width: `${task.progress}%` }}
+                                                ></div>
                                                 <div className="absolute inset-0 flex items-center justify-start px-2">
                                                     <p className="text-xs font-semibold text-primary-foreground truncate">{task.title}</p>
                                                 </div>
