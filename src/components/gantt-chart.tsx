@@ -39,6 +39,10 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
   
   const [viewMode, setViewMode] = useState<'day' | 'month'>('day');
 
+  const [tooltipData, setTooltipData] = useState<{ x: number; y: number; content: string } | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+
   const dateRange = useMemo(() => {
     if (tasks.length === 0) {
         const today = new Date();
@@ -226,8 +230,15 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
 
 
   return (
-    <TooltipProvider>
-      <div className="w-full">
+    <div className="w-full">
+         {tooltipData && (
+            <div
+            className="absolute z-30 p-2 text-xs bg-popover text-popover-foreground rounded-md shadow-lg pointer-events-none"
+            style={{ top: tooltipData.y, left: tooltipData.x, transform: 'translate(10px, 10px)' }}
+            >
+            {tooltipData.content}
+            </div>
+        )}
         {tasks.length === 0 ? (
           <div className="text-center p-8">
             <p className="text-sm text-muted-foreground">Nenhuma tarefa no cronograma. Clique em ‘+ Tarefa’ para começar.</p>
@@ -246,7 +257,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                   <PlusCircle className="mr-2 h-4 w-4" /> Nova Tarefa
                 </Button>
               </div>
-            <div className="flex">
+            <div className="flex" ref={containerRef}>
               {/* Task List Column (Fixed) */}
               <div className="w-[150px] md:w-[300px] flex-shrink-0 border-r">
                   <div className="h-[69px] border-b p-2 flex items-center sticky top-0 bg-background z-10">
@@ -293,9 +304,17 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
 
                                 return (
                                     <div key={task.id} className="relative h-[50px] border-b">
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className="absolute top-1/2 -translate-y-1/2 h-8" style={{ left: `${left}px` }}>
+                                          <div 
+                                            className="absolute top-1/2 -translate-y-1/2 h-8 gantt-task-bar" 
+                                            style={{ left: `${left}px` }}
+                                            onMouseMove={(e) => {
+                                                if (containerRef.current) {
+                                                    const rect = containerRef.current.getBoundingClientRect();
+                                                    setTooltipData({ x: e.clientX - rect.left, y: e.clientY - rect.top, content: task.title });
+                                                }
+                                            }}
+                                            onMouseLeave={() => setTooltipData(null)}
+                                          >
                                             <Resizable
                                                 size={{ width: `${width}px`, height: '32px' }}
                                                 minWidth={viewMode === 'day' ? DAY_WIDTH : MONTH_WIDTH}
@@ -316,17 +335,12 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                                   style={{ backgroundColor: `rgba(${bgColorRgb}, 0.2)` }}
                                               >
                                                   <div 
-                                                      className={cn("h-full rounded-md", solidColor)} 
-                                                      style={{ width: `${task.progress}%` }}
+                                                      className="h-full rounded-md"
+                                                      style={{ width: `${task.progress}%`, backgroundColor: `rgb(${bgColorRgb})` }}
                                                   ></div>
                                               </div>
                                             </Resizable>
                                           </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>{task.title}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
                                     </div>
                                 );
                             })}
@@ -349,7 +363,6 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
           />
         )}
       </div>
-    </TooltipProvider>
   );
 };
 
