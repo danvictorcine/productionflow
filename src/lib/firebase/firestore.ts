@@ -101,6 +101,8 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
       throw new Error("Permission denied to update this project.");
   }
   
+  const batch = writeBatch(db);
+
   const dataToUpdate: Record<string, any> = { ...projectData };
   if (projectData.talents) {
     dataToUpdate.talents = projectData.talents.map(talent => {
@@ -114,8 +116,32 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
       date: Timestamp.fromDate(inst.date),
     }));
   }
-  await updateDoc(projectRef, dataToUpdate);
+  
+  // 1. Update the project document
+  batch.update(projectRef, dataToUpdate);
+
+  // 2. Sync talent data back to the main talent pool
+  if (projectData.talents) {
+      for (const talent of projectData.talents) {
+          const talentRef = doc(db, 'talents', talent.id);
+          // O `role` no projeto financeiro é o `paymentType` + cachê. A "função" real fica no talent pool.
+          // Portanto, não sincronizamos o `role` do projeto para o pool.
+          const { id, role, paymentType, fee, dailyRate, days, ...talentPoolData } = talent;
+          
+          const cleanedTalentData: Record<string, any> = { userId };
+          for (const key in talentPoolData) {
+            if ((talentPoolData as any)[key] !== undefined) {
+              cleanedTalentData[key] = (talentPoolData as any)[key];
+            }
+          }
+
+          batch.set(talentRef, cleanedTalentData, { merge: true });
+      }
+  }
+
+  await batch.commit();
 };
+
 
 export const deleteProject = async (projectId: string) => {
   const userId = getUserId();
@@ -496,7 +522,6 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
 
   const batch = writeBatch(db);
   
-  // Clean undefined fields from team members to prevent Firestore errors
   const cleanedData: Record<string, any> = { ...data };
   if (data.team) {
     cleanedData.team = data.team.map(member => {
@@ -510,26 +535,24 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
     });
   }
   
-  // 1. Update the production document itself
   batch.update(productionRef, cleanedData);
 
-  // 2. If team data is being updated, sync changes back to the main talent pool
   if (data.team) {
       for (const member of data.team) {
           const talentRef = doc(db, 'talents', member.id);
-          // Prepare data for talent pool (it shouldn't contain project-specific roles)
-          const { id, role, ...talentData } = member;
-          const talentDataToSave: Record<string, any> = { userId };
-          for (const key in talentData) {
-              if ((talentData as any)[key] !== undefined) {
-                  talentDataToSave[key] = (talentData as any)[key];
+          const { id, role, ...talentPoolData } = member;
+          
+          const dataToSync: Record<string, any> = { userId };
+           for (const key in talentPoolData) {
+              if ((talentPoolData as any)[key] !== undefined) {
+                  dataToSync[key] = (talentPoolData as any)[key];
               }
           }
-          batch.set(talentRef, talentDataToSave, { merge: true });
+          // Merge with existing talent data to preserve the original 'role'
+          batch.set(talentRef, dataToSync, { merge: true });
       }
   }
 
-  // 3. Sync updated team info to all shooting days within this production
   if (cleanedData.team) {
     const updatedTeamMap = new Map(cleanedData.team.map((member: TeamMember) => [member.id, member]));
     const daysQuery = query(collection(db, 'shooting_days'), where('productionId', '==', productionId), where('userId', '==', userId));
@@ -1600,7 +1623,6 @@ export const saveSingleTalent = async (talent: Talent) => {
 
   const memberUpdatePayload = {
       name: talent.name,
-      role: talent.role,
       photoURL: talent.photoURL,
       contact: talent.contact,
       hasDietaryRestriction: talent.hasDietaryRestriction,
@@ -1614,12 +1636,12 @@ export const saveSingleTalent = async (talent: Talent) => {
     let needsUpdate = false;
     const updatedTeam = team.map(member => {
         if (member.id === talent.id) {
-            needsUpdate = true;
-            // For financial 'talents', preserve payment info
-            if ('paymentType' in member) {
-                return { ...member, ...memberUpdatePayload };
+            // Check if any value is different before flagging for update
+             const hasChanged = Object.keys(memberUpdatePayload).some(key => member[key] !== (memberUpdatePayload as any)[key]);
+            if (hasChanged) {
+              needsUpdate = true;
+              return { ...member, ...memberUpdatePayload };
             }
-            return { ...member, ...memberUpdatePayload };
         }
         return member;
     });
