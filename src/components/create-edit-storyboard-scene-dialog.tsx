@@ -31,7 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 const formSchema = z.object({
   title: z.string().min(2, "O título da cena deve ter pelo menos 2 caracteres."),
   description: z.string().optional(),
-  aspectRatio: z.enum(['16:9', '4:3']),
+  aspectRatio: z.enum(['16:9', '4:3', '9:16', '2.39:1']),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -119,6 +119,8 @@ export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, s
                         <SelectContent>
                             <SelectItem value="16:9">Widescreen (16:9)</SelectItem>
                             <SelectItem value="4:3">Clássico (4:3)</SelectItem>
+                            <SelectItem value="9:16">Mobile (9:16)</SelectItem>
+                            <SelectItem value="2.39:1">Anamórfico (2.39:1)</SelectItem>
                         </SelectContent>
                     </Select>
                   <FormMessage />

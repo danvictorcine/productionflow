@@ -33,7 +33,7 @@ const ItemType = 'PANEL';
 
 interface PanelCardProps {
   panel: StoryboardPanel;
-  aspectRatio: '16:9' | '4:3';
+  aspectRatio: StoryboardScene['aspectRatio'];
   index: number;
   onDelete: (panelId: string, sceneId: string) => void;
   onUpdateNotes: (panelId: string, notes: string) => void;
@@ -41,6 +41,17 @@ interface PanelCardProps {
   onDropPanel: (sceneId: string) => void;
   isExporting: boolean;
 }
+
+const getAspectRatioClass = (aspectRatio: StoryboardScene['aspectRatio']) => {
+    switch (aspectRatio) {
+        case '16:9': return 'aspect-video';
+        case '4:3': return 'aspect-[4/3]';
+        case '9:16': return 'aspect-[9/16]';
+        case '2.39:1': return 'aspect-[2.39/1]';
+        default: return 'aspect-video';
+    }
+}
+
 
 const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNotes, movePanel, onDropPanel, isExporting }: PanelCardProps) => {
     const [notes, setNotes] = useState(panel.notes);
@@ -89,7 +100,7 @@ const PanelCard = React.memo(({ panel, aspectRatio, index, onDelete, onUpdateNot
     return (
         <div ref={cardRef} data-handler-id={handlerId} style={{ opacity: isDragging ? 0.3 : 1 }} className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm break-inside-avoid group relative">
              {!isExporting && ( <div ref={handleRef} className="drag-handle absolute top-0 left-1/2 -translate-x-1/2 w-12 h-5 flex items-start justify-center cursor-move z-10 opacity-30 group-hover:opacity-100 transition-opacity"><GripVertical className="h-4 w-4 text-muted-foreground" /></div> )}
-            <div className={cn("relative w-full rounded-md overflow-hidden bg-muted", aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]")}>
+            <div className={cn("relative w-full rounded-md overflow-hidden bg-muted", getAspectRatioClass(aspectRatio))}>
                 <Image src={panel.imageUrl} alt={`Storyboard panel ${index + 1}`} layout="fill" objectFit="cover" data-ai-hint="action sequence" />
                  <div className="absolute top-1 left-1 bg-black/30 text-white/90 text-xs font-bold px-1.5 py-0.5 rounded-sm pointer-events-none transition-colors group-hover:opacity-100">{index + 1}</div>
                 {!isExporting && ( <Button variant="ghost" size="icon" className="absolute top-0.5 right-1 h-7 w-7 text-white/70 hover:text-white hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDelete(panel.id, panel.sceneId)}><X className="h-4 w-4" /></Button> )}
@@ -326,7 +337,7 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDele
                         {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
                             <PanelCard key={panel.id} panel={panel} aspectRatio={scene.aspectRatio} index={panelIndex} onDelete={handleDeletePanel} onUpdateNotes={handleUpdatePanelNotes} movePanel={movePanel} onDropPanel={handleDropPanel} isExporting={isExporting} />
                         ))}
-                        {!isExporting && (<button className={cn("flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors", scene.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]")} onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }} disabled={isUploading}>{isUploading && sceneForUpload === scene.id ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <PlusCircle className="h-8 w-8 text-muted-foreground/50" />}</button>)}
+                        {!isExporting && (<button className={cn("flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors", getAspectRatioClass(scene.aspectRatio))} onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }} disabled={isUploading}>{isUploading && sceneForUpload === scene.id ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <PlusCircle className="h-8 w-8 text-muted-foreground/50" />}</button>)}
                     </div>
                 </div>
             ))}
@@ -347,7 +358,7 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDele
                         {(panelsByScene[scene.id] || []).map((panel, panelIndex) => (
                             <PanelCard key={panel.id} panel={panel} aspectRatio={scene.aspectRatio} index={panelIndex} onDelete={handleDeletePanel} onUpdateNotes={handleUpdatePanelNotes} movePanel={movePanel} onDropPanel={handleDropPanel} isExporting={isExporting}/>
                         ))}
-                        {!isExporting && (<button className={cn("flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors", scene.aspectRatio === '16:9' ? "aspect-video" : "aspect-[4/3]")} onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }} disabled={isUploading}>{isUploading && sceneForUpload === scene.id ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <PlusCircle className="h-8 w-8 text-muted-foreground/50" />}</button>)}
+                        {!isExporting && (<button className={cn("flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors", getAspectRatioClass(scene.aspectRatio))} onClick={() => { setSceneForUpload(scene.id); imageUploadRef.current?.click(); }} disabled={isUploading}>{isUploading && sceneForUpload === scene.id ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <PlusCircle className="h-8 w-8 text-muted-foreground/50" />}</button>)}
                     </div>
                 </div>
             ))}
@@ -383,7 +394,7 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDele
                             <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} className="h-9 w-9" disabled={gridCols <= 1}>
                                 <ZoomIn className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setIsStoryboardDialogOpen(true)} className="h-9 w-9">
+                            <Button variant="ghost" size="icon" onClick={() => setIsStoryboardDialogOpen(true)} className="h-9 w-9 tool-button">
                                 <Edit className="h-4 w-4" />
                             </Button>
                              <Button variant="ghost" size="icon" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
