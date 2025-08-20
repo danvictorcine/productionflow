@@ -23,8 +23,8 @@ interface GanttChartProps {
 
 // Function to parse date strings in UTC to avoid timezone issues
 const parseDateInUTC = (dateString: string) => {
-    // Appending 'T00:00:00Z' makes it explicit that the date is in UTC
     const [year, month, day] = dateString.split('-').map(Number);
+    // Appending 'T00:00:00Z' is not needed if we use Date.UTC
     return new Date(Date.UTC(year, month - 1, day));
 };
 
@@ -280,7 +280,6 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
 
                               // This logic converts tailwind bg color classes to actual colors for the style attribute
                               // It's a bit of a hack but necessary for dynamic colors with opacity.
-                              // A better solution would be to store hex codes in the DB.
                               let bgColorRgb;
                               switch (solidColor) {
                                   case 'bg-blue-500': bgColorRgb = '59, 130, 246'; break;
@@ -315,11 +314,16 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                                 style={{ backgroundColor: `rgba(${bgColorRgb}, 0.2)` }}
                                            >
                                                 <div 
-                                                    className={cn("h-full", solidColor)} 
+                                                    className={cn("h-full rounded-md", solidColor)} 
                                                     style={{ width: `${task.progress}%` }}
                                                 ></div>
                                                 <div className="absolute inset-0 flex items-center justify-start px-2">
-                                                    <p className="text-xs font-semibold text-primary-foreground truncate">{task.title}</p>
+                                                    <p 
+                                                      className="text-xs font-semibold text-primary-foreground truncate"
+                                                      style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)' }}
+                                                    >
+                                                      {task.title}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </Resizable>
