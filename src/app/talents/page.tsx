@@ -364,7 +364,7 @@ function ManageTalentsPage() {
                                 />
                             </div>
                             <div className="flex items-center gap-2">
-                               <Button type="button" variant="outline" onClick={() => prepend({ id: crypto.randomUUID(), name: '', role: '', photoURL: '', contact: '' })}>
+                               <Button type="button" variant="ghost" onClick={() => prepend({ id: crypto.randomUUID(), name: '', role: '', photoURL: '', contact: '' })}>
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     Adicionar Talento
                                 </Button>
