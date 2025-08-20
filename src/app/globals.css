@@ -68,6 +68,11 @@
   }
 }
 
+.loading-brand {
+    color: hsl(var(--brand-login, var(--primary)));
+}
+
+
 /* Fix for Leaflet map appearing over dialogs */
 .leaflet-container {
   z-index: 1;
