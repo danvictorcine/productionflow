@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Trash2, Check } from "lucide-react";
 
@@ -97,12 +97,17 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
 
   useEffect(() => {
     if (isOpen) {
+      // Helper to parse YYYY-MM-DD string into a local Date object without timezone shifts
+      const parseDateString = (dateStr: string): Date => {
+        return parse(dateStr, 'yyyy-MM-dd', new Date());
+      };
+      
       const defaultValues = isEditMode
         ? {
             title: task.title,
             phase: task.phase,
-            startDate: new Date(task.startDate),
-            endDate: new Date(task.endDate),
+            startDate: parseDateString(task.startDate),
+            endDate: parseDateString(task.endDate),
             progress: task.progress,
             notes: task.notes || "",
             color: task.color || 'bg-primary'

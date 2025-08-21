@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { GanttTaskForm } from './gantt-task-form';
-import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, eachMonthOfInterval, differenceInMonths } from 'date-fns';
+import { format, differenceInDays, addDays, startOfMonth, endOfMonth, eachDayOfInterval, eachMonthOfInterval, differenceInMonths, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Resizable } from 're-resizable';
 import { CopyableError } from './copyable-error';
@@ -24,9 +24,7 @@ interface GanttChartProps {
 
 // Function to parse date strings in UTC to avoid timezone issues
 const parseDateInUTC = (dateString: string) => {
-    const [year, month, day] = dateString.split('-').map(Number);
-    // Appending 'T00:00:00Z' is not needed if we use Date.UTC
-    return new Date(Date.UTC(year, month - 1, day));
+    return parse(dateString, 'yyyy-MM-dd', new Date());
 };
 
 
