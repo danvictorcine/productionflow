@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -616,7 +617,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
     }
     
     const handleCreateNewTalent = async (values: NewTalentFormValues) => {
-        const talentToSave: Omit<Talent, 'id' | 'userId'> = {
+        const talentToSave: Omit<Talent, 'id'> = {
             name: values.name,
             role: values.role
         };
