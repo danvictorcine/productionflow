@@ -1,3 +1,4 @@
+
 // @/src/app/project/[id]/dashboard/page.tsx
 'use client';
 
@@ -161,7 +162,7 @@ function ProjectDashboardPage() {
   return (
     <div className="p-4 sm:p-6 md:p-8 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard do Projeto</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
         <p className="text-muted-foreground">{project.name}</p>
       </div>
 
