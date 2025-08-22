@@ -214,7 +214,7 @@ function ManageTalentsPage() {
     }
     
     const handleDeleteClick = (talent: Talent, index: number) => {
-        const isNew = !dirtyFields.talents?.[index]; // A simple heuristic: if it's not dirty, it must exist in DB. A better way might be needed if logic changes. A more robust way is to check if the ID is a UUID.
+        const isNew = !dirtyFields.talents?.[index]; // A simple heuristic: if it's not dirty, it must exist in DB. A better way might be needed if logic changes.
         // For a new unsaved item, its ID is a UUID from crypto.randomUUID(). Saved items have Firestore IDs.
         const isTrulyNew = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(talent.id);
 
@@ -233,12 +233,15 @@ function ManageTalentsPage() {
             await firestoreApi.deleteTalent(firestoreId);
             toast({ title: "Talento removido com sucesso!" });
             await fetchData(); // Refresh data after deletion
-        } catch (error) {
-             const errorTyped = error as { code?: string; message: string };
+        } catch (error: any) {
+            let userMessage = "Não foi possível excluir o talento.";
+            if (error.message === 'TALENT_IN_USE') {
+                userMessage = "Este talento não pode ser excluído pois está sendo utilizado em um ou mais projetos. Remova-o dos projetos antes de excluir.";
+            }
              toast({
                 variant: 'destructive',
                 title: 'Erro ao Excluir',
-                description: <CopyableError userMessage="Não foi possível excluir o talento." errorCode={errorTyped.message || errorTyped.code || 'UNKNOWN_ERROR'} />,
+                description: <CopyableError userMessage={userMessage} errorCode={error.message || error.code || 'UNKNOWN_ERROR'} />,
             });
         } finally {
             setTalentToDelete(null);

@@ -1,4 +1,3 @@
-
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -156,7 +155,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
               const transQuery = query(
                   collection(db, 'transactions'),
                   where('projectId', '==', projectId),
-                  where('userId', '==', userId), // <-- FIX: Added this line
+                  where('userId', '==', userId),
                   where('talentId', '==', teamMember.id),
                   where('status', '==', 'planned')
               );
@@ -1688,14 +1687,55 @@ export const saveSingleTalent = async (talent: Talent) => {
   await batch.commit();
 };
 
+export const isTalentInUse = async (talentId: string): Promise<boolean> => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
+
+    // Check financial projects
+    const financialQuery = query(collection(db, 'projects'), where('userId', '==', userId), where('talents', 'array-contains-any', [{ id: talentId }]));
+    const financialSnapshot = await getDocs(financialQuery);
+    if (!financialSnapshot.empty) {
+        // More robust check since array-contains-any can have false positives on objects
+        for (const doc of financialSnapshot.docs) {
+            const project = doc.data() as Project;
+            if (project.talents?.some(t => t.id === talentId)) {
+                return true;
+            }
+        }
+    }
+
+    // Check production projects
+    const productionQuery = query(collection(db, 'productions'), where('userId', '==', userId), where('team', 'array-contains-any', [{ id: talentId }]));
+    const productionSnapshot = await getDocs(productionQuery);
+    if (!productionSnapshot.empty) {
+        for (const doc of productionSnapshot.docs) {
+            const production = doc.data() as Production;
+            if (production.team?.some(t => t.id === talentId)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 export const deleteTalent = async (talentId: string): Promise<void> => {
   const userId = getUserId();
   if (!userId) throw new Error("Usuário não autenticado.");
+
+  const talentInUse = await isTalentInUse(talentId);
+  if (talentInUse) {
+      throw new Error("TALENT_IN_USE");
+  }
 
   const talentRef = doc(db, 'talents', talentId);
   const talentSnap = await getDoc(talentRef);
   if (!talentSnap.exists() || talentSnap.data().userId !== userId) {
       throw new Error("Permission denied or talent not found.");
+  }
+  
+  if (talentSnap.data().photoURL) {
+      await deleteImageFromUrl(talentSnap.data().photoURL).catch(err => console.warn("Could not delete talent photo:", err));
   }
 
   await deleteDoc(talentRef);
