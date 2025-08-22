@@ -4,7 +4,7 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PlusCircle, Trash2, Calendar as CalendarIcon, Info, Users, Search } from "lucide-react";
+import { PlusCircle, Trash2, Calendar as CalendarIcon, Info, Users, Search, ChevronDown } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -46,6 +46,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { Checkbox } from "./ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+
 
 const teamMemberSchema = z.object({
   id: z.string(),
@@ -281,7 +283,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                 : ""
                             }
                             onChange={(e) => {
-                              const numericValue = e.target.value.replace(/\D/g, "");
+                              const numericValue = e.target.value.replace(/\\D/g, "");
                               field.onChange(Number(numericValue) / 100);
                             }}
                           />
@@ -333,7 +335,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                     : ""
                                 }
                                 onChange={(e) => {
-                                  const numericValue = e.target.value.replace(/\D/g, "");
+                                  const numericValue = e.target.value.replace(/\\D/g, "");
                                   field.onChange(Number(numericValue) / 100);
                                 }}
                               />
@@ -423,7 +425,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                       type="text" placeholder="R$ 0,00"
                                       value={ field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""}
                                       onChange={(e) => {
-                                        const numericValue = e.target.value.replace(/\D/g, "");
+                                        const numericValue = e.target.value.replace(/\\D/g, "");
                                         field.onChange(Number(numericValue) / 100);
                                       }}
                                     />
@@ -474,74 +476,77 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                       {talentFields.map((field, index) => {
                         const paymentType = form.watch(`talents.${index}.paymentType`);
                         return (
-                          <div key={field.id} className="grid grid-cols-1 gap-4 rounded-md border p-4">
-                            <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-                                <FormField control={control} name={`talents.${index}.name`} render={({ field: nameField }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-xs">Nome</FormLabel>
-                                        <div className="flex items-center gap-2">
-                                            <Avatar className="h-9 w-9">
-                                                <AvatarImage src={form.watch(`talents.${index}.photoURL`)} alt={nameField.value} />
-                                                <AvatarFallback>{getInitials(nameField.value)}</AvatarFallback>
-                                            </Avatar>
-                                            <FormControl>
-                                                <Input placeholder="Nome do Talento" {...nameField} readOnly />
-                                            </FormControl>
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}/>
-                                <FormField control={control} name={`talents.${index}.role`} render={({ field }) => (
-                                    <FormItem><FormLabel className="text-xs">Função</FormLabel><FormControl><Input placeholder="ex: Ator Principal" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={control} name={`talents.${index}.paymentType`} render={({ field }) => (
-                                    <FormItem><FormLabel className="text-xs">Tipo de Pagamento</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="fixed">Cachê Fixo</SelectItem>
-                                            <SelectItem value="daily">Por Diária</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage /></FormItem>
-                                )}/>
-                                <Button type="button" variant="destructive" size="icon" onClick={() => removeTalent(index)} className="self-end"><Trash2 className="h-4 w-4" /></Button>
-                            </div>
-                            {paymentType === 'fixed' && (
-                                <FormField control={control} name={`talents.${index}.fee`} render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-xs">Cachê Fixo</FormLabel>
-                                        <FormControl>
-                                            <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
-                                                const numericValue = e.target.value.replace(/\D/g, ""); field.onChange(Number(numericValue) / 100);
-                                            }}/>
-                                        </FormControl><FormMessage />
-                                    </FormItem>
-                                )}/>
-                            )}
-                            {paymentType === 'daily' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <FormField control={control} name={`talents.${index}.dailyRate`} render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-xs">Valor da Diária</FormLabel>
-                                            <FormControl>
-                                                <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
-                                                    const numericValue = e.target.value.replace(/\D/g, ""); field.onChange(Number(numericValue) / 100);
-                                                }}/>
-                                            </FormControl><FormMessage />
-                                        </FormItem>
-                                    )}/>
-                                    <FormField control={control} name={`talents.${index}.days`} render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-xs">Nº de Diárias</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" placeholder="ex: 3" {...field} onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}/>
-                                            </FormControl><FormMessage />
-                                        </FormItem>
-                                    )}/>
-                                </div>
-                            )}
-                          </div>
+                          <Accordion type="single" collapsible key={field.id} className="w-full">
+                            <AccordionItem value={field.id} className="border-b-0">
+                               <div className="border rounded-lg bg-card group">
+                                <AccordionTrigger className="p-3 hover:no-underline">
+                                    <div className="flex items-center gap-4 flex-1">
+                                        <Avatar className="h-12 w-12">
+                                            <AvatarImage src={field.photoURL || undefined} alt={field.name} className="object-cover" />
+                                            <AvatarFallback>{getInitials(field.name)}</AvatarFallback>
+                                        </Avatar>
+                                        <p className="font-semibold">{field.name || "Novo Talento"}</p>
+                                    </div>
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); removeTalent(index); }}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                    <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 pt-0">
+                                    <div className="space-y-4 pt-4 border-t">
+                                        <FormField control={control} name={`talents.${index}.role`} render={({ field }) => (
+                                            <FormItem><FormLabel className="text-xs">Função</FormLabel><FormControl><Input placeholder="ex: Ator Principal" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={control} name={`talents.${index}.paymentType`} render={({ field }) => (
+                                            <FormItem><FormLabel className="text-xs">Tipo de Pagamento</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="fixed">Cachê Fixo</SelectItem>
+                                                    <SelectItem value="daily">Por Diária</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage /></FormItem>
+                                        )}/>
+                                        {paymentType === 'fixed' && (
+                                            <FormField control={control} name={`talents.${index}.fee`} render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-xs">Cachê Fixo</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
+                                                            const numericValue = e.target.value.replace(/\\D/g, ""); field.onChange(Number(numericValue) / 100);
+                                                        }}/>
+                                                    </FormControl><FormMessage />
+                                                </FormItem>
+                                            )}/>
+                                        )}
+                                        {paymentType === 'daily' && (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <FormField control={control} name={`talents.${index}.dailyRate`} render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs">Valor da Diária</FormLabel>
+                                                        <FormControl>
+                                                            <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
+                                                                const numericValue = e.target.value.replace(/\\D/g, ""); field.onChange(Number(numericValue) / 100);
+                                                            }}/>
+                                                        </FormControl><FormMessage />
+                                                    </FormItem>
+                                                )}/>
+                                                <FormField control={control} name={`talents.${index}.days`} render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs">Nº de Diárias</FormLabel>
+                                                        <FormControl>
+                                                            <Input type="number" placeholder="ex: 3" {...field} onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}/>
+                                                        </FormControl><FormMessage />
+                                                    </FormItem>
+                                                )}/>
+                                            </div>
+                                        )}
+                                    </div>
+                                </AccordionContent>
+                               </div>
+                            </AccordionItem>
+                          </Accordion>
                         )
                       })}
                        <Dialog open={isTalentSelectorOpen} onOpenChange={setIsTalentSelectorOpen}>
@@ -690,5 +695,3 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
         </div>
     )
 }
-
-    
