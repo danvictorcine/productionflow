@@ -61,7 +61,7 @@ const getVimeoEmbedUrl = (url: string) => {
 };
 
 const getSpotifyEmbedUrl = (url: string) => {
-    const spotifyRegex = /https?:\/\/open\.spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/;
+    const spotifyRegex = /https?:\/\/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/;
     const match = url.match(spotifyRegex);
     if (match && match[1] && match[2]) {
         const type = match[1];
@@ -691,7 +691,7 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
       </div>
       
       <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
             <DialogHeader>
                 <DialogTitle>Adicionar Vídeo</DialogTitle>
                 <DialogDescription>Cole a URL de um vídeo do YouTube ou Vimeo.</DialogDescription>
@@ -707,10 +707,10 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
       </Dialog>
 
       <Dialog open={isSpotifyDialogOpen} onOpenChange={setIsSpotifyDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
             <DialogHeader>
                 <DialogTitle>Adicionar Música</DialogTitle>
-                <DialogDescription>Cole a URL de uma música, álbum ou playlist do Spotify.</DialogDescription>
+                <DialogDescription>Cole a URL de uma música, álbum, playlist ou episódio de podcast do Spotify.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
                 <Label htmlFor="spotify-url">URL do Spotify</Label>
