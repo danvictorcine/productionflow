@@ -11,13 +11,13 @@ import { ptBR } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -40,15 +40,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import * as firestoreApi from "@/lib/firebase/firestore";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogDescription,
-  DialogFooter
-} from "./ui/dialog";
 import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { getInitials } from "@/lib/utils";
@@ -228,7 +219,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   talentId: talent.id,
                   name: talent.name,
                   photoURL: talent.photoURL,
-                  role: 'Função a definir', // Default role
+                  role: talent.role || 'Função a definir',
                   paymentType: 'fixed',
                   fee: 0,
                   dailyRate: 0,
@@ -246,7 +237,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-2xl flex flex-col">
+      <DialogContent className="sm:max-w-2xl flex flex-col h-full md:h-auto">
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</DialogTitle>
           <DialogDescription>
@@ -255,7 +246,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 pr-6">
+            <ScrollArea className="flex-1 pr-6 -mr-6">
                 <div className="space-y-6">
                   <FormField
                     control={form.control}
@@ -576,7 +567,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   </div>
               </div>
             </ScrollArea>
-            <DialogFooter className="flex-shrink-0 border-t p-4 pt-6">
+            <DialogFooter className="flex-shrink-0 border-t pt-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
             </DialogFooter>
@@ -589,6 +580,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
 
 const newTalentFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
+  role: z.string().min(2, { message: "A função deve ter pelo menos 2 caracteres." }),
 });
 type NewTalentFormValues = z.infer<typeof newTalentFormSchema>;
 
@@ -605,7 +597,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
     
     const form = useForm<NewTalentFormValues>({
         resolver: zodResolver(newTalentFormSchema),
-        defaultValues: { name: "" },
+        defaultValues: { name: "", role: "" },
     });
     
     const filteredTalentPool = useMemo(() => {
@@ -622,28 +614,32 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
             setSelectedIds(prev => prev.filter(sid => sid !== id));
         }
     }
-
+    
     const handleCreateNewTalent = async (values: NewTalentFormValues) => {
         const talentToSave: Omit<Talent, 'id' | 'userId'> = {
             name: values.name,
+            role: values.role
         };
         try {
             await firestoreApi.addTalent(talentToSave);
             toast({ title: "Talento criado com sucesso!" });
             form.reset();
-            onTalentCreated(); 
-            setView('select'); 
+            onTalentCreated();
+            setView('select');
         } catch (error) {
             toast({ variant: 'destructive', title: "Erro", description: "Não foi possível criar o novo talento." });
         }
     };
-    
+
     if (view === 'create') {
         return (
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleCreateNewTalent)} className="space-y-4">
                     <FormField control={form.control} name="name" render={({ field }) => (
                         <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="role" render={({ field }) => (
+                        <FormItem><FormLabel>Função Padrão</FormLabel><FormControl><Input placeholder="Ex: Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => setView('select')}>Cancelar</Button>
@@ -684,6 +680,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
                                     </Avatar>
                                     <div>
                                         <p>{talent.name}</p>
+                                        <p className="text-xs text-muted-foreground">{talent.role}</p>
                                     </div>
                                 </label>
                             </div>
