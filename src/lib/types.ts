@@ -30,7 +30,7 @@ export type Talent = {
 export type TeamMember = {
   id: string; // ID único do talento no banco de talentos (usado como talentId)
   name: string;     // Denormalized para exibição fácil
-  role: string;     // Específico para este projeto
+  role: string;     // Específico para este projeto. Agora tem um default no schema de validação.
   
   // Informações de pagamento específicas do projeto
   paymentType?: 'fixed' | 'daily';

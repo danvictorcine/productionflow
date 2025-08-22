@@ -50,7 +50,7 @@ import { useToast } from "@/hooks/use-toast";
 const teamMemberSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Nome do talento é obrigatório."),
-  role: z.string().min(1, "Função é obrigatória."),
+  role: z.string().min(1, "Função é obrigatória.").default("Função a definir"),
   photoURL: z.string().optional(),
   paymentType: z.enum(['fixed', 'daily']).default('fixed'),
   fee: z.coerce.number().optional(),
@@ -247,7 +247,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 pr-6 -mr-6 max-h-[80vh] overflow-y-auto">
+            <ScrollArea className="flex-1 pr-6 -mr-6 py-4">
                 <div className="space-y-6">
                   <FormField
                     control={form.control}
