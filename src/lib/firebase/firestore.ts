@@ -1,3 +1,4 @@
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -139,6 +140,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
               dailyRate, 
               days, 
               role,
+              file,
               ...talentPoolData 
           } = teamMember as any;
 
@@ -151,7 +153,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
           batch.set(talentRef, dataToSync, { merge: true });
 
           // 3. Sync planned fixed fee transactions
-           if ((teamMember.paymentType === 'fixed' || !teamMember.paymentType) && typeof teamMember.fee === 'number') {
+           if (paymentType === 'fixed' && typeof fee === 'number') {
               const transQuery = query(
                   collection(db, 'transactions'),
                   where('projectId', '==', projectId),
@@ -162,7 +164,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
               const transSnapshot = await getDocs(transQuery);
               if (transSnapshot.docs.length > 0) {
                  const transDocRef = transSnapshot.docs[0].ref;
-                 batch.update(transDocRef, { amount: teamMember.fee });
+                 batch.update(transDocRef, { amount: fee });
               }
           }
       }
@@ -1692,27 +1694,22 @@ export const isTalentInUse = async (talentId: string): Promise<boolean> => {
     if (!userId) throw new Error("Usuário não autenticado.");
 
     // Check financial projects
-    const financialQuery = query(collection(db, 'projects'), where('userId', '==', userId), where('talents', 'array-contains-any', [{ id: talentId }]));
+    const financialQuery = query(collection(db, 'projects'), where('userId', '==', userId));
     const financialSnapshot = await getDocs(financialQuery);
-    if (!financialSnapshot.empty) {
-        // More robust check since array-contains-any can have false positives on objects
-        for (const doc of financialSnapshot.docs) {
-            const project = doc.data() as Project;
-            if (project.talents?.some(t => t.id === talentId)) {
-                return true;
-            }
+    for (const doc of financialSnapshot.docs) {
+        const project = doc.data() as Project;
+        if (project.talents?.some(t => t.id === talentId)) {
+            return true;
         }
     }
 
     // Check production projects
-    const productionQuery = query(collection(db, 'productions'), where('userId', '==', userId), where('team', 'array-contains-any', [{ id: talentId }]));
+    const productionQuery = query(collection(db, 'productions'), where('userId', '==', userId));
     const productionSnapshot = await getDocs(productionQuery);
-    if (!productionSnapshot.empty) {
-        for (const doc of productionSnapshot.docs) {
-            const production = doc.data() as Production;
-            if (production.team?.some(t => t.id === talentId)) {
-                return true;
-            }
+    for (const doc of productionSnapshot.docs) {
+        const production = doc.data() as Production;
+        if (production.team?.some(t => t.id === talentId)) {
+            return true;
         }
     }
 
