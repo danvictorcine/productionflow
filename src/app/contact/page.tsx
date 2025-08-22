@@ -61,7 +61,7 @@ export default function ContactPage() {
           <div className="flex items-center gap-2">
             <ProductionFlowIcon className="h-7 w-7" />
             <p className="text-lg font-semibold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</p>
-            <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
+            <Badge variant="outline" className="px-2 py-0.5 text-[0.6rem] font-normal">BETA</Badge>
           </div>
           {user && <UserNav />}
         </div>

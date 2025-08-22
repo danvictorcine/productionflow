@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 <ProductionFlowIcon className="h-8 w-8" style={{ color: "hsl(var(--brand-icon))" }} />
                 <div className="flex items-center gap-2">
                   <h1 className="text-2xl font-bold tracking-tighter" style={{ color: "hsl(var(--brand-text))" }}>ProductionFlow</h1>
-                  <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
+                  <Badge variant="outline" className="px-2 py-0.5 text-[0.6rem] font-normal">BETA</Badge>
                 </div>
              </div>
              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

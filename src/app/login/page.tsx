@@ -211,7 +211,7 @@ export default function LoginPage() {
                     <div className="flex items-center justify-center gap-3">
                         <ProductionFlowIcon className="h-10 w-10 flex-shrink-0" />
                         <h1 className={cn("text-4xl font-bold tracking-tighter", showBackground ? "text-white" : "text-foreground")} style={{color: showBackground ? 'white' : 'hsl(var(--brand-text))'}}>ProductionFlow</h1>
-                        <Badge variant="outline" className={cn(showBackground && "bg-black/20 text-white border-white/50")}>BETA</Badge>
+                        <Badge variant="outline" className={cn("px-2 py-0.5 text-[0.6rem] font-normal", showBackground && "bg-black/20 text-white border-white/50")}>BETA</Badge>
                     </div>
                     <p className="text-lg text-muted-foreground">
                         Sua plataforma completa para a gestão de produções audiovisuais.

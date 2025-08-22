@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -170,7 +171,7 @@ export default function SignupPage() {
               <ProductionFlowIcon className="h-10 w-10" />
               <div className="flex items-center gap-2">
                 <h1 className="text-4xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-login))"}}>ProductionFlow</h1>
-                <Badge variant="outline" className="text-xs font-normal">BETA</Badge>
+                <Badge variant="outline" className="px-2 py-0.5 text-[0.6rem] font-normal">BETA</Badge>
               </div>
             </div>
             <p className="text-lg text-muted-foreground">

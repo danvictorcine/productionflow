@@ -349,7 +349,7 @@ function HomePage() {
             <h1 className="text-lg md:text-2xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>
               ProductionFlow
             </h1>
-            <Badge variant="outline" className="text-xs font-normal">
+            <Badge variant="outline" className="px-2 py-0.5 text-[0.6rem] font-normal">
               BETA
             </Badge>
           </div>
