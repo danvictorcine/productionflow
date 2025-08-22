@@ -8,7 +8,7 @@ import imageCompression from 'browser-image-compression';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 import { 
-    Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Palette, Plus, X, ExternalLink, Music, Type, GalleryVertical, ZoomIn, ZoomOut, Trash2, Edit
+    Image as ImageIcon, Video, MapPin, Loader2, GripVertical, FileText, ListTodo, Plus, X, ExternalLink, Music, Type, GalleryVertical, ZoomIn, ZoomOut, Trash2, Edit
 } from 'lucide-react';
 
 
@@ -103,10 +103,6 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
 
     const handleChecklistUpdate = (updatedItems: ChecklistItem[]) => {
         onUpdate(item.id, { items: updatedItems });
-    };
-
-    const handlePaletteUpdate = (updatedColors: string[]) => {
-        onUpdate(item.id, { content: JSON.stringify(updatedColors) });
     };
     
     const handleContentChange = (content: string) => {
@@ -224,42 +220,6 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                        </Button>
                     </div>
                 )
-            }
-            case 'palette': {
-                let colors: string[] = [];
-                try {
-                    if (typeof item.content === 'string' && item.content.startsWith('[')) {
-                        const parsed = JSON.parse(item.content);
-                        if (Array.isArray(parsed)) {
-                            colors = parsed.filter(c => typeof c === 'string');
-                        }
-                    }
-                } catch (e) {
-                    console.error("Failed to parse palette content, rendering an empty palette.", e);
-                }
-
-                return (
-                    <div className="p-2 flex flex-col h-full bg-background" onClick={() => onSelect(null)}>
-                       <div className="flex-1 grid grid-cols-4 gap-2">
-                           {colors.map((color, index) => (
-                               <div key={index} className="relative group rounded flex items-center justify-center" style={{ backgroundColor: color }}>
-                                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => {
-                                       const newColors = colors.filter((_, i) => i !== index);
-                                       handlePaletteUpdate(newColors);
-                                   }}>
-                                     <Trash2 className="h-3 w-3 mix-blend-difference" />
-                                   </Button>
-                               </div>
-                           ))}
-                           <button onClick={() => colorInputRef.current?.click()} className="rounded border-2 border-dashed flex items-center justify-center hover:bg-muted">
-                               <Plus className="h-6 w-6 text-muted-foreground"/>
-                               <input ref={colorInputRef} type="color" className="hidden" onChange={(e) => {
-                                   handlePaletteUpdate([...colors, e.target.value]);
-                               }}/>
-                           </button>
-                       </div>
-                    </div>
-                );
             }
             case 'image':
                 return <img src={item.content} alt="Moodboard item" className="w-full h-full object-cover" data-ai-hint="abstract texture" onClick={() => onSelect(null)}/>;
@@ -455,7 +415,6 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   
   const handleAddNote = () => handleAddItem('note', '<h2>Novo Título</h2><p>Comece a escrever aqui...</p>', { width: 350, height: 300 });
   const handleAddChecklist = () => handleAddItem('checklist', 'Nova Lista', { width: 300, height: 250 }, { items: [{ id: crypto.randomUUID(), text: 'Primeiro item', checked: false }] });
-  const handleAddPalette = () => handleAddItem('palette', JSON.stringify(['#f87171', '#60a5fa', '#34d399', '#a78bfa']), { width: 250, height: 80 });
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'storyboard') => {
     if (!user?.isAdmin && items.length >= DEFAULT_BETA_LIMITS.MAX_ITEMS_PER_MOODBOARD) {
@@ -628,7 +587,6 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         <div className="flex items-center gap-1 flex-wrap">
           <Button variant="ghost" size="sm" onClick={handleAddNote} className="tool-button"><Type className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Texto</span></Button>
           <Button variant="ghost" size="sm" onClick={handleAddChecklist} className="tool-button"><ListTodo className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Checklist</span></Button>
-          <Button variant="ghost" size="sm" onClick={handleAddPalette} className="tool-button"><Palette className="h-4 w-4 md:mr-2" /><span className="hidden md:inline">Paleta</span></Button>
           <Button variant="ghost" size="sm" onClick={() => imageUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <ImageIcon className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Imagem</span></Button>
           <input type="file" ref={imageUploadRef} onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" className="hidden" />
           <Button variant="ghost" size="sm" onClick={() => storyboardUploadRef.current?.click()} disabled={isUploading} className="tool-button">{isUploading ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" /> : <GalleryVertical className="h-4 w-4 md:mr-2" />}<span className="hidden md:inline">Storyboard</span></Button>

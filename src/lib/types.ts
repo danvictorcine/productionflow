@@ -259,7 +259,7 @@ export type BoardItem = {
   id: string;
   projectId: string; // Este ainda se refere ao ID do creative_project
   userId: string;
-  type: 'note' | 'image' | 'video' | 'location' | 'checklist' | 'palette' | 'pdf' | 'spotify' | 'text' | 'storyboard';
+  type: 'note' | 'image' | 'video' | 'location' | 'checklist' | 'pdf' | 'spotify' | 'text' | 'storyboard';
   content: string; // HTML for note, URL for image, URL for video, JSON for location, Title for checklist, JSON for palette, URL for PDF
   notes?: string; // For storyboard notes
   items?: ChecklistItem[]; // For checklist items
