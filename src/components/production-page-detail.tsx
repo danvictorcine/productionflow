@@ -30,7 +30,7 @@ import {
 import { Accordion } from '@/components/ui/accordion';
 import { ProductionInfoCard } from '@/components/production-info-card';
 import { TeamAndCastSection } from '@/components/team-and-cast-section';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CopyableError } from './copyable-error';
@@ -374,12 +374,12 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
           </AlertDialogContent>
         </AlertDialog>
 
-        <Sheet open={!!shareLink} onOpenChange={(open) => !open && setShareLink(null)}>
-                <SheetContent>
-                    <SheetHeader>
-                        <SheetTitle>Compartilhar Produção</SheetTitle>
-                        <SheetDescription>Qualquer pessoa com este link poderá ver as informações. As atualizações feitas serão refletidas publicamente.</SheetDescription>
-                    </SheetHeader>
+        <Dialog open={!!shareLink} onOpenChange={(open) => !open && setShareLink(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Compartilhar Produção</DialogTitle>
+                        <DialogDescription>Qualquer pessoa com este link poderá ver as informações. As atualizações feitas serão refletidas publicamente.</DialogDescription>
+                    </DialogHeader>
                     <div className="space-y-2 py-4">
                         <Label htmlFor="share-link">Link Público</Label>
                         <div className="flex gap-2">
@@ -389,8 +389,11 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
                             </Button>
                         </div>
                     </div>
-                </SheetContent>
-            </Sheet>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShareLink(null)}>Fechar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </main>
     </div>
   );

@@ -15,13 +15,13 @@ import type { ShootingDay, TeamMember, ChecklistItem, LocationAddress } from "@/
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -279,17 +279,17 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-4xl flex flex-col">
-        <SheetHeader>
-          <SheetTitle>Ordem do Dia</SheetTitle>
-          <SheetDescription>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-4xl flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Ordem do Dia</DialogTitle>
+          <DialogDescription>
             {isEditMode ? "Atualize os detalhes do dia de filmagem." : "Preencha os detalhes para a Ordem do Dia."}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto pr-6">
+            <div className="flex-1 overflow-y-auto pr-6 -mr-6 py-4">
                 <div className="space-y-6">
                     
                     <div>
@@ -587,13 +587,13 @@ export function CreateEditShootingDayDialog({ isOpen, setIsOpen, onSubmit, shoot
                     </div>
                 </div>
             </div>
-            <SheetFooter className="flex-shrink-0 border-t p-4 pt-6">
+            <DialogFooter className="flex-shrink-0 border-t p-4 pt-6">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Ordem do Dia"}</Button>
-            </SheetFooter>
+            </DialogFooter>
           </form>
         </Form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
