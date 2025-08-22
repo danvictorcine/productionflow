@@ -1,3 +1,4 @@
+
 // @/src/components/dashboard.tsx
 "use client";
 
@@ -221,9 +222,18 @@ export default function Dashboard({
     setAddSheetOpen(true);
   };
   
-  const handleEditProject = async (projectData: Omit<Project, 'id' | 'userId'>) => {
-      await onProjectUpdate(projectData);
-      setEditDialogOpen(false);
+  const handleEditProject = async (projectData: Omit<Project, 'id' | 'userId' | 'createdAt'>) => {
+      try {
+        await onProjectUpdate(projectData);
+        setEditDialogOpen(false);
+      } catch (error) {
+        const errorTyped = error as { code?: string; message: string };
+        toast({
+            variant: "destructive",
+            title: "Erro ao Atualizar Projeto",
+            description: <CopyableError userMessage="Não foi possível salvar o projeto." errorCode={errorTyped.code || errorTyped.message} />,
+        });
+      }
   };
 
   const handleDeleteTalent = async (talentId: string) => {
