@@ -73,17 +73,17 @@ const teamMemberSchema = z.object({
         });
     }
     if (data.paymentType === 'daily') {
-        if (data.dailyRate === undefined || data.dailyRate <= 0) {
+        if (data.dailyRate === undefined || data.dailyRate < 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: "Valor da diária deve ser positivo.",
+                message: "Valor da diária não pode ser negativo.",
                 path: ["dailyRate"],
             });
         }
-        if (data.days === undefined || data.days <= 0) {
+        if (data.days === undefined || data.days < 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: "Nº de diárias deve ser positivo.",
+                message: "Nº de diárias não pode ser negativo.",
                 path: ["days"],
             });
         }
