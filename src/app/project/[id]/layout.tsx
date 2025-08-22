@@ -29,12 +29,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 
 function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
@@ -48,7 +42,6 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     const [project, setProject] = useState<UnifiedProject | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [isTalentPoolDialogOpen, setIsTalentPoolDialogOpen] = useState(false);
     
     const isCreativePage = pathname.includes('/creative');
     const isStoryboardPage = pathname.includes('/storyboard');
@@ -122,7 +115,7 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                     <h1 className="text-lg md:text-xl font-bold text-primary truncate">{project.name}</h1>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
-                     <Button onClick={() => setIsTalentPoolDialogOpen(true)} variant="ghost" size="sm">
+                     <Button onClick={() => router.push('/talents')} variant="ghost" size="sm">
                         <Users className="h-4 w-4 md:mr-2" />
                         <span className="hidden md:inline">Banco de Talentos</span>
                     </Button>
@@ -169,21 +162,6 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                 project={project}
             />
 
-            <Dialog open={isTalentPoolDialogOpen} onOpenChange={setIsTalentPoolDialogOpen}>
-                <DialogContent className="max-w-screen-lg h-[90vh] flex flex-col p-0">
-                    <DialogHeader className="p-6 pb-0">
-                        <DialogTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Banco de Talentos</DialogTitle>
-                    </DialogHeader>
-                    <div className="flex-1 overflow-hidden">
-                        <iframe
-                            src="/talents"
-                            className="w-full h-full border-0"
-                            title="Banco de Talentos"
-                        />
-                    </div>
-                </DialogContent>
-            </Dialog>
-            
         </div>
     );
 }
