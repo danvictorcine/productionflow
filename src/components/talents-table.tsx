@@ -1,8 +1,8 @@
-
+// @/src/components/talents-table.tsx
 "use client";
 
 import { useState, useMemo } from 'react';
-import type { Talent, Transaction } from "@/lib/types";
+import type { Talent, Transaction, TeamMember } from "@/lib/types";
 import { MoreHorizontal, Trash2, Edit, Banknote, Check, Undo2, CalendarDays } from "lucide-react";
 import { formatCurrency, getInitials } from "@/lib/utils";
 
@@ -36,19 +36,19 @@ import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface TalentsTableProps {
-  talents: Talent[];
+  talents: TeamMember[]; // Changed from Talent[]
   transactions: Transaction[];
   onEdit: () => void;
-  onDelete: (id: string) => void;
-  onPayFixedFee: (talent: Talent, transaction: Transaction | undefined) => void;
+  onDelete: (talentId: string) => void;
+  onPayFixedFee: (talent: TeamMember, transaction: Transaction | undefined) => void;
   onUndoPayment: (id: string) => void;
-  onManageDailyPayment: (talent: Talent) => void;
+  onManageDailyPayment: (talent: TeamMember) => void;
 }
 
 export default function TalentsTable({ talents, transactions, onEdit, onDelete, onPayFixedFee, onUndoPayment, onManageDailyPayment }: TalentsTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
-  const talentToDelete = talents.find(t => t.id === deleteId);
+  const talentToDelete = talents.find(t => t.talentId === deleteId);
 
   const transactionsByTalentId = useMemo(() => {
     const map = new Map<string, Transaction[]>();
@@ -79,11 +79,11 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
             <TableBody>
               {talents.length > 0 ? (
                 talents.map((talent) => {
-                  const talentTransactions = transactionsByTalentId.get(talent.id) || [];
+                  const talentTransactions = transactionsByTalentId.get(talent.talentId) || [];
                   const isFixedFee = talent.paymentType === 'fixed' || !talent.paymentType;
                   
                   return (
-                    <TableRow key={talent.id}>
+                    <TableRow key={talent.talentId}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
@@ -150,9 +150,9 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                                 <Edit className="mr-2 h-4 w-4" />
                                 Editar Projeto
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeleteId(talent.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                            <DropdownMenuItem onClick={() => setDeleteId(talent.talentId)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Excluir Talento
+                              Remover do Projeto
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

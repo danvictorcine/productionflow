@@ -1,7 +1,8 @@
+// @/src/components/pay-daily-rate-dialog.tsx
 "use client"
 
 import { useMemo } from "react";
-import type { Talent, Transaction } from "@/lib/types";
+import type { TeamMember, Transaction } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
   Table,
@@ -20,9 +21,9 @@ import { Badge } from "./ui/badge";
 interface PayDailyRateDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  talent: Talent;
+  talent: TeamMember;
   transactions: Transaction[];
-  onPay: (talent: Talent, dayNumber: number) => void;
+  onPay: (talent: TeamMember, dayNumber: number) => void;
   onUndo: (transactionId: string) => void;
 }
 

@@ -1,9 +1,9 @@
-
+// @/src/components/dashboard.tsx
 "use client";
 
 import { useState, useMemo } from "react";
 import Link from 'next/link';
-import type { Transaction, Project, Talent, ExpenseCategory } from "@/lib/types";
+import type { Transaction, Project, Talent, ExpenseCategory, TeamMember } from "@/lib/types";
 import { PlusCircle, Edit, ArrowLeft, BarChart2, Users, FileSpreadsheet, FileText, Upload, ClipboardList, DollarSign, CheckCircle, Trash2 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
@@ -74,7 +74,7 @@ export default function Dashboard({
   const [isDailyPaymentOpen, setDailyPaymentOpen] = useState(false);
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedTalent, setSelectedTalent] = useState<Talent | null>(null);
+  const [selectedTalent, setSelectedTalent] = useState<TeamMember | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { toast } = useToast();
@@ -96,7 +96,6 @@ export default function Dashboard({
         if (talent.paymentType === 'daily') {
             return sum + (talent.dailyRate || 0) * (talent.days || 0);
         }
-        // Also handles legacy projects where paymentType might be undefined
         return sum + (talent.fee || 0);
     }, 0);
   }, [project.talents]);
@@ -227,12 +226,12 @@ export default function Dashboard({
   };
 
   const handleDeleteTalent = async (talentId: string) => {
-    const updatedTalents = project.talents.filter(t => t.id !== talentId);
+    const updatedTalents = project.talents.filter(t => t.talentId !== talentId);
     await onProjectUpdate({ talents: updatedTalents });
     toast({ title: 'Talento removido com sucesso!'});
   };
   
-  const handlePayFixedFeeTalent = async (talent: Talent, transaction: Transaction | undefined) => {
+  const handlePayFixedFeeTalent = async (talent: TeamMember, transaction: Transaction | undefined) => {
     if (transaction && transaction.status === 'planned') {
       await onUpdateTransaction(transaction.id, { status: 'paid' });
     } else if (!transaction) {
@@ -243,19 +242,19 @@ export default function Dashboard({
         description: `Cachê: ${talent.name}`,
         category: 'Cachê de Equipe e Talentos',
         date: new Date(),
-        talentId: talent.id,
+        talentId: talent.talentId,
         status: 'paid',
       };
       await onAddTransaction(newTransactionData);
     }
   };
 
-  const handleManageDailyPayment = (talent: Talent) => {
+  const handleManageDailyPayment = (talent: TeamMember) => {
       setSelectedTalent(talent);
       setDailyPaymentOpen(true);
   };
 
-  const handlePayDailyRate = async (talent: Talent, dayNumber: number) => {
+  const handlePayDailyRate = async (talent: TeamMember, dayNumber: number) => {
       const newTransactionData: Omit<Transaction, 'id' | 'userId'> = {
         projectId: project.id,
         type: 'expense',
@@ -263,7 +262,7 @@ export default function Dashboard({
         description: `Diária ${dayNumber}/${talent.days}: ${talent.name}`,
         category: 'Cachê de Equipe e Talentos',
         date: new Date(),
-        talentId: talent.id,
+        talentId: talent.talentId,
         status: 'paid',
         paidDay: dayNumber,
       };
@@ -288,13 +287,11 @@ export default function Dashboard({
     const wb = XLSX.utils.book_new();
     const currencyFormat = 'R$#,##0.00;[Red]-R$#,##0.00';
 
-    // --- Common Styles ---
     const titleStyle = { font: { sz: 16, bold: true }, alignment: { horizontal: "center" } };
     const headerStyle = { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF3F51B5" } }, alignment: { horizontal: "center" } };
-    const paidStyle = { fill: { fgColor: { rgb: "FFD1FAE5" } } }; // Green tint
-    const plannedStyle = { fill: { fgColor: { rgb: "FFFFFBEB" } } }; // Yellow tint
+    const paidStyle = { fill: { fgColor: { rgb: "FFD1FAE5" } } }; 
+    const plannedStyle = { fill: { fgColor: { rgb: "FFFFFBEB" } } }; 
     
-    // --- 1. Summary Sheet ---
     const summaryDataForSheet = [
         ['Orçamento Total', project.budget],
         ...(project.isBudgetParcelado ? [['Valor em Conta (Soma das Parcelas)', totalInstallments]] : []),
@@ -320,10 +317,8 @@ export default function Dashboard({
     });
     XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo");
 
-
-    // --- 2. Talents Sheet ---
     const talentData = project.talents.map(talent => {
-        const talentTransactions = paidTransactions.filter(t => t.talentId === talent.id && t.category === "Cachê de Equipe e Talentos");
+        const talentTransactions = paidTransactions.filter(t => t.talentId === talent.talentId && t.category === "Cachê de Equipe e Talentos");
         const paidAmount = talentTransactions.reduce((sum, t) => sum + t.amount, 0);
         
         let paymentDetail = '';
@@ -369,8 +364,6 @@ export default function Dashboard({
     });
     XLSX.utils.book_append_sheet(wb, wsTalents, "Equipe e Talentos");
     
-
-    // --- 3 & 4. Transactions Sheets ---
     const createTransactionSheet = (sheetName: string, title: string, data: any[]) => {
         const ws = XLSX.utils.aoa_to_sheet([
             [title],
@@ -402,7 +395,6 @@ export default function Dashboard({
     createTransactionSheet("Todas as Despesas", `Relatório de Todas as Despesas - ${project.name}`, allOtherTransactions);
     
 
-    // --- Trigger Download ---
     XLSX.writeFile(wb, `Relatorio_Financeiro_${project.name.replace(/ /g, "_")}.xlsx`);
     toast({ title: "Exportação Concluída", description: "Seu relatório do Excel foi baixado." });
   };
@@ -636,7 +628,7 @@ export default function Dashboard({
             isOpen={isDailyPaymentOpen}
             setIsOpen={setDailyPaymentOpen}
             talent={selectedTalent}
-            transactions={transactions.filter(t => t.talentId === selectedTalent.id)}
+            transactions={transactions.filter(t => t.talentId === selectedTalent.talentId)}
             onPay={handlePayDailyRate}
             onUndo={handleUndoDailyPayment}
         />

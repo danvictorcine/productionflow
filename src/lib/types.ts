@@ -1,4 +1,4 @@
-
+// @/src/lib/types.ts
 
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Aluguel de Equipamentos",
@@ -11,24 +11,39 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
 
 export type ExpenseCategory = string;
 
-// Este tipo agora é usado para o Banco de Talentos GLOBAL
-// e também para a equipe dentro de um projeto financeiro.
+// Modelo principal para o Banco de Talentos. Contém informações pessoais.
 export type Talent = {
   id: string;
+  userId: string;
   name: string;
-  role: string;
+  photoURL?: string;
+  contact?: string;
+  hasDietaryRestriction?: boolean;
+  dietaryRestriction?: string;
+  extraNotes?: string;
+  // O campo 'file' é apenas para o estado de upload no frontend
+  file?: File;
+};
+
+// Modelo para um membro de equipe DENTRO de um projeto.
+// Inclui informações específicas do projeto, como a função e pagamento.
+export type TeamMember = {
+  talentId: string; // Link para o ID do Talent no banco de talentos
+  name: string;     // Denormalized para exibição fácil
+  role: string;     // Específico para este projeto
+  
+  // Informações de pagamento específicas do projeto
   paymentType?: 'fixed' | 'daily';
   fee?: number; 
   dailyRate?: number; 
   days?: number; 
+
+  // Informações denormalizadas do talento para exibição e uso na ordem do dia
   photoURL?: string;
   contact?: string;
-  // Campos adicionais que estavam em TeamMember
   hasDietaryRestriction?: boolean;
   dietaryRestriction?: string;
   extraNotes?: string;
-  // Campo para upload
-  file?: File;
 };
 
 
@@ -39,7 +54,6 @@ export type Installment = {
   description: string;
 }
 
-// O Projeto Financeiro agora tem um link para o projeto unificado
 export type Project = {
   id: string;
   userId: string;
@@ -47,18 +61,18 @@ export type Project = {
   budget: number;
   hasProductionCosts: boolean;
   productionCosts: number;
-  talents: Talent[];
+  talents: TeamMember[]; // Alterado de Talent[] para TeamMember[]
   includeProductionCostsInBudget: boolean;
   customCategories?: string[];
   isBudgetParcelado: boolean;
   installments: Installment[];
   createdAt: Date;
-  unifiedProjectId?: string; // Link para o novo modelo
+  unifiedProjectId?: string;
 };
 
 export type Transaction = {
   id: string;
-  projectId: string; // Este ainda se refere ao ID do projeto financeiro
+  projectId: string;
   userId: string;
   type: "expense";
   amount: number;
@@ -66,8 +80,8 @@ export type Transaction = {
   category?: ExpenseCategory;
   date: Date;
   status: 'planned' | 'paid';
-  talentId?: string;
-  paidDay?: number; // For daily payments
+  talentId?: string; // ID do Talent (NÃO do TeamMember)
+  paidDay?: number;
 };
 
 export type UserProfile = {
@@ -100,7 +114,7 @@ export type LoginFeature = {
   id: string;
   title: string;
   description: string;
-  icon: string; // Name of a lucide-react icon
+  icon: string;
   order: number;
 };
 
@@ -110,7 +124,6 @@ export type LoginPageContent = {
   isBackgroundEnabled?: boolean;
 };
 
-// New type for Team Members on the About Page
 export type TeamMemberAbout = {
   id: string;
   name: string;
@@ -118,36 +131,22 @@ export type TeamMemberAbout = {
   bio: string;
   photoURL: string;
   order: number;
-  createdAt?: Date; // Optional for backward compatibility
-  file?: File; // For upload state management
+  createdAt?: Date;
+  file?: File;
 };
 
-
-// New types for Production (Call Sheet) Module
-export type TeamMember = {
-  id:string;
-  name: string;
-  role: string;
-  photoURL?: string;
-  contact?: string;
-  hasDietaryRestriction?: boolean;
-  dietaryRestriction?: string;
-  extraNotes?: string;
-};
-
-// A Produção agora tem um link para o projeto unificado
 export type Production = {
   id: string;
   userId: string;
   name: string;
-  type: string; // e.g., 'Curta-metragem', 'Publicidade'
+  type: string;
   director: string;
   responsibleProducer?: string;
   client?: string;
   producer?: string;
   createdAt: Date;
   team: TeamMember[];
-  unifiedProjectId?: string; // Link para o novo modelo
+  unifiedProjectId?: string;
 };
 
 export type WeatherInfo = {
@@ -162,9 +161,9 @@ export type WeatherInfo = {
     temperature_2m: number[];
     weather_code: number[];
   };
-  lastUpdated: string; // ISO String
+  lastUpdated: string;
   locationName: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   timezone?: string;
 };
 
@@ -197,9 +196,9 @@ export type LocationAddress = {
 export type Scene = {
   id: string;
   sceneNumber: string;
-  title: string; // e.g., EXT. PARK - DAY
+  title: string;
   description: string;
-  pages: string; // e.g., "1 3/8" or a time like "14:30"
+  pages: string;
   presentInScene: TeamMember[];
   equipment?: ChecklistItem[];
   costumes?: ChecklistItem[];
@@ -212,7 +211,7 @@ export type Scene = {
 export type CallTime = {
   id: string;
   department: string;
-  time: string; // e.g., "08:00"
+  time: string;
 };
 
 export type ChecklistItem = {
@@ -231,8 +230,8 @@ export type ShootingDay = {
   callTimes: CallTime[];
   dayNumber?: number;
   totalDays?: number;
-  startTime?: string; // e.g., "08:00"
-  endTime?: string; // e.g., "18:00"
+  startTime?: string;
+  endTime?: string;
   mealTime?: string;
   radioChannels?: string;
   nearestHospital?: HospitalInfo;
@@ -244,39 +243,35 @@ export type ShootingDay = {
   parkingInfo?: string;
 };
 
-// === Creative Project (Moodboard) Types ===
-// O CreativeProject agora tem um link para o projeto unificado
 export type CreativeProject = {
   id: string;
   userId: string;
   name: string;
   description: string;
   createdAt: Date;
-  unifiedProjectId?: string; // Link para o novo modelo
+  unifiedProjectId?: string;
 };
 
 export type BoardItem = {
   id: string;
-  projectId: string; // Este ainda se refere ao ID do creative_project
+  projectId: string;
   userId: string;
   type: 'note' | 'image' | 'video' | 'location' | 'checklist' | 'pdf' | 'spotify' | 'text' | 'storyboard';
-  content: string; // HTML for note, URL for image, URL for video, JSON for location, Title for checklist, JSON for palette, URL for PDF
-  notes?: string; // For storyboard notes
-  items?: ChecklistItem[]; // For checklist items
+  content: string;
+  notes?: string;
+  items?: ChecklistItem[];
   position: { x: number; y: number };
   size: { width: number | string; height: number | string };
   createdAt: Date;
 };
 
-// === Storyboard Project Types ===
-// O Storyboard agora tem um link para o projeto unificado
 export type Storyboard = {
   id: string;
   userId: string;
   name: string;
   description?: string;
   createdAt: Date;
-  unifiedProjectId?: string; // Link para o novo modelo
+  unifiedProjectId?: string;
 };
 
 export type StoryboardScene = {
@@ -301,7 +296,6 @@ export type StoryboardPanel = {
   createdAt: Date;
 };
 
-// === Theme Settings ===
 export type ThemeSettings = {
   primary: string;
   secondary: string;
@@ -320,7 +314,6 @@ export type ThemeSettings = {
   brandText: string;
 };
 
-// === Beta Limits Settings ===
 export type BetaLimits = {
   MAX_PROJECTS_PER_USER: number;
   MAX_PROJECTS_PER_GROUP: number;
@@ -328,7 +321,6 @@ export type BetaLimits = {
   MAX_PANELS_PER_STORYBOARD_SCENE: number;
 };
 
-// === Data Export/Import Types ===
 type ExportedFinancialProject = { type: 'financial'; project: Project; transactions: Transaction[] };
 type ExportedProductionProject = { type: 'production'; production: Production; shootingDays: ShootingDay[] };
 type ExportedCreativeProject = { type: 'creative'; creativeProject: CreativeProject; boardItems: BoardItem[] };
@@ -336,45 +328,36 @@ type ExportedStoryboardProject = { type: 'storyboard'; storyboard: Storyboard; s
 
 export type ExportedProjectData = ExportedFinancialProject | ExportedProductionProject | ExportedCreativeProject | ExportedStoryboardProject;
 
-
-// ===================================================================
-// === NOVA ARQUITETURA DE PROJETO ÚNICO ===
-// ===================================================================
-
 export type UnifiedProject = {
   id: string;
   userId: string;
   name: string;
   description: string;
   createdAt: Date;
-
-  // IDs dos projetos associados
   financialProjectId?: string;
   productionProjectId?: string;
   creativeProjectId?: string;
   storyboardProjectId?: string;
 };
 
-// Esta é uma combinação de todos os tipos para a listagem
 export type DisplayableItem =
-  | (Project & { itemType: 'financial'; unifiedProjectId?: undefined }) // Projetos antigos
-  | (Production & { itemType: 'production'; unifiedProjectId?: undefined }) // Projetos antigos
-  | (CreativeProject & { itemType: 'creative'; unifiedProjectId?: undefined }) // Projetos antigos
-  | (Storyboard & { itemType: 'storyboard'; unifiedProjectId?: undefined }) // Projetos antigos
+  | (Project & { itemType: 'financial'; unifiedProjectId?: undefined })
+  | (Production & { itemType: 'production'; unifiedProjectId?: undefined })
+  | (CreativeProject & { itemType: 'creative'; unifiedProjectId?: undefined })
+  | (Storyboard & { itemType: 'storyboard'; unifiedProjectId?: undefined })
   | (UnifiedProject & { itemType: 'unified' });
   
-// === Gantt Chart Types ===
 export type GanttTask = {
   id: string;
   userId: string;
   phase: 'Desenvolvimento' | 'Pre' | 'Prod' | 'Post' | 'Distribuição';
   title: string;
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
-  progress: number; // 0-100
+  startDate: string;
+  endDate: string;
+  progress: number;
   assignees?: string[];
   notes?: string;
-  color?: string; // Tailwind bg color class, e.g., 'bg-blue-500'
+  color?: string;
   createdAt: Date;
   updatedAt: Date;
 };

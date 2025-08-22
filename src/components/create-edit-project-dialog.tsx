@@ -1,4 +1,3 @@
-
 // @/src/components/create-edit-project-dialog.tsx
 "use client";
 
@@ -30,7 +29,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import type { Project, Talent } from "@/lib/types";
+import type { Project, Talent, TeamMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -56,9 +55,8 @@ import { getInitials } from "@/lib/utils";
 import { Checkbox } from "./ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
-
-const talentSchema = z.object({
-  id: z.string(),
+const teamMemberSchema = z.object({
+  talentId: z.string(),
   name: z.string().min(1, "Nome do talento é obrigatório."),
   role: z.string().min(1, "Função é obrigatória."),
   photoURL: z.string().optional(),
@@ -66,6 +64,11 @@ const talentSchema = z.object({
   fee: z.coerce.number().optional(),
   dailyRate: z.coerce.number().optional(),
   days: z.coerce.number().optional(),
+  // Denormalized fields for convenience, not part of the form editing
+  contact: z.string().optional(),
+  hasDietaryRestriction: z.boolean().optional(),
+  dietaryRestriction: z.string().optional(),
+  extraNotes: z.string().optional(),
 }).superRefine((data, ctx) => {
     if (data.paymentType === 'fixed' && (data.fee === undefined || data.fee <= 0)) {
         ctx.addIssue({
@@ -106,7 +109,7 @@ const projectFormSchema = z.object({
   hasProductionCosts: z.boolean().default(true),
   productionCosts: z.coerce.number().min(0, "O valor de produção não pode ser negativo."),
   includeProductionCostsInBudget: z.boolean().default(true),
-  talents: z.array(talentSchema),
+  talents: z.array(teamMemberSchema),
   isBudgetParcelado: z.boolean().default(false),
   installments: z.array(installmentSchema),
 }).superRefine((data, ctx) => {
@@ -220,16 +223,21 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
   const handleSelectTalents = (selectedTalentIds: string[]) => {
       selectedTalentIds.forEach(id => {
           const talent = talentPool.find(t => t.id === id);
-          if (talent && !talentFields.some(field => field.id === talent.id)) {
+          if (talent && !talentFields.some(field => field.talentId === talent.id)) {
               appendTalent({
-                  id: talent.id,
+                  talentId: talent.id,
                   name: talent.name,
-                  role: talent.role,
                   photoURL: talent.photoURL,
+                  role: 'Função a definir', // Default role
                   paymentType: 'fixed',
                   fee: 0,
                   dailyRate: 0,
                   days: 0,
+                  // Denormalized fields for convenience
+                  contact: talent.contact,
+                  hasDietaryRestriction: talent.hasDietaryRestriction,
+                  dietaryRestriction: talent.dietaryRestriction,
+                  extraNotes: talent.extraNotes,
               });
           }
       });
@@ -237,17 +245,17 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-2xl flex flex-col z-[9998]">
-        <SheetHeader>
-          <SheetTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</SheetTitle>
-          <SheetDescription>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-2xl flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</DialogTitle>
+          <DialogDescription>
             {isEditMode ? "Atualize os detalhes do seu projeto." : "Preencha os detalhes abaixo para criar seu projeto."}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-1 pr-6">
+            <ScrollArea className="flex-1 pr-6">
                 <div className="space-y-6">
                   <FormField
                     control={form.control}
@@ -474,7 +482,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                       {talentFields.map((field, index) => {
                         const paymentType = form.watch(`talents.${index}.paymentType`);
                         return (
-                          <div key={field.id} className="grid grid-cols-1 gap-4 rounded-md border p-4">
+                          <div key={field.talentId} className="grid grid-cols-1 gap-4 rounded-md border p-4">
                             <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
                                 <FormField control={control} name={`talents.${index}.name`} render={({ field: nameField }) => (
                                     <FormItem>
@@ -551,14 +559,14 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                               Adicionar Talento do Banco
                            </Button>
                          </DialogTrigger>
-                         <DialogContent className="sm:max-w-md z-[9999]">
+                         <DialogContent className="sm:max-w-md">
                             <DialogHeader>
                                 <DialogTitle>Selecionar Talentos</DialogTitle>
                                 <DialogDescription>Selecione os talentos do seu banco de contatos para adicionar ao projeto.</DialogDescription>
                             </DialogHeader>
                             <TalentSelector
                                 talentPool={talentPool}
-                                selectedTalents={talentFields as Talent[]}
+                                selectedTalents={talentFields}
                                 onSelect={handleSelectTalents}
                                 onTalentCreated={fetchTalents}
                             />
@@ -567,27 +575,26 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                     </div>
                   </div>
               </div>
-            </div>
-            <SheetFooter className="flex-shrink-0 border-t p-4 pt-6">
+            </ScrollArea>
+            <DialogFooter className="flex-shrink-0 border-t p-4 pt-6">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
-            </SheetFooter>
+            </DialogFooter>
           </form>
         </Form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 const newTalentFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
-  role: z.string().min(2, { message: "A função deve ter pelo menos 2 caracteres." }),
 });
 type NewTalentFormValues = z.infer<typeof newTalentFormSchema>;
 
 function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated }: { 
     talentPool: Talent[], 
-    selectedTalents: Talent[],
+    selectedTalents: TeamMember[],
     onSelect: (ids: string[]) => void,
     onTalentCreated: () => void 
 }) {
@@ -598,7 +605,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
     
     const form = useForm<NewTalentFormValues>({
         resolver: zodResolver(newTalentFormSchema),
-        defaultValues: { name: "", role: "" },
+        defaultValues: { name: "" },
     });
     
     const filteredTalentPool = useMemo(() => {
@@ -617,9 +624,8 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
     }
 
     const handleCreateNewTalent = async (values: NewTalentFormValues) => {
-        const talentToSave: Omit<Talent, 'id'> = {
+        const talentToSave: Omit<Talent, 'id' | 'userId'> = {
             name: values.name,
-            role: values.role,
         };
         try {
             await firestoreApi.addTalent(talentToSave);
@@ -638,9 +644,6 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
                 <form onSubmit={form.handleSubmit(handleCreateNewTalent)} className="space-y-4">
                     <FormField control={form.control} name="name" render={({ field }) => (
                         <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                    <FormField control={form.control} name="role" render={({ field }) => (
-                        <FormItem><FormLabel>Função Padrão</FormLabel><FormControl><Input placeholder="Ex: Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => setView('select')}>Cancelar</Button>
@@ -665,7 +668,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
              <ScrollArea className="h-72">
                  <div className="p-4 space-y-2">
                      {filteredTalentPool.map(talent => {
-                        const isInProject = selectedTalents.some(t => t.id === talent.id);
+                        const isInProject = selectedTalents.some(t => t.talentId === talent.id);
                         return (
                             <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50")}>
                                 <Checkbox
@@ -681,7 +684,6 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
                                     </Avatar>
                                     <div>
                                         <p>{talent.name}</p>
-                                        <p className="text-xs text-muted-foreground">{talent.role}</p>
                                     </div>
                                 </label>
                             </div>
