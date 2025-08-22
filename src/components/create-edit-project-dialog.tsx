@@ -65,10 +65,10 @@ const teamMemberSchema = z.object({
   dietaryRestriction: z.string().optional(),
   extraNotes: z.string().optional(),
 }).superRefine((data, ctx) => {
-    if (data.paymentType === 'fixed' && data.fee === undefined) {
+    if (data.paymentType === 'fixed' && (data.fee === undefined || data.fee === null || data.fee < 0)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Cachê fixo é obrigatório.",
+        message: "Cachê fixo é obrigatório e não pode ser negativo.",
         path: ["fee"],
       });
     }

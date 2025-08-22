@@ -371,7 +371,7 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
     const handleCreateNewTalent = async (values: NewTalentFormValues) => {
         const talentToSave: Omit<Talent, 'id'> = {
             name: values.name,
-            role: "Função Indefinida" // Default role, not saved in main talent doc
+            // role is project-specific, so it's not saved here
         };
         try {
             await firestoreApi.addTalent(talentToSave);
