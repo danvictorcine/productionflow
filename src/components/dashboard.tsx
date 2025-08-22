@@ -71,7 +71,7 @@ export default function Dashboard({
   const [isAddSheetOpen, setAddSheetOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isDailyPaymentOpen, setDailyPaymentOpen] = useState(false);
+  const [isDailyPaymentOpen, setIsDailyPaymentOpen] = useState(false);
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedTalent, setSelectedTalent] = useState<TeamMember | null>(null);
@@ -226,7 +226,7 @@ export default function Dashboard({
   };
 
   const handleDeleteTalent = async (talentId: string) => {
-    const updatedTalents = project.talents.filter(t => t.talentId !== talentId);
+    const updatedTalents = project.talents.filter(t => t.id !== talentId);
     await onProjectUpdate({ talents: updatedTalents });
     toast({ title: 'Talento removido com sucesso!'});
   };
@@ -242,7 +242,7 @@ export default function Dashboard({
         description: `Cachê: ${talent.name}`,
         category: 'Cachê de Equipe e Talentos',
         date: new Date(),
-        talentId: talent.talentId,
+        talentId: talent.id,
         status: 'paid',
       };
       await onAddTransaction(newTransactionData);
@@ -262,7 +262,7 @@ export default function Dashboard({
         description: `Diária ${dayNumber}/${talent.days}: ${talent.name}`,
         category: 'Cachê de Equipe e Talentos',
         date: new Date(),
-        talentId: talent.talentId,
+        talentId: talent.id,
         status: 'paid',
         paidDay: dayNumber,
       };
@@ -318,7 +318,7 @@ export default function Dashboard({
     XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo");
 
     const talentData = project.talents.map(talent => {
-        const talentTransactions = paidTransactions.filter(t => t.talentId === talent.talentId && t.category === "Cachê de Equipe e Talentos");
+        const talentTransactions = paidTransactions.filter(t => t.talentId === talent.id && t.category === "Cachê de Equipe e Talentos");
         const paidAmount = talentTransactions.reduce((sum, t) => sum + t.amount, 0);
         
         let paymentDetail = '';
@@ -628,7 +628,7 @@ export default function Dashboard({
             isOpen={isDailyPaymentOpen}
             setIsOpen={setDailyPaymentOpen}
             talent={selectedTalent}
-            transactions={transactions.filter(t => t.talentId === selectedTalent.talentId)}
+            transactions={transactions.filter(t => t.talentId === selectedTalent.id)}
             onPay={handlePayDailyRate}
             onUndo={handleUndoDailyPayment}
         />

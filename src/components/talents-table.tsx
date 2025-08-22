@@ -36,7 +36,7 @@ import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface TalentsTableProps {
-  talents: TeamMember[]; // Changed from Talent[]
+  talents: TeamMember[];
   transactions: Transaction[];
   onEdit: () => void;
   onDelete: (talentId: string) => void;
