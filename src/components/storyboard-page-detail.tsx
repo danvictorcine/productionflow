@@ -347,7 +347,6 @@ export default function StoryboardPageDetail({ storyboard, onDataRefresh, onDele
 
     const mobileView = (
         <div ref={exportRef} className="p-4 space-y-6">
-             <div className="p-4 rounded-lg bg-card border"><CardHeader className="p-0"><CardTitle>{storyboard.name}</CardTitle>{storyboard.description && <CardDescription className="whitespace-pre-wrap pt-1">{storyboard.description}</CardDescription>}</CardHeader></div>
             {scenes.map((scene) => (
                 <div key={scene.id} className="p-4 rounded-lg bg-card border space-y-4">
                     <div className="flex justify-between items-center">
