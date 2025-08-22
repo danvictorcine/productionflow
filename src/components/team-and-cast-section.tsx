@@ -1,3 +1,4 @@
+
 // @/src/components/team-and-cast-section.tsx
 'use client';
 
@@ -77,7 +78,7 @@ export function TeamAndCastSection({ team, onEdit, onDeleteMember }: TeamAndCast
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onDeleteMember(member)}>
                                                                 <Trash2 className="mr-2 h-4 w-4"/>
-                                                                Excluir Membro
+                                                                Remover do Projeto
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>

@@ -448,7 +448,7 @@ export const getProjectDataForExport = async (projectId: string, projectType: Di
             return { type: 'creative', creativeProject, boardItems };
         }
         case 'storyboard': {
-            const storyboard = await getStoryboard(projectId);
+            const storyboard = await getStoryboard(storyboardId);
             if (!storyboard) throw new Error("Storyboard não encontrado.");
             const scenes = await getStoryboardScenes(storyboard.id);
             const panels = await getStoryboardPanels(storyboard.id);
@@ -545,42 +545,36 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
           }
           batch.set(talentRef, dataToSync, { merge: true });
       }
-  }
 
-  if (cleanedData.team) {
-    const updatedTeamMap = new Map(cleanedData.team.map((member: TeamMember) => [member.id, member]));
-    const daysQuery = query(collection(db, 'shooting_days'), where('productionId', '==', productionId), where('userId', '==', userId));
-    const daysSnapshot = await getDocs(daysQuery);
+      const updatedTeamMap = new Map(cleanedData.team.map((member: TeamMember) => [member.id, member]));
+      const updatedTeamIds = new Set(cleanedData.team.map((member: TeamMember) => member.id));
 
-    daysSnapshot.forEach(dayDoc => {
-      const dayData = dayDoc.data() as ShootingDay;
-      let dayNeedsUpdate = false;
-      
-      const updatedPresentTeam = (dayData.presentTeam || []).map(member => {
-          const updatedMember = updatedTeamMap.get(member.id);
-          if (updatedMember && JSON.stringify(member) !== JSON.stringify(updatedMember)) {
+      const daysQuery = query(collection(db, 'shooting_days'), where('productionId', '==', productionId), where('userId', '==', userId));
+      const daysSnapshot = await getDocs(daysQuery);
+
+      daysSnapshot.forEach(dayDoc => {
+        const dayData = dayDoc.data() as ShootingDay;
+        let dayNeedsUpdate = false;
+        
+        // Filter presentTeam, keeping only members that are still in the main team
+        const updatedPresentTeam = (dayData.presentTeam || []).filter(member => updatedTeamIds.has(member.id));
+        if (updatedPresentTeam.length !== (dayData.presentTeam || []).length) {
+          dayNeedsUpdate = true;
+        }
+        
+        // Filter presentInScene for each scene
+        const updatedScenes = (dayData.scenes || []).map(scene => {
+            const updatedPresentInScene = (scene.presentInScene || []).filter(member => updatedTeamIds.has(member.id));
+            if (updatedPresentInScene.length !== (scene.presentInScene || []).length) {
               dayNeedsUpdate = true;
-              return updatedMember;
-          }
-          return member;
-      }).filter(Boolean) as TeamMember[];
-      
-      const updatedScenes = (dayData.scenes || []).map(scene => {
-          const updatedPresentInScene = (scene.presentInScene || []).map(member => {
-              const updatedMember = updatedTeamMap.get(member.id);
-              if (updatedMember && JSON.stringify(member) !== JSON.stringify(updatedMember)) {
-                  dayNeedsUpdate = true;
-                  return updatedMember;
-              }
-              return member;
-          }).filter(Boolean) as TeamMember[];
-          return {...scene, presentInScene: updatedPresentInScene};
-      });
+            }
+            return {...scene, presentInScene: updatedPresentInScene};
+        });
 
-      if (dayNeedsUpdate) {
-        batch.update(dayDoc.ref, { presentTeam: updatedPresentTeam, scenes: updatedScenes });
-      }
-    });
+        if (dayNeedsUpdate) {
+          batch.update(dayDoc.ref, { presentTeam: updatedPresentTeam, scenes: updatedScenes });
+        }
+      });
   }
   
   await batch.commit();
@@ -1709,7 +1703,6 @@ export const migrateTeamToTalentPool = async (): Promise<void> => {
     // Helper to create a clean talent object
     const createCleanTalent = (member: any): Omit<Talent, 'id'> => ({
       name: member.name || "Nome Desconhecido",
-      role: member.role || "Função Desconhecida",
       photoURL: member.photoURL || undefined,
       contact: member.contact || undefined,
       hasDietaryRestriction: member.hasDietaryRestriction === true,

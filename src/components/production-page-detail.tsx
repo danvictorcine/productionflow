@@ -348,7 +348,7 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Excluir Membro da Equipe?</AlertDialogTitle>
-                        <AlertDialogDescription>Tem certeza que deseja excluir "{memberToDelete?.name}" da equipe? Esta ação não pode ser desfeita.</AlertDialogDescription>
+                        <AlertDialogDescription>Tem certeza que deseja excluir "{memberToDelete?.name}" da equipe? Esta ação não pode ser desfeita e removerá o membro de todas as ordens do dia associadas.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
