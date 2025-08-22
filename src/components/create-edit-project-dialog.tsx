@@ -48,6 +48,7 @@ import { Checkbox } from "./ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
 const teamMemberSchema = z.object({
+  id: z.string(),
   talentId: z.string(),
   name: z.string().min(1, "Nome do talento é obrigatório."),
   role: z.string().min(1, "Função é obrigatória."),
@@ -217,6 +218,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
           const talent = talentPool.find(t => t.id === id);
           if (talent && !talentFields.some(field => field.talentId === talent.id)) {
               appendTalent({
+                  id: talent.id,
                   talentId: talent.id,
                   name: talent.name,
                   photoURL: talent.photoURL,
@@ -238,7 +240,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-2xl flex flex-col h-full md:h-auto">
+      <DialogContent className="sm:max-w-3xl flex flex-col h-full md:h-auto">
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</DialogTitle>
           <DialogDescription>
@@ -281,7 +283,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                 : ""
                             }
                             onChange={(e) => {
-                              const numericValue = e.target.value.replace(/\D/g, "");
+                              const numericValue = e.target.value.replace(/\\D/g, "");
                               field.onChange(Number(numericValue) / 100);
                             }}
                           />
@@ -333,7 +335,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                     : ""
                                 }
                                 onChange={(e) => {
-                                  const numericValue = e.target.value.replace(/\D/g, "");
+                                  const numericValue = e.target.value.replace(/\\D/g, "");
                                   field.onChange(Number(numericValue) / 100);
                                 }}
                               />
@@ -423,7 +425,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                       type="text" placeholder="R$ 0,00"
                                       value={ field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""}
                                       onChange={(e) => {
-                                        const numericValue = e.target.value.replace(/\D/g, "");
+                                        const numericValue = e.target.value.replace(/\\D/g, "");
                                         field.onChange(Number(numericValue) / 100);
                                       }}
                                     />
@@ -474,7 +476,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                       {talentFields.map((field, index) => {
                         const paymentType = form.watch(`talents.${index}.paymentType`);
                         return (
-                          <div key={field.talentId} className="grid grid-cols-1 gap-4 rounded-md border p-4">
+                          <div key={field.id} className="grid grid-cols-1 gap-4 rounded-md border p-4">
                             <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
                                 <FormField control={control} name={`talents.${index}.name`} render={({ field: nameField }) => (
                                     <FormItem>
@@ -513,7 +515,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                         <FormLabel className="text-xs">Cachê Fixo</FormLabel>
                                         <FormControl>
                                             <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
-                                                const numericValue = e.target.value.replace(/\D/g, ""); field.onChange(Number(numericValue) / 100);
+                                                const numericValue = e.target.value.replace(/\\D/g, ""); field.onChange(Number(numericValue) / 100);
                                             }}/>
                                         </FormControl><FormMessage />
                                     </FormItem>
@@ -526,7 +528,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                             <FormLabel className="text-xs">Valor da Diária</FormLabel>
                                             <FormControl>
                                                 <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
-                                                    const numericValue = e.target.value.replace(/\D/g, ""); field.onChange(Number(numericValue) / 100);
+                                                    const numericValue = e.target.value.replace(/\\D/g, ""); field.onChange(Number(numericValue) / 100);
                                                 }}/>
                                             </FormControl><FormMessage />
                                         </FormItem>
