@@ -106,7 +106,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
   const dataToUpdate: Record<string, any> = { ...projectData };
   if (projectData.talents) {
     dataToUpdate.talents = projectData.talents.map(talent => {
-        const { file, ...rest } = talent as any; // Cast to handle transient 'file' property
+        const { file, ...rest } = talent as any;
         return rest;
     });
   }
@@ -122,29 +122,40 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
 
   // 2. Sync talent data back to the main talent pool
   if (projectData.talents) {
-      for (const talent of projectData.talents) {
-          const talentRef = doc(db, 'talents', talent.id);
-          const { paymentType, fee, dailyRate, days, ...talentPoolData } = talent;
+      for (const teamMember of projectData.talents) {
+          const talentRef = doc(db, 'talents', teamMember.id);
           
+          // Separate project-specific data from talent pool data
+          const { 
+              paymentType, 
+              fee, 
+              dailyRate, 
+              days, 
+              role,
+              file, // This is a transient property for uploads, never save it.
+              ...talentPoolData 
+          } = teamMember as any;
+
           const dataToSync: Record<string, any> = { userId };
-           for (const key in talentPoolData) {
+          for (const key in talentPoolData) {
               if ((talentPoolData as any)[key] !== undefined) {
                   dataToSync[key] = (talentPoolData as any)[key];
               }
           }
+          // Only sync non-project-specific fields back to the main talent document
           batch.set(talentRef, dataToSync, { merge: true });
 
           // 3. Sync planned fixed fee transactions
-           if (talent.paymentType === 'fixed' || !talent.paymentType) {
+           if (teamMember.paymentType === 'fixed' || !teamMember.paymentType) {
               const transQuery = query(
                   collection(db, 'transactions'),
                   where('projectId', '==', projectId),
-                  where('talentId', '==', talent.id),
+                  where('talentId', '==', teamMember.id),
                   where('status', '==', 'planned')
               );
               const transSnapshot = await getDocs(transQuery);
               transSnapshot.forEach(doc => {
-                  batch.update(doc.ref, { amount: talent.fee || 0 });
+                  batch.update(doc.ref, { amount: teamMember.fee || 0 });
               });
           }
       }
@@ -460,7 +471,7 @@ export const getProjectDataForExport = async (projectId: string, projectType: Di
             return { type: 'creative', creativeProject, boardItems };
         }
         case 'storyboard': {
-            const storyboard = await getStoryboard(storyboardId);
+            const storyboard = await getStoryboard(projectId);
             if (!storyboard) throw new Error("Storyboard não encontrado.");
             const scenes = await getStoryboardScenes(storyboard.id);
             const panels = await getStoryboardPanels(storyboard.id);
@@ -546,7 +557,7 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
   if (data.team) {
       for (const member of data.team) {
           const talentRef = doc(db, 'talents', member.id);
-          // Don't save project-specific role to the main talent entry
+          // Don't save project-specific role to the main talent doc
           const { role, ...talentPoolData } = member;
           
           const dataToSync: Record<string, any> = { userId };
