@@ -330,8 +330,13 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   // Zoom and Pan state
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const isPanning = useRef(false);
+  
+  // Touch state refs
+  const isInteracting = useRef(false);
   const startPanPoint = useRef({ x: 0, y: 0 });
+  const initialTouchDistance = useRef(0);
+  const initialScale = useRef(1);
+
   
   const frameAllItems = useCallback(() => {
     if (!boardContainerRef.current || initialItems.length === 0) {
@@ -357,6 +362,12 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     const contentWidth = maxX - minX;
     const contentHeight = maxY - minY;
 
+    if (contentWidth <= 0 || contentHeight <= 0) {
+        setScale(1);
+        setPosition({ x: 0, y: 0 });
+        return;
+    }
+
     const scaleX = (viewWidth - PADDING * 2) / contentWidth;
     const scaleY = (viewHeight - PADDING * 2) / contentHeight;
     const newScale = Math.min(scaleX, scaleY, 1); // Do not zoom in more than 100%
@@ -371,8 +382,6 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
 
   useEffect(() => {
     setItems(initialItems);
-    // Call frameAllItems only after the initial items are set
-    // A small timeout ensures the container ref has its dimensions calculated
     setTimeout(() => {
         frameAllItems();
     }, 100);
@@ -503,15 +512,12 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     const itemToUpdate = items.find(i => i.id === itemId);
     if (!itemToUpdate) return;
     
-    // Optimistic UI update
     setItems(prevItems => prevItems.map(item => item.id === itemId ? { ...item, ...data } : item));
     
-    // Add to dirty set for batch updates (position/size)
     if(data.position || data.size) { 
         dirtyItemsRef.current.add(itemId);
     }
     
-    // Direct Firestore update for content changes with debounce
     if (data.content || data.items || data.notes) {
         const contentUpdate: Partial<BoardItem> = {};
         if(data.content) contentUpdate.content = data.content;
@@ -522,7 +528,6 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
              firestoreApi.updateBoardItem(project.id, itemId, contentUpdate)
                 .catch(err => {
                     console.error("Failed to save content", err);
-                    // Revert UI on error
                     setItems(items); 
                     toast({ variant: 'destructive', title: 'Erro de Sincronização' });
                 });
@@ -560,7 +565,8 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
   useEffect(() => {
     return () => { saveDirtyItems(); };
   }, [saveDirtyItems]);
-
+  
+  // Panning and Zooming Handlers
   const handleWheel = (e: React.WheelEvent) => { e.preventDefault(); const newScale = Math.min(Math.max(0.1, scale - (e.deltaY > 0 ? 0.1 : -0.1)), 2); setScale(newScale); };
   const handleZoom = (dir: 'in' | 'out') => { const newScale = Math.min(Math.max(0.1, scale + (dir === 'in' ? 0.15 : -0.15)), 2); setScale(newScale); }
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -568,11 +574,49 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
     if (target.closest('.rnd-item, .tool-button, .ql-editor, .ql-toolbar')) return;
     e.preventDefault();
     setSelectedItemId(null);
-    isPanning.current = true;
+    isInteracting.current = true;
     startPanPoint.current = { x: e.clientX - position.x, y: e.clientY - position.y };
   };
-  const handleMouseMove = (e: React.MouseEvent) => { if (!isPanning.current) return; e.preventDefault(); setPosition({ x: e.clientX - startPanPoint.current.x, y: e.clientY - startPanPoint.current.y }); };
-  const handleMouseUp = () => { isPanning.current = false; };
+  const handleMouseMove = (e: React.MouseEvent) => { if (!isInteracting.current) return; e.preventDefault(); setPosition({ x: e.clientX - startPanPoint.current.x, y: e.clientY - startPanPoint.current.y }); };
+  const handleMouseUp = () => { isInteracting.current = false; };
+  
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.rnd-item, .tool-button, .ql-editor, .ql-toolbar')) return;
+    e.preventDefault();
+    setSelectedItemId(null);
+    isInteracting.current = true;
+
+    if (e.touches.length === 2) { // Pinch-to-zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        initialTouchDistance.current = Math.sqrt(dx * dx + dy * dy);
+        initialScale.current = scale;
+    } else if (e.touches.length === 1) { // Panning
+        startPanPoint.current = { x: e.touches[0].clientX - position.x, y: e.touches[0].clientY - position.y };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isInteracting.current) return;
+    e.preventDefault();
+    
+    if (e.touches.length === 2) { // Pinch-to-zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const currentDistance = Math.sqrt(dx * dx + dy * dy);
+        const scaleRatio = currentDistance / initialTouchDistance.current;
+        const newScale = Math.min(Math.max(0.1, initialScale.current * scaleRatio), 2);
+        setScale(newScale);
+    } else if (e.touches.length === 1) { // Panning
+        setPosition({ x: e.touches[0].clientX - startPanPoint.current.x, y: e.touches[0].clientY - startPanPoint.current.y });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    isInteracting.current = false;
+    initialTouchDistance.current = 0;
+  };
   
   const handleProjectUpdate = async (data: Omit<CreativeProject, 'id' | 'userId' | 'createdAt'>) => {
     await firestoreApi.updateCreativeProject(project.id, data);
@@ -610,12 +654,15 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
 
       <div 
         ref={boardContainerRef} 
-        className="flex-1 relative overflow-hidden cursor-grab bg-muted/40" 
+        className="flex-1 relative overflow-hidden cursor-grab bg-muted/40 touch-none" 
         onMouseDown={handleMouseDown} 
         onMouseMove={handleMouseMove} 
         onMouseUp={handleMouseUp} 
         onMouseLeave={handleMouseUp} 
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <div
             className="w-full h-full bg-grid-slate-200/[0.5] dark:bg-grid-slate-700/[0.5]"
