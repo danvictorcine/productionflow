@@ -19,7 +19,7 @@ import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -690,9 +690,53 @@ export default function CreativeProjectPageDetail({ project, initialItems, onDat
         </div>
       </div>
       
-      <Sheet open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}><SheetContent><SheetHeader><SheetTitle>Adicionar Vídeo</SheetTitle><SheetDescription>Cole a URL de um vídeo do YouTube ou Vimeo.</SheetDescription></SheetHeader><div className="grid gap-4 py-4"><Label htmlFor="video-url">URL do Vídeo</Label><Input id="video-url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..."/></div><SheetFooter><Button onClick={handleAddVideo}>Adicionar</Button></SheetFooter></SheetContent></Sheet>
-      <Sheet open={isSpotifyDialogOpen} onOpenChange={setIsSpotifyDialogOpen}><SheetContent><SheetHeader><SheetTitle>Adicionar Música</SheetTitle><SheetDescription>Cole a URL de uma música, álbum ou playlist do Spotify.</SheetDescription></SheetHeader><div className="grid gap-4 py-4"><Label htmlFor="spotify-url">URL do Spotify</Label><Input id="spotify-url" value={spotifyUrl} onChange={e => setSpotifyUrl(e.target.value)} placeholder="https://open.spotify.com/track/..."/></div><SheetFooter><Button onClick={handleAddSpotify}>Adicionar</Button></SheetFooter></SheetContent></Sheet>
-      <Sheet open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}><SheetContent className="sm:max-w-2xl"><SheetHeader><SheetTitle>Adicionar Localização</SheetTitle><SheetDescription>Pesquise ou clique no mapa para adicionar um local.</SheetDescription></SheetHeader><div className="py-4"><LocationPicker initialPosition={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [-14.235, -51.925]} onLocationChange={(lat, lng, name) => setSelectedLocation({ lat, lng, ...name })} /></div><SheetFooter><Button onClick={handleAddLocation} disabled={!selectedLocation}>Adicionar Local</Button></SheetFooter></SheetContent></Sheet>
+      <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Adicionar Vídeo</DialogTitle>
+                <DialogDescription>Cole a URL de um vídeo do YouTube ou Vimeo.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <Label htmlFor="video-url">URL do Vídeo</Label>
+                <Input id="video-url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
+            </div>
+            <DialogFooter>
+                <Button onClick={handleAddVideo}>Adicionar</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSpotifyDialogOpen} onOpenChange={setIsSpotifyDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Adicionar Música</DialogTitle>
+                <DialogDescription>Cole a URL de uma música, álbum ou playlist do Spotify.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <Label htmlFor="spotify-url">URL do Spotify</Label>
+                <Input id="spotify-url" value={spotifyUrl} onChange={e => setSpotifyUrl(e.target.value)} placeholder="https://open.spotify.com/track/..." />
+            </div>
+            <DialogFooter>
+                <Button onClick={handleAddSpotify}>Adicionar</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
+          <DialogContent className="sm:max-w-2xl">
+              <DialogHeader>
+                  <DialogTitle>Adicionar Localização</DialogTitle>
+                  <DialogDescription>Pesquise ou clique no mapa para adicionar um local.</DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                  <LocationPicker initialPosition={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : [-14.235, -51.925]} onLocationChange={(lat, lng, name) => setSelectedLocation({ lat, lng, ...name })} />
+              </div>
+              <DialogFooter>
+                  <Button onClick={handleAddLocation} disabled={!selectedLocation}>Adicionar Local</Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+
       <CreateEditCreativeProjectDialog 
         isOpen={isProjectDialogOpen}
         setIsOpen={setIsProjectDialogOpen}
