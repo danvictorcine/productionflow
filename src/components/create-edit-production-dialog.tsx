@@ -1,3 +1,4 @@
+
 // @/src/components/create-edit-production-dialog.tsx
 "use client";
 
@@ -416,7 +417,7 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
                      {filteredTalentPool.map(talent => {
                         const isInProject = selectedTeam.some(t => t.id === talent.id);
                         return (
-                            <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50")}>
+                            <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50 cursor-not-allowed")}>
                                 <Checkbox
                                     id={`talent-prod-${talent.id}`}
                                     checked={selectedIds.includes(talent.id)}

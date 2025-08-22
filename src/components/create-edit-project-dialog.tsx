@@ -1,3 +1,4 @@
+
 // @/src/components/create-edit-project-dialog.tsx
 "use client";
 
@@ -65,7 +66,7 @@ const teamMemberSchema = z.object({
   dietaryRestriction: z.string().optional(),
   extraNotes: z.string().optional(),
 }).superRefine((data, ctx) => {
-    if (data.paymentType === 'fixed' && (data.fee === undefined || data.fee === null)) {
+    if (data.paymentType === 'fixed' && (data.fee === undefined || data.fee === null || data.fee < 0)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Cachê fixo é obrigatório.",
@@ -73,14 +74,14 @@ const teamMemberSchema = z.object({
       });
     }
     if (data.paymentType === 'daily') {
-        if (data.dailyRate === undefined) {
+        if (data.dailyRate === undefined || data.dailyRate <= 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: "Valor da diária é obrigatório.",
                 path: ["dailyRate"],
             });
         }
-        if (data.days === undefined) {
+        if (data.days === undefined || data.days <= 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: "Nº de diárias é obrigatório.",
@@ -678,7 +679,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
                      {filteredTalentPool.map(talent => {
                         const isInProject = selectedTalents.some(t => t.id === talent.id);
                         return (
-                            <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50")}>
+                            <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50 cursor-not-allowed")}>
                                 <Checkbox
                                     id={`talent-${talent.id}`}
                                     checked={selectedIds.includes(talent.id)}
