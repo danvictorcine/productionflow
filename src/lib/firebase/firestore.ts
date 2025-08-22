@@ -1694,7 +1694,6 @@ export const isTalentInUse = async (talentId: string): Promise<boolean> => {
     const userId = getUserId();
     if (!userId) throw new Error("Usuário não autenticado.");
 
-    // 1. Check financial projects' main talent list
     const financialQuery = query(collection(db, 'projects'), where('userId', '==', userId));
     const financialSnapshot = await getDocs(financialQuery);
     for (const doc of financialSnapshot.docs) {
@@ -1704,25 +1703,25 @@ export const isTalentInUse = async (talentId: string): Promise<boolean> => {
         }
     }
 
-    // 2. Check production projects' main team list AND all their shooting days
     const productionQuery = query(collection(db, 'productions'), where('userId', '==', userId));
     const productionSnapshot = await getDocs(productionQuery);
     for (const doc of productionSnapshot.docs) {
         const production = doc.data() as Production;
         if (production.team?.some(t => t.id === talentId)) {
-            return true; // Found in the main production team list
+            return true;
         }
         
-        // 2a. Check every shooting day within this production
-        const shootingDaysQuery = query(collection(db, 'shooting_days'), where('productionId', '==', doc.id));
+        const shootingDaysQuery = query(
+            collection(db, 'shooting_days'), 
+            where('productionId', '==', doc.id),
+            where('userId', '==', userId)
+        );
         const shootingDaysSnapshot = await getDocs(shootingDaysQuery);
         for (const dayDoc of shootingDaysSnapshot.docs) {
             const day = dayDoc.data() as ShootingDay;
-            // Check `presentTeam` array
             if (day.presentTeam?.some(t => t.id === talentId)) {
                 return true;
             }
-            // Check `presentInScene` array for each scene
             if (day.scenes?.some(scene => scene.presentInScene?.some(t => t.id === talentId))) {
                 return true;
             }
@@ -2043,3 +2042,4 @@ export const deleteGanttTask = async (projectId: string, taskId: string) => {
   const taskRef = doc(db, `unified_projects/${projectId}/schedule`, taskId);
   await deleteDoc(taskRef);
 };
+
