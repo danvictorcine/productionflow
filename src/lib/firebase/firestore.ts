@@ -1,3 +1,4 @@
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -139,7 +140,6 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
               dailyRate, 
               days, 
               role,
-              file,
               ...talentPoolData 
           } = teamMember as any;
 
@@ -156,6 +156,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
               const transQuery = query(
                   collection(db, 'transactions'),
                   where('projectId', '==', projectId),
+                  where('userId', '==', userId), // <-- FIX: Added this line
                   where('talentId', '==', teamMember.id),
                   where('status', '==', 'planned')
               );
