@@ -1,5 +1,3 @@
-
-
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -135,6 +133,20 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
               }
           }
           batch.set(talentRef, dataToSync, { merge: true });
+
+          // 3. Sync planned fixed fee transactions
+           if (talent.paymentType === 'fixed' || !talent.paymentType) {
+              const transQuery = query(
+                  collection(db, 'transactions'),
+                  where('projectId', '==', projectId),
+                  where('talentId', '==', talent.id),
+                  where('status', '==', 'planned')
+              );
+              const transSnapshot = await getDocs(transQuery);
+              transSnapshot.forEach(doc => {
+                  batch.update(doc.ref, { amount: talent.fee || 0 });
+              });
+          }
       }
   }
 
