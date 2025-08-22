@@ -68,7 +68,7 @@ const teamMemberSchema = z.object({
     if (data.paymentType === 'fixed' && (data.fee === undefined || data.fee < 0)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Cachê não pode ser negativo.",
+            message: "Cachê fixo deve ser um valor igual ou maior que zero.",
             path: ["fee"],
         });
     }
