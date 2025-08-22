@@ -125,6 +125,13 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
       for (const teamMember of projectData.talents) {
           const talentRef = doc(db, 'talents', teamMember.id);
           
+          // Verify ownership before updating the talent pool
+          const talentDoc = await getDoc(talentRef);
+          if (talentDoc.exists() && talentDoc.data().userId !== userId) {
+              console.warn(`Skipping talent sync for ${teamMember.name} due to ownership mismatch.`);
+              continue; // Skip this talent if it doesn't belong to the user
+          }
+
           // Separate project-specific data from talent pool data
           const { 
               paymentType, 
@@ -132,7 +139,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
               dailyRate, 
               days, 
               role,
-              file, // This is a transient property for uploads, never save it.
+              file,
               ...talentPoolData 
           } = teamMember as any;
 
@@ -142,11 +149,10 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
                   dataToSync[key] = (talentPoolData as any)[key];
               }
           }
-          // Only sync non-project-specific fields back to the main talent document
           batch.set(talentRef, dataToSync, { merge: true });
 
           // 3. Sync planned fixed fee transactions
-           if (teamMember.paymentType === 'fixed' || !teamMember.paymentType) {
+           if ((teamMember.paymentType === 'fixed' || !teamMember.paymentType) && typeof teamMember.fee === 'number') {
               const transQuery = query(
                   collection(db, 'transactions'),
                   where('projectId', '==', projectId),
@@ -154,9 +160,10 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
                   where('status', '==', 'planned')
               );
               const transSnapshot = await getDocs(transQuery);
-              transSnapshot.forEach(doc => {
-                  batch.update(doc.ref, { amount: teamMember.fee || 0 });
-              });
+              if (transSnapshot.docs.length > 0) {
+                 const transDocRef = transSnapshot.docs[0].ref;
+                 batch.update(transDocRef, { amount: teamMember.fee });
+              }
           }
       }
   }
