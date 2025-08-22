@@ -283,7 +283,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                 : ""
                             }
                             onChange={(e) => {
-                              const numericValue = e.target.value.replace(/\\D/g, "");
+                              const numericValue = e.target.value.replace(/\D/g, "");
                               field.onChange(Number(numericValue) / 100);
                             }}
                           />
@@ -335,7 +335,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                     : ""
                                 }
                                 onChange={(e) => {
-                                  const numericValue = e.target.value.replace(/\\D/g, "");
+                                  const numericValue = e.target.value.replace(/\D/g, "");
                                   field.onChange(Number(numericValue) / 100);
                                 }}
                               />
@@ -425,7 +425,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                       type="text" placeholder="R$ 0,00"
                                       value={ field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""}
                                       onChange={(e) => {
-                                        const numericValue = e.target.value.replace(/\\D/g, "");
+                                        const numericValue = e.target.value.replace(/\D/g, "");
                                         field.onChange(Number(numericValue) / 100);
                                       }}
                                     />
@@ -514,7 +514,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                                     <FormLabel className="text-xs">Cachê Fixo</FormLabel>
                                                     <FormControl>
                                                         <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
-                                                            const numericValue = e.target.value.replace(/\\D/g, ""); field.onChange(Number(numericValue) / 100);
+                                                            const numericValue = e.target.value.replace(/\D/g, ""); field.onChange(Number(numericValue) / 100);
                                                         }}/>
                                                     </FormControl><FormMessage />
                                                 </FormItem>
@@ -527,7 +527,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                                         <FormLabel className="text-xs">Valor da Diária</FormLabel>
                                                         <FormControl>
                                                             <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
-                                                                const numericValue = e.target.value.replace(/\\D/g, ""); field.onChange(Number(numericValue) / 100);
+                                                                const numericValue = e.target.value.replace(/\D/g, ""); field.onChange(Number(numericValue) / 100);
                                                             }}/>
                                                         </FormControl><FormMessage />
                                                     </FormItem>
