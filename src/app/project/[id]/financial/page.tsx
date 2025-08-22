@@ -113,7 +113,8 @@ function FinancialProjectPageDetail() {
             await fetchProjectData();
             toast({ title: "Projeto atualizado!" });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro ao atualizar projeto' });
+            // Re-throw the error so the calling component can handle it (e.g., show a detailed toast)
+            throw error;
         }
     };
 
