@@ -130,7 +130,7 @@ export function AddTransactionSheet({
               onSubmit={form.handleSubmit(handleSubmit)}
               className="flex-1 flex flex-col overflow-hidden"
             >
-              <div className="flex-1 overflow-y-auto p-1 space-y-4">
+              <div className="flex-1 overflow-y-auto p-1 space-y-4 max-h-[80vh]">
                   <FormField
                   control={form.control}
                   name="description"
@@ -251,7 +251,7 @@ export function AddTransactionSheet({
                       )}
                   />
               </div>
-              <DialogFooter className="flex-shrink-0 pt-4 border-t">
+              <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
                 <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
                 <Button type="submit">{isEditMode ? "Salvar Alterações" : "Salvar Despesa"}</Button>
               </DialogFooter>

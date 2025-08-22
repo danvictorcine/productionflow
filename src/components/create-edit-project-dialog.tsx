@@ -249,7 +249,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 pr-6 -mr-6">
+            <ScrollArea className="flex-1 pr-6 -mr-6 max-h-[80vh] overflow-y-auto">
                 <div className="space-y-6">
                   <FormField
                     control={form.control}
@@ -283,7 +283,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                 : ""
                             }
                             onChange={(e) => {
-                              const numericValue = e.target.value.replace(/\\D/g, "");
+                              const numericValue = e.target.value.replace(/\D/g, "");
                               field.onChange(Number(numericValue) / 100);
                             }}
                           />
@@ -335,7 +335,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                     : ""
                                 }
                                 onChange={(e) => {
-                                  const numericValue = e.target.value.replace(/\\D/g, "");
+                                  const numericValue = e.target.value.replace(/\D/g, "");
                                   field.onChange(Number(numericValue) / 100);
                                 }}
                               />
@@ -425,7 +425,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                       type="text" placeholder="R$ 0,00"
                                       value={ field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""}
                                       onChange={(e) => {
-                                        const numericValue = e.target.value.replace(/\\D/g, "");
+                                        const numericValue = e.target.value.replace(/\D/g, "");
                                         field.onChange(Number(numericValue) / 100);
                                       }}
                                     />
@@ -515,7 +515,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                         <FormLabel className="text-xs">Cachê Fixo</FormLabel>
                                         <FormControl>
                                             <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
-                                                const numericValue = e.target.value.replace(/\\D/g, ""); field.onChange(Number(numericValue) / 100);
+                                                const numericValue = e.target.value.replace(/\D/g, ""); field.onChange(Number(numericValue) / 100);
                                             }}/>
                                         </FormControl><FormMessage />
                                     </FormItem>
@@ -528,7 +528,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                                             <FormLabel className="text-xs">Valor da Diária</FormLabel>
                                             <FormControl>
                                                 <Input type="text" placeholder="R$ 0,00" value={field.value ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(field.value) : ""} onChange={(e) => {
-                                                    const numericValue = e.target.value.replace(/\\D/g, ""); field.onChange(Number(numericValue) / 100);
+                                                    const numericValue = e.target.value.replace(/\D/g, ""); field.onChange(Number(numericValue) / 100);
                                                 }}/>
                                             </FormControl><FormMessage />
                                         </FormItem>
@@ -570,7 +570,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                   </div>
               </div>
             </ScrollArea>
-            <DialogFooter className="flex-shrink-0 border-t pt-4">
+            <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
             </DialogFooter>

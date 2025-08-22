@@ -9,13 +9,13 @@ import * as z from "zod";
 import type { StoryboardScene } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  Dialog as Sheet,
+  DialogContent as SheetContent,
+  DialogHeader as SheetHeader,
+  DialogTitle as SheetTitle,
+  DialogDescription as SheetDescription,
+  DialogFooter as SheetFooter,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -82,7 +82,7 @@ export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, s
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-lg">
+      <SheetContent className="sm:max-w-lg flex flex-col">
         <SheetHeader>
           <SheetTitle>{isEditMode ? "Editar Cena" : "Criar Nova Cena"}</SheetTitle>
           <SheetDescription>
@@ -90,57 +90,59 @@ export function CreateEditStoryboardSceneDialog({ isOpen, setIsOpen, onSubmit, s
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Título da Cena</FormLabel>
-                  <FormControl>
-                    <Input placeholder="ex: CENA 01 - COZINHA (DIA)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="aspectRatio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Proporção da Cena</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecione a proporção" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="16:9">Widescreen (16:9)</SelectItem>
-                            <SelectItem value="4:3">Clássico (4:3)</SelectItem>
-                            <SelectItem value="9:16">Mobile (9:16)</SelectItem>
-                            <SelectItem value="2.39:1">Anamórfico (2.39:1)</SelectItem>
-                        </SelectContent>
-                    </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição (Opcional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Breve resumo do que acontece nesta cena." {...field} rows={4} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <SheetFooter>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
+            <div className="space-y-4 py-4 max-h-[80vh] overflow-y-auto">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Título da Cena</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ex: CENA 01 - COZINHA (DIA)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="aspectRatio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Proporção da Cena</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                              <SelectTrigger>
+                                  <SelectValue placeholder="Selecione a proporção" />
+                              </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                              <SelectItem value="16:9">Widescreen (16:9)</SelectItem>
+                              <SelectItem value="4:3">Clássico (4:3)</SelectItem>
+                              <SelectItem value="9:16">Mobile (9:16)</SelectItem>
+                              <SelectItem value="2.39:1">Anamórfico (2.39:1)</SelectItem>
+                          </SelectContent>
+                      </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição (Opcional)</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Breve resumo do que acontece nesta cena." {...field} rows={4} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <SheetFooter className="mt-auto">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Cena"}</Button>
             </SheetFooter>

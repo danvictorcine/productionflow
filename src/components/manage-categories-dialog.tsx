@@ -70,13 +70,13 @@ export function ManageCategoriesDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent>
+      <DialogContent className="flex flex-col">
         <DialogHeader>
           <DialogTitle>Gerenciar Categorias</DialogTitle>
           <DialogDescription>Adicione, edite ou exclua suas categorias de despesa personalizadas.</DialogDescription>
         </DialogHeader>
         
-        <div className="py-4 space-y-4">
+        <div className="py-4 space-y-4 flex-1 overflow-y-auto max-h-[80vh]">
             <div className="flex gap-2">
               <Input 
                 placeholder="Nome da nova categoria" 
@@ -154,7 +154,7 @@ export function ManageCategoriesDialog({
             </ScrollArea>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={() => setIsOpen(false)}>Fechar</Button>
         </DialogFooter>
       </DialogContent>

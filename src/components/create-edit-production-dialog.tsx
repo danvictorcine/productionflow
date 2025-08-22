@@ -10,13 +10,13 @@ import { PlusCircle, Trash2, Users, Search, ChevronDown } from "lucide-react";
 import type { Production, TeamMember, Talent } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  Dialog as Sheet,
+  DialogContent as SheetContent,
+  DialogHeader as SheetHeader,
+  DialogTitle as SheetTitle,
+  DialogDescription as SheetDescription,
+  DialogFooter as SheetFooter,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -166,16 +166,42 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
         </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto pr-6">
-                <div className="space-y-4">
-                  <FormField
+            <div className="flex-1 overflow-y-auto pr-6 space-y-4 max-h-[80vh]">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome da Produção</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ex: O Legado Perdido" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Produção</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ex: Curta-metragem, Publicidade" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <FormField
                     control={form.control}
-                    name="name"
+                    name="director"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nome da Produção</FormLabel>
+                        <FormLabel>Diretor(a)</FormLabel>
                         <FormControl>
-                          <Input placeholder="ex: O Legado Perdido" {...field} />
+                          <Input placeholder="Nome do(a) diretor(a)" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -183,162 +209,134 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                   />
                   <FormField
                     control={form.control}
-                    name="type"
+                    name="responsibleProducer"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tipo de Produção</FormLabel>
+                        <FormLabel>Produtor(a) Responsável <span className="text-xs text-muted-foreground">(Opcional)</span></FormLabel>
                         <FormControl>
-                          <Input placeholder="ex: Curta-metragem, Publicidade" {...field} />
+                          <Input placeholder="Nome do(a) produtor(a)" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField
-                      control={form.control}
-                      name="director"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Diretor(a)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nome do(a) diretor(a)" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="responsibleProducer"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Produtor(a) Responsável <span className="text-xs text-muted-foreground">(Opcional)</span></FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nome do(a) produtor(a)" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="producer"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Produtora <span className="text-xs text-muted-foreground">(Opcional)</span></FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nome da produtora" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="client"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cliente <span className="text-xs text-muted-foreground">(Opcional)</span></FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nome do(a) cliente" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                   </div>
-                  
-                  <Separator />
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="producer"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Produtora <span className="text-xs text-muted-foreground">(Opcional)</span></FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome da produtora" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="client"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cliente <span className="text-xs text-muted-foreground">(Opcional)</span></FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome do(a) cliente" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                 </div>
+                
+                <Separator />
 
-                  <div>
-                    <h3 className="text-lg font-semibold">Equipe & Elenco</h3>
-                    <p className="text-sm text-muted-foreground">Cadastre todos os envolvidos na produção. Alterações feitas aqui serão sincronizadas com seu Banco de Talentos.</p>
-                    <div className="space-y-3 mt-4">
-                      {teamFields.map((field, index) => {
-                        const hasRestriction = watch(`team.${index}.hasDietaryRestriction`);
+                <div>
+                  <h3 className="text-lg font-semibold">Equipe & Elenco</h3>
+                  <p className="text-sm text-muted-foreground">Cadastre todos os envolvidos na produção. Alterações feitas aqui serão sincronizadas com seu Banco de Talentos.</p>
+                  <div className="space-y-3 mt-4">
+                    {teamFields.map((field, index) => {
+                      const hasRestriction = watch(`team.${index}.hasDietaryRestriction`);
 
-                        return (
-                           <Collapsible key={field.id} className="group border rounded-lg bg-card">
-                                <div className="p-3 flex items-center justify-between">
-                                    <CollapsibleTrigger asChild>
-                                        <div className="flex-1 flex items-center gap-4 cursor-pointer">
-                                             <Avatar className="h-12 w-12">
-                                                <AvatarImage src={field.photoURL || undefined} alt={field.name} className="object-cover" />
-                                                <AvatarFallback>{getInitials(field.name)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="font-semibold">{field.name || "Novo Talento"}</p>
-                                                <p className="text-sm text-muted-foreground">{field.role || "Função não definida"}</p>
-                                            </div>
-                                        </div>
-                                    </CollapsibleTrigger>
-                                     <div className="flex items-center gap-1">
-                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => removeTeam(index)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                        <CollapsibleTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                            </Button>
-                                        </CollapsibleTrigger>
-                                     </div>
-                                </div>
+                      return (
+                         <Collapsible key={field.id} className="group border rounded-lg bg-card">
+                              <div className="p-3 flex items-center justify-between">
+                                  <CollapsibleTrigger asChild>
+                                      <div className="flex-1 flex items-center gap-4 cursor-pointer">
+                                           <Avatar className="h-12 w-12">
+                                              <AvatarImage src={field.photoURL || undefined} alt={field.name} className="object-cover" />
+                                              <AvatarFallback>{getInitials(field.name)}</AvatarFallback>
+                                          </Avatar>
+                                          <div>
+                                              <p className="font-semibold">{field.name || "Novo Talento"}</p>
+                                              <p className="text-sm text-muted-foreground">{field.role || "Função não definida"}</p>
+                                          </div>
+                                      </div>
+                                  </CollapsibleTrigger>
+                                   <div className="flex items-center gap-1">
+                                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => removeTeam(index)}>
+                                          <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                      <CollapsibleTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                                              <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                          </Button>
+                                      </CollapsibleTrigger>
+                                   </div>
+                              </div>
 
-                                <CollapsibleContent className="px-4 pb-4 pt-0">
-                                    <div className="pt-4 border-t space-y-4">
-                                        <FormField control={form.control} name={`team.${index}.name`} render={({ field }) => (
-                                          <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
+                              <CollapsibleContent className="px-4 pb-4 pt-0">
+                                  <div className="pt-4 border-t space-y-4">
+                                      <FormField control={form.control} name={`team.${index}.name`} render={({ field }) => (
+                                        <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
+                                      )}/>
+                                      <FormField control={form.control} name={`team.${index}.role`} render={({ field }) => (
+                                        <FormItem><FormLabel>Função no Projeto</FormLabel><FormControl><Input placeholder="ex: Ator, Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
+                                      )}/>
+                                      <FormField control={control} name={`team.${index}.contact`} render={({ field }) => (
+                                        <FormItem><FormLabel>Contato (Telefone)</FormLabel><FormControl><Input placeholder="ex: (75) 99123-4567" {...field} /></FormControl><FormMessage /></FormItem>
+                                      )}/>
+                                     <FormField control={control} name={`team.${index}.hasDietaryRestriction`} render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Possui restrição alimentar?</FormLabel></FormItem>
+                                      )}/>
+                                      {hasRestriction && (
+                                        <FormField control={control} name={`team.${index}.dietaryRestriction`} render={({ field }) => (
+                                          <FormItem><FormLabel className="text-xs">Qual restrição/alergia?</FormLabel><FormControl><Input placeholder="ex: Glúten, lactose, amendoim..." {...field} /></FormControl><FormMessage /></FormItem>
                                         )}/>
-                                        <FormField control={form.control} name={`team.${index}.role`} render={({ field }) => (
-                                          <FormItem><FormLabel>Função no Projeto</FormLabel><FormControl><Input placeholder="ex: Ator, Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                        <FormField control={control} name={`team.${index}.contact`} render={({ field }) => (
-                                          <FormItem><FormLabel>Contato (Telefone)</FormLabel><FormControl><Input placeholder="ex: (75) 99123-4567" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                       <FormField control={control} name={`team.${index}.hasDietaryRestriction`} render={({ field }) => (
-                                          <FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Possui restrição alimentar?</FormLabel></FormItem>
-                                        )}/>
-                                        {hasRestriction && (
-                                          <FormField control={control} name={`team.${index}.dietaryRestriction`} render={({ field }) => (
-                                            <FormItem><FormLabel className="text-xs">Qual restrição/alergia?</FormLabel><FormControl><Input placeholder="ex: Glúten, lactose, amendoim..." {...field} /></FormControl><FormMessage /></FormItem>
-                                          )}/>
-                                        )}
-                                       <FormField control={control} name={`team.${index}.extraNotes`} render={({ field }) => (
-                                          <FormItem><FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel><FormControl><Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                    </div>
-                                </CollapsibleContent>
-                            </Collapsible>
-                        )
-                      })}
-                      <Dialog open={isTalentSelectorOpen} onOpenChange={setIsTalentSelectorOpen}>
-                         <DialogTrigger asChild>
-                           <Button type="button" variant="outline" size="sm">
-                              <Users className="mr-2 h-4 w-4" />
-                              Adicionar Talento do Banco
-                           </Button>
-                         </DialogTrigger>
-                         <DialogContent className="sm:max-w-md z-[9999]">
-                            <DialogHeader>
-                                <DialogTitle>Selecionar Talentos</DialogTitle>
-                                <DialogDescription>Selecione os talentos do seu banco de contatos para adicionar à equipe desta produção.</DialogDescription>
-                            </DialogHeader>
-                            <TalentSelector
-                                talentPool={talentPool}
-                                selectedTeam={teamFields as TeamMember[]}
-                                onSelect={handleSelectTalents}
-                                onTalentCreated={fetchTalents}
-                            />
-                         </DialogContent>
-                       </Dialog>
-                    </div>
+                                      )}
+                                     <FormField control={control} name={`team.${index}.extraNotes`} render={({ field }) => (
+                                        <FormItem><FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel><FormControl><Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} /></FormControl><FormMessage /></FormItem>
+                                      )}/>
+                                  </div>
+                              </CollapsibleContent>
+                          </Collapsible>
+                      )
+                    })}
+                    <Dialog open={isTalentSelectorOpen} onOpenChange={setIsTalentSelectorOpen}>
+                       <DialogTrigger asChild>
+                         <Button type="button" variant="outline" size="sm">
+                            <Users className="mr-2 h-4 w-4" />
+                            Adicionar Talento do Banco
+                         </Button>
+                       </DialogTrigger>
+                       <DialogContent className="sm:max-w-md z-[9999]">
+                          <DialogHeader>
+                              <DialogTitle>Selecionar Talentos</DialogTitle>
+                              <DialogDescription>Selecione os talentos do seu banco de contatos para adicionar à equipe desta produção.</DialogDescription>
+                          </DialogHeader>
+                          <TalentSelector
+                              talentPool={talentPool}
+                              selectedTeam={teamFields as TeamMember[]}
+                              onSelect={handleSelectTalents}
+                              onTalentCreated={fetchTalents}
+                          />
+                       </DialogContent>
+                     </Dialog>
                   </div>
                 </div>
             </div>
-            <SheetFooter className="flex-shrink-0 border-t p-4 pt-6">
+            <SheetFooter className="flex-shrink-0 border-t p-4 pt-6 mt-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Produção"}</Button>
             </SheetFooter>

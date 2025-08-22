@@ -41,7 +41,7 @@ export function PayDailyRateDialog({ isOpen, setIsOpen, talent, transactions, on
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md flex flex-col">
         <DialogHeader>
           <DialogTitle>Gerenciar Diárias</DialogTitle>
           <DialogDescription>
@@ -50,7 +50,7 @@ export function PayDailyRateDialog({ isOpen, setIsOpen, talent, transactions, on
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[60vh] pr-4 my-4">
+        <ScrollArea className="max-h-[60vh] pr-4 my-4 flex-1">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -91,7 +91,7 @@ export function PayDailyRateDialog({ isOpen, setIsOpen, talent, transactions, on
             </Table>
         </ScrollArea>
         
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={() => setIsOpen(false)}>Fechar</Button>
         </DialogFooter>
       </DialogContent>

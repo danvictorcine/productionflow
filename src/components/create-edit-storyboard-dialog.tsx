@@ -9,13 +9,13 @@ import * as z from "zod";
 import type { Storyboard } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  Dialog as Sheet,
+  DialogContent as SheetContent,
+  DialogHeader as SheetHeader,
+  DialogTitle as SheetTitle,
+  DialogDescription as SheetDescription,
+  DialogFooter as SheetFooter,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -76,7 +76,7 @@ export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyb
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-lg">
+      <SheetContent className="sm:max-w-lg flex flex-col">
         <SheetHeader>
           <SheetTitle>{isEditMode ? "Editar Storyboard" : "Criar Novo Storyboard"}</SheetTitle>
           <SheetDescription>
@@ -84,34 +84,36 @@ export function CreateEditStoryboardDialog({ isOpen, setIsOpen, onSubmit, storyb
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Projeto</FormLabel>
-                  <FormControl>
-                    <Input placeholder="ex: Storyboard do curta 'Amanhecer'" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição (Opcional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Descreva a visão geral, estilo ou premissa do projeto." {...field} rows={4} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <SheetFooter>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
+            <div className="space-y-4 py-4 max-h-[80vh] overflow-y-auto">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Projeto</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ex: Storyboard do curta 'Amanhecer'" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição (Opcional)</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Descreva a visão geral, estilo ou premissa do projeto." {...field} rows={4} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <SheetFooter className="mt-auto">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Storyboard"}</Button>
             </SheetFooter>
