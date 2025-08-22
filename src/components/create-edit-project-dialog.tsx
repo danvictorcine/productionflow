@@ -618,7 +618,6 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
     const handleCreateNewTalent = async (values: NewTalentFormValues) => {
         const talentToSave: Omit<Talent, 'id'> = {
             name: values.name,
-            role: "Indefinido" // Role is not global anymore
         };
         try {
             await firestoreApi.addTalent(talentToSave);

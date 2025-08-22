@@ -23,8 +23,6 @@ export type Talent = {
   extraNotes?: string;
   // O campo 'file' é apenas para o estado de upload no frontend
   file?: File;
-  // O campo 'role' foi removido para ser específico do projeto
-  role: string; 
 };
 
 // Modelo para um membro de equipe DENTRO de um projeto.

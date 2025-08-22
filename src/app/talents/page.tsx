@@ -48,8 +48,6 @@ const talentSchema = z.object({
     dietaryRestriction: z.string().optional(),
     extraNotes: z.string().optional(),
     file: z.instanceof(File).optional(),
-    // 'role' is removed from the main talent entity
-    role: z.string().optional(),
 });
 
 const formSchema = z.object({
