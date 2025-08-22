@@ -65,10 +65,10 @@ const teamMemberSchema = z.object({
   dietaryRestriction: z.string().optional(),
   extraNotes: z.string().optional(),
 }).superRefine((data, ctx) => {
-    if (data.paymentType === 'fixed' && (data.fee === undefined || data.fee <= 0)) {
+    if (data.paymentType === 'fixed' && (data.fee === undefined || data.fee < 0)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Cachê deve ser positivo.",
+            message: "Cachê não pode ser negativo.",
             path: ["fee"],
         });
     }
