@@ -61,7 +61,8 @@ const getVimeoEmbedUrl = (url: string) => {
 };
 
 const getSpotifyEmbedUrl = (url: string) => {
-    const spotifyRegex = /https?:\/\/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/;
+    // This regex is now more flexible to capture various Spotify IDs
+    const spotifyRegex = /https?:\/\/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]{22})/;
     const match = url.match(spotifyRegex);
     if (match && match[1] && match[2]) {
         const type = match[1];
