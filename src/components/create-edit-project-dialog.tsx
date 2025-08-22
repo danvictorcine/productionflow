@@ -65,25 +65,25 @@ const teamMemberSchema = z.object({
   dietaryRestriction: z.string().optional(),
   extraNotes: z.string().optional(),
 }).superRefine((data, ctx) => {
-    if (data.paymentType === 'fixed' && (data.fee === undefined || data.fee === null || data.fee < 0)) {
+    if (data.paymentType === 'fixed' && (data.fee === undefined || data.fee === null)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Cachê fixo é obrigatório e não pode ser negativo.",
+        message: "Cachê fixo é obrigatório.",
         path: ["fee"],
       });
     }
     if (data.paymentType === 'daily') {
-        if (data.dailyRate === undefined || data.dailyRate < 0) {
+        if (data.dailyRate === undefined) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: "Valor da diária não pode ser negativo.",
+                message: "Valor da diária é obrigatório.",
                 path: ["dailyRate"],
             });
         }
-        if (data.days === undefined || data.days < 0) {
+        if (data.days === undefined) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: "Nº de diárias não pode ser negativo.",
+                message: "Nº de diárias é obrigatório.",
                 path: ["days"],
             });
         }
