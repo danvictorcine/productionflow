@@ -238,17 +238,17 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-3xl flex flex-col h-full md:h-auto">
+      <DialogContent className="sm:max-w-3xl flex flex-col h-full">
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Editar Projeto" : "Criar Novo Projeto"}</DialogTitle>
           <DialogDescription>
             {isEditMode ? "Atualize os detalhes do seu projeto." : "Preencha os detalhes abaixo para criar seu projeto."}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 pr-6 -mr-6 py-4">
-                <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto -mr-6 pr-6 py-4">
+            <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} id="project-form" className="space-y-6">
+                
                   <FormField
                     control={form.control}
                     name="name"
@@ -566,14 +566,14 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                        </Dialog>
                     </div>
                   </div>
-              </div>
-            </ScrollArea>
-            <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
-              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
-              <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              
+            </form>
+          </Form>
+        </div>
+        <DialogFooter className="flex-shrink-0 border-t pt-4">
+            <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
+            <Button type="submit" form="project-form">{isEditMode ? "Salvar Alterações" : "Criar Projeto"}</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -690,3 +690,5 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
         </div>
     )
 }
+
+    
