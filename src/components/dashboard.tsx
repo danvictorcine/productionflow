@@ -251,7 +251,7 @@ export default function Dashboard({
 
   const handleManageDailyPayment = (talent: TeamMember) => {
       setSelectedTalent(talent);
-      setDailyPaymentOpen(true);
+      setIsDailyPaymentOpen(true);
   };
 
   const handlePayDailyRate = async (talent: TeamMember, dayNumber: number) => {
@@ -626,7 +626,7 @@ export default function Dashboard({
       {selectedTalent && (
         <PayDailyRateDialog
             isOpen={isDailyPaymentOpen}
-            setIsOpen={setDailyPaymentOpen}
+            setIsOpen={setIsDailyPaymentOpen}
             talent={selectedTalent}
             transactions={transactions.filter(t => t.talentId === selectedTalent.id)}
             onPay={handlePayDailyRate}
