@@ -12,13 +12,13 @@ import { Calendar as CalendarIcon, Trash2, Check } from "lucide-react";
 import type { GanttTask } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -142,14 +142,14 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>{isEditMode ? "Editar Tarefa" : "Nova Tarefa do Cronograma"}</SheetTitle>
-          <SheetDescription>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{isEditMode ? "Editar Tarefa" : "Nova Tarefa do Cronograma"}</DialogTitle>
+          <DialogDescription>
             {isEditMode ? "Atualize os detalhes da tarefa." : "Preencha as informações para adicionar uma nova tarefa ao cronograma."}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
             <FormField control={form.control} name="title" render={({ field }) => (
@@ -264,7 +264,7 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
                 <FormMessage />
               </FormItem>
             )}/>
-            <SheetFooter className="pt-4">
+            <DialogFooter className="pt-4">
               {isEditMode && (
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -284,10 +284,10 @@ export function GanttTaskForm({ isOpen, setIsOpen, onSubmit, onDelete, task }: G
               )}
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Tarefa"}</Button>
-            </SheetFooter>
+            </DialogFooter>
           </form>
         </Form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

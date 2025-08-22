@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -8,14 +7,7 @@ import { Download, Upload, FileX2, CheckCircle2, AlertTriangle, Loader2 } from "
 import type { Transaction, Project } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
@@ -165,19 +157,19 @@ export function ImportTransactionsDialog({ isOpen, setIsOpen, onSubmit, project 
   };
   
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => {
+    <Dialog open={isOpen} onOpenChange={(open) => {
         if (!open) resetState();
         setIsOpen(open);
     }}>
-      <SheetContent className="sm:max-w-4xl flex flex-col">
-        <SheetHeader>
-          <SheetTitle>Importar Despesas</SheetTitle>
-          <SheetDescription>
+      <DialogContent className="sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Importar Despesas</DialogTitle>
+          <DialogDescription>
             Faça o upload de um arquivo .xlsx para adicionar múltiplas despesas de uma vez.
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
         
-        <div className="grid md:grid-cols-2 gap-6 items-start flex-1 min-h-0">
+        <div className="grid md:grid-cols-2 gap-6 items-start flex-1 min-h-0 py-4">
             {/* Left Column: Instructions & Upload */}
             <div className="flex flex-col gap-4 p-4 border rounded-lg h-full">
                 <div className="space-y-2">
@@ -285,14 +277,14 @@ export function ImportTransactionsDialog({ isOpen, setIsOpen, onSubmit, project 
             </div>
         </div>
 
-        <SheetFooter className="flex-shrink-0 border-t pt-4">
+        <DialogFooter className="flex-shrink-0 border-t pt-4">
             <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
             <Button type="button" onClick={handleSubmit} disabled={parsedData.length === 0 || isLoading}>
                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Importar {parsedData.length > 0 ? `${parsedData.length} Transações` : ''}
             </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

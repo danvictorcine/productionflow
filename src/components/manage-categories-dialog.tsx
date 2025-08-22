@@ -1,14 +1,7 @@
 "use client"
 
 import { useState } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
@@ -76,12 +69,12 @@ export function ManageCategoriesDialog({
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Gerenciar Categorias</SheetTitle>
-          <SheetDescription>Adicione, edite ou exclua suas categorias de despesa personalizadas.</SheetDescription>
-        </SheetHeader>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Gerenciar Categorias</DialogTitle>
+          <DialogDescription>Adicione, edite ou exclua suas categorias de despesa personalizadas.</DialogDescription>
+        </DialogHeader>
         
         <div className="py-4 space-y-4">
             <div className="flex gap-2">
@@ -161,10 +154,10 @@ export function ManageCategoriesDialog({
             </ScrollArea>
         </div>
 
-        <SheetFooter>
+        <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Fechar</Button>
-        </SheetFooter>
-      </SheetContent>
+        </DialogFooter>
+      </DialogContent>
 
       {/* Edit Dialog */}
       <AlertDialog open={!!editingCategory} onOpenChange={(open) => !open && setEditingCategory(null)}>
@@ -186,6 +179,6 @@ export function ManageCategoriesDialog({
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Sheet>
+    </Dialog>
   )
 }

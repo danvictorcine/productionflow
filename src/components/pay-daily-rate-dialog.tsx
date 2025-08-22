@@ -2,14 +2,7 @@
 
 import { useMemo } from "react";
 import type { Talent, Transaction } from "@/lib/types";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -46,15 +39,15 @@ export function PayDailyRateDialog({ isOpen, setIsOpen, talent, transactions, on
   const allDaysPaid = paidDays.size === (talent.days || 0);
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>Gerenciar Diárias</SheetTitle>
-          <SheetDescription>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Gerenciar Diárias</DialogTitle>
+          <DialogDescription>
             Pague as diárias para <span className="font-semibold text-foreground">{talent.name}</span>.
             {allDaysPaid && <Badge className="ml-2 border-green-500 bg-green-50 text-green-700">Todas as diárias pagas</Badge>}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
         
         <ScrollArea className="max-h-[60vh] pr-4 my-4">
             <Table>
@@ -77,7 +70,7 @@ export function PayDailyRateDialog({ isOpen, setIsOpen, talent, transactions, on
                                 <TableCell className="text-center">
                                     {isPaid ? (
                                         <div className="group relative w-[100px] h-9 mx-auto">
-                                            <Button size="sm" variant="outline" className="absolute inset-0 w-full h-full border-green-500 bg-green-50 text-green-700 transition-opacity group-hover:opacity-0 pointer-events-none rounded-md" aria-hidden="true" tabIndex={-1}>
+                                            <Button size="sm" className="absolute inset-0 w-full h-full bg-green-600 hover:bg-green-700 text-white transition-opacity group-hover:opacity-0 pointer-events-none rounded-md" aria-hidden="true" tabIndex={-1}>
                                                 <Check className="mr-1 h-4 w-4" /> Pago
                                             </Button>
                                             <Button size="sm" variant="ghost" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md" onClick={() => onUndo(transactionId!)} aria-label={`Desfazer pagamento da diária ${dayNumber}`}>
@@ -97,10 +90,10 @@ export function PayDailyRateDialog({ isOpen, setIsOpen, talent, transactions, on
             </Table>
         </ScrollArea>
         
-        <SheetFooter>
+        <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Fechar</Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
