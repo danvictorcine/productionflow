@@ -66,7 +66,7 @@ function ManageTalentsPage() {
     const [isMigrating, setIsMigrating] = useState(false);
     const [legacyTeamMembers, setLegacyTeamMembers] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [talentToDelete, setTalentToDelete] = useState<{ id: string; name: string } | null>(null);
+    const [talentToDelete, setTalentToDelete] = useState<{ id: string; name: string, isNew: boolean, index: number } | null>(null);
 
 
     const form = useForm<FormValues>({
@@ -213,6 +213,19 @@ function ManageTalentsPage() {
         }
     }
     
+    const handleDeleteClick = (talent: Talent, index: number) => {
+        const isNew = !dirtyFields.talents?.[index]; // A simple heuristic: if it's not dirty, it must exist in DB. A better way might be needed if logic changes. A more robust way is to check if the ID is a UUID.
+        // For a new unsaved item, its ID is a UUID from crypto.randomUUID(). Saved items have Firestore IDs.
+        const isTrulyNew = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(talent.id);
+
+        if (isTrulyNew) {
+            remove(index);
+            toast({ title: "Talento removido." });
+        } else {
+            setTalentToDelete({ id: talent.id, name: talent.name, isNew: isTrulyNew, index });
+        }
+    }
+
     const handleConfirmDelete = async () => {
         if (!talentToDelete) return;
         const { id: firestoreId } = talentToDelete;
@@ -281,7 +294,7 @@ function ManageTalentsPage() {
                                 </Avatar>
                                 <p className="font-semibold">{talentData.name || "Novo Talento"}</p>
                             </div>
-                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); setTalentToDelete({ id: talentData.id, name: talentData.name }); }}>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mr-2 z-10" onClick={(e) => { e.stopPropagation(); handleDeleteClick(talentData, originalIndex) }}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                             <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
