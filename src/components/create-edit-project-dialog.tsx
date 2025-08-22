@@ -40,7 +40,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import * as firestoreApi from "@/lib/firebase/firestore";
+import * as firestoreApi from '@/lib/firebase/firestore';
 import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { getInitials } from "@/lib/utils";
@@ -49,7 +49,6 @@ import { useToast } from "@/hooks/use-toast";
 
 const teamMemberSchema = z.object({
   id: z.string(),
-  talentId: z.string(),
   name: z.string().min(1, "Nome do talento é obrigatório."),
   role: z.string().min(1, "Função é obrigatória."),
   photoURL: z.string().optional(),
@@ -216,13 +215,12 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
   const handleSelectTalents = (selectedTalentIds: string[]) => {
       selectedTalentIds.forEach(id => {
           const talent = talentPool.find(t => t.id === id);
-          if (talent && !talentFields.some(field => field.talentId === talent.id)) {
+          if (talent && !talentFields.some(field => field.id === talent.id)) {
               appendTalent({
                   id: talent.id,
-                  talentId: talent.id,
                   name: talent.name,
                   photoURL: talent.photoURL,
-                  role: talent.role || 'Função a definir',
+                  role: "Função a definir",
                   paymentType: 'fixed',
                   fee: 0,
                   dailyRate: 0,
@@ -560,7 +558,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                             </DialogHeader>
                             <TalentSelector
                                 talentPool={talentPool}
-                                selectedTalents={talentFields}
+                                selectedTalents={talentFields as TeamMember[]}
                                 onSelect={handleSelectTalents}
                                 onTalentCreated={fetchTalents}
                             />
@@ -583,7 +581,6 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
 
 const newTalentFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
-  role: z.string().min(2, { message: "A função deve ter pelo menos 2 caracteres." }),
 });
 type NewTalentFormValues = z.infer<typeof newTalentFormSchema>;
 
@@ -600,7 +597,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
     
     const form = useForm<NewTalentFormValues>({
         resolver: zodResolver(newTalentFormSchema),
-        defaultValues: { name: "", role: "" },
+        defaultValues: { name: "" },
     });
     
     const filteredTalentPool = useMemo(() => {
@@ -621,7 +618,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
     const handleCreateNewTalent = async (values: NewTalentFormValues) => {
         const talentToSave: Omit<Talent, 'id'> = {
             name: values.name,
-            role: values.role
+            role: "Indefinido" // Role is not global anymore
         };
         try {
             await firestoreApi.addTalent(talentToSave);
@@ -640,9 +637,6 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
                 <form onSubmit={form.handleSubmit(handleCreateNewTalent)} className="space-y-4">
                     <FormField control={form.control} name="name" render={({ field }) => (
                         <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                    <FormField control={form.control} name="role" render={({ field }) => (
-                        <FormItem><FormLabel>Função Padrão</FormLabel><FormControl><Input placeholder="Ex: Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => setView('select')}>Cancelar</Button>
@@ -667,7 +661,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
              <ScrollArea className="h-72">
                  <div className="p-4 space-y-2">
                      {filteredTalentPool.map(talent => {
-                        const isInProject = selectedTalents.some(t => t.talentId === talent.id);
+                        const isInProject = selectedTalents.some(t => t.id === talent.id);
                         return (
                             <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50")}>
                                 <Checkbox
@@ -681,10 +675,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
                                         <AvatarImage src={talent.photoURL || undefined} alt={talent.name} />
                                         <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
                                     </Avatar>
-                                    <div>
-                                        <p>{talent.name}</p>
-                                        <p className="text-xs text-muted-foreground">{talent.role}</p>
-                                    </div>
+                                    <p>{talent.name}</p>
                                 </label>
                             </div>
                         )

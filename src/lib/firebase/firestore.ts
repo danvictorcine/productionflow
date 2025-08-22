@@ -108,7 +108,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
   const dataToUpdate: Record<string, any> = { ...projectData };
   if (projectData.talents) {
     dataToUpdate.talents = projectData.talents.map(talent => {
-        const { file, ...rest } = talent;
+        const { file, ...rest } = talent as any; // Cast to handle transient 'file' property
         return rest;
     });
   }
@@ -126,7 +126,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
   if (projectData.talents) {
       for (const talent of projectData.talents) {
           const talentRef = doc(db, 'talents', talent.id);
-          const { id, paymentType, fee, dailyRate, days, ...talentPoolData } = talent;
+          const { paymentType, fee, dailyRate, days, ...talentPoolData } = talent;
           
           const dataToSync: Record<string, any> = { userId };
            for (const key in talentPoolData) {
@@ -524,13 +524,8 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
   const cleanedData: Record<string, any> = { ...data };
   if (data.team) {
     cleanedData.team = data.team.map(member => {
-        const cleanedMember: Record<string, any> = {};
-        for (const key in member) {
-            if ((member as any)[key] !== undefined) {
-                cleanedMember[key] = (member as any)[key];
-            }
-        }
-        return cleanedMember;
+        const { file, ...rest } = member as any;
+        return rest;
     });
   }
   
@@ -539,7 +534,8 @@ export const updateProduction = async (productionId: string, data: Partial<Omit<
   if (data.team) {
       for (const member of data.team) {
           const talentRef = doc(db, 'talents', member.id);
-          const { id, role, ...talentPoolData } = member;
+          // Don't save project-specific role to the main talent entry
+          const { role, ...talentPoolData } = member;
           
           const dataToSync: Record<string, any> = { userId };
            for (const key in talentPoolData) {
@@ -1601,7 +1597,7 @@ export const saveSingleTalent = async (talent: Talent) => {
   
   // 1. Update the main talent document
   const talentRef = doc(db, 'talents', talent.id);
-  const { id, file, ...data } = talent;
+  const { id, file, role, ...data } = talent; // Remove role from data to be saved to main talent doc
   const talentDataToSave: Record<string, any> = { userId };
   for (const key in data) {
     if ((data as any)[key] !== undefined) {
@@ -1714,10 +1710,6 @@ export const migrateTeamToTalentPool = async (): Promise<void> => {
     const createCleanTalent = (member: any): Omit<Talent, 'id'> => ({
       name: member.name || "Nome Desconhecido",
       role: member.role || "Função Desconhecida",
-      paymentType: member.paymentType === 'daily' ? 'daily' : 'fixed',
-      fee: typeof member.fee === 'number' ? member.fee : undefined,
-      dailyRate: typeof member.dailyRate === 'number' ? member.dailyRate : undefined,
-      days: typeof member.days === 'number' ? member.days : undefined,
       photoURL: member.photoURL || undefined,
       contact: member.contact || undefined,
       hasDietaryRestriction: member.hasDietaryRestriction === true,
@@ -1727,7 +1719,7 @@ export const migrateTeamToTalentPool = async (): Promise<void> => {
 
     // Prioritize existing talents
     existingTalents.forEach(talent => {
-        const key = `${talent.name.trim().toLowerCase()}-${talent.role.trim().toLowerCase()}`;
+        const key = `${talent.name.trim().toLowerCase()}`;
         if (!uniqueTalents.has(key)) {
             uniqueTalents.set(key, talent);
         }
@@ -1735,8 +1727,8 @@ export const migrateTeamToTalentPool = async (): Promise<void> => {
 
     // Process legacy members, merging data if a more complete record is found
     combinedLegacyTeam.forEach(member => {
-        if (!member.name || !member.role) return;
-        const key = `${member.name.trim().toLowerCase()}-${member.role.trim().toLowerCase()}`;
+        if (!member.name) return;
+        const key = `${member.name.trim().toLowerCase()}`;
         if (!uniqueTalents.has(key)) {
             const newTalent: Talent = {
                 id: doc(collection(db, 'talents')).id, // Generate a new ID

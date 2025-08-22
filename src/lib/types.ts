@@ -23,12 +23,14 @@ export type Talent = {
   extraNotes?: string;
   // O campo 'file' é apenas para o estado de upload no frontend
   file?: File;
+  // O campo 'role' foi removido para ser específico do projeto
+  role: string; 
 };
 
 // Modelo para um membro de equipe DENTRO de um projeto.
 // Inclui informações específicas do projeto, como a função e pagamento.
 export type TeamMember = {
-  talentId: string; // Link para o ID do Talent no banco de talentos
+  id: string; // ID único do talento no banco de talentos (usado como talentId)
   name: string;     // Denormalized para exibição fácil
   role: string;     // Específico para este projeto
   

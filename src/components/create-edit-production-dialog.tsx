@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "./ui/separator";
-import { Checkbox } from "./ui/checkbox";
 import { Textarea } from "./ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import * as firestoreApi from '@/lib/firebase/firestore';
@@ -37,6 +36,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ScrollArea } from "./ui/scroll-area";
 import { getInitials, cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
+import { Checkbox } from "./ui/checkbox";
+
 
 const teamMemberSchema = z.object({
   id: z.string(),
@@ -143,7 +144,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
             appendTeam({
                 id: talent.id,
                 name: talent.name,
-                role: talent.role,
+                role: "Função a definir", // Role is now project-specific
                 photoURL: talent.photoURL,
                 contact: talent.contact,
                 hasDietaryRestriction: talent.hasDietaryRestriction,
@@ -254,11 +255,9 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
 
                 <div>
                   <h3 className="text-lg font-semibold">Equipe & Elenco</h3>
-                  <p className="text-sm text-muted-foreground">Cadastre todos os envolvidos na produção. Alterações feitas aqui serão sincronizadas com seu Banco de Talentos.</p>
+                  <p className="text-sm text-muted-foreground">Cadastre todos os envolvidos na produção. As informações são sincronizadas com o Banco de Talentos, apenas a função é específica para este projeto.</p>
                   <div className="space-y-3 mt-4">
                     {teamFields.map((field, index) => {
-                      const hasRestriction = watch(`team.${index}.hasDietaryRestriction`);
-
                       return (
                          <Collapsible key={field.id} className="group border rounded-lg bg-card">
                               <div className="p-3 flex items-center justify-between">
@@ -288,26 +287,10 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
 
                               <CollapsibleContent className="px-4 pb-4 pt-0">
                                   <div className="pt-4 border-t space-y-4">
-                                      <FormField control={form.control} name={`team.${index}.name`} render={({ field }) => (
-                                        <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
-                                      )}/>
                                       <FormField control={form.control} name={`team.${index}.role`} render={({ field }) => (
                                         <FormItem><FormLabel>Função no Projeto</FormLabel><FormControl><Input placeholder="ex: Ator, Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
                                       )}/>
-                                      <FormField control={control} name={`team.${index}.contact`} render={({ field }) => (
-                                        <FormItem><FormLabel>Contato (Telefone)</FormLabel><FormControl><Input placeholder="ex: (75) 99123-4567" {...field} /></FormControl><FormMessage /></FormItem>
-                                      )}/>
-                                     <FormField control={control} name={`team.${index}.hasDietaryRestriction`} render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Possui restrição alimentar?</FormLabel></FormItem>
-                                      )}/>
-                                      {hasRestriction && (
-                                        <FormField control={control} name={`team.${index}.dietaryRestriction`} render={({ field }) => (
-                                          <FormItem><FormLabel className="text-xs">Qual restrição/alergia?</FormLabel><FormControl><Input placeholder="ex: Glúten, lactose, amendoim..." {...field} /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                      )}
-                                     <FormField control={control} name={`team.${index}.extraNotes`} render={({ field }) => (
-                                        <FormItem><FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel><FormControl><Textarea placeholder="ex: Medicação específica, necessidade especial..." {...field} rows={2} /></FormControl><FormMessage /></FormItem>
-                                      )}/>
+                                      <p className="text-xs text-muted-foreground text-center pt-2">Para editar outras informações (nome, foto, etc.), acesse o <Link href="/talents" target="_blank" className="underline hover:text-primary">Banco de Talentos</Link>.</p>
                                   </div>
                               </CollapsibleContent>
                           </Collapsible>
@@ -350,7 +333,6 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
 
 const newTalentFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
-  role: z.string().min(2, { message: "A função deve ter pelo menos 2 caracteres." }),
 });
 type NewTalentFormValues = z.infer<typeof newTalentFormSchema>;
 
@@ -367,7 +349,7 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
     
     const form = useForm<NewTalentFormValues>({
         resolver: zodResolver(newTalentFormSchema),
-        defaultValues: { name: "", role: "" },
+        defaultValues: { name: "" },
     });
     
     const filteredTalentPool = useMemo(() => {
@@ -388,7 +370,7 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
     const handleCreateNewTalent = async (values: NewTalentFormValues) => {
         const talentToSave: Omit<Talent, 'id'> = {
             name: values.name,
-            role: values.role,
+            role: "Função Indefinida" // Default role, not saved in main talent doc
         };
         try {
             await firestoreApi.addTalent(talentToSave);
@@ -407,9 +389,6 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
                 <form onSubmit={form.handleSubmit(handleCreateNewTalent)} className="space-y-4">
                     <FormField control={form.control} name="name" render={({ field }) => (
                         <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                    <FormField control={form.control} name="role" render={({ field }) => (
-                        <FormItem><FormLabel>Função Padrão</FormLabel><FormControl><Input placeholder="Ex: Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => setView('select')}>Cancelar</Button>
@@ -448,10 +427,7 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
                                         <AvatarImage src={talent.photoURL || undefined} alt={talent.name} />
                                         <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
                                     </Avatar>
-                                    <div>
-                                        <p>{talent.name}</p>
-                                        <p className="text-xs text-muted-foreground">{talent.role}</p>
-                                    </div>
+                                    <p>{talent.name}</p>
                                 </label>
                             </div>
                         )

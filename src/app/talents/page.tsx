@@ -42,13 +42,14 @@ import {
 const talentSchema = z.object({
     id: z.string(),
     name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
-    role: z.string().min(2, { message: 'A função deve ter pelo menos 2 caracteres.' }),
     photoURL: z.string().optional(),
     contact: z.string().optional(),
     hasDietaryRestriction: z.boolean().optional(),
     dietaryRestriction: z.string().optional(),
     extraNotes: z.string().optional(),
     file: z.instanceof(File).optional(),
+    // 'role' is removed from the main talent entity
+    role: z.string().optional(),
 });
 
 const formSchema = z.object({
@@ -102,13 +103,13 @@ function ManageTalentsPage() {
             const combinedLegacy = [...legacyProdTeam, ...legacyFinTeam];
 
             const uniqueLegacy = combinedLegacy.filter((member, index, self) =>
-                member.name && member.role && index === self.findIndex((t) => (
-                    t.name === member.name && t.role === member.role
+                member.name && index === self.findIndex((t) => (
+                    t.name === member.name
                 ))
             );
             
-            const talentsInPool = new Set(talents.map(t => `${t.name}-${t.role}`));
-            const membersToMigrate = uniqueLegacy.filter(m => !talentsInPool.has(`${m.name}-${m.role}`));
+            const talentsInPool = new Set(talents.map(t => t.name.trim().toLowerCase()));
+            const membersToMigrate = uniqueLegacy.filter(m => !talentsInPool.has(m.name.trim().toLowerCase()));
 
             setLegacyTeamMembers(membersToMigrate);
 
@@ -303,7 +304,6 @@ function ManageTalentsPage() {
                                     <input id={`photo-upload-${originalIndex}`} type="file" className="hidden" accept="image/png, image/jpeg" onChange={(e) => handlePhotoUpload(originalIndex, e)} disabled={isUploading[originalIndex]} />
                                 </div>
                                 <FormField control={control} name={`talents.${originalIndex}.name`} render={({ field }) => (<FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={control} name={`talents.${originalIndex}.role`} render={({ field }) => (<FormItem><FormLabel>Função Padrão</FormLabel><FormControl><Input placeholder="Ex: Diretor de Fotografia" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                                 <FormField control={control} name={`talents.${originalIndex}.contact`} render={({ field }) => (<FormItem><FormLabel>Contato (Telefone/Email)</FormLabel><FormControl><Input placeholder="Informação de contato" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                                 <div className="space-y-3 pt-3 border-t">
                                     <FormField control={control} name={`talents.${originalIndex}.hasDietaryRestriction`} render={({ field }) => (<FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Possui restrição alimentar?</FormLabel></FormItem>)}/>
@@ -345,7 +345,7 @@ function ManageTalentsPage() {
                           <UserIcon className="h-4 w-4" />
                           <AlertTitle>Gerenciando seu Banco de Talentos</AlertTitle>
                           <AlertDescription>
-                            Adicione, remova e edite os contatos da sua equipe. Estes contatos estarão disponíveis para serem selecionados em todos os seus projetos, tanto no financeiro quanto na ordem do dia.
+                            Adicione, remova e edite os contatos da sua equipe. Estes contatos estarão disponíveis para serem selecionados em todos os seus projetos. A função de cada pessoa é definida dentro de cada projeto específico.
                           </AlertDescription>
                         </Alert>
                         
@@ -360,7 +360,7 @@ function ManageTalentsPage() {
                                 />
                             </div>
                             <div className="flex items-center gap-2">
-                               <Button type="button" variant="ghost" onClick={() => prepend({ id: crypto.randomUUID(), name: '', role: '', photoURL: '', contact: '' })}>
+                               <Button type="button" variant="ghost" onClick={() => prepend({ id: crypto.randomUUID(), name: '', contact: '' })}>
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     Adicionar Talento
                                 </Button>
@@ -400,7 +400,7 @@ function ManageTalentsPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o talento "{talentToDelete?.name}" do seu Banco de Talentos.
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o talento "{talentToDelete?.name}" do seu Banco de Talentos e o removerá de todos os projetos.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

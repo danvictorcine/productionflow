@@ -48,7 +48,7 @@ interface TalentsTableProps {
 export default function TalentsTable({ talents, transactions, onEdit, onDelete, onPayFixedFee, onUndoPayment, onManageDailyPayment }: TalentsTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
-  const talentToDelete = talents.find(t => t.talentId === deleteId);
+  const talentToDelete = talents.find(t => t.id === deleteId);
 
   const transactionsByTalentId = useMemo(() => {
     const map = new Map<string, Transaction[]>();
@@ -79,11 +79,11 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
             <TableBody>
               {talents.length > 0 ? (
                 talents.map((talent) => {
-                  const talentTransactions = transactionsByTalentId.get(talent.talentId) || [];
+                  const talentTransactions = transactionsByTalentId.get(talent.id) || [];
                   const isFixedFee = talent.paymentType === 'fixed' || !talent.paymentType;
                   
                   return (
-                    <TableRow key={talent.talentId}>
+                    <TableRow key={talent.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
@@ -150,7 +150,7 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
                                 <Edit className="mr-2 h-4 w-4" />
                                 Editar Projeto
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeleteId(talent.talentId)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                            <DropdownMenuItem onClick={() => setDeleteId(talent.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                               <Trash2 className="mr-2 h-4 w-4" />
                               Remover do Projeto
                             </DropdownMenuItem>
