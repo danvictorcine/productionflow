@@ -24,7 +24,8 @@ interface GanttChartProps {
 
 // Function to parse date strings in UTC to avoid timezone issues
 const parseDateInUTC = (dateString: string) => {
-    return parse(dateString, 'yyyy-MM-dd', new Date());
+    const date = new Date(dateString);
+    return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 };
 
 
@@ -265,7 +266,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                     groupedTasks[phase] && (
                       <div key={phase}>
                         <div className="flex items-center h-10 border-b bg-muted/50 p-2">
-                          <p className="font-bold text-primary">{phaseLabels[phase]}</p>
+                          <p className="font-bold text-foreground">{phaseLabels[phase]}</p>
                         </div>
                         {groupedTasks[phase].map(task => (
                           <div key={task.id} className="flex h-[50px] items-center border-b p-2 hover:bg-muted/30 cursor-pointer" onClick={() => openEditForm(task)}>
