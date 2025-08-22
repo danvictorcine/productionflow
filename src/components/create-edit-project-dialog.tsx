@@ -47,6 +47,7 @@ import { getInitials } from "@/lib/utils";
 import { Checkbox } from "./ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { CopyableError } from "./copyable-error";
 
 
 const teamMemberSchema = z.object({
@@ -157,7 +158,12 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
         talents.sort((a, b) => a.name.localeCompare(b.name));
         setTalentPool(talents);
     } catch (error) {
-        toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar o banco de talentos." });
+        const errorTyped = error as { code?: string; message: string };
+        toast({
+            variant: "destructive",
+            title: "Erro ao Carregar Talentos",
+            description: <CopyableError userMessage="Não foi possível carregar o banco de talentos." errorCode={errorTyped.code || errorTyped.message} />
+        });
     }
   };
 
@@ -271,22 +277,22 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                       <FormItem>
                         <FormLabel>Orçamento Total</FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="R$ 0,00"
-                            value={
-                              field.value
-                                ? new Intl.NumberFormat("pt-BR", {
-                                    style: "currency",
-                                    currency: "BRL",
-                                  }).format(field.value)
-                                : ""
-                            }
-                            onChange={(e) => {
-                              const numericValue = e.target.value.replace(/\D/g, "");
-                              field.onChange(Number(numericValue) / 100);
-                            }}
-                          />
+                           <Input
+                              type="text"
+                              placeholder="R$ 0,00"
+                              value={
+                                field.value
+                                  ? new Intl.NumberFormat("pt-BR", {
+                                      style: "currency",
+                                      currency: "BRL",
+                                    }).format(field.value)
+                                  : ""
+                              }
+                              onChange={(e) => {
+                                const numericValue = e.target.value.replace(/\D/g, "");
+                                field.onChange(Number(numericValue) / 100);
+                              }}
+                            />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -631,7 +637,12 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
             onTalentCreated();
             setView('select');
         } catch (error) {
-            toast({ variant: 'destructive', title: "Erro", description: "Não foi possível criar o novo talento." });
+             const errorTyped = error as { code?: string; message: string };
+            toast({
+                variant: 'destructive',
+                title: "Erro ao Criar Talento",
+                description: <CopyableError userMessage="Não foi possível criar o novo talento." errorCode={errorTyped.code || errorTyped.message} />
+            });
         }
     };
 

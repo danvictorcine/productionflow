@@ -39,6 +39,7 @@ import { ImportTransactionsDialog } from "./import-transactions-dialog";
 import { PayDailyRateDialog } from "./pay-daily-rate-dialog";
 import { ManageCategoriesDialog } from "./manage-categories-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog";
+import { CopyableError } from "./copyable-error";
 
 
 interface DashboardProps {
