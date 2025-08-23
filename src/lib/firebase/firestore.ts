@@ -1,4 +1,5 @@
 
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -1452,9 +1453,14 @@ export const getLoginPageContent = async (): Promise<LoginPageContent> => {
 
 export const saveLoginPageContent = async (content: LoginPageContent) => {
     const docRef = doc(db, 'pages', 'login');
-    // Ensure we handle a possibly undefined carouselImages array
     const dataToSave = {
-        features: (content.features || []).map((feature, index) => ({ ...feature, order: index })),
+        features: (content.features || []).map((feature, index) => ({
+            id: feature.id,
+            title: feature.title,
+            description: feature.description,
+            icon: feature.icon,
+            order: index,
+        })),
         carouselImages: (content.carouselImages || []).map(image => ({
             id: image.id,
             url: image.url,
@@ -2038,5 +2044,3 @@ export const deleteGanttTask = async (projectId: string, taskId: string) => {
   const taskRef = doc(db, `unified_projects/${projectId}/schedule`, taskId);
   await deleteDoc(taskRef);
 };
-
-    

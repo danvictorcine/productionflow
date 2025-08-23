@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -37,7 +38,7 @@ const featureSchema = z.object({
   id: z.string(),
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }),
   description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres." }),
-  icon: z.string().min(1, { message: "É necessário selecionar um ícone." }).or(z.literal('')),
+  icon: z.string().min(1, { message: "É necessário selecionar um ícone." }),
   order: z.number(),
 });
 
@@ -142,17 +143,6 @@ export default function EditLoginPage() {
     
     const onInvalid = (errors: FieldErrors<FormValues>) => {
       console.error("Validation Errors:", errors);
-      const errorMessages = Object.entries(errors).flatMap(([section, sectionErrors]) => 
-        Array.isArray(sectionErrors) 
-        ? sectionErrors.map((error, index) => {
-            if (!error) return null;
-            const fieldName = section === 'features' ? `Card de Feature ${index + 1}` : `Imagem do Carrossel ${index + 1}`;
-            const fieldErrors = Object.values(error).map(e => (e as any)?.message).filter(Boolean).join(', ');
-            return `${fieldName}: ${fieldErrors}`;
-          }).filter(Boolean)
-        : []
-      ).join('\n');
-
       toast({
         variant: "destructive",
         title: "Erro de Validação",
