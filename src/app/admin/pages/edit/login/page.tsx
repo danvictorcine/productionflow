@@ -214,6 +214,11 @@ export default function EditLoginPage() {
                             )})}
                         </div>
                         
+                        <Button type="button" variant="outline" onClick={() => appendCarousel({ id: crypto.randomUUID(), url: '' })}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar Imagem ao Carrossel
+                        </Button>
+                        
                         <Separator />
                         
                         <Alert>
@@ -287,17 +292,14 @@ export default function EditLoginPage() {
                             </div>
                         ))}
                         </div>
+                        
+                        <Button type="button" variant="outline" onClick={() => appendFeature({ id: crypto.randomUUID(), title: '', description: '', icon: '', order: featureFields.length })}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar Card de Feature
+                        </Button>
 
-                        <div className="flex items-center gap-4">
-                             <Button type="button" variant="outline" onClick={() => appendCarousel({ id: crypto.randomUUID(), url: '' })}>
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Adicionar Imagem ao Carrossel
-                            </Button>
-                            <Button type="button" variant="outline" onClick={() => appendFeature({ id: crypto.randomUUID(), title: '', description: '', icon: '', order: featureFields.length })}>
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Adicionar Card de Feature
-                            </Button>
-                        </div>
+                        <Separator className="my-8" />
+
                         <Button type="submit" disabled={isSaving || Object.values(isUploading).some(v => v)}>
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Salvar Alterações
