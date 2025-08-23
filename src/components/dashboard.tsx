@@ -1,4 +1,3 @@
-
 // @/src/components/dashboard.tsx
 "use client";
 
@@ -540,8 +539,8 @@ export default function Dashboard({
                   Equipe e Talentos
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                 <ScrollArea className="max-h-[500px] w-full">
+              <CardContent className="p-0">
+                 <ScrollArea>
                     <TalentsTable
                         talents={project.talents}
                         transactions={transactions}
