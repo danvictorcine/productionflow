@@ -29,7 +29,7 @@ import { Separator } from '@/components/ui/separator';
 
 const carouselImageSchema = z.object({
   id: z.string(),
-  url: z.string().url({ message: 'É necessário enviar uma imagem.' }),
+  url: z.string().url({ message: 'É necessário enviar uma imagem.' }).or(z.literal('')),
   file: z.instanceof(File).optional(),
 });
 
@@ -311,5 +311,3 @@ export default function EditLoginPage() {
         </div>
     )
 }
-
-    
