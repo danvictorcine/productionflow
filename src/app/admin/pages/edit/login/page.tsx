@@ -37,7 +37,7 @@ const featureSchema = z.object({
   id: z.string(),
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }),
   description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres." }),
-  icon: z.string().min(1, { message: "É necessário selecionar um ícone." }),
+  icon: z.string().min(1, { message: "É necessário selecionar um ícone." }).or(z.literal('')),
   order: z.number(),
 });
 
@@ -212,12 +212,11 @@ export default function EditLoginPage() {
                                     </Button>
                                 </div>
                             )})}
+                             <Button type="button" variant="outline" onClick={() => appendCarousel({ id: crypto.randomUUID(), url: '' })}>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Adicionar Imagem ao Carrossel
+                            </Button>
                         </div>
-                        
-                        <Button type="button" variant="outline" onClick={() => appendCarousel({ id: crypto.randomUUID(), url: '' })}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Adicionar Imagem ao Carrossel
-                        </Button>
                         
                         <Separator />
                         
@@ -293,7 +292,7 @@ export default function EditLoginPage() {
                         ))}
                         </div>
                         
-                        <Button type="button" variant="outline" onClick={() => appendFeature({ id: crypto.randomUUID(), title: '', description: '', icon: '', order: featureFields.length })}>
+                        <Button type="button" variant="outline" onClick={() => appendFeature({ id: crypto.randomUUID(), title: '', description: '', icon: 'LayoutDashboard', order: featureFields.length })}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Adicionar Card de Feature
                         </Button>
