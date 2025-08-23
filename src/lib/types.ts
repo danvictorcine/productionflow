@@ -121,8 +121,6 @@ export type LoginFeature = {
 export type LoginCarouselImage = {
   id: string;
   url: string;
-  title: string;
-  description: string;
   file?: File;
 };
 

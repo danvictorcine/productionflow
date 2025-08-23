@@ -235,19 +235,13 @@ export default function LoginPage() {
                             <CarouselContent>
                                 {loginPageContent?.carouselImages?.map(image => (
                                     <CarouselItem key={image.id}>
-                                        <div className="p-1">
-                                            <Card className={cn(showBackground && "bg-white/10 text-white border-white/20")}>
-                                                <CardContent className="flex flex-col items-center justify-center p-4 gap-4">
-                                                    <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                                                         <Image src={image.url} alt={image.title} layout="fill" objectFit="cover" />
-                                                    </div>
-                                                    <div className="text-center">
-                                                        <p className="text-lg font-semibold">{image.title}</p>
-                                                        <p className="text-sm text-muted-foreground mt-1">{image.description}</p>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        </div>
+                                        <Card className={cn("overflow-hidden", showBackground && "bg-white/10 text-white border-white/20")}>
+                                            <CardContent className="p-2">
+                                                <div className="relative aspect-video w-full overflow-hidden rounded-md">
+                                                     <Image src={image.url} alt="Imagem do Carrossel" layout="fill" objectFit="cover" />
+                                                </div>
+                                            </CardContent>
+                                        </Card>
                                     </CarouselItem>
                                 ))}
                             </CarouselContent>
