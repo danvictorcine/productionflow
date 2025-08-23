@@ -569,7 +569,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                             </DialogHeader>
                             <TalentSelector
                                 talentPool={talentPool}
-                                selectedTalents={project?.talents || []}
+                                teamInForm={talentFields}
                                 onSelect={handleSelectTalents}
                                 onTalentCreated={fetchTalents}
                             />
@@ -595,9 +595,9 @@ const newTalentFormSchema = z.object({
 });
 type NewTalentFormValues = z.infer<typeof newTalentFormSchema>;
 
-function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated }: { 
+function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: { 
     talentPool: Talent[], 
-    selectedTalents: TeamMember[],
+    teamInForm: TeamMember[],
     onSelect: (ids: string[]) => void,
     onTalentCreated: () => void 
 }) {
@@ -676,7 +676,7 @@ function TalentSelector({ talentPool, selectedTalents, onSelect, onTalentCreated
              <ScrollArea className="h-72">
                  <div className="p-4 space-y-2">
                      {filteredTalentPool.map(talent => {
-                        const isInProject = selectedTalents.some(t => t.id === talent.id);
+                        const isInProject = teamInForm.some(t => t.id === talent.id);
                         return (
                             <div key={talent.id} className="flex items-center space-x-3 rounded-md p-2">
                                 <Checkbox
