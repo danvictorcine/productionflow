@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
@@ -139,6 +139,30 @@ export default function EditLoginPage() {
             setIsSaving(false);
         }
     }
+    
+    const onInvalid = (errors: FieldErrors<FormValues>) => {
+      console.error("Validation Errors:", errors);
+      const errorMessages = Object.entries(errors).flatMap(([section, sectionErrors]) => 
+        Array.isArray(sectionErrors) 
+        ? sectionErrors.map((error, index) => {
+            if (!error) return null;
+            const fieldName = section === 'features' ? `Card de Feature ${index + 1}` : `Imagem do Carrossel ${index + 1}`;
+            const fieldErrors = Object.values(error).map(e => (e as any)?.message).filter(Boolean).join(', ');
+            return `${fieldName}: ${fieldErrors}`;
+          }).filter(Boolean)
+        : []
+      ).join('\n');
+
+      toast({
+        variant: "destructive",
+        title: "Erro de Validação",
+        description: <CopyableError 
+          userMessage="Por favor, corrija os erros antes de salvar." 
+          errorCode={JSON.stringify(errors, null, 2)}
+        />
+      })
+    };
+
 
     if (isLoading) {
         return (
@@ -166,7 +190,7 @@ export default function EditLoginPage() {
             </header>
             <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                  <Form {...form}>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8">
 
                         <Alert>
                           <ImageIcon className="h-4 w-4" />
