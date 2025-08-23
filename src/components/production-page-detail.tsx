@@ -1,4 +1,3 @@
-
 // @/src/components/production-page-detail.tsx
 'use client';
 
@@ -271,7 +270,7 @@ export default function ProductionPageDetail({ production, shootingDays, onDataR
             </Button>
         </div>
       </div>
-      <main className="flex-1 p-4 sm:p-6 md:p-8 w-full mx-auto space-y-6 overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-screen-2xl mx-auto space-y-6 overflow-y-auto">
         {dayToExportPdf && <PdfExportPortal day={dayToExportPdf} production={production} />}
 
         <ProductionInfoCard production={production} />
