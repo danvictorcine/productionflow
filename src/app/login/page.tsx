@@ -192,7 +192,7 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen">
         <div className="w-full lg:grid lg:grid-cols-2 flex-1">
-          <div className="flex flex-col items-center justify-center p-8 relative bg-muted">
+          <div className="flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative bg-muted">
             {showBackground && (
                 <>
                     <Image
@@ -213,7 +213,7 @@ export default function LoginPage() {
                         <h1 className={cn("text-4xl font-bold tracking-tighter", showBackground ? "text-white" : "text-foreground")} style={{color: showBackground ? 'white' : 'hsl(var(--brand-text))'}}>ProductionFlow</h1>
                         <Badge variant="outline" className={cn("px-2 py-0.5 text-[0.6rem] font-normal", showBackground && "bg-black/20 text-white border-white/50")}>BETA</Badge>
                     </div>
-                    <p className="text-lg text-muted-foreground">
+                    <p className={cn("text-lg", showBackground ? 'text-slate-200' : 'text-muted-foreground' )}>
                         Sua plataforma completa para a gestão de produções audiovisuais.
                     </p>
                 </div>
