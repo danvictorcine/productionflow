@@ -125,10 +125,7 @@ export type LoginCarouselImage = {
 };
 
 export type LoginPageContent = {
-  features: LoginFeature[];
   carouselImages?: LoginCarouselImage[];
-  backgroundImageUrl?: string;
-  isBackgroundEnabled?: boolean;
 };
 
 export type TeamMemberAbout = {

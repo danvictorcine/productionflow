@@ -170,7 +170,7 @@ export default function SignupPage() {
             <div className="flex items-center justify-center gap-3">
               <ProductionFlowIcon className="h-10 w-10" />
               <div className="flex items-center gap-2">
-                <h1 className="text-4xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-login))"}}>ProductionFlow</h1>
+                <h1 className="text-4xl font-bold tracking-tighter" style={{color: "hsl(var(--brand-text))"}}>ProductionFlow</h1>
                 <Badge variant="outline" className="px-2 py-0.5 text-[0.6rem] font-normal">BETA</Badge>
               </div>
             </div>

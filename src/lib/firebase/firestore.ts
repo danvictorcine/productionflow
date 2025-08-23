@@ -1439,14 +1439,7 @@ export const getLoginPageContent = async (): Promise<LoginPageContent> => {
     return docSnap.data() as LoginPageContent;
   }
 
-  // Return default hardcoded values if nothing exists in Firestore
   return {
-    features: [
-      { id: 'default-0', title: 'Orçamento Inteligente', description: 'Controle seu orçamento, despesas e saldo em tempo real, com gráficos claros e detalhados.', icon: 'DollarSign', order: 0 },
-      { id: 'default-1', title: 'Gestão de Equipe Completa', description: 'Cadastre sua equipe, gerencie informações de contato e controle pagamentos de cachês e diárias.', icon: 'Users', order: 1 },
-      { id: 'default-2', title: 'Ordem do Dia Detalhada', description: 'Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.', icon: 'Clapperboard', order: 2 },
-      { id: 'default-3', title: 'Relatórios Simplificados', description: 'Exporte relatórios financeiros e de produção para Excel e PDF com um clique.', icon: 'FileSpreadsheet', order: 3 },
-    ],
     carouselImages: [],
   };
 };
@@ -1454,13 +1447,6 @@ export const getLoginPageContent = async (): Promise<LoginPageContent> => {
 export const saveLoginPageContent = async (content: LoginPageContent) => {
     const docRef = doc(db, 'pages', 'login');
     const dataToSave = {
-        features: (content.features || []).map((feature, index) => ({
-            id: feature.id, // Ensure ID is saved
-            title: feature.title,
-            description: feature.description,
-            icon: feature.icon,
-            order: index,
-        })),
         carouselImages: (content.carouselImages || []).map(image => ({
             id: image.id,
             url: image.url,

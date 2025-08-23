@@ -8,7 +8,7 @@ import { useForm, useFieldArray, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, PlusCircle, Trash2, Upload, Image as ImageIcon, ArrowUp, ArrowDown, Users } from 'lucide-react';
+import { ArrowLeft, Loader2, PlusCircle, Trash2, Upload, Image as ImageIcon, ArrowUp, ArrowDown } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 import { AppFooter } from '@/components/app-footer';
@@ -16,16 +16,13 @@ import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import * as firestoreApi from '@/lib/firebase/firestore';
-import type { LoginCarouselImage, LoginPageContent, LoginFeature } from '@/lib/types';
+import type { LoginCarouselImage, LoginPageContent } from '@/lib/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CopyableError } from '@/components/copyable-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
-import { featureIcons, type FeatureIconName } from '@/lib/icons';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 
 const carouselImageSchema = z.object({
@@ -35,13 +32,6 @@ const carouselImageSchema = z.object({
 });
 
 const formSchema = z.object({
-  features: z.array(z.object({
-    id: z.string(),
-    title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }),
-    description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres." }),
-    icon: z.string().min(1, { message: "É necessário selecionar um ícone." }),
-    order: z.number(),
-  })),
   carouselImages: z.array(carouselImageSchema),
 });
 
@@ -58,13 +48,11 @@ export default function EditLoginPage() {
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: { 
-            features: [],
             carouselImages: [],
         },
     });
 
     const { control, handleSubmit, setValue, watch, trigger } = form;
-    const { fields: featureFields, append: appendFeature, remove: removeFeature, move: moveFeature } = useFieldArray({ control, name: "features" });
     const { fields: carouselFields, append: appendCarousel, remove: removeCarousel, move: moveCarousel } = useFieldArray({ control, name: "carouselImages" });
 
     const watchedImages = watch('carouselImages');
@@ -73,7 +61,6 @@ export default function EditLoginPage() {
         firestoreApi.getLoginPageContent()
             .then(content => {
                 form.reset({ 
-                    features: content.features || [],
                     carouselImages: content.carouselImages || [],
                 });
             })
@@ -121,7 +108,6 @@ export default function EditLoginPage() {
         setIsSaving(true);
         try {
             const contentToSave: LoginPageContent = {
-                features: values.features.map(f => ({ ...f, icon: f.icon as FeatureIconName })),
                 carouselImages: values.carouselImages.map(({ file, ...rest }) => rest),
             };
             await firestoreApi.saveLoginPageContent(contentToSave);
@@ -230,85 +216,6 @@ export default function EditLoginPage() {
                             </Button>
                         </div>
                         
-                        <Separator />
-                        
-                        <Alert>
-                          <Users className="h-4 w-4" />
-                          <AlertTitle>Gerenciando Cards de Features</AlertTitle>
-                          <AlertDescription>
-                            Adicione, remova, edite e reordene os cards de features que aparecem na página de cadastro.
-                          </AlertDescription>
-                        </Alert>
-                         <div className="space-y-4">
-                            {featureFields.map((field, index) => (
-                            <div key={field.id} className="flex items-start gap-3 p-4 border rounded-lg bg-card">
-                                <div className="flex flex-col gap-2 pt-1">
-                                    <Button type="button" variant="ghost" size="icon" className="h-7 w-7 cursor-pointer" disabled={index === 0} onClick={() => moveFeature(index, index - 1)} aria-label="Mover para cima"><ArrowUp className="h-4 w-4" /></Button>
-                                    <Button type="button" variant="ghost" size="icon" className="h-7 w-7 cursor-pointer" disabled={index === featureFields.length - 1} onClick={() => moveFeature(index, index + 1)} aria-label="Mover para baixo"><ArrowDown className="h-4 w-4" /></Button>
-                                </div>
-                                <div className="flex-1 space-y-4">
-                                     <FormField
-                                        control={control}
-                                        name={`features.${index}.title`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Título</FormLabel>
-                                                <FormControl><Input {...field} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={control}
-                                        name={`features.${index}.description`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Descrição</FormLabel>
-                                                <FormControl><Textarea {...field} rows={2} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={control}
-                                        name={`features.${index}.icon`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Ícone</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Selecione um ícone" />
-                                                </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                {Object.keys(featureIcons).map(iconName => (
-                                                    <SelectItem key={iconName} value={iconName}>
-                                                    <div className="flex items-center gap-2">
-                                                        {React.cloneElement(featureIcons[iconName as FeatureIconName], { className: "h-4 w-4" })}
-                                                        {iconName}
-                                                    </div>
-                                                    </SelectItem>
-                                                ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                                 <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => removeFeature(index)}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
-                        </div>
-                        
-                        <Button type="button" variant="outline" onClick={() => appendFeature({ id: crypto.randomUUID(), title: '', description: '', icon: 'LayoutDashboard', order: featureFields.length })}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Adicionar Card de Feature
-                        </Button>
-
                         <Separator className="my-8" />
 
                         <Button type="submit" disabled={isSaving || Object.values(isUploading).some(v => v)}>
