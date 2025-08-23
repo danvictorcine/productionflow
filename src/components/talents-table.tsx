@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button";
 import { Badge } from './ui/badge';
-import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface TalentsTableProps {
@@ -65,112 +64,109 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
 
   return (
     <>
-      <ScrollArea className="w-full whitespace-nowrap">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead className="hidden md:table-cell">Função</TableHead>
-                <TableHead className="text-right hidden md:table-cell">Cachê</TableHead>
-                <TableHead className="text-center w-[150px]">Status</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {talents.length > 0 ? (
-                talents.map((talent) => {
-                  const talentTransactions = transactionsByTalentId.get(talent.id) || [];
-                  const isFixedFee = talent.paymentType === 'fixed' || !talent.paymentType;
-                  
-                  return (
-                    <TableRow key={talent.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage src={talent.photoURL || undefined} alt={talent.name} />
-                            <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p>{talent.name}</p>
-                            <p className="text-xs text-muted-foreground md:hidden">{talent.role}</p>
-                            <p className="text-xs text-muted-foreground md:hidden mt-1">
-                                {isFixedFee
-                                  ? formatCurrency(talent.fee || 0)
-                                  : `${formatCurrency(talent.dailyRate || 0)}/diária`
-                                }
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">{talent.role}</TableCell>
-                      <TableCell className="text-right hidden md:table-cell">
-                        {isFixedFee
-                          ? formatCurrency(talent.fee || 0)
-                          : `${formatCurrency(talent.dailyRate || 0)} x ${talent.days} diárias = ${formatCurrency((talent.dailyRate || 0) * (talent.days || 0))}`
-                        }
-                      </TableCell>
-                      <TableCell className="text-center">
-                          {isFixedFee ? (
-                              talentTransactions.length > 0 && talentTransactions[0].status === 'paid' ? (
-                                  <div className="group relative w-[120px] h-9 mx-auto">
-                                    <Button size="sm" className="absolute inset-0 w-full h-full bg-green-600 hover:bg-green-700 text-white transition-opacity group-hover:opacity-0 pointer-events-none rounded-md" aria-hidden="true" tabIndex={-1}>
-                                      <Check className="mr-1 h-4 w-4" /> Pago
-                                    </Button>
-                                    <Button size="sm" variant="ghost" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md" onClick={() => onUndoPayment(talentTransactions[0].id)} aria-label={`Desfazer pagamento de ${talent.name}`}>
-                                      <Undo2 className="mr-2 h-4 w-4" /> Desfazer
-                                    </Button>
-                                  </div>
-                              ) : (
-                                  <Button size="sm" variant="outline" onClick={() => onPayFixedFee(talent, talentTransactions[0])} aria-label={`Pagar ${talent.name}`} className="w-[120px]">
-                                      <Banknote className="mr-2 h-4 w-4" /> Pagar
-                                  </Button>
-                              )
-                          ) : (
-                             <div className="flex flex-col items-center gap-1">
-                                <Button size="sm" variant="outline" onClick={() => onManageDailyPayment(talent)} aria-label={`Gerenciar Diárias de ${talent.name}`} className="w-[120px]">
-                                    <CalendarDays className="mr-2 h-4 w-4" /> Gerenciar
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead className="hidden md:table-cell">Função</TableHead>
+            <TableHead className="text-right hidden md:table-cell">Cachê</TableHead>
+            <TableHead className="text-center w-[150px]">Status</TableHead>
+            <TableHead className="w-[50px]"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {talents.length > 0 ? (
+            talents.map((talent) => {
+              const talentTransactions = transactionsByTalentId.get(talent.id) || [];
+              const isFixedFee = talent.paymentType === 'fixed' || !talent.paymentType;
+              
+              return (
+                <TableRow key={talent.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={talent.photoURL || undefined} alt={talent.name} />
+                        <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p>{talent.name}</p>
+                        <p className="text-xs text-muted-foreground md:hidden">{talent.role}</p>
+                        <p className="text-xs text-muted-foreground md:hidden mt-1">
+                            {isFixedFee
+                              ? formatCurrency(talent.fee || 0)
+                              : `${formatCurrency(talent.dailyRate || 0)}/diária`
+                            }
+                        </p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">{talent.role}</TableCell>
+                  <TableCell className="text-right hidden md:table-cell">
+                    {isFixedFee
+                      ? formatCurrency(talent.fee || 0)
+                      : `${formatCurrency(talent.dailyRate || 0)} x ${talent.days} diárias = ${formatCurrency((talent.dailyRate || 0) * (talent.days || 0))}`
+                    }
+                  </TableCell>
+                  <TableCell className="text-center">
+                      {isFixedFee ? (
+                          talentTransactions.length > 0 && talentTransactions[0].status === 'paid' ? (
+                              <div className="group relative w-[120px] h-9 mx-auto">
+                                <Button size="sm" className="absolute inset-0 w-full h-full bg-green-600 hover:bg-green-700 text-white transition-opacity group-hover:opacity-0 pointer-events-none rounded-md" aria-hidden="true" tabIndex={-1}>
+                                  <Check className="mr-1 h-4 w-4" /> Pago
                                 </Button>
-                                {talentTransactions.length > 0 && (
-                                  <Badge variant="secondary" className="font-normal">
-                                    {talentTransactions.length} / {talent.days} pagas
-                                  </Badge>
-                                )}
+                                <Button size="sm" variant="ghost" className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md" onClick={() => onUndoPayment(talentTransactions[0].id)} aria-label={`Desfazer pagamento de ${talent.name}`}>
+                                  <Undo2 className="mr-2 h-4 w-4" /> Desfazer
+                                </Button>
                               </div>
-                          )}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Opções para ${talent.name}`}>
-                              <MoreHorizontal className="h-4 w-4" />
+                          ) : (
+                              <Button size="sm" variant="outline" onClick={() => onPayFixedFee(talent, talentTransactions[0])} aria-label={`Pagar ${talent.name}`} className="w-[120px]">
+                                  <Banknote className="mr-2 h-4 w-4" /> Pagar
+                              </Button>
+                          )
+                      ) : (
+                         <div className="flex flex-col items-center gap-1">
+                            <Button size="sm" variant="outline" onClick={() => onManageDailyPayment(talent)} aria-label={`Gerenciar Diárias de ${talent.name}`} className="w-[120px]">
+                                <CalendarDays className="mr-2 h-4 w-4" /> Gerenciar
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEdit()}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Editar Projeto
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeleteId(talent.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Remover do Projeto
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">
-                    Nenhum talento cadastrado.
+                            {talentTransactions.length > 0 && (
+                              <Badge variant="secondary" className="font-normal">
+                                {talentTransactions.length} / {talent.days} pagas
+                              </Badge>
+                            )}
+                          </div>
+                      )}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Opções para ${talent.name}`}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onEdit()}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar Projeto
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setDeleteId(talent.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remover do Projeto
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+              )
+            })
+          ) : (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center h-24">
+                Nenhum talento cadastrado.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
