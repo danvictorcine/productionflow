@@ -201,7 +201,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                                          newItems[index].text = e.target.value;
                                          handleChecklistUpdate(newItems);
                                      }}
-                                     className="flex-1 h-8 border-none bg-transparent focus-visible:ring-0"
+                                     className="flex-1 h-8 border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                                      placeholder="Novo item..."
                                    />
                                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 data-[empty=true]:opacity-0" data-empty={!checklistItem.text} onClick={() => {
