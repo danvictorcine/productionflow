@@ -1,3 +1,4 @@
+
 // @/src/components/talents-table.tsx
 "use client";
 
@@ -82,13 +83,13 @@ export default function TalentsTable({ talents, transactions, onEdit, onDelete, 
               
               return (
                 <TableRow key={talent.id}>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-medium whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={talent.photoURL || undefined} alt={talent.name} />
                         <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
                       </Avatar>
-                      <div className="whitespace-nowrap">
+                      <div>
                         <p>{talent.name}</p>
                         <p className="text-xs text-muted-foreground md:hidden">{talent.role}</p>
                         <p className="text-xs text-muted-foreground md:hidden mt-1">

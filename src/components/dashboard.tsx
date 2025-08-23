@@ -540,7 +540,7 @@ export default function Dashboard({
                   Equipe e Talentos
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent>
                  <ScrollArea className="max-h-[500px] w-full">
                     <TalentsTable
                         talents={project.talents}
