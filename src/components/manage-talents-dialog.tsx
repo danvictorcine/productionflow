@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { ScrollArea } from './ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 
 const talentSchema = z.object({
@@ -333,7 +334,7 @@ export function ManageTalentsDialog({ isOpen, setIsOpen }: ManageTalentsDialogPr
     
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="sm:max-w-screen-2xl flex flex-col h-full">
+            <DialogContent className={cn("flex flex-col h-full sm:max-w-6xl")}>
                 <DialogHeader>
                     <DialogTitle>Banco de Talentos</DialogTitle>
                     <DialogDescription>
