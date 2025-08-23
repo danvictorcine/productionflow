@@ -58,6 +58,7 @@ import { AppFooter } from '@/components/app-footer';
 import { Alert } from '@/components/ui/alert';
 import { useRouter } from 'next/navigation';
 import { ProductionFlowIcon } from '@/components/production-flow-icon';
+import { ManageTalentsDialog } from '@/components/manage-talents-dialog';
 
 
 function HomePage() {
@@ -71,6 +72,7 @@ function HomePage() {
 
   // Dialog states
   const [isUnifiedProjectDialogOpen, setIsUnifiedProjectDialogOpen] = useState(false);
+  const [isTalentsDialogOpen, setIsTalentsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<UnifiedProject | null>(null);
 
   // Deleting state
@@ -355,7 +357,7 @@ function HomePage() {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button onClick={() => router.push('/talents')} size="sm" variant="ghost">
+          <Button onClick={() => setIsTalentsDialogOpen(true)} size="sm" variant="ghost">
             <Users className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Banco de Talentos</span>
           </Button>
@@ -399,6 +401,11 @@ function HomePage() {
         onSubmit={handleProjectSubmit}
         project={editingProject || undefined}
       />
+      
+      <ManageTalentsDialog
+        isOpen={isTalentsDialogOpen}
+        setIsOpen={setIsTalentsDialogOpen}
+       />
 
       <AlertDialog
         open={!!itemToDelete}

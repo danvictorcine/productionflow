@@ -1,4 +1,4 @@
-
+// @/components/manage-talents-dialog.tsx
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -37,6 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 
 
 const talentSchema = z.object({
@@ -56,8 +57,12 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-function ManageTalentsPage() {
-    const router = useRouter();
+interface ManageTalentsDialogProps {
+    isOpen: boolean;
+    setIsOpen: (open: boolean) => void;
+}
+
+export function ManageTalentsDialog({ isOpen, setIsOpen }: ManageTalentsDialogProps) {
     const { toast } = useToast();
     
     const [isLoading, setIsLoading] = useState(true);
@@ -125,8 +130,10 @@ function ManageTalentsPage() {
 
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (isOpen) {
+            fetchData();
+        }
+    }, [isOpen, fetchData]);
 
     const handlePhotoUpload = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files?.[0]) return;
@@ -260,17 +267,6 @@ function ManageTalentsPage() {
     }, [searchTerm, fields]);
 
 
-    if (isLoading) {
-        return (
-             <div className="p-8 space-y-4">
-                <Skeleton className="h-10 w-1/4" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-64 w-full" />
-                <Skeleton className="h-10 w-24" />
-            </div>
-        );
-    }
-    
     const renderTalentCard = (field: any, originalIndex: number) => {
         const talentData = watchedTalents[originalIndex];
         if (!talentData) return null;
@@ -340,75 +336,71 @@ function ManageTalentsPage() {
     }
     
     return (
-        <div className="flex flex-col min-h-screen">
-            <header className="sticky top-0 z-10 flex h-[60px] items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6">
-                <Link href="/" className="flex items-center gap-2" aria-label="Voltar">
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                </Link>
-                <h1 className="text-xl font-bold">Banco de Talentos</h1>
-                <div className="ml-auto flex items-center gap-4">
-                    <UserNav />
-                </div>
-            </header>
-            <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                 <Form {...form}>
-                    <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
-                        <Alert>
-                          <UserIcon className="h-4 w-4" />
-                          <AlertTitle>Gerenciando seu Banco de Talentos</AlertTitle>
-                          <AlertDescription>
-                            Adicione, remova e edite os contatos da sua equipe. Estes contatos estarão disponíveis para serem selecionados em todos os seus projetos. A função de cada pessoa é definida dentro de cada projeto específico.
-                          </AlertDescription>
-                        </Alert>
-                        
-                         <div className="flex items-center justify-between gap-4">
-                            <div className="relative flex-grow">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Pesquisar talento por nome..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10"
-                                />
-                            </div>
-                            <div className="flex items-center gap-2">
-                               <Button type="button" variant="ghost" onClick={() => prepend({ id: crypto.randomUUID(), name: '', contact: '' })}>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Adicionar Talento
-                                </Button>
-                            </div>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="sm:max-w-6xl flex flex-col h-full">
+                <DialogHeader>
+                    <DialogTitle>Banco de Talentos</DialogTitle>
+                    <DialogDescription>
+                        Adicione, remova e edite os contatos da sua equipe. Estes contatos estarão disponíveis para serem selecionados em todos os seus projetos.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto -mr-6 pr-6 py-4">
+                    {isLoading ? (
+                        <div className="p-8 space-y-4">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-64 w-full" />
                         </div>
-                        
-                         {legacyTeamMembers.length > 0 && (
-                            <Alert variant="default" className="border-amber-500/50 text-amber-900 dark:text-amber-300 [&>svg]:text-amber-500">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Migração de Equipes</AlertTitle>
-                                <AlertDescription className="text-amber-700 dark:text-amber-400">
-                                    Encontramos {legacyTeamMembers.length} membro(s) de equipe em seus projetos antigos que ainda não estão no Banco de Talentos. Clique para importá-los.
-                                </AlertDescription>
-                                <Button type="button" onClick={handleMigration} disabled={isMigrating} className="mt-3 bg-amber-500 hover:bg-amber-600 text-white">
-                                    {isMigrating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                    Migrar Equipes Antigas
-                                </Button>
-                            </Alert>
-                        )}
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                           <div className="flex flex-col gap-4">
-                                {filteredFields
-                                    .filter((_, index) => index % 2 === 0)
-                                    .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
-                            </div>
-                             <div className="flex flex-col gap-4">
-                                {filteredFields
-                                    .filter((_, index) => index % 2 !== 0)
-                                    .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
-                            </div>
-                        </div>
-                    </form>
-                </Form>
+                    ) : (
+                        <Form {...form}>
+                            <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="relative flex-grow">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Pesquisar talento por nome..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="pl-10"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                    <Button type="button" variant="ghost" onClick={() => prepend({ id: crypto.randomUUID(), name: '', contact: '' })}>
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Adicionar Talento
+                                        </Button>
+                                    </div>
+                                </div>
+                                
+                                {legacyTeamMembers.length > 0 && (
+                                    <Alert variant="default" className="border-amber-500/50 text-amber-900 dark:text-amber-300 [&>svg]:text-amber-500">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        <AlertTitle>Migração de Equipes</AlertTitle>
+                                        <AlertDescription className="text-amber-700 dark:text-amber-400">
+                                            Encontramos {legacyTeamMembers.length} membro(s) de equipe em seus projetos antigos que ainda não estão no Banco de Talentos. Clique para importá-los.
+                                        </AlertDescription>
+                                        <Button type="button" onClick={handleMigration} disabled={isMigrating} className="mt-3 bg-amber-500 hover:bg-amber-600 text-white">
+                                            {isMigrating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                            Migrar Equipes Antigas
+                                        </Button>
+                                    </Alert>
+                                )}
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                <div className="flex flex-col gap-4">
+                                        {filteredFields
+                                            .filter((_, index) => index % 2 === 0)
+                                            .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
+                                    </div>
+                                    <div className="flex flex-col gap-4">
+                                        {filteredFields
+                                            .filter((_, index) => index % 2 !== 0)
+                                            .map(({ field, originalIndex }) => renderTalentCard(field, originalIndex))}
+                                    </div>
+                                </div>
+                            </form>
+                        </Form>
+                    )}
+                 </div>
                  <AlertDialog open={!!talentToDelete} onOpenChange={(open) => !open && setTalentToDelete(null)}>
                     <AlertDialogContent>
                     <AlertDialogHeader>
@@ -428,16 +420,7 @@ function ManageTalentsPage() {
                     </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-            </main>
-            <AppFooter />
-        </div>
+            </DialogContent>
+        </Dialog>
     )
-}
-
-export default function Talents() {
-  return (
-    <AuthGuard>
-      <ManageTalentsPage />
-    </AuthGuard>
-  );
 }

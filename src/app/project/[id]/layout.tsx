@@ -29,6 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ManageTalentsDialog } from '@/components/manage-talents-dialog';
 
 
 function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
@@ -42,6 +43,7 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
     const [project, setProject] = useState<UnifiedProject | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isTalentsDialogOpen, setIsTalentsDialogOpen] = useState(false);
     
     const isCreativePage = pathname.includes('/creative');
     const isStoryboardPage = pathname.includes('/storyboard');
@@ -115,7 +117,7 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                     <h1 className="text-lg md:text-xl font-bold text-primary truncate">{project.name}</h1>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
-                     <Button onClick={() => router.push('/talents')} variant="ghost" size="sm">
+                     <Button onClick={() => setIsTalentsDialogOpen(true)} variant="ghost" size="sm">
                         <Users className="h-4 w-4 md:mr-2" />
                         <span className="hidden md:inline">Banco de Talentos</span>
                     </Button>
@@ -160,6 +162,11 @@ function ProjectLayoutDetail({ children }: { children: React.ReactNode }) {
                 setIsOpen={setIsEditDialogOpen}
                 onSubmit={handleProjectUpdate}
                 project={project}
+            />
+
+            <ManageTalentsDialog
+                isOpen={isTalentsDialogOpen}
+                setIsOpen={setIsTalentsDialogOpen}
             />
 
         </div>
