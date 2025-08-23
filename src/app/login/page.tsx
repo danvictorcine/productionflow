@@ -223,7 +223,7 @@ export default function LoginPage() {
                                 {loginPageContent?.carouselImages?.map(image => (
                                     <CarouselItem key={image.id}>
                                         <Card className={cn("overflow-hidden")}>
-                                            <CardContent className="p-2">
+                                            <CardContent className="p-0">
                                                 <div className="relative aspect-video w-full overflow-hidden rounded-md">
                                                      <Image src={image.url} alt="Imagem do Carrossel" layout="fill" objectFit="cover" />
                                                 </div>
