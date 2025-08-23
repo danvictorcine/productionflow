@@ -500,7 +500,7 @@ export const ShootingDayCard = ({ day, production, onEdit, onDelete, onShare, on
                 </AccordionTrigger>
                 <AccordionContent>
                     <CardContent className="flex-grow flex flex-col justify-between space-y-6 pt-0">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                             <div className="relative h-[235px] transition-all duration-500 ease-in-out group hover:scale-105">
                                 <WeatherCardAnimated 
                                     day={day} 
@@ -514,10 +514,11 @@ export const ShootingDayCard = ({ day, production, onEdit, onDelete, onShare, on
                                     <div className="h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 text-center">
                                     <p className="text-sm font-semibold">Sem mapa</p>
                                     <p className="text-xs text-muted-foreground mt-1">Defina um local para exibir o mapa.</p>
+                                    {!isPublicView && <Button size="sm" variant="outline" className="mt-2" onClick={onEdit}>Editar</Button>}
                                     </div>
                                 )}
                             </div>
-                            <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
+                            <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105 md:col-span-2 xl:col-span-1">
                                 <Card className="h-full flex flex-col justify-center items-center p-4 bg-card rounded-2xl shadow-lg">
                                     <CardHeader className="p-0 text-center">
                                         <CardTitle className="text-lg flex items-center justify-center gap-2">
