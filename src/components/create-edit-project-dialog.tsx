@@ -243,6 +243,11 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
       });
       setIsTalentSelectorOpen(false);
   }
+  
+  const combinedTalents = useMemo(() => [
+      ...(project?.talents || []),
+      ...talentFields
+  ], [project?.talents, talentFields]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -569,7 +574,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                             </DialogHeader>
                             <TalentSelector
                                 talentPool={talentPool}
-                                teamInForm={talentFields}
+                                teamInForm={combinedTalents}
                                 onSelect={handleSelectTalents}
                                 onTalentCreated={fetchTalents}
                             />
@@ -597,7 +602,7 @@ type NewTalentFormValues = z.infer<typeof newTalentFormSchema>;
 
 function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: { 
     talentPool: Talent[], 
-    teamInForm: TeamMember[],
+    teamInForm: (TeamMember | { id: string })[],
     onSelect: (ids: string[]) => void,
     onTalentCreated: () => void 
 }) {
@@ -645,6 +650,8 @@ function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: {
             });
         }
     };
+    
+    const teamInFormIds = useMemo(() => new Set(teamInForm.map(t => t.id)), [teamInForm]);
 
     if (view === 'create') {
         return (
@@ -676,7 +683,7 @@ function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: {
              <ScrollArea className="h-72">
                  <div className="p-4 space-y-2">
                      {filteredTalentPool.map(talent => {
-                        const isInProject = teamInForm.some(t => t.id === talent.id);
+                        const isInProject = teamInFormIds.has(talent.id);
                         return (
                             <div key={talent.id} className="flex items-center space-x-3 rounded-md p-2">
                                 <Checkbox
