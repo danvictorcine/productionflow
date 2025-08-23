@@ -1455,7 +1455,7 @@ export const saveLoginPageContent = async (content: LoginPageContent) => {
     const docRef = doc(db, 'pages', 'login');
     const dataToSave = {
         features: (content.features || []).map((feature, index) => ({
-            id: feature.id,
+            id: feature.id, // Ensure ID is saved
             title: feature.title,
             description: feature.description,
             icon: feature.icon,

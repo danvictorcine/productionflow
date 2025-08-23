@@ -34,15 +34,6 @@ const carouselImageSchema = z.object({
   file: z.instanceof(File).optional(),
 });
 
-const featureSchema = z.object({
-  title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }),
-  description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres." }),
-  icon: z.string().min(1, { message: "É necessário selecionar um ícone." }),
-  order: z.number(),
-  id: z.string(), // Keep ID for React keys, but it's not part of user input validation
-});
-
-
 const formSchema = z.object({
   features: z.array(z.object({
     id: z.string(),
