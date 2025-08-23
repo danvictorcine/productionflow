@@ -1,3 +1,4 @@
+
 // @/src/components/dashboard.tsx
 "use client";
 
@@ -539,16 +540,19 @@ export default function Dashboard({
                   Equipe e Talentos
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <TalentsTable
-                    talents={project.talents}
-                    transactions={transactions}
-                    onEdit={() => setEditDialogOpen(true)}
-                    onDelete={handleDeleteTalent}
-                    onPayFixedFee={handlePayFixedFeeTalent}
-                    onUndoPayment={handleUndoPayment}
-                    onManageDailyPayment={handleManageDailyPayment}
-                />
+              <CardContent className="p-0">
+                 <ScrollArea className="max-h-[500px] w-full">
+                    <TalentsTable
+                        talents={project.talents}
+                        transactions={transactions}
+                        onEdit={() => setEditDialogOpen(true)}
+                        onDelete={handleDeleteTalent}
+                        onPayFixedFee={handlePayFixedFeeTalent}
+                        onUndoPayment={handleUndoPayment}
+                        onManageDailyPayment={handleManageDailyPayment}
+                    />
+                    <ScrollBar orientation="horizontal" />
+                </ScrollArea>
               </CardContent>
             </Card>
             
