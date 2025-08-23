@@ -334,14 +334,14 @@ export function ManageTalentsDialog({ isOpen, setIsOpen }: ManageTalentsDialogPr
     
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className={cn("flex flex-col h-full sm:max-w-6xl")}>
+            <DialogContent className={cn("flex flex-col sm:max-w-6xl h-full")}>
                 <DialogHeader>
                     <DialogTitle>Banco de Talentos</DialogTitle>
                     <DialogDescription>
                         Adicione, remova e edite os contatos da sua equipe. Estes contatos estarão disponíveis para serem selecionados em todos os seus projetos.
                     </DialogDescription>
                 </DialogHeader>
-                 <ScrollArea className="flex-1 -mr-6 pr-6">
+                 <div className="flex-1 overflow-y-auto -mr-6 pr-6">
                     <div className="py-4">
                         {isLoading ? (
                             <div className="p-8 space-y-4">
@@ -399,7 +399,7 @@ export function ManageTalentsDialog({ isOpen, setIsOpen }: ManageTalentsDialogPr
                             </Form>
                         )}
                     </div>
-                </ScrollArea>
+                </div>
                  <AlertDialog open={!!talentToDelete} onOpenChange={(open) => !open && setTalentToDelete(null)}>
                     <AlertDialogContent>
                     <AlertDialogHeader>
