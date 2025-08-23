@@ -372,7 +372,6 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
     const handleCreateNewTalent = async (values: NewTalentFormValues) => {
         const talentToSave: Omit<Talent, 'id'> = {
             name: values.name,
-            // role is project-specific, so it's not saved here
         };
         try {
             await firestoreApi.addTalent(talentToSave);
@@ -417,14 +416,20 @@ function TalentSelector({ talentPool, selectedTeam, onSelect, onTalentCreated }:
                      {filteredTalentPool.map(talent => {
                         const isInProject = selectedTeam.some(t => t.id === talent.id);
                         return (
-                            <div key={talent.id} className={cn("flex items-center space-x-3 rounded-md p-2", isInProject && "opacity-50 cursor-not-allowed")}>
+                            <div key={talent.id} className="flex items-center space-x-3 rounded-md p-2">
                                 <Checkbox
                                     id={`talent-prod-${talent.id}`}
                                     checked={selectedIds.includes(talent.id)}
                                     onCheckedChange={(checked) => handleCheckboxChange(talent.id, !!checked)}
                                     disabled={isInProject}
                                 />
-                                <label htmlFor={`talent-prod-${talent.id}`} className={cn("flex items-center gap-3 text-sm font-medium leading-none w-full", isInProject ? "cursor-not-allowed" : "cursor-pointer")}>
+                                <label 
+                                  htmlFor={`talent-prod-${talent.id}`} 
+                                  className={cn(
+                                    "flex items-center gap-3 text-sm font-medium leading-none w-full", 
+                                    isInProject ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                                  )}
+                                >
                                      <Avatar className="h-9 w-9">
                                         <AvatarImage src={talent.photoURL || undefined} alt={talent.name} />
                                         <AvatarFallback>{getInitials(talent.name)}</AvatarFallback>
