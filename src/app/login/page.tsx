@@ -75,7 +75,7 @@ export default function LoginPage() {
   const [loginPageContent, setLoginPageContent] = useState<LoginPageContent | null>(null);
 
   const plugin = React.useRef(
-    Autoplay({ delay: 5000, stopOnInteraction: true })
+    Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true })
   )
 
   useEffect(() => {
@@ -216,8 +216,6 @@ export default function LoginPage() {
                         <Carousel 
                              plugins={[plugin.current]}
                              className="w-full"
-                             onMouseEnter={plugin.current.stop}
-                             onMouseLeave={plugin.current.reset}
                         >
                             <CarouselContent>
                                 {loginPageContent?.carouselImages?.map(image => (
