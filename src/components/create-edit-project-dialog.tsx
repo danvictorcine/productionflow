@@ -1,4 +1,3 @@
-
 // @/src/components/create-edit-project-dialog.tsx
 "use client";
 
@@ -570,7 +569,7 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
                             </DialogHeader>
                             <TalentSelector
                                 talentPool={talentPool}
-                                selectedTalents={talentFields as TeamMember[]}
+                                selectedTalents={project?.talents || []}
                                 onSelect={handleSelectTalents}
                                 onTalentCreated={fetchTalents}
                             />

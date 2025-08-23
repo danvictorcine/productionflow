@@ -1,4 +1,3 @@
-
 // @/src/components/create-edit-production-dialog.tsx
 "use client";
 
@@ -312,7 +311,7 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
                           </DialogHeader>
                           <TalentSelector
                               talentPool={talentPool}
-                              selectedTeam={teamFields as TeamMember[]}
+                              selectedTeam={production?.team || []}
                               onSelect={handleSelectTalents}
                               onTalentCreated={fetchTalents}
                           />
