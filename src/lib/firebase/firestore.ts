@@ -1,5 +1,3 @@
-
-
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -481,7 +479,7 @@ export const getProjectDataForExport = async (projectId: string, projectType: Di
             return { type: 'creative', creativeProject, boardItems };
         }
         case 'storyboard': {
-            const storyboard = await getStoryboard(projectId);
+            const storyboard = await getStoryboard(storyboardId);
             if (!storyboard) throw new Error("Storyboard não encontrado.");
             const scenes = await getStoryboardScenes(storyboard.id);
             const panels = await getStoryboardPanels(storyboard.id);
@@ -1602,7 +1600,7 @@ export const getTalents = async (): Promise<Talent[]> => {
   return talents;
 };
 
-export const addTalent = async (talent: Omit<Talent, 'id'>): Promise<string> => {
+export const addTalent = async (talent: Omit<Talent, 'id'|'userId'>): Promise<string> => {
     const userId = getUserId();
     if (!userId) throw new Error("Usuário não autenticado.");
     const talentRef = doc(collection(db, 'talents'));
@@ -2042,4 +2040,3 @@ export const deleteGanttTask = async (projectId: string, taskId: string) => {
   const taskRef = doc(db, `unified_projects/${projectId}/schedule`, taskId);
   await deleteDoc(taskRef);
 };
-

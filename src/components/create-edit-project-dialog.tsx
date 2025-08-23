@@ -4,10 +4,11 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PlusCircle, Trash2, Calendar as CalendarIcon, Info, Users, Search, ChevronDown } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { PlusCircle, Trash2, Calendar as CalendarIcon, Info, Users, Search, ChevronDown, Camera, User as UserIcon } from "lucide-react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import imageCompression from 'browser-image-compression';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +49,8 @@ import { Checkbox } from "./ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { CopyableError } from "./copyable-error";
+import { Textarea } from "./ui/textarea";
+import { Loader2 } from "lucide-react";
 
 
 const teamMemberSchema = z.object({
@@ -597,6 +600,11 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
 
 const newTalentFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
+  contact: z.string().optional(),
+  hasDietaryRestriction: z.boolean().optional(),
+  dietaryRestriction: z.string().optional(),
+  extraNotes: z.string().optional(),
+  file: z.instanceof(File).optional(),
 });
 type NewTalentFormValues = z.infer<typeof newTalentFormSchema>;
 
@@ -610,10 +618,13 @@ function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: {
     const [searchTerm, setSearchTerm] = useState("");
     const [view, setView] = useState<'select' | 'create'>('select');
     const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
     
     const form = useForm<NewTalentFormValues>({
         resolver: zodResolver(newTalentFormSchema),
-        defaultValues: { name: "" },
+        defaultValues: { name: "", contact: "", hasDietaryRestriction: false, dietaryRestriction: "", extraNotes: "", file: undefined },
     });
     
     const filteredTalentPool = useMemo(() => {
@@ -630,45 +641,99 @@ function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: {
             setSelectedIds(prev => prev.filter(sid => sid !== id));
         }
     }
+
+    const resetFormAndGoBack = () => {
+        form.reset();
+        setPhotoPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        setView('select');
+        setIsSaving(false);
+    }
     
     const handleCreateNewTalent = async (values: NewTalentFormValues) => {
-        const talentToSave: Omit<Talent, 'id'> = {
-            name: values.name,
-        };
+        setIsSaving(true);
         try {
+            let photoURL: string | undefined = undefined;
+            if (values.file) {
+                const compressedFile = await imageCompression(values.file, { maxSizeMB: 0.5, maxWidthOrHeight: 512 });
+                photoURL = await firestoreApi.uploadTalentPhoto(compressedFile);
+            }
+
+            const talentToSave: Omit<Talent, 'id' | 'userId'> = {
+                name: values.name,
+                contact: values.contact || "",
+                hasDietaryRestriction: values.hasDietaryRestriction || false,
+                dietaryRestriction: values.dietaryRestriction || "",
+                extraNotes: values.extraNotes || "",
+                photoURL: photoURL,
+            };
+
             await firestoreApi.addTalent(talentToSave);
             toast({ title: "Talento criado com sucesso!" });
-            form.reset();
-            onTalentCreated();
-            setView('select');
+            await onTalentCreated(); // Re-fetch talent pool
+            resetFormAndGoBack();
         } catch (error) {
-             const errorTyped = error as { code?: string; message: string };
-            toast({
-                variant: 'destructive',
-                title: "Erro ao Criar Talento",
+            const errorTyped = error as { code?: string; message: string };
+            toast({ 
+                variant: 'destructive', 
+                title: "Erro ao Criar Talento", 
                 description: <CopyableError userMessage="Não foi possível criar o novo talento." errorCode={errorTyped.code || errorTyped.message} />
             });
+        } finally {
+            setIsSaving(false);
         }
     };
-    
-    const teamInFormIds = useMemo(() => new Set(teamInForm.map(t => t.id)), [teamInForm]);
+
+     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files[0]) {
+          const file = event.target.files[0];
+          form.setValue('file', file);
+          setPhotoPreview(URL.createObjectURL(file));
+        }
+    };
 
     if (view === 'create') {
         return (
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleCreateNewTalent)} className="space-y-4">
+                    <div className="flex justify-center">
+                         <div className="relative group">
+                            <Avatar className="h-24 w-24">
+                                <AvatarImage src={photoPreview || undefined} alt="Avatar Preview" />
+                                <AvatarFallback className="text-3xl"><UserIcon /></AvatarFallback>
+                            </Avatar>
+                            <label 
+                              htmlFor="photo-upload-dialog" 
+                              className="absolute inset-0 bg-black/40 flex items-center justify-center text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                            >
+                              <Camera className="h-6 w-6" />
+                            </label>
+                            <input ref={fileInputRef} id="photo-upload-dialog" type="file" className="hidden" accept="image/png, image/jpeg" onChange={handlePhotoChange} disabled={isSaving}/>
+                        </div>
+                    </div>
                     <FormField control={form.control} name="name" render={({ field }) => (
                         <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome completo" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
+                     <FormField control={form.control} name="contact" render={({ field }) => (
+                        <FormItem><FormLabel>Contato (Opcional)</FormLabel><FormControl><Input placeholder="Telefone ou e-mail" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                     <FormField control={form.control} name={`hasDietaryRestriction`} render={({ field }) => (<FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal text-sm">Possui restrição alimentar?</FormLabel></FormItem>)}/>
+                      {form.watch('hasDietaryRestriction') && (<FormField control={form.control} name={`dietaryRestriction`} render={({ field }) => (<FormItem><FormLabel className="text-xs">Qual restrição/alergia?</FormLabel><FormControl><Input placeholder="ex: Glúten, lactose..." {...field} /></FormControl><FormMessage /></FormItem>)}/>)}
+                      <FormField control={form.control} name={`extraNotes`} render={({ field }) => (<FormItem><FormLabel>Observação Extra <span className="text-muted-foreground">(Opcional)</span></FormLabel><FormControl><Textarea placeholder="ex: Medicação específica..." {...field} rows={2} /></FormControl><FormMessage /></FormItem>)}/>
                     <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => setView('select')}>Cancelar</Button>
-                        <Button type="submit">Salvar Talento</Button>
+                        <Button type="button" variant="ghost" onClick={resetFormAndGoBack} disabled={isSaving}>Cancelar</Button>
+                        <Button type="submit" disabled={isSaving}>
+                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Salvar Talento
+                        </Button>
                     </DialogFooter>
                 </form>
             </Form>
         );
     }
     
+    const teamInFormIds = useMemo(() => new Set(teamInForm.map(t => t.id)), [teamInForm]);
+
     return (
         <div className="space-y-4">
              <div className="relative">
