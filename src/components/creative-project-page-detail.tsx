@@ -181,7 +181,7 @@ const BoardItemDisplay = React.memo(({ item, onDelete, onUpdate, isSelected, onS
                          defaultValue={title}
                          onBlur={(e) => onUpdate(item.id, { content: e.target.value })}
                          placeholder="Título da Lista"
-                         className="font-bold border-none focus-visible:ring-0 text-base mb-2"
+                         className="font-bold border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base mb-2"
                        />
                        <div className="flex-1 overflow-y-auto pr-2 space-y-2">
                            {items.map((checklistItem, index) => (
