@@ -118,8 +118,17 @@ export type LoginFeature = {
   order: number;
 };
 
+export type LoginCarouselImage = {
+  id: string;
+  url: string;
+  title: string;
+  description: string;
+  file?: File;
+};
+
 export type LoginPageContent = {
   features: LoginFeature[];
+  carouselImages?: LoginCarouselImage[];
   backgroundImageUrl?: string;
   isBackgroundEnabled?: boolean;
 };

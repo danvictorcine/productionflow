@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -10,16 +10,18 @@ import * as z from 'zod';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import Autoplay from "embla-carousel-autoplay"
+
 
 import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/context/auth-context';
 import { useTheme } from "next-themes";
 import * as firestoreApi from '@/lib/firebase/firestore';
 import type { Post, LoginPageContent } from '@/lib/types';
-import { featureIcons } from '@/lib/icons';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,6 +73,10 @@ export default function LoginPage() {
   const { setTheme } = useTheme();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loginPageContent, setLoginPageContent] = useState<LoginPageContent | null>(null);
+
+  const plugin = React.useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: true })
+  )
 
   useEffect(() => {
     if (!loading && user) {
@@ -188,6 +194,7 @@ export default function LoginPage() {
   }
   
   const showBackground = loginPageContent?.isBackgroundEnabled && loginPageContent?.backgroundImageUrl;
+  const hasCarouselImages = loginPageContent?.carouselImages && loginPageContent.carouselImages.length > 0;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -217,25 +224,42 @@ export default function LoginPage() {
                         Sua plataforma completa para a gestão de produções audiovisuais.
                     </p>
                 </div>
-                <div className="mt-12 grid gap-8 w-full max-w-md">
-                    {isContentLoading ? (
-                        [...Array(4)].map((_, i) => <FeatureCardSkeleton key={i} />)
-                    ) : (
-                        loginPageContent?.features.map(feature => (
-                            <div key={feature.id} className="flex items-start gap-4">
-                                <div className={cn("flex h-12 w-12 items-center justify-center rounded-full flex-shrink-0", showBackground ? "bg-white/10 text-white" : "bg-primary/10 text-primary")}>
-                                    {featureIcons[feature.icon] ? React.cloneElement(featureIcons[feature.icon], { className: 'h-6 w-6' }) : <DollarSign className="h-6 w-6" />}
-                                </div>
-                                <div className={cn(showBackground && "text-slate-200")}>
-                                    <h3 className={cn("text-lg font-semibold", showBackground && "text-white")}>{feature.title}</h3>
-                                    <p className="mt-1 text-sm">
-                                        {feature.description}
-                                    </p>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
+                {hasCarouselImages ? (
+                    <div className="mt-12 w-full max-w-lg">
+                        <Carousel 
+                             plugins={[plugin.current]}
+                             className="w-full"
+                             onMouseEnter={plugin.current.stop}
+                             onMouseLeave={plugin.current.reset}
+                        >
+                            <CarouselContent>
+                                {loginPageContent?.carouselImages?.map(image => (
+                                    <CarouselItem key={image.id}>
+                                        <div className="p-1">
+                                            <Card className={cn(showBackground && "bg-white/10 text-white border-white/20")}>
+                                                <CardContent className="flex flex-col items-center justify-center p-4 gap-4">
+                                                    <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+                                                         <Image src={image.url} alt={image.title} layout="fill" objectFit="cover" />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <p className="text-lg font-semibold">{image.title}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1">{image.description}</p>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+                                    </CarouselItem>
+                                ))}
+                            </CarouselContent>
+                            <CarouselPrevious className={cn("left-2", showBackground && "bg-white/20 text-white border-white/30 hover:bg-white/30")} />
+                            <CarouselNext className={cn("right-2", showBackground && "bg-white/20 text-white border-white/30 hover:bg-white/30")} />
+                        </Carousel>
+                    </div>
+                ) : (
+                    <div className="mt-12 w-full max-w-md">
+                        {isContentLoading && <Skeleton className="h-64 w-full rounded-lg bg-white/10" />}
+                    </div>
+                )}
                  <div className="mt-8 w-full max-w-md">
                     {(isContentLoading || posts.length > 0) && (
                         <>
@@ -373,5 +397,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
