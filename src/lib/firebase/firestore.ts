@@ -1,3 +1,4 @@
+
 // @/src/lib/firebase/firestore.ts
 
 import { db, auth, storage } from './config';
@@ -1444,26 +1445,18 @@ export const getLoginPageContent = async (): Promise<LoginPageContent> => {
       { id: 'default-2', title: 'Ordem do Dia Detalhada', description: 'Crie e gerencie Ordens do Dia (Call Sheets) com horários, cenas, clima e checklists interativos.', icon: 'Clapperboard', order: 2 },
       { id: 'default-3', title: 'Relatórios Simplificados', description: 'Exporte relatórios financeiros e de produção para Excel e PDF com um clique.', icon: 'FileSpreadsheet', order: 3 },
     ],
-    backgroundImageUrl: '',
-    isBackgroundEnabled: false,
+    carouselImages: [],
   };
 };
 
-export const saveLoginPageContent = async (content: Omit<LoginPageContent, 'features'> & { features: Omit<LoginFeature, 'id'>[] }) => {
+export const saveLoginPageContent = async (content: LoginPageContent) => {
   const docRef = doc(db, 'pages', 'login');
   const dataToSave = {
-    ...content,
-    features: content.features.map((feature, index) => ({...feature, order: index}))
-  }
+    features: content.features.map((feature, index) => ({...feature, order: index})),
+    carouselImages: content.carouselImages?.map(image => ({...image})) || []
+  };
   await setDoc(docRef, dataToSave, { merge: true });
 };
-
-export const uploadLoginBackground = async (file: File): Promise<string> => {
-  const filePath = `content/login_background/background.jpg`; // Fixed name to auto-replace
-  const storageRef = ref(storage, filePath);
-  await uploadBytes(storageRef, file);
-  return await getDownloadURL(storageRef);
-}
 
 
 export const deleteImageFromUrl = async (url: string): Promise<void> => {
