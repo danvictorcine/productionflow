@@ -161,10 +161,20 @@ export function CreateEditProductionDialog({ isOpen, setIsOpen, onSubmit, produc
     setIsTalentSelectorOpen(false);
   }
   
-  const combinedTeam = useMemo(() => [
-      ...(production?.team || []),
-      ...teamFields
-  ], [production?.team, teamFields]);
+  const combinedTeam = useMemo(() => {
+    const existingIds = new Set(teamFields.map(t => t.id));
+    const combined = [...teamFields];
+    
+    if (production?.team) {
+        production.team.forEach(pt => {
+            if (!existingIds.has(pt.id)) {
+                combined.push(pt);
+            }
+        });
+    }
+    
+    return combined;
+  }, [production?.team, teamFields]);
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -415,7 +425,7 @@ function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: {
 
             await firestoreApi.addTalent(talentToSave);
             toast({ title: "Talento criado com sucesso!" });
-            await onTalentCreated(); // Re-fetch talent pool
+            onTalentCreated();
             resetFormAndGoBack();
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };

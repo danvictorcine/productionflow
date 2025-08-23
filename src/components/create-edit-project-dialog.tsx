@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { PlusCircle, Trash2, Calendar as CalendarIcon, Info, Users, Search, ChevronDown, Camera, User as UserIcon } from "lucide-react";
 import { useEffect, useState, useMemo, useRef } from "react";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import imageCompression from 'browser-image-compression';
 
@@ -247,10 +247,21 @@ export function CreateEditProjectDialog({ isOpen, setIsOpen, onSubmit, project }
       setIsTalentSelectorOpen(false);
   }
   
-  const combinedTalents = useMemo(() => [
-      ...(project?.talents || []),
-      ...talentFields
-  ], [project?.talents, talentFields]);
+  const combinedTalents = useMemo(() => {
+    const existingIds = new Set(talentFields.map(t => t.id));
+    const combined = [...talentFields];
+    
+    if (project?.talents) {
+        project.talents.forEach(pt => {
+            if (!existingIds.has(pt.id)) {
+                combined.push(pt);
+            }
+        });
+    }
+    
+    return combined;
+  }, [project?.talents, talentFields]);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -672,7 +683,7 @@ function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: {
 
             await firestoreApi.addTalent(talentToSave);
             toast({ title: "Talento criado com sucesso!" });
-            await onTalentCreated(); // Re-fetch talent pool
+            onTalentCreated();
             resetFormAndGoBack();
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
