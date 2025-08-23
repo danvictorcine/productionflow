@@ -1,3 +1,4 @@
+
 // @/src/components/shooting-day-card.tsx
 "use client";
 
@@ -321,7 +322,7 @@ interface ShootingDayCardProps {
 const formatLocationForHeader = (location?: LocationAddress): string => {
     if (!location) return "Localização não definida";
 
-    const city = location.city || location.town || location.village;
+    const city = location.city || location.town || location.village || location.county;
     
     const parts = [city, location.state, location.country].filter(Boolean);
 
@@ -518,7 +519,7 @@ export const ShootingDayCard = ({ day, production, onEdit, onDelete, onShare, on
                                     </div>
                                 )}
                             </div>
-                            <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105 md:col-span-2 xl:col-span-1">
+                            <div className="h-[235px] transition-all duration-500 ease-in-out hover:scale-105">
                                 <Card className="h-full flex flex-col justify-center items-center p-4 bg-card rounded-2xl shadow-lg">
                                     <CardHeader className="p-0 text-center">
                                         <CardTitle className="text-lg flex items-center justify-center gap-2">
