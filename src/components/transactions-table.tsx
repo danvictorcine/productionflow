@@ -66,7 +66,7 @@ export default function TransactionsTable({
 
   return (
     <>
-      <ScrollArea className="w-full whitespace-nowrap">
+      <ScrollArea className="w-full">
         <Table>
           <TableHeader>
             <TableRow>
@@ -81,7 +81,7 @@ export default function TransactionsTable({
             {transactions.length > 0 ? (
               transactions.map((t) => (
                 <TableRow key={t.id} data-state={t.status === 'paid' ? 'paid' : 'planned'}>
-                   <TableCell>
+                   <TableCell className="whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       {t.status === 'paid' && variant === 'history' && (
                         <TooltipProvider>
@@ -106,10 +106,10 @@ export default function TransactionsTable({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right whitespace-nowrap">
                     {formatCurrency(t.amount)}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{format(t.date, "d MMM, yyyy", { locale: ptBR })}</TableCell>
+                  <TableCell className="hidden md:table-cell whitespace-nowrap">{format(t.date, "d MMM, yyyy", { locale: ptBR })}</TableCell>
                   {variant === 'default' && (
                     <TableCell className="text-center">
                       {t.status === 'planned' && onPay && (
