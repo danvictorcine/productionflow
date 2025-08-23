@@ -129,7 +129,7 @@ export const updateProject = async (projectId: string, projectData: Partial<Omit
           // Verify ownership before updating the talent pool
           const talentDoc = await getDoc(talentRef);
           if (talentDoc.exists() && talentDoc.data().userId !== userId) {
-              console.warn(`Skipping talent sync for ${teamMember.name} due to ownership mismatch.`);
+              console.warn(`Skipping talent sync for ${'teamMember.name'} due to ownership mismatch.`);
               continue; // Skip this talent if it doesn't belong to the user
           }
 
@@ -460,6 +460,7 @@ export const getProjectDataForExport = async (projectId: string, projectType: Di
     const userId = getUserId();
     if (!userId) throw new Error("Usuário não autenticado.");
     
+    let storyboardId = '';
     switch (projectType) {
         case 'financial': {
             const project = await getProject(projectId);
@@ -1450,12 +1451,16 @@ export const getLoginPageContent = async (): Promise<LoginPageContent> => {
 };
 
 export const saveLoginPageContent = async (content: LoginPageContent) => {
-  const docRef = doc(db, 'pages', 'login');
-  const dataToSave = {
-    features: content.features.map((feature, index) => ({...feature, order: index})),
-    carouselImages: content.carouselImages?.map(image => ({...image})) || []
-  };
-  await setDoc(docRef, dataToSave, { merge: true });
+    const docRef = doc(db, 'pages', 'login');
+    // Ensure we handle a possibly undefined carouselImages array
+    const dataToSave = {
+        features: (content.features || []).map((feature, index) => ({ ...feature, order: index })),
+        carouselImages: (content.carouselImages || []).map(image => ({
+            id: image.id,
+            url: image.url,
+        })),
+    };
+    await setDoc(docRef, dataToSave, { merge: true });
 };
 
 
@@ -2033,3 +2038,5 @@ export const deleteGanttTask = async (projectId: string, taskId: string) => {
   const taskRef = doc(db, `unified_projects/${projectId}/schedule`, taskId);
   await deleteDoc(taskRef);
 };
+
+    
