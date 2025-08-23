@@ -627,6 +627,8 @@ function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: {
         defaultValues: { name: "", contact: "", hasDietaryRestriction: false, dietaryRestriction: "", extraNotes: "", file: undefined },
     });
     
+    const teamInFormIds = useMemo(() => new Set(teamInForm.map(t => t.id)), [teamInForm]);
+    
     const filteredTalentPool = useMemo(() => {
         return talentPool
             .filter(talent => 
@@ -732,8 +734,6 @@ function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: {
         );
     }
     
-    const teamInFormIds = useMemo(() => new Set(teamInForm.map(t => t.id)), [teamInForm]);
-
     return (
         <div className="space-y-4">
              <div className="relative">
@@ -761,7 +761,7 @@ function TalentSelector({ talentPool, teamInForm, onSelect, onTalentCreated }: {
                                   htmlFor={`talent-${talent.id}`} 
                                   className={cn(
                                     "flex items-center gap-3 text-sm font-medium leading-none w-full", 
-                                    isInProject ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                                    isInProject && "cursor-not-allowed opacity-50"
                                   )}
                                 >
                                      <Avatar className="h-9 w-9">
