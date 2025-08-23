@@ -21,7 +21,7 @@ import type { Post, LoginPageContent } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselDots } from '@/components/ui/carousel';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -193,34 +193,21 @@ export default function LoginPage() {
       return null;
   }
   
-  const showBackground = loginPageContent?.isBackgroundEnabled && loginPageContent?.backgroundImageUrl;
   const hasCarouselImages = loginPageContent?.carouselImages && loginPageContent.carouselImages.length > 0;
 
   return (
     <div className="flex flex-col min-h-screen">
         <div className="w-full lg:grid lg:grid-cols-2 flex-1">
           <div className="flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative bg-muted">
-            {showBackground && (
-                <>
-                    <Image
-                        src={loginPageContent.backgroundImageUrl!}
-                        alt="Background"
-                        layout="fill"
-                        objectFit="cover"
-                        className="z-0"
-                    />
-                    <div className="absolute inset-0 bg-black/50 z-10"></div>
-                </>
-            )}
-
+            
             <div className="z-20 w-full h-full flex flex-col items-center justify-center overflow-y-auto">
                 <div className="mx-auto w-full max-w-md space-y-4 text-center">
                     <div className="flex items-center justify-center gap-3">
                         <ProductionFlowIcon className="h-10 w-10 flex-shrink-0" />
-                        <h1 className={cn("text-4xl font-bold tracking-tighter", showBackground ? "text-white" : "text-foreground")} style={{color: showBackground ? 'white' : 'hsl(var(--brand-text))'}}>ProductionFlow</h1>
-                        <Badge variant="outline" className={cn("px-2 py-0.5 text-[0.6rem] font-normal", showBackground && "bg-black/20 text-white border-white/50")}>BETA</Badge>
+                        <h1 className={cn("text-4xl font-bold tracking-tighter", "text-foreground")} style={{color: 'hsl(var(--brand-text))'}}>ProductionFlow</h1>
+                        <Badge variant="outline" className={cn("px-2 py-0.5 text-[0.6rem] font-normal")}>BETA</Badge>
                     </div>
-                    <p className={cn("text-lg", showBackground ? 'text-slate-200' : 'text-muted-foreground' )}>
+                    <p className={cn("text-lg", 'text-muted-foreground' )}>
                         Sua plataforma completa para a gestão de produções audiovisuais.
                     </p>
                 </div>
@@ -235,7 +222,7 @@ export default function LoginPage() {
                             <CarouselContent>
                                 {loginPageContent?.carouselImages?.map(image => (
                                     <CarouselItem key={image.id}>
-                                        <Card className={cn("overflow-hidden", showBackground && "bg-white/10 text-white border-white/20")}>
+                                        <Card className={cn("overflow-hidden")}>
                                             <CardContent className="p-2">
                                                 <div className="relative aspect-video w-full overflow-hidden rounded-md">
                                                      <Image src={image.url} alt="Imagem do Carrossel" layout="fill" objectFit="cover" />
@@ -245,8 +232,7 @@ export default function LoginPage() {
                                     </CarouselItem>
                                 ))}
                             </CarouselContent>
-                            <CarouselPrevious className={cn("left-2", showBackground && "bg-white/20 text-white border-white/30 hover:bg-white/30")} />
-                            <CarouselNext className={cn("right-2", showBackground && "bg-white/20 text-white border-white/30 hover:bg-white/30")} />
+                            <CarouselDots />
                         </Carousel>
                     </div>
                 ) : (
@@ -257,11 +243,11 @@ export default function LoginPage() {
                  <div className="mt-8 w-full max-w-md">
                     {(isContentLoading || posts.length > 0) && (
                         <>
-                            <h3 className={cn("mb-4 text-center text-lg font-semibold tracking-tight", showBackground ? "text-white" : "text-foreground")}>Últimas do Blog</h3>
+                            <h3 className={cn("mb-4 text-center text-lg font-semibold tracking-tight", "text-foreground")}>Últimas do Blog</h3>
                             {isContentLoading ? (
                                 <div className="grid grid-cols-2 gap-4">
-                                    <Skeleton className="h-36 w-full rounded-lg bg-white/10" />
-                                    <Skeleton className="h-36 w-full rounded-lg bg-white/10" />
+                                    <Skeleton className="h-36 w-full rounded-lg" />
+                                    <Skeleton className="h-36 w-full rounded-lg" />
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 gap-4">
@@ -271,9 +257,9 @@ export default function LoginPage() {
 
                                         return (
                                         <Link key={post.id} href={`/blog#${post.id}`} className="block group">
-                                            <Card className={cn("h-full hover:bg-background/50 transition-colors flex flex-col justify-between p-4", showBackground && "bg-white/5 hover:bg-white/10 text-slate-200 border-white/20")}>
+                                            <Card className={cn("h-full hover:bg-background/50 transition-colors flex flex-col justify-between p-4")}>
                                                 <div>
-                                                    <CardTitle className={cn("text-base font-semibold leading-tight line-clamp-2", showBackground && "text-white")}>{post.title}</CardTitle>
+                                                    <CardTitle className={cn("text-base font-semibold leading-tight line-clamp-2")}>{post.title}</CardTitle>
                                                     <CardDescription className="text-xs mt-1">
                                                         {format(post.createdAt, "dd MMM, yyyy", { locale: ptBR })}
                                                     </CardDescription>
