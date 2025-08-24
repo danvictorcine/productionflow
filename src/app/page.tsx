@@ -277,7 +277,7 @@ function HomePage() {
              return (
               <Card
                 key={`${item.itemType}-${item.id}`}
-                className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] h-full flex flex-col relative"
+                className="hover:shadow-lg transition-transform duration-200 hover:scale-[1.02] h-full flex flex-col relative"
               >
                 <div className="absolute top-2 right-2 z-10">
                   <DropdownMenu>
@@ -305,7 +305,7 @@ function HomePage() {
                 <Link href={`/project/${item.id}`} className="flex flex-col flex-grow p-6">
                   <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10 p-0">
                     <div className="p-3 rounded-full bg-primary/10">
-                        <ProjectIcon iconName={item.icon || 'Folder'} iconType={item.iconType} className="h-6 w-6 text-primary" />
+                        <ProjectIcon iconName={item.icon} iconType={item.iconType} className="h-6 w-6 text-primary" />
                     </div>
                     <div>
                       <CardTitle>{item.name}</CardTitle>
@@ -320,7 +320,7 @@ function HomePage() {
           return (
             <Card
                 key={`${item.itemType}-${item.id}`}
-                className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] h-full flex flex-col relative border-dashed bg-muted/50"
+                className="hover:shadow-lg transition-transform duration-200 hover:scale-[1.02] h-full flex flex-col relative border-dashed bg-muted/50"
               >
                 <Link href={getLegacyProjectLink(item)} className="flex flex-col flex-grow">
                   <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10">
