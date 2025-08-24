@@ -232,7 +232,7 @@ function HomePage() {
   const getLegacyProjectLink = (item: DisplayableItem) => {
     // Links para rotas antigas, que agora serão redirecionadas
     switch(item.itemType) {
-        case 'financial': return `/project/${item.id}`;
+        case 'financial': return `/financial/${item.id}`;
         case 'production': return `/production/${item.id}`;
         case 'creative': return `/creative/${item.id}`;
         case 'storyboard': return `/storyboard/${item.id}`;
@@ -361,7 +361,7 @@ function HomePage() {
             <Users className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Banco de Talentos</span>
           </Button>
-          <Button onClick={() => setIsUnifiedProjectDialogOpen(true)} size="sm" variant="ghost">
+          <Button onClick={() => setIsUnifiedProjectDialogOpen(true)} size="sm" variant="default">
             <PlusCircle className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Criar Novo</span>
           </Button>
