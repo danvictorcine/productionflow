@@ -309,7 +309,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
                                             onMouseMove={(e) => {
                                                 if (containerRef.current) {
                                                     const rect = containerRef.current.getBoundingClientRect();
-                                                    setTooltipData({ x: e.clientX - rect.left, y: e.clientY - rect.top, content: `[${task.progress}%] ${task.title}` });
+                                                    setTooltipData({ x: e.clientX - rect.left, y: e.clientY - rect.top, content: `${task.progress}% ${task.title}` });
                                                 }
                                             }}
                                             onMouseLeave={() => setTooltipData(null)}
