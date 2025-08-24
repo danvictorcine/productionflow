@@ -55,7 +55,6 @@ import { Alert } from '@/components/ui/alert';
 import { useRouter } from 'next/navigation';
 import { ProductionFlowIcon } from '@/components/production-flow-icon';
 import { ManageTalentsDialog } from '@/components/manage-talents-dialog';
-import { ProjectIcon } from '@/lib/icons';
 
 
 function HomePage() {
@@ -217,12 +216,13 @@ function HomePage() {
   };
   
   const getLegacyProjectIcon = (itemType: DisplayableItem['itemType']) => {
+    const iconClass = "h-6 w-6 text-muted-foreground";
     switch(itemType) {
-        case 'financial': return <ProjectIcon icon="DollarSign" />;
-        case 'production': return <ProjectIcon icon="Clapperboard" />;
-        case 'creative': return <ProjectIcon icon="Brush" />;
-        case 'storyboard': return <ProjectIcon icon="Image" />;
-        default: return <ProjectIcon icon="Folder" />;
+        case 'financial': return <DollarSign className={iconClass} />;
+        case 'production': return <Clapperboard className={iconClass} />;
+        case 'creative': return <Users className={iconClass} />;
+        case 'storyboard': return <FileSpreadsheet className={iconClass} />;
+        default: return <Folder className={iconClass} />;
     }
   };
   
@@ -301,7 +301,7 @@ function HomePage() {
                 <Link href={`/project/${item.id}`} className="flex flex-col flex-grow p-6">
                   <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10 p-0">
                     <div className="p-3 rounded-full bg-primary/10">
-                        <ProjectIcon icon={(item as UnifiedProject).icon} iconType={(item as UnifiedProject).iconType} />
+                        <Folder className="h-6 w-6 text-primary" />
                     </div>
                     <div>
                       <CardTitle>{item.name}</CardTitle>
