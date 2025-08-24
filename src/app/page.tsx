@@ -13,6 +13,9 @@ import {
   AlertTriangle,
   Loader2,
   Users,
+  DollarSign,
+  Clapperboard,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 import type { Project, Production, CreativeProject, Storyboard, UnifiedProject, DisplayableItem } from '@/lib/types';
