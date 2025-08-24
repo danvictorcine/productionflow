@@ -1938,7 +1938,6 @@ export const migrateAllLegacyData = async () => {
     if (!userId) throw new Error("Usuário não autenticado.");
 
     // Step 1: Migrate legacy projects to unified projects
-    const allProjects = await getUnifiedProjects();
     const allProductions = await getProductions();
     const allCreative = await getCreativeProjects();
     const allStoryboards = await getStoryboards();
