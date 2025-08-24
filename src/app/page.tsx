@@ -59,7 +59,6 @@ import { Alert } from '@/components/ui/alert';
 import { useRouter } from 'next/navigation';
 import { ProductionFlowIcon } from '@/components/production-flow-icon';
 import { ManageTalentsDialog } from '@/components/manage-talents-dialog';
-import { ProjectIcon } from '@/lib/icons';
 
 
 function HomePage() {
@@ -305,7 +304,7 @@ function HomePage() {
                 <Link href={`/project/${item.id}`} className="flex flex-col flex-grow p-6">
                   <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10 p-0">
                     <div className="p-3 rounded-full bg-primary/10">
-                        <ProjectIcon iconName={item.icon} iconType={item.iconType} className="h-6 w-6 text-primary" />
+                        <Folder className="h-6 w-6 text-primary" />
                     </div>
                     <div>
                       <CardTitle>{item.name}</CardTitle>
