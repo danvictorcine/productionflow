@@ -65,8 +65,6 @@ export function ManageTalentsDialog({ isOpen, setIsOpen }: ManageTalentsDialogPr
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState<Record<number, boolean>>({});
     const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
-    const [isMigrating, setIsMigrating] = useState(false);
-    const [legacyTeamMembers, setLegacyTeamMembers] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [talentToDelete, setTalentToDelete] = useState<{ id: string; name: string, isNew: boolean, index: number } | null>(null);
 
@@ -89,30 +87,9 @@ export function ManageTalentsDialog({ isOpen, setIsOpen }: ManageTalentsDialogPr
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [talents, productions, projects] = await Promise.all([
-                firestoreApi.getTalents(),
-                firestoreApi.getProductions(),
-                firestoreApi.getProjects(),
-            ]);
-            
+            const talents = await firestoreApi.getTalents();
             talents.sort((a, b) => a.name.localeCompare(b.name));
             reset({ talents });
-
-            const legacyProdTeam = productions.flatMap(p => p.team || []);
-            const legacyFinTeam = projects.flatMap(p => p.talents || []);
-            const combinedLegacy = [...legacyProdTeam, ...legacyFinTeam];
-
-            const uniqueLegacy = combinedLegacy.filter((member, index, self) =>
-                member.name && index === self.findIndex((t) => (
-                    t.name === member.name
-                ))
-            );
-            
-            const talentsInPool = new Set(talents.map(t => t.name.trim().toLowerCase()));
-            const membersToMigrate = uniqueLegacy.filter(m => !talentsInPool.has(m.name.trim().toLowerCase()));
-
-            setLegacyTeamMembers(membersToMigrate);
-
         } catch (error) {
             const errorTyped = error as { code?: string; message: string };
             toast({
@@ -193,27 +170,6 @@ export function ManageTalentsDialog({ isOpen, setIsOpen }: ManageTalentsDialogPr
             });
         } finally {
             setIsSaving(prev => ({ ...prev, [index]: false }));
-        }
-    }
-    
-    const handleMigration = async () => {
-        setIsMigrating(true);
-        try {
-            await firestoreApi.migrateTeamToTalentPool();
-            toast({
-                title: 'Migração Concluída!',
-                description: 'Todas as equipes dos seus projetos foram adicionadas ao Banco de Talentos.',
-            });
-            await fetchData();
-        } catch (error) {
-             const errorTyped = error as { code?: string; message: string };
-             toast({
-                variant: 'destructive',
-                title: 'Erro na Migração',
-                description: <CopyableError userMessage="Não foi possível migrar as equipes." errorCode={errorTyped.code || errorTyped.message} />,
-            });
-        } finally {
-            setIsMigrating(false);
         }
     }
     
@@ -368,21 +324,7 @@ export function ManageTalentsDialog({ isOpen, setIsOpen }: ManageTalentsDialogPr
                                             </Button>
                                         </div>
                                     </div>
-                                    
-                                    {legacyTeamMembers.length > 0 && (
-                                        <Alert variant="default" className="border-amber-500/50 text-amber-900 dark:text-amber-300 [&>svg]:text-amber-500">
-                                            <AlertTriangle className="h-4 w-4" />
-                                            <AlertTitle>Migração de Equipes</AlertTitle>
-                                            <AlertDescription className="text-amber-700 dark:text-amber-400">
-                                                Encontramos {legacyTeamMembers.length} membro(s) de equipe em seus projetos antigos que ainda não estão no Banco de Talentos. Clique para importá-los.
-                                            </AlertDescription>
-                                            <Button type="button" onClick={handleMigration} disabled={isMigrating} className="mt-3 bg-amber-500 hover:bg-amber-600 text-white">
-                                                {isMigrating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                                Migrar Equipes Antigas
-                                            </Button>
-                                        </Alert>
-                                    )}
-                                    
+                                                                        
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                                     <div className="flex flex-col gap-4">
                                             {filteredFields

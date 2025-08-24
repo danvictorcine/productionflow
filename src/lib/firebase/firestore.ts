@@ -1755,74 +1755,6 @@ export const uploadTalentPhoto = async (file: File): Promise<string> => {
   return await getDownloadURL(storageRef);
 };
 
-export const migrateTeamToTalentPool = async (): Promise<void> => {
-    const userId = getUserId();
-    if (!userId) throw new Error("Usuário não autenticado.");
-
-    const [productions, projects, existingTalents] = await Promise.all([
-        getProductions(),
-        getProjects(),
-        getTalents()
-    ]);
-    
-    const legacyProdTeam: any[] = productions.flatMap(p => p.team || []);
-    const legacyFinTeam: any[] = projects.flatMap(p => p.talents || []);
-    const combinedLegacyTeam: any[] = [...legacyProdTeam, ...legacyFinTeam];
-
-    const uniqueTalents = new Map<string, Talent>();
-
-    // Helper to create a clean talent object
-    const createCleanTalent = (member: any): Omit<Talent, 'id'> => ({
-      name: member.name || "Nome Desconhecido",
-      photoURL: member.photoURL || undefined,
-      contact: member.contact || undefined,
-      hasDietaryRestriction: member.hasDietaryRestriction === true,
-      dietaryRestriction: member.dietaryRestriction || undefined,
-      extraNotes: member.extraNotes || undefined,
-    });
-
-    // Prioritize existing talents
-    existingTalents.forEach(talent => {
-        const key = `${talent.name.trim().toLowerCase()}`;
-        if (!uniqueTalents.has(key)) {
-            uniqueTalents.set(key, talent);
-        }
-    });
-
-    // Process legacy members, merging data if a more complete record is found
-    combinedLegacyTeam.forEach(member => {
-        if (!member.name) return;
-        const key = `${member.name.trim().toLowerCase()}`;
-        if (!uniqueTalents.has(key)) {
-            const newTalent: Talent = {
-                id: doc(collection(db, 'talents')).id, // Generate a new ID
-                ...createCleanTalent(member),
-            };
-            uniqueTalents.set(key, newTalent);
-        } else {
-            // Merge info: if existing entry is missing info that the new one has, add it.
-            const existing = uniqueTalents.get(key)!;
-            if (!existing.contact && member.contact) existing.contact = member.contact;
-            if (!existing.photoURL && member.photoURL) existing.photoURL = member.photoURL;
-            if (existing.hasDietaryRestriction === undefined && member.hasDietaryRestriction !== undefined) {
-                 existing.hasDietaryRestriction = member.hasDietaryRestriction;
-                 existing.dietaryRestriction = member.dietaryRestriction;
-            }
-            if (!existing.extraNotes && member.extraNotes) existing.extraNotes = member.extraNotes;
-        }
-    });
-
-    const talentsToSave = Array.from(uniqueTalents.values());
-    
-    const batch = writeBatch(db);
-    talentsToSave.forEach(talent => {
-        const docRef = doc(db, 'talents', talent.id);
-        const { file, ...dataToSave } = talent;
-        batch.set(docRef, { ...dataToSave, userId }, { merge: true });
-    });
-    await batch.commit();
-};
-
 
 // === Unified Project Functions ===
 
@@ -1931,14 +1863,98 @@ export const deleteStoryboardSubProject = async (storyboardProjectId: string, un
     await updateUnifiedProject(unifiedProjectId, { storyboardProjectId: deleteField() as any });
 }
 
-export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) => {
+
+export const migrateTeamToTalentPool = async (): Promise<void> => {
     const userId = getUserId();
     if (!userId) throw new Error("Usuário não autenticado.");
 
-    const batch = writeBatch(db);
+    const [productions, projects, existingTalents] = await Promise.all([
+        getProductions(),
+        getProjects(),
+        getTalents()
+    ]);
+    
+    const legacyProdTeam: any[] = productions.flatMap(p => p.team || []);
+    const legacyFinTeam: any[] = projects.flatMap(p => p.talents || []);
+    const combinedLegacyTeam: any[] = [...legacyProdTeam, ...legacyFinTeam];
 
-    for (const legacy of legacyProjects) {
-        if (legacy.itemType === 'unified' || (legacy as any).unifiedProjectId) continue;
+    const uniqueTalents = new Map<string, Talent>();
+
+    // Helper to create a clean talent object
+    const createCleanTalent = (member: any): Omit<Talent, 'id'> => ({
+      name: member.name || "Nome Desconhecido",
+      photoURL: member.photoURL || undefined,
+      contact: member.contact || undefined,
+      hasDietaryRestriction: member.hasDietaryRestriction === true,
+      dietaryRestriction: member.dietaryRestriction || undefined,
+      extraNotes: member.extraNotes || undefined,
+    });
+
+    // Prioritize existing talents
+    existingTalents.forEach(talent => {
+        const key = `${talent.name.trim().toLowerCase()}`;
+        if (!uniqueTalents.has(key)) {
+            uniqueTalents.set(key, talent);
+        }
+    });
+
+    // Process legacy members, merging data if a more complete record is found
+    combinedLegacyTeam.forEach(member => {
+        if (!member.name) return;
+        const key = `${member.name.trim().toLowerCase()}`;
+        if (!uniqueTalents.has(key)) {
+            const newTalent: Talent = {
+                id: doc(collection(db, 'talents')).id, // Generate a new ID
+                ...createCleanTalent(member),
+            };
+            uniqueTalents.set(key, newTalent);
+        } else {
+            // Merge info: if existing entry is missing info that the new one has, add it.
+            const existing = uniqueTalents.get(key)!;
+            if (!existing.contact && member.contact) existing.contact = member.contact;
+            if (!existing.photoURL && member.photoURL) existing.photoURL = member.photoURL;
+            if (existing.hasDietaryRestriction === undefined && member.hasDietaryRestriction !== undefined) {
+                 existing.hasDietaryRestriction = member.hasDietaryRestriction;
+                 existing.dietaryRestriction = member.dietaryRestriction;
+            }
+            if (!existing.extraNotes && member.extraNotes) existing.extraNotes = member.extraNotes;
+        }
+    });
+
+    const talentsToSave = Array.from(uniqueTalents.values());
+    
+    const batch = writeBatch(db);
+    talentsToSave.forEach(talent => {
+        const docRef = doc(db, 'talents', talent.id);
+        const { file, ...dataToSave } = talent;
+        batch.set(docRef, { ...dataToSave, userId }, { merge: true });
+    });
+    await batch.commit();
+};
+
+
+export const migrateAllLegacyData = async () => {
+    const userId = getUserId();
+    if (!userId) throw new Error("Usuário não autenticado.");
+
+    // Step 1: Migrate legacy projects to unified projects
+    const allProjects = await getUnifiedProjects();
+    const allProductions = await getProductions();
+    const allCreative = await getCreativeProjects();
+    const allStoryboards = await getStoryboards();
+    const allFinancials = await getProjects();
+    
+    const legacyItems: DisplayableItem[] = [
+        ...allFinancials.filter(p => !p.unifiedProjectId).map((p) => ({ ...p, itemType: 'financial' as const })),
+        ...allProductions.filter(p => !p.unifiedProjectId).map((p) => ({ ...p, itemType: 'production' as const })),
+        ...allCreative.filter(p => !p.unifiedProjectId).map((p) => ({ ...p, itemType: 'creative' as const })),
+        ...allStoryboards.filter(p => !p.unifiedProjectId).map((p) => ({ ...p, itemType: 'storyboard' as const })),
+    ];
+    
+    const projectBatch = writeBatch(db);
+
+    for (const legacy of legacyItems) {
+        if ((legacy as any).unifiedProjectId) continue;
 
         const unifiedProjectRef = doc(collection(db, 'unified_projects'));
         
@@ -1959,30 +1975,25 @@ export const migrateLegacyProjects = async (legacyProjects: DisplayableItem[]) =
             }
         }
         
-        batch.set(unifiedProjectRef, { ...cleanedData, createdAt: Timestamp.now() });
+        projectBatch.set(unifiedProjectRef, { ...cleanedData, createdAt: Timestamp.now() });
         
         let legacyProjectRef: any;
         switch (legacy.itemType) {
-            case 'financial':
-                legacyProjectRef = doc(db, 'projects', legacy.id);
-                break;
-            case 'production':
-                legacyProjectRef = doc(db, 'productions', legacy.id);
-                break;
-            case 'creative':
-                legacyProjectRef = doc(db, 'creative_projects', legacy.id);
-                break;
-            case 'storyboard':
-                legacyProjectRef = doc(db, 'storyboards', legacy.id);
-                break;
+            case 'financial': legacyProjectRef = doc(db, 'projects', legacy.id); break;
+            case 'production': legacyProjectRef = doc(db, 'productions', legacy.id); break;
+            case 'creative': legacyProjectRef = doc(db, 'creative_projects', legacy.id); break;
+            case 'storyboard': legacyProjectRef = doc(db, 'storyboards', legacy.id); break;
         }
         
         if (legacyProjectRef) {
-            batch.update(legacyProjectRef, { unifiedProjectId: unifiedProjectRef.id });
+            projectBatch.update(legacyProjectRef, { unifiedProjectId: unifiedProjectRef.id });
         }
     }
     
-    await batch.commit();
+    await projectBatch.commit();
+    
+    // Step 2: Migrate teams to talent pool
+    await migrateTeamToTalentPool();
 }
 
 

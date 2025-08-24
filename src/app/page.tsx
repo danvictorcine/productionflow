@@ -9,10 +9,6 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Clapperboard,
-  DollarSign,
-  Brush,
-  Image as ImageIcon,
   Folder,
   AlertTriangle,
   Loader2,
@@ -59,6 +55,7 @@ import { Alert } from '@/components/ui/alert';
 import { useRouter } from 'next/navigation';
 import { ProductionFlowIcon } from '@/components/production-flow-icon';
 import { ManageTalentsDialog } from '@/components/manage-talents-dialog';
+import { ProjectIcon } from '@/lib/icons';
 
 
 function HomePage() {
@@ -167,20 +164,20 @@ function HomePage() {
   };
   
   const handleMigrateProjects = async () => {
-    const legacyProjects = items.filter(item => item.itemType !== 'unified');
-    if (legacyProjects.length === 0) return;
+    const legacyItems = items.filter(item => item.itemType !== 'unified');
+    if (legacyItems.length === 0) return;
     
     setIsMigrating(true);
     try {
-        await firestoreApi.migrateLegacyProjects(legacyProjects);
-        toast({ title: "Migração Concluída!", description: "Seus projetos antigos agora estão no novo formato." });
+        await firestoreApi.migrateAllLegacyData();
+        toast({ title: "Migração Concluída!", description: "Seus projetos e equipes foram atualizados para o novo formato." });
         await fetchItems();
     } catch (error) {
         const errorTyped = error as { code?: string; message: string };
         toast({
             variant: "destructive",
             title: "Erro na Migração",
-            description: <CopyableError userMessage="Não foi possível migrar os projetos." errorCode={errorTyped.code || errorTyped.message} />,
+            description: <CopyableError userMessage="Não foi possível migrar os dados." errorCode={errorTyped.code || errorTyped.message} />,
         });
     } finally {
         setIsMigrating(false);
@@ -221,11 +218,11 @@ function HomePage() {
   
   const getLegacyProjectIcon = (itemType: DisplayableItem['itemType']) => {
     switch(itemType) {
-        case 'financial': return <DollarSign className="h-6 w-6 text-muted-foreground" />;
-        case 'production': return <Clapperboard className="h-6 w-6 text-muted-foreground" />;
-        case 'creative': return <Brush className="h-6 w-6 text-muted-foreground" />;
-        case 'storyboard': return <ImageIcon className="h-6 w-6 text-muted-foreground" />;
-        default: return <Folder className="h-6 w-6 text-primary" />;
+        case 'financial': return <ProjectIcon icon="DollarSign" />;
+        case 'production': return <ProjectIcon icon="Clapperboard" />;
+        case 'creative': return <ProjectIcon icon="Brush" />;
+        case 'storyboard': return <ProjectIcon icon="Image" />;
+        default: return <ProjectIcon icon="Folder" />;
     }
   };
   
@@ -304,7 +301,7 @@ function HomePage() {
                 <Link href={`/project/${item.id}`} className="flex flex-col flex-grow p-6">
                   <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10 p-0">
                     <div className="p-3 rounded-full bg-primary/10">
-                        <Folder className="h-6 w-6 text-primary" />
+                        <ProjectIcon icon={(item as UnifiedProject).icon} iconType={(item as UnifiedProject).iconType} />
                     </div>
                     <div>
                       <CardTitle>{item.name}</CardTitle>
@@ -321,8 +318,8 @@ function HomePage() {
                 key={`${item.itemType}-${item.id}`}
                 className="hover:shadow-lg transition-transform duration-200 hover:scale-[1.02] h-full flex flex-col relative border-dashed bg-muted/50"
               >
-                <Link href={getLegacyProjectLink(item)} className="flex flex-col flex-grow">
-                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10">
+                <Link href={getLegacyProjectLink(item)} className="flex flex-col flex-grow p-6">
+                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pr-10 p-0">
                     <div className="p-3 rounded-full bg-muted">
                         {getLegacyProjectIcon(item.itemType)}
                     </div>
@@ -331,7 +328,7 @@ function HomePage() {
                       <CardDescription>Projeto Legado</CardDescription>
                     </div>
                   </CardHeader>
-                  <CardContent className="mt-auto">
+                  <CardContent className="mt-auto p-0 pt-4">
                     <Button className="w-full" variant="secondary">Abrir Projeto Legado</Button>
                   </CardContent>
                 </Link>
@@ -375,11 +372,11 @@ function HomePage() {
                 <AlertTriangle className="h-4 w-4" />
                 <CardTitle className="text-base">Atualização da Estrutura de Projetos</CardTitle>
                 <CardDescription className="text-amber-700 dark:text-amber-400">
-                    Detectamos projetos no formato antigo. Para usar as novas funcionalidades integradas, migre seus projetos para o novo formato unificado. A migração é segura e não apaga seus dados originais.
+                    Detectamos projetos no formato antigo. Para usar as novas funcionalidades integradas, clique no botão abaixo para migrar seus projetos e equipes para o novo formato unificado.
                 </CardDescription>
                 <Button onClick={handleMigrateProjects} disabled={isMigrating} className="mt-3 bg-amber-500 hover:bg-amber-600 text-white">
                     {isMigrating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Migrar Projetos Antigos
+                    Migrar Dados Antigos
                 </Button>
             </Alert>
         )}
